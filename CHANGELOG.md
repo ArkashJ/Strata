@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `docs/07-data-layer-brainstorm.md` — decision record from the data-layer
+  brainstorm (38 questions resolved, full record schemas, build sequence
+  mapped to roadmap, verification plan).
+
 ### Planned
 - Primitives schema + JSON store (`data/primitives/`).
 - Framework schema + first 3 reference recipes (bottoms-up GTM, top-down spend, analog/penetration).
