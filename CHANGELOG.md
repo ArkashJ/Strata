@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   product-surface brainstorm (12 UX decisions resolved, 9 surfaces specified,
   URL state model, cross-cutting interaction patterns, verification plan).
   Supersedes `02-network-graph.md` and `04-user-journey.md` for v0.3+.
+- `docs/09-expert-layer-brainstorm.md` — partial decision record for the
+  expert layer (5 schema decisions locked: pure-commentary annotations,
+  three flat tiers, annotation field set, append-only lifecycle). All
+  operational mechanics (verification, reputation algorithm, moderation,
+  adversarial defenses) deliberately deferred to v0.5.
 
 ### Planned
 - Primitives schema + JSON store (`data/primitives/`).
