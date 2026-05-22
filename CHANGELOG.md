@@ -47,6 +47,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/` with pytest configured, smoke test green.
 - Pyright strict mode + Ruff lint/format wired in `pyproject.toml`.
 - Empty `data/` directory tree (`concepts/`, `primitives/`, `composites/`, `frameworks/`, `sources/`, `annotations/`, `tams/`) staged for seed records.
+- `web/` — Next.js 16 + React 19 + TS + Tailwind 4 + react-flow, bun-managed.
+  Brand-kit tokens (`brand-kit.md`) dropped into `web/src/app/globals.css`,
+  Geist + Geist Mono + Instrument Serif wired via `next/font`.
+- Landing page (`/`) — Robinhood-density: single centered search box,
+  editorial Instrument Serif headline, three try-me suggestion chips.
+- Build page (`/build?q=…`) — Harvey AI-style workflow canvas:
+  target → frameworks → primitives rendered with react-flow, smoothstep
+  edges on a sage canvas, white canvas-cards with role chips, right-rail
+  accordion (Frameworks · Independence · Lineage graph).
+- `web/src/lib/api.ts` — in-memory mock API mirroring the planned FastAPI
+  response shapes for the P&C doc-gen TAM. Swap point for real backend.
+- `docs/design/captures/v0.3-prototype/` — playwright-cli screenshots of
+  the landing and build pages for visual regression tracking.
 
 ## [0.1.0] - 2026-05-20
 

@@ -1,0 +1,186 @@
+@import "tailwindcss";
+
+/*
+ * Strata brand tokens — extracted verbatim from docs/design/brand-kit.md (v0.42 mockup).
+ * Light-default palette on #FAFAFA paper, deep ink, indigo accent.
+ * Never inline a hex in a component — refer back here.
+ */
+:root {
+  /* Surfaces */
+  --bg-0: #fafafa;
+  --bg-1: #ffffff;
+  --bg-2: #f4f4f5;
+  --bg-3: #e9e9ec;
+
+  /* Ink */
+  --fg-1: #0a0a0b;
+  --fg-2: #52525b;
+  --fg-3: #7e7e86;
+  --fg-4: #b4b4ba;
+
+  /* Borders / dividers */
+  --border-1: #e8e8ec;
+  --border-2: #d4d4d8;
+  --border-3: #a1a1aa;
+
+  /* Accent (Strata indigo) */
+  --accent: #5b5bd6;
+  --accent-hover: #6e6ee0;
+  --accent-active: #4848c4;
+  --accent-fg-on: #ffffff;
+  --accent-tint: rgba(91, 91, 214, 0.12);
+  --accent-ring: rgba(91, 91, 214, 0.35);
+
+  /* Semantic */
+  --success: #4ade80;
+  --warning: #c99846;
+  --danger: #e5484d;
+  --info: #3b7bd9;
+
+  /* Source-tier palette (load-bearing — see docs/03-data-model.md) */
+  --tier-regulator: #3fa66b;
+  --tier-regulator-tint: rgba(63, 166, 107, 0.14);
+  --tier-aggregator: #2ba39a;
+  --tier-aggregator-tint: rgba(43, 163, 154, 0.14);
+  --tier-analyst: #c99846;
+  --tier-analyst-tint: rgba(201, 152, 70, 0.14);
+  --tier-community: #7a7a82;
+  --tier-community-tint: rgba(122, 122, 130, 0.16);
+  --tier-onchain: #8b5cd6;
+  --tier-onchain-tint: rgba(139, 92, 214, 0.14);
+  --tier-prediction: #d97849;
+  --tier-prediction-tint: rgba(217, 120, 73, 0.14);
+  --tier-first-party: var(--accent);
+  --tier-first-party-tint: var(--accent-tint);
+
+  /* Axis colors (pyramid) */
+  --axis-qualitative: var(--fg-2);
+  --axis-quantitative: var(--accent);
+  --axis-industry: var(--tier-analyst);
+
+  /* Spacing — 4px grid */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Radii */
+  --r-1: 4px;
+  --r-2: 6px;
+  --r-3: 8px;
+  --r-4: 12px;
+  --r-round: 999px;
+
+  /* Elevation */
+  --shadow-pop: 0 4px 14px rgba(0, 0, 0, 0.08), 0 1px 0 rgba(0, 0, 0, 0.02) inset;
+  --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.14), 0 1px 0 rgba(0, 0, 0, 0.02) inset;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --t-fast: 120ms;
+  --t-base: 180ms;
+  --t-slow: 240ms;
+
+  /* Layout primitives */
+  --sidebar-w: 240px;
+  --topbar-h: 48px;
+  --right-rail-w: 320px;
+  --content-max: 1280px;
+
+  /* Workflow-canvas tones (build-view inspiration: Harvey AI workflow builder) */
+  --canvas-bg: #dde1dc;
+  --canvas-line: #c6cbc4;
+  --card-bg: #ffffff;
+  --card-border: rgba(10, 10, 11, 0.06);
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(15, 23, 42, 0.04);
+  --card-shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.06);
+  --chip-bg: #f1f2ef;
+  --chip-fg: #4b524b;
+}
+
+@theme inline {
+  --color-bg-0: var(--bg-0);
+  --color-bg-1: var(--bg-1);
+  --color-bg-2: var(--bg-2);
+  --color-bg-3: var(--bg-3);
+  --color-fg-1: var(--fg-1);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-fg-4: var(--fg-4);
+  --color-border-1: var(--border-1);
+  --color-border-2: var(--border-2);
+  --color-border-3: var(--border-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --font-ui: var(--font-ui), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-display: var(--font-display), Georgia, serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+/* Robinhood-style focus: thick accent ring, no UA outline */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+  border-radius: var(--r-2);
+}
+
+/* Editorial display class — applied to H1 / big headlines */
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* Big mono number — the headline TAM value */
+.tam-num {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+/* Harvey-style workflow card — white, soft, used for graph nodes + rail rows */
+.canvas-card {
+  background: var(--card-bg);
+  border-radius: var(--r-3);
+  box-shadow: var(--card-shadow);
+  transition: box-shadow var(--t-base) var(--ease-out);
+}
+.canvas-card:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
+/* Role / output chip — used beneath card titles to show kind */
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-1);
+  background: var(--chip-bg);
+  color: var(--chip-fg);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  line-height: 1.4;
+}
+.role-chip--accent {
+  background: var(--accent-tint);
+  color: var(--accent-active);
+}

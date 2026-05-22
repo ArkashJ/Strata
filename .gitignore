@@ -42,5 +42,8 @@ tmp/
 # Superpowers brainstorm mockups (visual companion)
 .superpowers/
 
+# Claude Code agent worktrees (transient)
+.claude/
+
 # uv / ruff caches (lockfile IS committed for reproducible installs)
 .ruff_cache/
