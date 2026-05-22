@@ -41,3 +41,6 @@ tmp/
 
 # Superpowers brainstorm mockups (visual companion)
 .superpowers/
+
+# uv / ruff caches (lockfile IS committed for reproducible installs)
+.ruff_cache/

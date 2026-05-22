@@ -29,12 +29,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/design/captures/` — 19 screenshots of the mockup as rendered
   (full-page, per-section, per-route, modal states) used as the visual
   source of truth for the catalog.
+- `docs/10-v0.2-backend-spec.md` — executable v0.2 backend roadmap
+  mapping data-layer + product-surface decisions to numbered tasks,
+  stack choices (Python 3.12 + uv + FastAPI + Pydantic v2 + pyright
+  strict), file layout, conventions, and a verification scenario
+  (P&C doc-gen TAM).
 
 ### Planned
 - Primitives schema + JSON store (`data/primitives/`).
 - Framework schema + first 3 reference recipes (bottoms-up GTM, top-down spend, analog/penetration).
 - Network-graph prototype (pyramid layout: Qualitative / Quantitative / Industry).
 - Source credibility tiering (1st-party / aggregator / analyst).
+
+### Scaffolded (v0.2 work-in-progress)
+- `pyproject.toml` — Python 3.12, uv-managed, FastAPI + Pydantic v2 + Typer.
+- `src/strata/` package layout (`models/`, `validator/`, `evaluator/`, `scoring/`, `api/`, `cli.py`).
+- `tests/` with pytest configured, smoke test green.
+- Pyright strict mode + Ruff lint/format wired in `pyproject.toml`.
+- Empty `data/` directory tree (`concepts/`, `primitives/`, `composites/`, `frameworks/`, `sources/`, `annotations/`, `tams/`) staged for seed records.
 
 ## [0.1.0] - 2026-05-20
 
