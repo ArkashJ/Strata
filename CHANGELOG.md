@@ -20,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   three flat tiers, annotation field set, append-only lifecycle). All
   operational mechanics (verification, reputation algorithm, moderation,
   adversarial defenses) deliberately deferred to v0.5.
+- `docs/design/brand-kit.md` — design tokens (color, type, spacing,
+  radii, elevation, motion, layout) extracted verbatim from the v0.42
+  standalone mockup, ready to drop into a future `tokens.css`.
+- `docs/design/component-catalog.md` — annotated tour of every component
+  in the v0.42 mockup (app shell, home, pyramid explorer, concept detail,
+  TAM detail, ⌘K palette) with screenshot references and token bindings.
+- `docs/design/captures/` — 19 screenshots of the mockup as rendered
+  (full-page, per-section, per-route, modal states) used as the visual
+  source of truth for the catalog.
 
 ### Planned
 - Primitives schema + JSON store (`data/primitives/`).
