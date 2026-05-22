@@ -38,3 +38,6 @@ coverage/
 # Local scratch
 scratch/
 tmp/
+
+# Superpowers brainstorm mockups (visual companion)
+.superpowers/

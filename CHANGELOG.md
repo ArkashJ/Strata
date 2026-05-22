@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/07-data-layer-brainstorm.md` — decision record from the data-layer
   brainstorm (38 questions resolved, full record schemas, build sequence
   mapped to roadmap, verification plan).
+- `docs/08-product-surface-brainstorm.md` — decision record from the
+  product-surface brainstorm (12 UX decisions resolved, 9 surfaces specified,
+  URL state model, cross-cutting interaction patterns, verification plan).
+  Supersedes `02-network-graph.md` and `04-user-journey.md` for v0.3+.
 
 ### Planned
 - Primitives schema + JSON store (`data/primitives/`).
