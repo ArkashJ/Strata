@@ -29,14 +29,29 @@ thesis, the three layers, the data model, and the user journey in < 20 min.
       (atomic_primitive, composite_primitive, framework, concept,
       marketplace_concept, company_concept, tam_output) +
       [`09-expert-layer-brainstorm.md`](09-expert-layer-brainstorm.md) (annotation).
-- [ ] Pydantic v2 models in `src/strata/models/` for each record type.
-- [ ] Hand-seed ~50 primitives covering the GTM, P&C insurance, and SMB-SaaS
-      slices used in `04-user-journey.md`.
-- [ ] Write the first 5 frameworks across two verticals — exercising
-      marketplace + multi-product + subsidy paths (verification scenarios in
-      [`07-data-layer-brainstorm.md`](07-data-layer-brainstorm.md#verification-plan-when-implementation-begins)).
+- [x] **Lens taxonomy locked** (Q39): six first-class lenses + four modifiers
+      on Concept; `analyst-paraphrase` source tier added (Q40). See
+      [`plans/data-collection-strategy.md`](plans/data-collection-strategy.md).
+- [ ] Pydantic v2 models in `backend/src/strata/models/` for each record type,
+      including the lens enum + modifiers + `required_primitive_roles` map.
+- [ ] **Six canonical frameworks** (one per lens):
+  - `bottoms_up_cost_efficiency` (L1)
+  - `top_down_revenue_capture` (L2)
+  - `adoption_curve_latent_demand` (L3) — requires `analog:` field
+  - `throughput_take_rate` (L4) — Q19 `marketplace_concept` consumer
+  - `consolidation_sum_then_discount` (L5)
+  - `productivity_uplift_value_split` (L6)
+- [ ] **Six seed concepts**, one per lens, exercising every source tier:
+      `doc-gen-pc-insurance` (L1+L2), `gtm-ops-tooling-na` (L1),
+      `midmarket-saas-spend-na` (L2 via analyst-paraphrase),
+      `payments-throughput-pc-insurance` (L4), `workplace-suite-consolidation` (L5),
+      `software-eng-productivity` (L6).
+- [ ] Ingest substrate per [`plans/execute.md`](plans/execute.md): BLS / FRED /
+      EDGAR / NAIC direct-API connectors + snapshot store + validator pipeline.
+      No vendor spend at v0.2.
 - [ ] Build a minimal CLI: `strata validate data/` (lints YAML against schemas).
 - [ ] CONTRIBUTING.md for primitives + frameworks + annotations.
+- [ ] Takedown endpoint for the `analyst-paraphrase` tier (Q40 requirement).
 
 **Exit criteria:** Three reviewers can independently submit a primitive in
 YAML, have it lint-pass, and have it referenced by an existing framework.

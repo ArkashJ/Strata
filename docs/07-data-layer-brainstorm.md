@@ -6,8 +6,9 @@
 > Final implementation blueprint is at the bottom.
 
 ## Status
-**Phase:** Data-layer brainstorm **COMPLETE.** 38 questions resolved (Q1–Q38).
-**Date:** 2026-05-20.
+**Phase:** Data-layer brainstorm **COMPLETE.** 40 questions resolved (Q1–Q40).
+**Date:** 2026-05-20 (Q1–Q38); **2026-05-22** (Q39–Q40 addendum from the
+data-collection brainstorm + MD lens-taxonomy critique).
 **Parked for a follow-up session:** Expert layer mechanics (credentialing,
 COI, decay, annotator gates) — better resolved closer to v0.5 with real
 contributor data informing parameters.
@@ -57,6 +58,8 @@ contributor data informing parameters.
 | 36 | Access-regulated markets? | **`requires_clearance: [list]`** on concepts + frameworks reuse Q16's `applicable_to` to enforce regulatory gates; TAM = addressable-given-clearance, not gross-pool |
 | 37 | Dark / private estimates? | **Allowed** with mandatory uncertainty range + lineage + tier=community/analyst. **Source-tier system extended** with two new tiers: `onchain` (first-party-equivalent for crypto/DeFi) and `prediction_market` (community-modeled, must cite specific market + liquidity). Hyperliquid-class onchain data and Kalshi/Polymarket-class prediction markets become first-class primitive sources for dark/forward-looking TAMs. |
 | 38 | TAM artifact / persistence? | **Permanent URL per TAM** with content-hash pinned inputs + PDF/markdown export embedding the URL. Citable in memos; reproducible forever; verifiable by anyone with the link. |
+| 39 | TAM lens taxonomy? | **Six first-class lenses + four composable modifiers.** Lenses: `cost_efficiency` · `revenue_generation` · `latent_demand` · `platform_throughput` · `bundle_consolidation` · `productivity_uplift`. Modifiers: `opex_conversion` · `margin_capture` · `regulatory_unlock` · `risk_transfer`. Concept declares `analysis_lens.primary` (required) + `secondary` (optional). Two lenses cannot size Stripe / Notion / Copilot / Salesforce / OneTrust / Wise / Uber / Shopify — six covers the structurally-distinct math shapes. |
+| 40 | Paywalled-but-numerical sources? | **New source tier `analyst-paraphrase`** between `analyst` (cite-only per Q26) and `community-modeled`. Paraphrased numerical claim only (fair-use transformative), mandatory `original_publisher` + `accessed` date + `paraphrase_reviewer`. Banner downstream: "Paraphrased from {publisher}; verify against full text." Unblocks SemiAnalysis / Gartner / IBISWorld / Statista numerical claims without value reproduction. Per-publisher opt-out registry + takedown endpoint required. |
 
 ---
 
@@ -779,6 +782,164 @@ calculation is reproducible forever. PDF/markdown export embeds the URL.
 of custody. This is the deliverable that makes Strata better than a Statista
 PDF — the PDF says "Source: Statista report XYZ" with no way to verify;
 Strata says "Source: strata.io/tam/abc123" and anyone can reproduce it.
+
+---
+
+### Q39 — TAM lens taxonomy
+
+**Decision:** **Six first-class lenses + four composable modifiers.** Every
+concept declares `analysis_lens.primary` (required) and optionally
+`analysis_lens.secondary`. Frameworks are tagged to lenses; the framework
+picker filters by the concept's declared lens.
+
+**Six lenses (structurally distinct math shapes):**
+
+| Lens | Math (sketch) | Canonical examples |
+|---|---|---|
+| `cost_efficiency` | `persona_pool × addressable_share × replacement_rate × cost_per_persona` | Harvey, Glean, Decagon |
+| `revenue_generation` | `target_segment × spend_per_target × capture_rate` | Brex, Rippling, Ramp |
+| `latent_demand` | `addressable_population × adoption_rate_curve × willingness_to_pay` | Uber, Duolingo, ChatGPT consumer |
+| `platform_throughput` | `gmv_or_volume × take_rate` (formalises `marketplace_concept` Q19) | Stripe, Shopify, Twilio, Plaid, Visa |
+| `bundle_consolidation` | `Σ(n tool spends) × consolidation_rate × pricing_discount` | Notion, Linear, Rippling, Monday |
+| `productivity_uplift` | `persona_count × productivity_gain_pct × value_split × pricing_capture` | GitHub Copilot, Cursor, Glean |
+
+**Four modifiers (fields, not lenses):**
+
+| Modifier | Effect | Examples |
+|---|---|---|
+| `opex_conversion` | Pricing multiplier when capex/one-time → recurring | Salesforce vs on-prem, Adobe CC, MS 365 |
+| `margin_capture` | L2 with `target_spend` swapped for middleman margin pool | Wise (FX), Robinhood (PFOF), Affirm |
+| `regulatory_unlock` | Demand non-optional; penetration curve event-driven | OneTrust (GDPR), Drata (SOC 2), Carta |
+| `risk_transfer` | L2 specialisation: target_spend = loss-absorbed | Coalition, Lemonade, CoverGenius |
+
+**Why:** Two lenses (cost-efficiency and revenue-generation alone) cannot
+size most modern software / fintech / AI / marketplace TAMs. Stripe is
+volume × take-rate, not budget capture. Notion sums multiple budgets and
+prices below sum. Copilot's persona stays employed but is more productive.
+OneTrust's demand is created by regulation. Six lenses are the **structurally
+distinct math shapes**; anything else folds into a modifier.
+
+**Decision tree for picking a lens:**
+
+```
+Q1: Does revenue exist in the target market today?
+ ├─ NO  → latent_demand
+ └─ YES → Q2: Is the product mediating volume (payments/messages/listings/orders)
+          rather than selling capability?
+          ├─ YES → platform_throughput
+          └─ NO  → Q3: Does the target persona stay employed?
+                   ├─ NO  → cost_efficiency
+                   └─ YES → Q4: Buying capability the persona already has,
+                            but faster/better?
+                            ├─ YES → productivity_uplift
+                            └─ NO  → Q5: Replacing multiple tools with one?
+                                     ├─ YES → bundle_consolidation
+                                     └─ NO  → revenue_generation
+
+then layer modifiers as fields.
+```
+
+**Implication for the Concept record:** new fields `analysis_lens.primary`,
+`analysis_lens.secondary`, `modifiers`, and a `required_primitive_roles` map
+(see Final design section below for full YAML). When `primary` and
+`secondary` are both set, the TAM scenario tree emits parallel scenarios.
+**Validator warning** if the two scenarios land within 30% of each other —
+means `secondary` isn't doing real strategic work.
+
+**Implication for the Framework library:** six canonical framework slugs at
+v0.2 — `bottoms_up_cost_efficiency`, `top_down_revenue_capture`,
+`adoption_curve_latent_demand`, `throughput_take_rate`,
+`consolidation_sum_then_discount`, `productivity_uplift_value_split`. Sector
+variants per Q17. Framework count by v0.3: ~15. By v1.0: ~30.
+
+**Hard guards (anti-LLM-projection per Q20):**
+- `latent_demand` frameworks require an `analog:` field pointing at a
+  citable, completed historical adoption curve (mobile apps 2010, cloud
+  2010, SaaS 2005). No bare exponentials.
+- `productivity_uplift` requires explicit `value_split_to_vendor` —
+  Copilot at $10/mo to a $200k engineer is 0.06% capture; the lens is
+  honest *because* this number is surfaced, not buried in a default.
+
+**Alternatives rejected:**
+- *Two lenses only (cost-eff + rev-gen)* — cannot size Stripe, Notion,
+  Copilot, Salesforce, OneTrust, Wise, Uber, Shopify; credibility cap an
+  MD would not accept.
+- *Ten lenses (adding `disintermediation`, `geo_expansion`, `data_network`,
+  `time_to_value_compression`)* — folds into modifiers or scenario tree;
+  promoting would explode the taxonomy without adding distinct math shapes.
+
+---
+
+### Q40 — Paywalled-but-numerical sources (`analyst-paraphrase` tier)
+
+**Decision:** **New source tier `analyst-paraphrase`** sitting between
+`analyst` (cite-only per Q26) and `community-modeled`. Allows paraphrased
+numerical claims from paywalled analyst sources (Gartner, IBISWorld,
+Statista, SemiAnalysis, The Information, FT) without value reproduction
+of the original document.
+
+**Schema:**
+
+```yaml
+source:
+  slug: <source_slug>
+  tier: analyst-paraphrase
+  original_publisher: "Gartner" | "IBISWorld" | "SemiAnalysis" | ...
+  url: <original retrieval URL>
+  accessed: <ISO date>
+  paraphrase_reviewer: <contributor_slug>      # who paraphrased
+  paraphrase_text: <≤ 280 chars, the numerical claim>
+  # snapshot_sha256 is over the paraphrase + metadata, NOT the original doc
+```
+
+Banner downstream on every TAM consuming an `analyst-paraphrase` primitive:
+*"Paraphrased from {original_publisher}; verify against full text at {url}
+({accessed})."*
+
+**Why:** Q26 said "paywalled = cite-only metadata stub, no value
+reproduction." That's legally clean but operationally lossy — SemiAnalysis,
+The Information, and the analyst houses are *the* sources for many
+sector-specific numerical claims (e.g., "global HBM3 production capacity
+Q4 2025"). Cite-only loses the signal entirely. IB and equity-research
+desks have used short paraphrased extraction under fair-use transformative
+practice for decades; Strata can do the same with a tighter rule set:
+short paraphrase, mandatory attribution, no body reproduction.
+
+**Constraints (the firewall against takedown risk):**
+1. **Numerical claim only** — never reproduce qualitative analyst prose.
+2. **≤ 280 characters** per paraphrase. Aggregating paraphrases from a
+   single source on a single page is forbidden.
+3. **Per-publisher opt-out registry** maintained in `data/sources/opt_out.yaml`.
+   Any publisher request → source moves to cite-only (Q26 treatment).
+4. **Takedown endpoint** required at v0.2 launch — clean, fast, no-question
+   removal.
+5. **`paraphrase_reviewer` is named** — a human contributor signs off, not
+   an LLM. (LLM may draft; reviewer attests.)
+6. **No auto-publish** (per Q25). `analyst-paraphrase` always goes through
+   PR review.
+
+**Why a new tier, not an extension of `analyst`:** `analyst` (Q26) is
+defined as cite-only by current policy; extending it muddies the licensing
+contract that contributors and consumers rely on. `community-modeled`
+(Q20) is synthetic-default and carries a 12-month expiry; that's wrong for
+paraphrased sourced claims (which are dated to the publisher's `as_of`,
+not to a synthetic model). A distinct tier with its own constraints is
+clearer.
+
+**Alternatives rejected:**
+- *Treat paywalled as `community` with a citation* — collapses tier
+  semantics; consumer can't distinguish IB-paraphrased Gartner from a
+  random forum post.
+- *No paraphrase, ever (keep Q26 strict)* — forfeits the entire
+  sector-specialist information class. Strata can't size a semis or
+  enterprise-software TAM without it.
+- *Full reproduction with a takedown shield* — invites litigation; fair-use
+  transformative is the safe boundary.
+
+**Implication for the source-tier enum:** extends to nine tiers —
+`first_party | regulator | aggregator | analyst | analyst-paraphrase |
+community | onchain | prediction_market | community-modeled`. Auto-publish
+gates (Q25) **do not** include `analyst-paraphrase` — always PR review.
 
 ---
 
