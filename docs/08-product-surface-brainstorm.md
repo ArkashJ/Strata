@@ -37,12 +37,14 @@
 The data layer brainstorm locked 38 decisions about **what** Strata stores and
 how the layers compose. This document locks **how** the user interacts with it.
 
-Two existing docs partially specify this surface — `02-network-graph.md` and
-`04-user-journey.md` — but both predate load-bearing data-layer decisions:
-scenario trees (Q1), concepts as first-class (Q9), content-hash-pinned URLs
-(Q38), independence scoring (Q7), competing measurements, regime modifiers,
-and the 5-layer model. **This spec supersedes those two docs for v0.3+**;
-they remain useful as historical context.
+The pyramid topology and the original P&C user journey were sketched in
+the early docs (since consolidated into [`01-primer.md`](01-primer.md)) and
+in [`04-user-journey.md`](04-user-journey.md), but both predate load-bearing
+data-layer decisions: scenario trees (Q1), concepts as first-class (Q9),
+content-hash-pinned URLs (Q38), independence scoring (Q7), competing
+measurements, regime modifiers, and the 5-layer model. **This spec
+supersedes the early sketches for v0.3+**; the primer remains the
+conceptual on-ramp.
 
 The interaction surface ships in three roadmap chunks:
 
@@ -126,7 +128,8 @@ The home of the product. Two-column layout, ~70% / ~30%.
 
 ### Main canvas (left): pyramid graph
 
-Per `02-network-graph.md` updated for the data-layer decisions:
+Per [`01-primer.md`](01-primer.md#the-pyramid-network-graph) updated for the
+data-layer decisions:
 
 - Three pillars (Qualitative / Quantitative / Industry), tier 0 root at top, tier 3 leaves at base.
 - Geo and time live as **filter chips above the graph** (per Q12), not pillars.
@@ -134,7 +137,7 @@ Per `02-network-graph.md` updated for the data-layer decisions:
 - Shift-click → OR within same pillar/tier.
 - Click again → remove constraint.
 - Right-click → context menu (Expand children · Annotate · Suggest framework).
-- Node anatomy per `02-network-graph.md` §"Node anatomy" — extend with red-dot annotation indicator (U8).
+- Node anatomy per [`01-primer.md`](01-primer.md#interaction-model) — extend with red-dot annotation indicator (U8).
 
 ### Right rail: collapsible accordion (U2)
 
@@ -311,7 +314,7 @@ Composite primitives use the same template but show `inputs` and
 Single-column with anchored sections:
 
 1. **Header** — name, method family (Q7), function tag.
-2. **Formula** — prose summary + machine-readable expression (per `03-data-model.md`).
+2. **Formula** — prose summary + machine-readable expression (per the framework YAML in [`07-data-layer-brainstorm.md`](07-data-layer-brainstorm.md#framework-record-canonical-yaml-shape)).
 3. **Inputs** — list: name · role (Q6) · unit signature · required/optional.
 4. **Variants (Q17)** — regional / sector variants, each with default primitive pointers (per Q15 no-scalar-defaults).
 5. **Applicability (Q16)** — `applicable_to` whitelist + `not_applicable_to` blacklist.
@@ -355,7 +358,7 @@ Doc-style page. Sections:
 
 - **Why contribute** — short paragraph of the open-library thesis.
 - **What you can contribute** — tiered list (per Q23): primitives, composites, frameworks, concepts, taxonomy nodes (all via PR); annotations (via inline web form).
-- **Schema docs** — links to `03-data-model.md`, `07-data-layer-brainstorm.md`, and the JSON-schema files (when they land).
+- **Schema docs** — links to [`07-data-layer-brainstorm.md`](07-data-layer-brainstorm.md), [`09-expert-layer-brainstorm.md`](09-expert-layer-brainstorm.md), and the Pydantic models (when they land).
 - **LLM PR review** (Q24, Q25) — explainer for what auto-approves (high-tier sources passing strict validators), what gets human spot-check.
 - **Licensing policy** (Q26) — public-domain/open sources reproduced fully + snapshot; paywalled sources cite-only with metadata stub.
 - **Two big buttons:**
@@ -505,7 +508,7 @@ If any of these requires "just one UX exception," the surface is not done.
 
 ## What's NOT in this brainstorm
 
-- **Implementation-stack choices** (frontend framework, backend, graph library). Defer to `writing-plans`. `02-network-graph.md` notes vis-network / cytoscape.js as candidates.
+- **Implementation-stack choices** (frontend framework, backend, graph library). Defer to `writing-plans`. The early-sketch shortlist of vis-network / cytoscape.js (since superseded by the current `web/` scaffold's ReactFlow) lives in git history.
 - **Storage backend details** — covered by data-layer brainstorm Q27 (YAML in git + Postgres mirror).
 - **Specific seed concepts and frameworks for v0.2** — content question, not surface question.
 - **Expert-layer mechanics** (credentialing, reputation decay, COI disclosure) — parked for v0.5 (carried from data-layer brainstorm).

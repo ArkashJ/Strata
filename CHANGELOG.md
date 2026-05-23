@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `docs/`: consolidated early sketches (`01-product-layers.md`,
+  `02-network-graph.md`, `03-data-model.md`) into a single new
+  `docs/01-primer.md` as the conceptual on-ramp. Brainstorm decision records
+  (07/08/09) preserved as the canonical schemas + decision rationale.
+  Cross-links across CLAUDE.md, README.md, and the surviving docs repointed.
+
 ### Added
 - `docs/07-data-layer-brainstorm.md` — decision record from the data-layer
   brainstorm (38 questions resolved, full record schemas, build sequence
@@ -40,6 +47,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Framework schema + first 3 reference recipes (bottoms-up GTM, top-down spend, analog/penetration).
 - Network-graph prototype (pyramid layout: Qualitative / Quantitative / Industry).
 - Source credibility tiering (1st-party / aggregator / analyst).
+
+### Scaffolded (v0.2 production stack)
+- **Backend ops layer:** `strata.config` (pydantic-settings, `STRATA_*` env),
+  `strata.logging` (structlog), `strata.db` (SQLAlchemy 2.0 async engine +
+  Base + naming convention + `session_scope` / `get_session`), `strata.api.app`
+  (factory with lifespan, CORS, mounted routers), `/healthz` route.
+- **Alembic** initialized (`alembic.ini` + async `env.py` reading
+  `strata.config.settings.database_url` and `strata.db.base.Base.metadata`).
+- **Postgres infra** wired (asyncpg driver). v0.2 data layer remains
+  YAML-on-disk; Postgres mirror lands at v0.3 per Q27.
+- **Frontend prod tooling:** TanStack Query (provider + sane defaults),
+  Zustand (`stores/ui-store.ts`), Zod (`lib/env.ts`), Biome
+  (`biome.json` — lint+format, JS/TS), ESLint slimmed to
+  `next/core-web-vitals` only, Prettier scoped to md/css/yaml, Knip,
+  Vitest + Testing Library + jsdom.
+- **`lib/api-client.ts`** typed fetch wrapper + `ApiError`; `gen:api` script
+  produces `src/lib/api-schema.d.ts` from FastAPI's `/openapi.json`.
+- **Docker:** `backend/Dockerfile` (uv-based, layered, healthcheck'd) +
+  `web/Dockerfile` (bun build → node runtime) + root `docker-compose.yml`
+  (Postgres 16 + api + web, healthchecks, named volume).
+- **`.env.example`** at repo root documenting all `STRATA_*` knobs.
+- **README** Stack + Quick Start sections covering both Docker and local
+  dev paths.
+- **Layout: backend moved from repo root into `backend/`** for symmetry with
+  `web/`. `pyproject.toml`, `uv.lock`, `src/strata/`, `alembic.ini`,
+  `alembic/`, `Dockerfile` all relocated. `uv` commands now run from
+  `backend/`; venv lives at `backend/.venv/`. `docker-compose.yml` build
+  context updated.
 
 ### Scaffolded (v0.2 work-in-progress)
 - `pyproject.toml` — Python 3.12, uv-managed, FastAPI + Pydantic v2 + Typer.

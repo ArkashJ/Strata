@@ -65,7 +65,9 @@ The pyramid in the sketch is the right primitive UI:
 - Clicking a base node propagates the constraint up and across, re-narrowing the
   available frameworks.
 
-See [`02-network-graph.md`](02-network-graph.md) for the full UI spec.
+See [`01-primer.md`](01-primer.md) for the topology and
+[`08-product-surface-brainstorm.md`](08-product-surface-brainstorm.md) for the
+full UX surface.
 
 ## Why now
 

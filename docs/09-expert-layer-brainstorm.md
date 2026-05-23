@@ -1,6 +1,7 @@
 # Strata — Expert Layer Brainstorm (partial)
 
-> Locks the **schema shape** of the expert layer (Layer 3 in `01-product-layers.md`).
+> Locks the **schema shape** of the expert layer (Layer 3 in
+> [`01-primer.md`](01-primer.md#layer-3--expert-layer)).
 > Most operational mechanics (credentialing process, reputation algorithm,
 > moderation pipeline, adversarial defenses) are **deliberately deferred**
 > to v0.5, when real contributor data is available to calibrate them.
@@ -8,9 +9,9 @@
 ## Status
 
 **Phase:** Expert-layer brainstorm **PARTIAL — schema locked, ops deferred.**
-**Builds on:** `docs/07-data-layer-brainstorm.md` (data layer Q1–Q38),
-`docs/08-product-surface-brainstorm.md` (product surface U1–U12),
-`docs/01-product-layers.md` (initial Layer 3 sketch).
+**Builds on:** [`docs/07-data-layer-brainstorm.md`](07-data-layer-brainstorm.md) (data layer Q1–Q38),
+[`docs/08-product-surface-brainstorm.md`](08-product-surface-brainstorm.md) (product surface U1–U12),
+[`docs/01-primer.md`](01-primer.md) (three-layer overview).
 
 ---
 
@@ -19,7 +20,7 @@
 | #  | Question                              | Decision                                                                                                                                                                                                                                                       |
 | -- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | E1 | What does an annotation *do*?         | **Pure commentary.** Text-only prose attached to an annotated item. The math layer **never** auto-applies an annotation. Sarah reads it and manually tweaks her build if she chooses to. Eliminates the COI-poisons-the-math risk before it begins.            |
-| E2 | Expertise model?                      | **Three flat tiers** (per `01-product-layers.md`): `verified-expert` · `active-practitioner` · `community`. Single badge per contributor; same badge on every annotation they make, regardless of domain. Cross-domain over-credit accepted as known limitation. |
+| E2 | Expertise model?                      | **Three flat tiers** (per [`01-primer.md`](01-primer.md#layer-3--expert-layer)): `verified-expert` · `active-practitioner` · `community`. Single badge per contributor; same badge on every annotation they make, regardless of domain. Cross-domain over-credit accepted as known limitation. |
 | E3 | Annotation record fields?             | **Minimal core + kind tag + COI field.** `target_slug` · `target_type` · `author` · `created_at` · `body` (markdown) · `kind` (informational enum) · `coi_disclosure` (optional text). No citations field (use markdown links in body), no supersedes, no expiry. |
 | E4 | Annotation lifecycle?                 | **Append-only, no auto-stale.** New annotations on the same item stack; older annotations remain visible. No expiry, no supersedes link. Readers sort/judge. Editing TBD at v0.5.                                                                              |
 | E5 | Tier-gating, reputation, moderation?  | **All operational mechanics deferred to v0.5.** Verification path for `verified-expert`, contributor-weight algorithm, moderation pipeline (pre vs post vs LLM-screened), and adversarial defenses all need real contributor data to calibrate. Bootstrap: Strata maintainers manually vet annotations until volume forces a pipeline. |

@@ -47,3 +47,7 @@ tmp/
 
 # uv / ruff caches (lockfile IS committed for reproducible installs)
 .ruff_cache/
+
+# Override global ignore: web/src/lib/ is real source, not a compiled output dir.
+!web/src/lib/
+!web/src/lib/**
