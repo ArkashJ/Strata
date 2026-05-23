@@ -1,18 +1,19 @@
-"""Source record + 9-tier enum (Q26, Q37, Q40).
+"""Source records (Q26, Q37, Q40) modelled as a discriminated union.
 
 The ``analyst-paraphrase`` tier (Q40) sits between ``analyst`` and
 ``community-modeled`` and unlocks paywalled numerical claims under tight
 fair-use rules: short paraphrase (≤ 280 chars), mandatory attribution,
-mandatory reviewer.
+mandatory reviewer. Modelled as its own variant of ``Source`` so the
+paraphrase-only fields are required on that branch and forbidden on the rest.
 """
 
 from __future__ import annotations
 
 from datetime import date
 from enum import StrEnum
-from typing import Self
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from ._common import Sha256Hex, Slug
 
@@ -34,42 +35,42 @@ class SourceTier(StrEnum):
     COMMUNITY_MODELED = "community-modeled"
 
 
-class Source(BaseModel):
-    """Citation record. ``snapshot_sha256`` is content-hash-pinned (Q5)."""
-
+class _SourceBase(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     slug: Slug
-    tier: SourceTier
     url: str
     accessed: date
     snapshot_sha256: Sha256Hex
 
-    # analyst-paraphrase tier additions (Q40). These are validated as required
-    # iff tier == ANALYST_PARAPHRASE; otherwise they MUST be absent.
-    original_publisher: str | None = None
-    paraphrase_reviewer: Slug | None = None
-    paraphrase_text: str | None = Field(default=None, max_length=PARAPHRASE_MAX_CHARS)
 
-    @model_validator(mode="after")
-    def _enforce_paraphrase_fields(self) -> Self:
-        is_paraphrase = self.tier == SourceTier.ANALYST_PARAPHRASE
-        paraphrase_fields = {
-            "original_publisher": self.original_publisher,
-            "paraphrase_reviewer": self.paraphrase_reviewer,
-            "paraphrase_text": self.paraphrase_text,
-        }
-        if is_paraphrase:
-            missing = [k for k, v in paraphrase_fields.items() if v is None]
-            if missing:
-                raise ValueError(
-                    f"analyst-paraphrase source {self.slug!r} requires fields: {missing}"
-                )
-        else:
-            present = [k for k, v in paraphrase_fields.items() if v is not None]
-            if present:
-                raise ValueError(
-                    f"source {self.slug!r} tier={self.tier.value} must not carry "
-                    f"paraphrase fields: {present}"
-                )
-        return self
+class StandardSource(_SourceBase):
+    """Every tier except ``analyst-paraphrase``."""
+
+    tier: Literal[
+        SourceTier.FIRST_PARTY,
+        SourceTier.REGULATOR,
+        SourceTier.AGGREGATOR,
+        SourceTier.ANALYST,
+        SourceTier.COMMUNITY,
+        SourceTier.ONCHAIN,
+        SourceTier.PREDICTION_MARKET,
+        SourceTier.COMMUNITY_MODELED,
+    ]
+
+
+class AnalystParaphraseSource(_SourceBase):
+    """Q40 paraphrase variant. ``snapshot_sha256`` is over the paraphrase +
+    metadata, not the original document — fair-use transformative.
+    """
+
+    tier: Literal[SourceTier.ANALYST_PARAPHRASE]
+    original_publisher: str = Field(min_length=1)
+    paraphrase_reviewer: Slug
+    paraphrase_text: str = Field(min_length=1, max_length=PARAPHRASE_MAX_CHARS)
+
+
+Source = Annotated[
+    StandardSource | AnalystParaphraseSource,
+    Field(discriminator="tier"),
+]

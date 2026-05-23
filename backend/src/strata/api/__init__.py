@@ -1,4 +1,6 @@
-"""FastAPI app factory + read-only routes per docs/08-product-surface-brainstorm.md."""
+"""FastAPI app factory. Product-surface routes per docs/08 land at v0.3
+alongside the graph renderer; v0.2 mounts liveness only.
+"""
 
 from __future__ import annotations
 

@@ -42,8 +42,15 @@ from .primitive import (
     SetOperation,
     Uncertainty,
 )
-from .source import PARAPHRASE_MAX_CHARS, Source, SourceTier
+from .source import (
+    PARAPHRASE_MAX_CHARS,
+    AnalystParaphraseSource,
+    Source,
+    SourceTier,
+    StandardSource,
+)
 from .tam_output import (
+    BannerKind,
     ExpansionStage,
     InputUsed,
     Scenario,
@@ -59,10 +66,12 @@ __all__ = [
     "SHA256_PATTERN",
     "SLUG_PATTERN",
     "AnalysisLens",
+    "AnalystParaphraseSource",
     "Annotation",
     "AnnotationKindTag",
     "AnnotationTargetType",
     "AtomicPrimitive",
+    "BannerKind",
     "CompositePrimitive",
     "Concept",
     "ConceptAnalysisLens",
@@ -93,6 +102,7 @@ __all__ = [
     "Slug",
     "Source",
     "SourceTier",
+    "StandardSource",
     "TAMOutput",
     "TAMTarget",
     "Uncertainty",

@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from strata.hashing import mint_state_hash
 from strata.models import (
@@ -18,6 +18,8 @@ from strata.models import (
     UnitDimension,
     UnitKind,
 )
+
+_SOURCE = TypeAdapter(Source)
 
 
 def _src(**overrides: object) -> dict[str, object]:
@@ -36,24 +38,24 @@ def _src(**overrides: object) -> dict[str, object]:
 
 
 def test_analyst_paraphrase_requires_all_paraphrase_fields() -> None:
-    Source.model_validate(_src())  # ok
+    _SOURCE.validate_python(_src())  # ok
     for missing in ("original_publisher", "paraphrase_reviewer", "paraphrase_text"):
         bad = _src()
         bad[missing] = None
         with pytest.raises(ValidationError):
-            Source.model_validate(bad)
+            _SOURCE.validate_python(bad)
 
 
 def test_non_paraphrase_source_rejects_paraphrase_fields() -> None:
     payload = _src(tier=SourceTier.REGULATOR)
     with pytest.raises(ValidationError):
-        Source.model_validate(payload)
+        _SOURCE.validate_python(payload)
 
 
 def test_paraphrase_text_max_length_enforced() -> None:
     payload = _src(paraphrase_text="x" * (PARAPHRASE_MAX_CHARS + 1))
     with pytest.raises(ValidationError):
-        Source.model_validate(payload)
+        _SOURCE.validate_python(payload)
 
 
 def test_unit_compatibility_loose() -> None:

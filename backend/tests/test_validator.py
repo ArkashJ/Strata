@@ -303,11 +303,14 @@ def test_as_of_in_future_rejected(tmp_path: Path) -> None:
 
 
 def test_framework_scalar_default_rejected(tmp_path: Path) -> None:
-    """Q15: every framework input binding is a primitive slug, never a scalar."""
+    """Q15: every framework input binding is a primitive slug, never a scalar.
+
+    Pydantic's typed ``default_inputs: dict[str, Slug]`` rejects the scalar
+    first; the loader layer surfaces it via ``code='loader'``. Asserting both
+    paths so a future relaxation of the model still trips the semantic
+    fallback.
+    """
     _seed_minimal(tmp_path)
-    # Hand-write a YAML where one variant binds a number directly. Pydantic
-    # would also reject this; the semantic layer catches it first with a
-    # precise error message.
     (tmp_path / "frameworks" / "bottoms-up-cost-efficiency.yaml").write_text(
         dedent(
             """\
@@ -333,7 +336,7 @@ def test_framework_scalar_default_rejected(tmp_path: Path) -> None:
               - scope: doc-gen-pc-insurance
                 default_inputs:
                   persona_pool: bls-pc-claims-adjusters-headcount
-                  cost_per_persona: 480      # Q15 violation: scalar not a slug
+                  cost_per_persona: 480
             expansion_stage_parameter: false
             horizon_class: snapshot
             """
@@ -342,8 +345,10 @@ def test_framework_scalar_default_rejected(tmp_path: Path) -> None:
     )
     report = validate(tmp_path)
     assert not report.ok
-    codes = [f.code for f in report.errors]
-    assert any("scalar_default" in c or "loader" in c for c in codes), codes
+    codes = {f.code for f in report.errors}
+    # Either the loader-layer Pydantic rejection OR the semantic-layer precise
+    # message must fire. Both is fine; neither is not.
+    assert codes & {"loader", "semantic.framework_scalar_default"}, codes
 
 
 def test_lens_tag_mismatch_rejected(tmp_path: Path) -> None:
@@ -384,4 +389,128 @@ def test_paraphrase_missing_required_field_rejected(tmp_path: Path, missing_fiel
 
     report = validate(tmp_path)
     assert not report.ok
-    assert any(missing_field in f.message for f in report.errors), report.errors
+    # Pydantic discriminated-union catches the missing field; the loader bubbles
+    # it as code='loader' with the field name in the message.
+    assert any(f.code == "loader" and missing_field in f.message for f in report.errors), (
+        report.errors
+    )
+
+
+def test_concept_measurement_missing_rejected(tmp_path: Path) -> None:
+    _seed_minimal(tmp_path)
+    path = tmp_path / "concepts" / "doc-gen-pc-insurance.yaml"
+    payload = yaml.safe_load(path.read_text())
+    payload["measurements"].append("primitive-does-not-exist")
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+    report = validate(tmp_path)
+    codes = {f.code for f in report.errors}
+    assert "cross.concept_missing_measurement" in codes, codes
+
+
+def test_variant_unknown_primitive_rejected(tmp_path: Path) -> None:
+    _seed_minimal(tmp_path)
+    path = tmp_path / "frameworks" / "bottoms-up-cost-efficiency.yaml"
+    payload = yaml.safe_load(path.read_text())
+    payload["variants"][0]["default_inputs"]["cost_per_persona"] = "no-such-slug"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+    report = validate(tmp_path)
+    codes = {f.code for f in report.errors}
+    assert "cross.variant_unknown_primitive" in codes, codes
+
+
+def test_variant_unknown_scope_rejected(tmp_path: Path) -> None:
+    """A variant whose `scope` does not resolve to any concept is a typo at
+    v0.2 (sector/region variants land later) — should fail loudly.
+    """
+    _seed_minimal(tmp_path)
+    path = tmp_path / "frameworks" / "bottoms-up-cost-efficiency.yaml"
+    payload = yaml.safe_load(path.read_text())
+    payload["variants"][0]["scope"] = "doc-gen-pc-insurnace"  # typo
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+    report = validate(tmp_path)
+    codes = {f.code for f in report.errors}
+    assert "cross.variant_unknown_scope" in codes, codes
+
+
+def test_applicable_to_violation_rejected(tmp_path: Path) -> None:
+    _seed_minimal(tmp_path)
+    path = tmp_path / "frameworks" / "bottoms-up-cost-efficiency.yaml"
+    payload = yaml.safe_load(path.read_text())
+    payload["applicable_to"] = ["unrelated-concept"]
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+    report = validate(tmp_path)
+    codes = {f.code for f in report.errors}
+    assert "cross.applicable_to_violation" in codes, codes
+
+
+def test_unit_signature_mismatch_rejected(tmp_path: Path) -> None:
+    """Q4: framework input declares a unit_signature; the bound primitive's
+    unit must be compatible. Swap the persona_pool binding to a currency
+    primitive and the cross-record validator should refuse it.
+    """
+    _seed_minimal(tmp_path)
+    path = tmp_path / "frameworks" / "bottoms-up-cost-efficiency.yaml"
+    payload = yaml.safe_load(path.read_text())
+    # persona_pool expects stock/people, bind currency/per-seat instead.
+    payload["variants"][0]["default_inputs"]["persona_pool"] = "pc-claims-adjuster-cost-per-seat"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+    report = validate(tmp_path)
+    codes = {f.code for f in report.errors}
+    assert "cross.unit_signature_mismatch" in codes, codes
+
+
+def test_bad_snapshot_hash_rejected(tmp_path: Path) -> None:
+    """``snapshot_sha256`` must match 64 hex characters. Pydantic's typed
+    `Sha256Hex` rejects a too-short string with a loader-layer error.
+    """
+    _seed_minimal(tmp_path)
+    path = tmp_path / "primitives" / "naic-active-pc-carriers-2024.yaml"
+    payload = yaml.safe_load(path.read_text())
+    payload["source"]["snapshot_sha256"] = "deadbeef"
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+    report = validate(tmp_path)
+    codes = {f.code for f in report.errors}
+    assert codes & {"loader", "semantic.bad_snapshot_hash"}, codes
+
+
+def test_nan_primitive_value_rejected(tmp_path: Path) -> None:
+    """NaN values would propagate silently through multiplications; reject at
+    construction.
+    """
+    _seed_minimal(tmp_path)
+    path = tmp_path / "primitives" / "naic-active-pc-carriers-2024.yaml"
+    payload = yaml.safe_load(path.read_text())
+    payload["value"] = float("nan")
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+    report = validate(tmp_path)
+    assert not report.ok
+
+
+def test_nonpositive_primitive_value_rejected(tmp_path: Path) -> None:
+    _seed_minimal(tmp_path)
+    path = tmp_path / "primitives" / "naic-active-pc-carriers-2024.yaml"
+    payload = yaml.safe_load(path.read_text())
+    payload["value"] = 0
+    path.write_text(yaml.safe_dump(payload), encoding="utf-8")
+
+    report = validate(tmp_path)
+    assert not report.ok
+
+
+def test_secondary_lens_no_warning_when_spread_exceeds_threshold(tmp_path: Path) -> None:
+    """Companion to the 30%-overlap warning test: when scenarios are far
+    apart, the warning must NOT fire (otherwise a flipped comparator would
+    silently emit for every concept).
+    """
+    _seed_minimal(tmp_path)
+    # The minimal fixture already spreads scenarios by ~3x — leave as-is.
+    report = validate(tmp_path)
+    codes = {f.code for f in report.warnings}
+    assert "cross.secondary_lens_low_strategic_work" not in codes, report.warnings

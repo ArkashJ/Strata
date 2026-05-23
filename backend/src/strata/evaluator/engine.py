@@ -10,6 +10,7 @@ Per Q1, the TAM is a scenario tree, never a scalar.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -17,18 +18,19 @@ from datetime import UTC, datetime
 from ..hashing import mint_state_hash
 from ..models import (
     AnalysisLens,
+    AnalystParaphraseSource,
     AtomicPrimitive,
+    BannerKind,
     Concept,
     Framework,
     FrameworkVariant,
     InputUsed,
     Scenario,
     ScenarioBanner,
-    SourceTier,
     TAMOutput,
     TAMTarget,
 )
-from ..registry import Registry
+from ..registry import Registry, RegistryError
 
 
 class EvaluatorError(RuntimeError):
@@ -46,12 +48,15 @@ class _ScenarioBuild:
 
 
 def size_concept(registry: Registry, concept_slug: str) -> TAMOutput:
-    concept = registry.get_concept(concept_slug)
+    try:
+        concept = registry.get_concept(concept_slug)
+    except RegistryError as exc:
+        raise EvaluatorError(f"concept {concept_slug!r} not found") from exc
     builds = list(_iter_scenario_builds(registry, concept))
     if not builds:
         raise EvaluatorError(f"concept {concept_slug!r} has no applicable framework variants")
     scenarios = tuple(_build_to_scenario(b) for b in builds)
-    method_families = tuple(sorted({b.framework.method_family.value for b in builds}))
+    method_families = sorted({b.framework.method_family for b in builds}, key=lambda m: m.value)
     payload: dict[str, object] = {
         "concept": concept.slug,
         "scenarios": [
@@ -71,16 +76,16 @@ def size_concept(registry: Registry, concept_slug: str) -> TAMOutput:
             for b in builds
         ],
     }
-    tam_slug = mint_state_hash(payload)
+    tam_hash = mint_state_hash(payload)
     return TAMOutput(
         kind="tam_output",
-        slug=tam_slug,
+        state_hash=tam_hash,
         schema_version=1,
         created_by="strata-evaluator",
         created_at=datetime.now(tz=UTC),
         target=TAMTarget(concept=concept.slug),
         scenarios=scenarios,
-        method_families_used=method_families,
+        method_families_used=tuple(method_families),
         independence_score=_independence(builds),
         uses_synthetic_primitives=False,
         uses_modeled_composites=False,
@@ -125,6 +130,12 @@ def _build_scenario(
             )
         atomic = registry.get_atomic(primitive_slug)
         value *= atomic.value
+        if not math.isfinite(value):
+            raise EvaluatorError(
+                f"framework {fw.slug!r} variant scope={variant.scope!r} produced "
+                f"non-finite value after multiplying primitive {primitive_slug!r} "
+                f"(value={atomic.value!r})"
+            )
         inputs_used.append(
             InputUsed(
                 role_name=input_def.name,
@@ -146,14 +157,13 @@ def _build_scenario(
 
 
 def _banners_for(p: AtomicPrimitive) -> list[ScenarioBanner]:
-    if p.source.tier == SourceTier.ANALYST_PARAPHRASE:
-        publisher = p.source.original_publisher or "unknown"
+    if isinstance(p.source, AnalystParaphraseSource):
         return [
             ScenarioBanner(
-                kind="analyst-paraphrase",
+                kind=BannerKind.ANALYST_PARAPHRASE,
                 message=(
-                    f"Paraphrased from {publisher}; verify against full text at "
-                    f"{p.source.url} (accessed {p.source.accessed.isoformat()})."
+                    f"Paraphrased from {p.source.original_publisher}; verify against "
+                    f"full text at {p.source.url} (accessed {p.source.accessed.isoformat()})."
                 ),
             )
         ]
@@ -161,7 +171,7 @@ def _banners_for(p: AtomicPrimitive) -> list[ScenarioBanner]:
 
 
 def _dedupe_banners(banners: list[ScenarioBanner]) -> list[ScenarioBanner]:
-    seen: set[tuple[str, str]] = set()
+    seen: set[tuple[BannerKind, str]] = set()
     out: list[ScenarioBanner] = []
     for b in banners:
         key = (b.kind, b.message)

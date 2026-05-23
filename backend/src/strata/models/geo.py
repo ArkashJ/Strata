@@ -1,6 +1,11 @@
-"""Geo type (Q8). Two parallel fields — geo_supply / geo_demand — live on the
-primitive; this module models the shared ``Geo`` record and the perspective
-enum.
+"""Geo type (Q8).
+
+v0.2 collapses Q8's two-parallel-fields design into a single ``geo: Geo``
+field plus a ``GeoPerspective`` enum (supply / demand / mixed / unknown) on
+each primitive. This works for the doc-gen slice where each primitive cleanly
+picks one perspective; restoring the parallel-fields shape is on the v0.3
+backlog when a primitive needs to declare both supply and demand geos
+simultaneously.
 """
 
 from __future__ import annotations

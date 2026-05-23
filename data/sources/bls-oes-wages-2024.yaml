@@ -6,5 +6,7 @@ accessed: 2026-05-22
 snapshot_sha256: "4d5e6f704d5e6f704d5e6f704d5e6f704d5e6f704d5e6f704d5e6f704d5e6f70"
 description: >
   Same BLS OES May 2024 occupational employment estimate, second cut: this
-  registry entry is used by the cost-per-seat derivation primitive
-  (regulator-tier lineage retained, multiplier captured in `derives_from`).
+  registry entry is referenced by the cost-per-seat derivation primitive
+  (regulator-tier upstream). The pricing-capture multiplier (~0.6%) used in
+  the derivation is not yet a primitive; surfaces at v0.3 alongside the
+  community-modeled slider library.

@@ -8,8 +8,9 @@ method_family: top_down_spend
 # Q39 lens tag — revenue_generation (Brex/Rippling math shape).
 lens: revenue_generation
 
-# v0.2 simplification: 2-input segment × spend product. Capture-rate as a
-# community-modeled slider primitive lands at v0.3.
+# v0.2 simplification: 2-input segment × spend product. The full Q39
+# revenue_generation math (segment × spend × capture) lands when the
+# community-modeled capture-rate slider primitive is seeded at v0.3.
 inputs:
   - name: target_segment_count
     role: base_value

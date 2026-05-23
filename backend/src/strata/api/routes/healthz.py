@@ -1,4 +1,4 @@
-"""Liveness + readiness endpoints."""
+"""Liveness probe endpoint."""
 
 from __future__ import annotations
 

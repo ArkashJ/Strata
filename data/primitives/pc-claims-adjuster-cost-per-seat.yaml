@@ -5,12 +5,11 @@ concept_slug: doc-gen-pc-insurance
 name: "Doc-gen replacement cost per claims-adjuster seat (USD per seat per year)"
 description: >
   Annual SaaS spend a P&C carrier would pay to replace one claims-adjuster's
-  document-handling workload with AI-assisted doc-gen. Derived from BLS OES
-  mean wages (13-1031) by applying a fractional pricing-capture multiplier
-  (target ARR per seat = ~0.6% of fully-loaded labour cost), validated against
-  observed price points at insurance-tech vendors. Treated as a regulator-tier
-  derivation since the upstream wage data is BLS-sourced; the multiplier is
-  recorded in `derives_from` for lineage.
+  document-handling workload with AI-assisted doc-gen. Derivation: BLS OES
+  mean wage (13-1031) × ~0.6% pricing-capture heuristic, calibrated against
+  observed insurance-tech price points. The 0.6% heuristic is not yet a
+  citable primitive — it lands as a community-modeled slider at v0.3, at
+  which point this primitive's `derives_from` will include it.
 
 value: 480
 unit:

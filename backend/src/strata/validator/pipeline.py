@@ -12,9 +12,9 @@ from pathlib import Path
 
 from ..loader import LoadedRecords, LoaderError, load_data_dir
 from ..registry import Registry, RegistryError
-from .cross_record import CrossRecordIssue, CrossRecordSeverity, cross_record_check
-from .semantic import SemanticError, semantic_check
-from .structural import StructuralError, structural_check
+from .cross_record import CrossRecordSeverity, cross_record_check
+from .semantic import semantic_check
+from .structural import structural_check
 
 
 class Severity(StrEnum):
@@ -66,12 +66,28 @@ def validate(data_dir: Path) -> ValidationReport:
         return report
 
     for err in structural_check(records):
-        report.findings.append(_from_structural(err))
+        report.findings.append(
+            ValidationFinding(
+                layer="structural",
+                code=err.code,
+                severity=Severity.ERROR,
+                slug="",
+                message=err.message,
+            )
+        )
     if report.errors:
         return report
 
     for serr in semantic_check(records):
-        report.findings.append(_from_semantic(serr))
+        report.findings.append(
+            ValidationFinding(
+                layer="semantic",
+                code=serr.code,
+                severity=Severity.ERROR,
+                slug=serr.slug,
+                message=serr.message,
+            )
+        )
     if report.errors:
         return report
 
@@ -91,36 +107,14 @@ def validate(data_dir: Path) -> ValidationReport:
     report.registry = registry
 
     for cerr in cross_record_check(registry):
-        report.findings.append(_from_cross(cerr))
+        sev = Severity.ERROR if cerr.severity == CrossRecordSeverity.ERROR else Severity.WARNING
+        report.findings.append(
+            ValidationFinding(
+                layer="cross_record",
+                code=cerr.code,
+                severity=sev,
+                slug=cerr.slug,
+                message=cerr.message,
+            )
+        )
     return report
-
-
-def _from_structural(err: StructuralError) -> ValidationFinding:
-    return ValidationFinding(
-        layer="structural",
-        code=err.code,
-        severity=Severity.ERROR,
-        slug="",
-        message=err.message,
-    )
-
-
-def _from_semantic(err: SemanticError) -> ValidationFinding:
-    return ValidationFinding(
-        layer="semantic",
-        code=err.code,
-        severity=Severity.ERROR,
-        slug=err.slug,
-        message=err.message,
-    )
-
-
-def _from_cross(err: CrossRecordIssue) -> ValidationFinding:
-    sev = Severity.ERROR if err.severity == CrossRecordSeverity.ERROR else Severity.WARNING
-    return ValidationFinding(
-        layer="cross_record",
-        code=err.code,
-        severity=sev,
-        slug=err.slug,
-        message=err.message,
-    )

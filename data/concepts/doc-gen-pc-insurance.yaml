@@ -9,10 +9,11 @@ definition: >
   personas only; excludes generic word-processing and excludes life/health
   carriers.
 
-# Q39 — lens taxonomy. Primary L1 (Harvey/Glean/Decagon math shape — replace
-# adjuster cost). Secondary L2 (Brex/Rippling math shape — capture carrier
-# software spend). Validator warns if the two scenarios land within 30% of
-# each other (means secondary isn't doing strategic work).
+# Q39 — lens taxonomy. Primary cost_efficiency (Harvey/Glean/Decagon math
+# shape — replace adjuster cost). Secondary revenue_generation (Brex/Rippling
+# math shape — capture carrier software spend). Validator warns if the two
+# scenarios land within 30% of each other (means secondary isn't doing
+# strategic work).
 analysis_lens:
   primary: cost_efficiency
   secondary: revenue_generation

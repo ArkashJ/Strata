@@ -7,10 +7,11 @@ A Concept is the curated identity object (Q9, Q10). It declares its
 
 from __future__ import annotations
 
+from datetime import date
 from enum import StrEnum
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ._common import AnalysisLens, Slug
 
@@ -34,7 +35,7 @@ class MarginCaptureModifier(BaseModel):
 class RegulatoryUnlockModifier(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     driver: Slug
-    effective_date: str  # ISO date
+    effective_date: date
 
 
 class RiskTransferModifier(BaseModel):
@@ -69,6 +70,15 @@ class ConceptAnalysisLens(BaseModel):
     primary: AnalysisLens
     secondary: AnalysisLens | None = None
 
+    @model_validator(mode="after")
+    def _secondary_differs_from_primary(self) -> Self:
+        if self.secondary is not None and self.secondary == self.primary:
+            raise ValueError(
+                f"analysis_lens.secondary ({self.secondary.value}) must differ from "
+                f"primary; a meaningful secondary expresses a distinct math shape"
+            )
+        return self
+
 
 class Concept(BaseModel):
     """Default concept record. ``Marketplace`` and ``Company`` variants extend
@@ -78,7 +88,7 @@ class Concept(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    kind: Literal["concept"] = "concept"
+    kind: Literal["concept"]
     slug: Slug
     schema_version: int = Field(ge=1)
     name: str

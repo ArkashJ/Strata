@@ -7,16 +7,17 @@
 
 from __future__ import annotations
 
+import math
 from datetime import date
 from enum import StrEnum
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ._common import Slug
 from .geo import Geo, GeoPerspective
 from .source import Source
-from .unit import Unit
+from .unit import Unit, UnitDimension
 
 
 class DistributionShape(StrEnum):
@@ -83,6 +84,20 @@ class AtomicPrimitive(BaseModel):
     source: Source
 
     derives_from: tuple[Slug, ...] = ()
+
+    @model_validator(mode="after")
+    def _value_must_be_finite(self) -> Self:
+        if not math.isfinite(self.value):
+            raise ValueError(
+                f"atomic_primitive {self.slug!r} value={self.value!r} is not finite "
+                f"(NaN/inf would propagate silently through every TAM consuming it)"
+            )
+        if self.value < 0 and self.unit.dimension != UnitDimension.PERCENT:
+            raise ValueError(
+                f"atomic_primitive {self.slug!r} value={self.value} negative for "
+                f"non-percent unit; reject at construction"
+            )
+        return self
 
 
 class CompositePrimitive(BaseModel):

@@ -11,10 +11,11 @@ method_family: bottoms_up_seats
 # value; the cross-record validator enforces the agreement.
 lens: cost_efficiency
 
-# v0.2 simplification: this framework is a 2-input persona × seat-cost product.
-# The full Q39 L1 math (persona × addressable × replacement × cost) lands when
-# the community-modeled slider primitives for addressable_share /
-# replacement_rate are seeded (slated for v0.3, see plans/data-collection-strategy.md).
+# v0.2 simplification: 2-input persona × seat-cost product. The full Q39
+# cost_efficiency math (persona × addressable × replacement × cost) lands when
+# the community-modeled slider primitives for addressable_share and
+# replacement_rate are seeded (slated for v0.3, see
+# plans/data-collection-strategy.md).
 inputs:
   - name: persona_pool
     role: base_value

@@ -41,7 +41,7 @@ class Registry:
             concepts=_index(records.concepts, lambda r: r.slug, "concept"),
             frameworks=_index(records.frameworks, lambda r: r.slug, "framework"),
             annotations=_index(records.annotations, lambda r: r.slug, "annotation"),
-            tam_outputs=_index(records.tam_outputs, lambda r: r.slug, "tam_output"),
+            tam_outputs=_index(records.tam_outputs, lambda r: r.state_hash, "tam_output"),
         )
 
     def primitive(self, slug: str) -> AtomicPrimitive | CompositePrimitive:

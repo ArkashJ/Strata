@@ -10,6 +10,7 @@ Checks that aren't covered by Pydantic but are local to a single record:
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass
 from datetime import date
@@ -17,10 +18,8 @@ from typing import Any
 
 from ..loader import LoadedRecords
 from ..models import (
-    PARAPHRASE_MAX_CHARS,
     SHA256_PATTERN,
     AtomicPrimitive,
-    SourceTier,
 )
 
 _HASH_RE = re.compile(SHA256_PATTERN)
@@ -42,8 +41,15 @@ def semantic_check(records: LoadedRecords, *, today: date | None = None) -> list
 
 
 def _atomic_primitive_checks(primitives: list[AtomicPrimitive], today: date) -> list[SemanticError]:
+    """Local-to-one-record checks. Pydantic already enforces sha256 hex shape on
+    the field type, the analyst-paraphrase discriminated-union requirements, and
+    the finite/non-negative invariant on value — this layer adds the
+    *temporal* and *sig-fig* checks that aren't expressible at the type level.
+    """
     errors: list[SemanticError] = []
     for p in primitives:
+        # Pydantic's `Sha256Hex` already enforces format; this layer just covers
+        # the case where someone bypasses the model (e.g. dynamic construction).
         if not _HASH_RE.fullmatch(p.source.snapshot_sha256):
             errors.append(
                 SemanticError(
@@ -57,91 +63,87 @@ def _atomic_primitive_checks(primitives: list[AtomicPrimitive], today: date) -> 
                 SemanticError(
                     code="semantic.as_of_in_future",
                     slug=p.slug,
-                    message=f"as_of {p.as_of.isoformat()} is in the future (today={today.isoformat()})",
+                    message=(
+                        f"as_of {p.as_of.isoformat()} is in the future (today={today.isoformat()})"
+                    ),
                 )
             )
-        if p.source.tier == SourceTier.ANALYST_PARAPHRASE:
-            errors.extend(_paraphrase_checks(p))
-        errors.extend(_sig_fig_check(p))
+        if not math.isfinite(p.value):
+            errors.append(
+                SemanticError(
+                    code="semantic.non_finite_value",
+                    slug=p.slug,
+                    message=f"value {p.value!r} is NaN or infinite",
+                )
+            )
+        if p.value <= 0 and p.unit.dimension.value != "percent":
+            errors.append(
+                SemanticError(
+                    code="semantic.nonpositive_value",
+                    slug=p.slug,
+                    message=f"value {p.value} not strictly positive for non-percent primitive",
+                )
+            )
     return errors
-
-
-def _paraphrase_checks(p: AtomicPrimitive) -> list[SemanticError]:
-    errors: list[SemanticError] = []
-    src = p.source
-    if src.paraphrase_text is None or not src.paraphrase_text.strip():
-        errors.append(
-            SemanticError(
-                code="semantic.paraphrase_missing_text",
-                slug=p.slug,
-                message="analyst-paraphrase source requires paraphrase_text",
-            )
-        )
-    elif len(src.paraphrase_text) > PARAPHRASE_MAX_CHARS:
-        errors.append(
-            SemanticError(
-                code="semantic.paraphrase_too_long",
-                slug=p.slug,
-                message=(
-                    f"paraphrase_text {len(src.paraphrase_text)} chars exceeds "
-                    f"{PARAPHRASE_MAX_CHARS}"
-                ),
-            )
-        )
-    if not src.paraphrase_reviewer:
-        errors.append(
-            SemanticError(
-                code="semantic.paraphrase_missing_reviewer",
-                slug=p.slug,
-                message="analyst-paraphrase source requires paraphrase_reviewer",
-            )
-        )
-    if not src.original_publisher:
-        errors.append(
-            SemanticError(
-                code="semantic.paraphrase_missing_publisher",
-                slug=p.slug,
-                message="analyst-paraphrase source requires original_publisher",
-            )
-        )
-    return errors
-
-
-def _sig_fig_check(p: AtomicPrimitive) -> list[SemanticError]:
-    # Sanity envelope. Reject obvious placeholder values (0 or NaN-ish).
-    if p.value <= 0 and p.unit.dimension.value != "percent":
-        return [
-            SemanticError(
-                code="semantic.nonpositive_value",
-                slug=p.slug,
-                message=f"value {p.value} not strictly positive for non-percent primitive",
-            )
-        ]
-    return []
 
 
 def _framework_no_scalar_defaults(records: LoadedRecords) -> list[SemanticError]:
     """Q15: every variant input must point at a primitive slug, never a scalar.
 
-    Inspect the *raw* YAML payload so we catch numeric defaults *before*
-    Pydantic coerces them to strings (Pydantic v2 strict will reject anyway,
-    but the error message is generic — this gives a precise message).
+    Inspects the *raw* YAML payload so we catch numeric defaults with a precise
+    error message (Pydantic v2 strict also rejects them via the typed
+    ``default_inputs: dict[str, Slug]``, but its message is generic). Malformed
+    shapes (variants-not-a-list, default_inputs-not-a-dict) are reported as
+    their own errors rather than silently skipped — without the explicit
+    report, a regression that loosened the field types would silently disable
+    the Q15 guard.
     """
     errors: list[SemanticError] = []
     for path, raw in records.raw_by_path.items():
         if raw.get("kind") != "framework":
             continue
         slug = str(raw.get("slug") or path.stem)
-        variants_raw = raw.get("variants") or []
+        variants_raw = raw.get("variants")
+        if variants_raw is None:
+            continue
         if not isinstance(variants_raw, list):
+            errors.append(
+                SemanticError(
+                    code="semantic.framework_variants_malformed",
+                    slug=slug,
+                    message=(f"`variants` must be a list, got {type(variants_raw).__name__}"),
+                )
+            )
             continue
         variants_list: list[Any] = variants_raw
         for variant_item in variants_list:
             if not isinstance(variant_item, dict):
+                errors.append(
+                    SemanticError(
+                        code="semantic.framework_variants_malformed",
+                        slug=slug,
+                        message=(
+                            f"every entry in `variants` must be a mapping, got "
+                            f"{type(variant_item).__name__}"
+                        ),
+                    )
+                )
                 continue
             variant: dict[str, Any] = {str(k): v for k, v in variant_item.items()}
-            defaults_raw = variant.get("default_inputs") or {}
+            defaults_raw = variant.get("default_inputs")
+            if defaults_raw is None:
+                continue
             if not isinstance(defaults_raw, dict):
+                errors.append(
+                    SemanticError(
+                        code="semantic.framework_variants_malformed",
+                        slug=slug,
+                        message=(
+                            f"variant scope={variant.get('scope')!r} `default_inputs` "
+                            f"must be a mapping, got {type(defaults_raw).__name__}"
+                        ),
+                    )
+                )
                 continue
             defaults: dict[str, Any] = {str(k): v for k, v in defaults_raw.items()}
             for input_name, value in defaults.items():
@@ -151,9 +153,9 @@ def _framework_no_scalar_defaults(records: LoadedRecords) -> list[SemanticError]
                             code="semantic.framework_scalar_default",
                             slug=slug,
                             message=(
-                                f"variant scope={variant.get('scope')!r} input {input_name!r} "
-                                f"has scalar default {value!r}; every input must point at a "
-                                f"primitive slug (Q15)"
+                                f"variant scope={variant.get('scope')!r} input "
+                                f"{input_name!r} has scalar default {value!r}; every "
+                                f"input must point at a primitive slug (Q15)"
                             ),
                         )
                     )
