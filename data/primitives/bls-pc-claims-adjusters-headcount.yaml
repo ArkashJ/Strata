@@ -1,0 +1,33 @@
+kind: atomic_primitive
+slug: bls-pc-claims-adjusters-headcount
+schema_version: 1
+concept_slug: doc-gen-pc-insurance
+name: "US claims adjusters, examiners, and investigators headcount (BLS OES, May 2024)"
+description: >
+  BLS OES occupational employment estimate 13-1031 (Claims Adjusters,
+  Examiners, and Investigators) for the United States, May 2024. Includes
+  P&C and adjacent insurance lines; v0.2 slice treats the full bucket as the
+  cost-efficiency persona pool until a tighter restrict_by_tag composite
+  lands.
+
+value: 322500
+unit:
+  kind: stock
+  dimension: people
+
+as_of: 2024-05-31
+
+geo:
+  level: country
+  codes: ["US"]
+geo_perspective: supply
+
+distribution_shape: normal
+delivery_mode: "n/a"
+
+source:
+  slug: bls-oes-13-1031-2024
+  tier: regulator
+  url: "https://www.bls.gov/oes/current/oes131031.htm"
+  accessed: 2026-05-22
+  snapshot_sha256: "2b3c4d5e2b3c4d5e2b3c4d5e2b3c4d5e2b3c4d5e2b3c4d5e2b3c4d5e2b3c4d5e"

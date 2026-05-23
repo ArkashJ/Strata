@@ -1,0 +1,29 @@
+kind: concept
+slug: doc-gen-pc-insurance
+schema_version: 1
+name: "P&C insurance document generation"
+definition: >
+  US-based property & casualty insurance carriers' adoption of AI-assisted
+  document-generation software (policy issuance docs, claims correspondence,
+  endorsements, ACORD forms). Narrow scope: claims-adjuster and underwriter
+  personas only; excludes generic word-processing and excludes life/health
+  carriers.
+
+# Q39 — lens taxonomy. Primary L1 (Harvey/Glean/Decagon math shape — replace
+# adjuster cost). Secondary L2 (Brex/Rippling math shape — capture carrier
+# software spend). Validator warns if the two scenarios land within 30% of
+# each other (means secondary isn't doing strategic work).
+analysis_lens:
+  primary: cost_efficiency
+  secondary: revenue_generation
+
+modifiers: {}
+
+measurements:
+  - bls-pc-claims-adjusters-headcount
+  - naic-active-pc-carriers-2024
+  - pc-saas-spend-per-carrier-2024
+  - pc-claims-adjuster-cost-per-seat
+
+competing_concepts: []
+requires_clearance: []

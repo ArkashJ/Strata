@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`feat(v0.2)`: lens-aware concept end-to-end on `doc-gen-pc-insurance`.**
+  First vertical slice of the Strata data layer — Pydantic models (Unit, Geo,
+  Source with the 9-tier enum incl. `analyst-paraphrase`, AtomicPrimitive,
+  CompositePrimitive, Concept with Q39 `analysis_lens` + modifiers,
+  Framework with `lens` tag + role-tagged inputs + variants, Annotation per
+  E3, TAMOutput scenario tree) in `backend/src/strata/models/`. YAML loader +
+  in-memory `Registry` (`backend/src/strata/{loader,registry}.py`). Three-layer
+  validator pipeline (`backend/src/strata/validator/`): structural (slug
+  uniqueness) → semantic (snapshot-hash format, `as_of` not in the future,
+  Q15 no-scalar-defaults, Q40 paraphrase ≤ 280 chars / reviewer / publisher)
+  → cross-record (concept↔primitive linkage, framework `applicable_to`,
+  Q39 lens-tag agreement, 30%-overlap warning between primary/secondary
+  scenarios). Multiplicative evaluator that mints TAMs with content-hash-pinned
+  inputs (`backend/src/strata/{evaluator,hashing}.py`). CLI wired:
+  `strata validate <data-dir>` and `strata size <concept-slug>`.
+- `data/` seed YAML for concept #1 — `doc-gen-pc-insurance`
+  (`analysis_lens.primary: cost_efficiency, secondary: revenue_generation`),
+  four atomic primitives (`naic-active-pc-carriers-2024`,
+  `bls-pc-claims-adjusters-headcount`, `pc-saas-spend-per-carrier-2024`
+  exercising the new Q40 `analyst-paraphrase` tier, and
+  `pc-claims-adjuster-cost-per-seat`), two canonical frameworks
+  (`bottoms-up-cost-efficiency` lens=cost_efficiency,
+  `top-down-revenue-capture` lens=revenue_generation), four source-registry
+  records, and an empty `data/sources/opt_out.yaml` takedown stub.
+- `backend/tests/` — 22 pytest cases covering each validator rule
+  (paraphrase missing `original_publisher` / `paraphrase_reviewer` /
+  `paraphrase_text`, `as_of` in future, framework scalar default, lens-tag
+  mismatch, 30%-overlap warning) plus end-to-end `strata size
+  doc-gen-pc-insurance` (two reproducible lens-tagged scenarios; both pin
+  every input by `snapshot_sha256`; the analyst-paraphrase scenario carries
+  the "verify against full text" banner).
+
 ### Changed
 - `docs/`: consolidated early sketches (`01-product-layers.md`,
   `02-network-graph.md`, `03-data-model.md`) into a single new

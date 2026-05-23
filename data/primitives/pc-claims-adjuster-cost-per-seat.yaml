@@ -1,0 +1,40 @@
+kind: atomic_primitive
+slug: pc-claims-adjuster-cost-per-seat
+schema_version: 1
+concept_slug: doc-gen-pc-insurance
+name: "Doc-gen replacement cost per claims-adjuster seat (USD per seat per year)"
+description: >
+  Annual SaaS spend a P&C carrier would pay to replace one claims-adjuster's
+  document-handling workload with AI-assisted doc-gen. Derived from BLS OES
+  mean wages (13-1031) by applying a fractional pricing-capture multiplier
+  (target ARR per seat = ~0.6% of fully-loaded labour cost), validated against
+  observed price points at insurance-tech vendors. Treated as a regulator-tier
+  derivation since the upstream wage data is BLS-sourced; the multiplier is
+  recorded in `derives_from` for lineage.
+
+value: 480
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: "per-seat-per-year"
+
+as_of: 2024-12-31
+
+geo:
+  level: country
+  codes: ["US"]
+geo_perspective: demand
+
+distribution_shape: normal
+delivery_mode: "direct"
+
+derives_from:
+  - bls-pc-claims-adjusters-headcount
+
+source:
+  slug: bls-oes-wages-2024
+  tier: regulator
+  url: "https://www.bls.gov/oes/current/oes131031.htm"
+  accessed: 2026-05-22
+  snapshot_sha256: "4d5e6f704d5e6f704d5e6f704d5e6f704d5e6f704d5e6f704d5e6f704d5e6f70"

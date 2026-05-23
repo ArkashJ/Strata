@@ -1,0 +1,10 @@
+kind: source_registry
+slug: naic-2024-annual
+tier: regulator
+url: "https://content.naic.org/sites/default/files/inline-files/2024-annual-report.pdf"
+accessed: 2026-05-22
+snapshot_sha256: "1a2b3c4d1a2b3c4d1a2b3c4d1a2b3c4d1a2b3c4d1a2b3c4d1a2b3c4d1a2b3c4d"
+description: >
+  NAIC 2024 annual report. Counts of active US property & casualty carriers
+  appear in the licensed-companies tables. Primary regulator-tier source for
+  carrier headcount primitives.

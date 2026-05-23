@@ -1,22 +1,45 @@
 """Strata CLI entry point.
 
-Commands land here as they're implemented:
-  strata validate <data-dir>     — Task 13 (validator pipeline)
-  strata serve [--port]          — Task 17 (FastAPI app)
-  strata mint <state.json>       — Task 14 (content-hash debug)
+Commands wired so far:
+  strata version
+  strata validate <data-dir>     — three-layer validator pipeline
+  strata size <concept-slug>     — load concept, run frameworks, print scenario tree
 """
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import typer
 
 from strata import __version__
+from strata.evaluator import EvaluatorError, size_concept
+from strata.loader import load_data_dir
+from strata.models import TAMOutput
+from strata.registry import Registry
+from strata.validator import Severity
+from strata.validator import validate as run_validate
 
 app = typer.Typer(
     name="strata",
     help="Open-source community-curated market-sizing tool.",
     no_args_is_help=True,
     add_completion=False,
+)
+
+# Typer Argument/Option must be created at module scope (B008) — function-default
+# evaluation in Python runs once per function-definition, which is what Typer expects.
+_DATA_DIR_ARG = typer.Argument(
+    ...,
+    exists=True,
+    file_okay=False,
+    dir_okay=True,
+    readable=True,
+    help="Path to the data directory (YAML records).",
+)
+_CONCEPT_SLUG_ARG = typer.Argument(..., help="Concept slug to size.")
+_DATA_DIR_OPT = typer.Option(
+    Path("data"), "--data-dir", "-d", help="Data directory (defaults to ./data)."
 )
 
 
@@ -29,6 +52,71 @@ def root() -> None:
 def version() -> None:
     """Print the installed Strata version."""
     typer.echo(__version__)
+
+
+@app.command()
+def validate(data_dir: Path = _DATA_DIR_ARG) -> None:
+    """Run the three-layer validator pipeline (structural → semantic → cross-record)."""
+    report = run_validate(data_dir)
+    for finding in report.findings:
+        prefix = "ERROR" if finding.severity == Severity.ERROR else "WARN "
+        slug = f" [{finding.slug}]" if finding.slug else ""
+        typer.echo(f"{prefix} {finding.layer:13} {finding.code}{slug}: {finding.message}")
+    if report.errors:
+        typer.echo(f"\n{len(report.errors)} error(s), {len(report.warnings)} warning(s).")
+        raise typer.Exit(code=1)
+    typer.echo(f"\nOK — {len(report.warnings)} warning(s).")
+
+
+@app.command()
+def size(
+    concept_slug: str = _CONCEPT_SLUG_ARG,
+    data_dir: Path = _DATA_DIR_OPT,
+) -> None:
+    """Load the concept, run its applicable frameworks, and print the scenario tree."""
+    records = load_data_dir(data_dir)
+    registry = Registry.from_loaded(records)
+    try:
+        tam = size_concept(registry, concept_slug)
+    except EvaluatorError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    _render(tam)
+
+
+def _render(tam: TAMOutput) -> None:
+    typer.echo(f"TAM /{tam.slug}")
+    typer.echo(f"  concept: {tam.target.concept}")
+    typer.echo(
+        f"  method_families: {list(tam.method_families_used)}  "
+        f"independence_score: {tam.independence_score:.2f}"
+    )
+    typer.echo("")
+    for scenario in tam.scenarios:
+        unit_label = _unit_label(scenario.unit)
+        typer.echo(
+            f"• {scenario.lens.value:24} {scenario.framework:36} "
+            f"= {scenario.value:>16,.0f} {unit_label}"
+        )
+        for iu in scenario.inputs_used:
+            typer.echo(
+                f"    {iu.role_name:22} ← {iu.primitive_slug}  (snapshot {iu.snapshot_sha256[:12]}…)"
+            )
+        for banner in scenario.banners:
+            typer.echo(f"    ⚠ {banner.kind}: {banner.message}")
+        typer.echo("")
+
+
+def _unit_label(unit: object) -> str:
+    # Avoid importing Unit at module top — keep render forgiving.
+    dim = getattr(unit, "dimension", None)
+    cur = getattr(unit, "currency", None)
+    den = getattr(unit, "denominator", None)
+    dim_val = getattr(dim, "value", dim)
+    label = f"{cur or ''}{' ' if cur else ''}{dim_val or ''}".strip() or "?"
+    if den:
+        label = f"{label} {den}"
+    return label
 
 
 if __name__ == "__main__":

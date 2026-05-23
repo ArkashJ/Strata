@@ -12,9 +12,7 @@ from structlog.types import EventDict, Processor
 from strata.config import settings
 
 
-def _drop_color_message_key(
-    _logger: object, _method_name: str, event_dict: EventDict
-) -> EventDict:
+def _drop_color_message_key(_logger: object, _method_name: str, event_dict: EventDict) -> EventDict:
     event_dict.pop("color_message", None)
     return event_dict
 

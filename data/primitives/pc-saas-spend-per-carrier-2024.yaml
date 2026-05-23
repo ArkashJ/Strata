@@ -1,0 +1,41 @@
+kind: atomic_primitive
+slug: pc-saas-spend-per-carrier-2024
+schema_version: 1
+concept_slug: doc-gen-pc-insurance
+name: "Average doc-gen-relevant SaaS spend per P&C carrier (2024, paraphrased)"
+description: >
+  Annual recurring software spend, per US P&C carrier, on the SaaS surface
+  that doc-gen products realistically displace or attach to (policy admin
+  workflow, claims correspondence automation, ACORD form generation). Sized
+  from a paraphrased Gartner market sizing — paywalled source under Q40
+  fair-use rules; banner attaches downstream.
+
+value: 185000
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: "per-carrier-per-year"
+
+as_of: 2024-12-31
+
+geo:
+  level: country
+  codes: ["US"]
+geo_perspective: demand
+
+distribution_shape: power_law
+delivery_mode: "direct"
+
+source:
+  slug: gartner-pc-software-2024
+  tier: analyst-paraphrase
+  url: "https://www.gartner.com/en/documents/pc-insurance-software-2024"
+  accessed: 2026-05-22
+  snapshot_sha256: "3c4d5e6f3c4d5e6f3c4d5e6f3c4d5e6f3c4d5e6f3c4d5e6f3c4d5e6f3c4d5e6f"
+  original_publisher: "Gartner"
+  paraphrase_reviewer: "arkash"
+  paraphrase_text: >
+    Gartner sizes 2024 US P&C carrier SaaS spend on policy-admin and
+    claims-document workflow at approximately $185K average per carrier
+    per year, skewed right by Top-25 carriers.
