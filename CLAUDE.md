@@ -163,7 +163,7 @@ Numbered for reading order. Cross-link liberally with relative paths.
 | `docs/04-user-journey.md` | Sarah's P&C doc-gen TAM golden path |
 | `docs/05-roadmap.md` | v0.2 → v1.0 milestones |
 | `docs/06-glossary.md` | Domain terms — update in same change that introduces a term |
-| `docs/07-data-layer-brainstorm.md` | **Decision record** Q1–Q38: full data-layer schema lock |
+| `docs/07-data-layer-brainstorm.md` | **Decision record** Q1–Q40: full data-layer schema lock |
 | `docs/08-product-surface-brainstorm.md` | **Decision record** U1–U12: UX surface lock |
 | `docs/09-expert-layer-brainstorm.md` | **Decision record** E1–E5: annotation schema (ops deferred to v0.5) |
 | `docs/10-v0.2-backend-spec.md` | Executable v0.2 backend spec — the implementation blueprint |
@@ -220,6 +220,20 @@ private valuation. If any needs a schema exception, the schema isn't done.
 - Records declare `schema_version` (Q30); migrations run atomically on bumps.
 - Content-addressed source snapshots stored sha256-named.
 
+### Running things
+- All `uv run` commands must be invoked from `backend/` (where `pyproject.toml` lives).
+- Tests live at `backend/tests/`; the orphaned root `/tests/` is not picked up by `testpaths`.
+- `data/` lives at the repo root — pass `--data-dir ../data` when running `strata` commands from `backend/`.
+- Verification suite: `uv run pytest && uv run pyright && uv run ruff check . && uv run ruff format --check .`
+
+### Pydantic v2
+- Discriminated unions (e.g. `Source = Annotated[Union, Field(discriminator=...)]`) are typing constructs, not models — validate with `TypeAdapter(Source).validate_python(...)`, not `.model_validate(...)`.
+- Trust `uv run pyright` over the IDE's streaming diagnostics on newly-written files (the latter shows phantom "Import could not be resolved" errors that resolve themselves).
+
+### Known schema drift (deferred to v0.3)
+- **Q8 geo** — at v0.2 primitives carry a single `geo: Geo` + `geo_perspective` enum, not the two-parallel-fields design Q8 mandates. Restoration tracked for v0.3 when a primitive needs to declare both supply and demand geos.
+- **Q20 synthetic primitives** — no `synthetic: bool` marker or required `expiry`/`uncertainty` yet. Lands when the first synthetic primitive is seeded (v0.3 community-modeled sliders).
+
 ---
 
 ## What NOT to do
@@ -239,6 +253,7 @@ private valuation. If any needs a schema exception, the schema isn't done.
   preference (bun/biome/tanstack/zustand).
 - **Don't run `cat`, `head`, `tail`, `sed`, `awk`** in Bash — use Read/Edit.
   Bash is for git/mkdir/rm/mv/navigation only (context-mode policy).
+- **Don't put `typer.Argument(...)` or `typer.Option(...)` in function defaults** (ruff B008) — create them as module-level singletons and reference them. Python evaluates function defaults once at definition time, which is exactly what Typer expects.
 
 ---
 
