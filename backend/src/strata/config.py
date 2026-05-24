@@ -32,7 +32,9 @@ class Settings(BaseSettings):
         description="Async DSN. Must use the asyncpg driver.",
     )
 
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
+    cors_origins: list[str] = Field(
+        default_factory=lambda: ["http://localhost:3000", "http://localhost:3001"]
+    )
 
     data_dir: str = "data"
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { LineageGraph } from "@/components/LineageGraph";
 import { ScenarioGraph } from "@/components/ScenarioGraph";
 import { formatUSD } from "@/lib/format";
 import { buildQuery, conceptsQuery } from "@/lib/queries";
@@ -47,6 +48,7 @@ export function BuildView() {
 }
 
 function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
+  const [lineageOpen, setLineageOpen] = useState(false);
   const values = tam.scenarios.map((s) => s.value);
   const midpoint = values.reduce((a, b) => a + b, 0) / values.length;
 
@@ -142,12 +144,17 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
             </div>
           </RailSection>
           <RailSection title="Lineage graph">
-            <button className="text-[13px] text-[var(--accent)] hover:underline">
+            <button
+              onClick={() => setLineageOpen(true)}
+              className="text-[13px] text-[var(--accent)] hover:underline"
+            >
               Open lineage modal →
             </button>
           </RailSection>
         </aside>
       </div>
+
+      <LineageGraph tam={tam} open={lineageOpen} onClose={() => setLineageOpen(false)} />
     </main>
   );
 }
