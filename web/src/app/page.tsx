@@ -27,6 +27,9 @@ export default function Landing() {
           <span className="display text-[20px] text-[var(--fg-1)]">Strata</span>
         </div>
         <nav className="flex items-center gap-6 text-[13px] text-[var(--fg-2)]">
+          <a href="/data" className="hover:text-[var(--fg-1)] transition-colors">
+            Data
+          </a>
           <a href="/browse" className="hover:text-[var(--fg-1)] transition-colors">
             Browse
           </a>

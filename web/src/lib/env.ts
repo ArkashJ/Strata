@@ -7,7 +7,7 @@ const ServerEnv = z.object({
 });
 
 const ClientEnv = z.object({
-  NEXT_PUBLIC_API_URL: z.string().url().default("http://localhost:8000"),
+  NEXT_PUBLIC_API_URL: z.string().url().optional().default("http://localhost:8000"),
 });
 
 const parsedServer = ServerEnv.safeParse({ NODE_ENV: process.env.NODE_ENV });
