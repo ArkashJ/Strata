@@ -18,6 +18,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY src ./src
 COPY alembic.ini ./alembic.ini
 COPY alembic ./alembic
+# Data dir is COPY'd when building from repo root context (docker build -f backend/Dockerfile .)
+# For local dev, mount -v ./data:/app/data instead.
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
