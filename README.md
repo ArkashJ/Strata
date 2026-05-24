@@ -4,6 +4,7 @@
 > primitives, frameworks, and expert annotations — rendered as an interactive pyramid
 > graph that lets VCs and operators build credible TAMs without buying a $20k report.
 
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://strata-pied-three.vercel.app)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 ![Version](https://img.shields.io/badge/version-0.2.0a0-informational)
 ![Status](https://img.shields.io/badge/status-pre--alpha-orange)
@@ -95,7 +96,20 @@ logic implemented yet. v0.1.0 was a thesis + spec snapshot; v0.2 wires the
 backend + frontend skeletons. See [`docs/05-roadmap.md`](docs/05-roadmap.md)
 for phasing.
 
-## 🧱 Stack
+## Deployment
+
+**Frontend:** [strata-pied-three.vercel.app](https://strata-pied-three.vercel.app) (Vercel, auto-deploys from `main`)
+
+The frontend deploys as a static Next.js app. The backend API is not yet deployed — pages that fetch data will show loading states until a backend is available. Set `NEXT_PUBLIC_API_URL` in Vercel environment variables when the API goes live.
+
+To deploy manually:
+
+```sh
+cd web
+vercel deploy --prod --scope arkashjs-projects
+```
+
+## Stack
 
 ### 🐍 Backend — `backend/`
 - **Python 3.12** managed by **uv**.

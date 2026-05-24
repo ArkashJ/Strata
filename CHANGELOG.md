@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Frontend deployed to Vercel** — live at
+  [strata-pied-three.vercel.app](https://strata-pied-three.vercel.app).
+  ReactQueryDevtools switched to `next/dynamic` with dev-only guard
+  (`bundle-defer-third-party`).
+- GitHub repo description, homepage URL, and topics updated.
+
 - **`feat(v0.2)`: lens-aware concept end-to-end on `doc-gen-pc-insurance`.**
   First vertical slice of the Strata data layer — Pydantic models (Unit, Geo,
   Source with the 9-tier enum incl. `analyst-paraphrase`, AtomicPrimitive,
@@ -146,5 +152,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `VERSION` file pinned to `0.1.0`.
 - Empty `data/` directory reserved for primitives, frameworks, annotations.
 
-[Unreleased]: https://example.com/strata/compare/v0.1.0...HEAD
-[0.1.0]: https://example.com/strata/releases/tag/v0.1.0
+[Unreleased]: https://github.com/ArkashJ/Strata/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ArkashJ/Strata/releases/tag/v0.1.0
