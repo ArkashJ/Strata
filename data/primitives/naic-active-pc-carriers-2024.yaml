@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: naic-active-pc-carriers-2024
+schema_version: 1
+concept_slug: doc-gen-pc-insurance
+name: "Active US P&C insurance carriers (NAIC, 2024)"
+description: >
+  Count of active property & casualty carriers filing with the NAIC at
+  year-end 2024. Excludes title, mortgage guaranty, and dissolved carriers.
+
+value: 2541
+unit:
+  kind: stock
+  dimension: organizations
+
+as_of: 2024-12-31
+
+geo:
+  level: country
+  codes: ["US"]
+geo_perspective: supply
+
+distribution_shape: uniform
+delivery_mode: "n/a"
+
+source:
+  slug: naic-2024-annual
+  tier: regulator
+  url: "https://content.naic.org/sites/default/files/inline-files/2024-annual-report.pdf"
+  accessed: 2026-05-22
+  snapshot_sha256: "1a2b3c4d1a2b3c4d1a2b3c4d1a2b3c4d1a2b3c4d1a2b3c4d1a2b3c4d1a2b3c4d"

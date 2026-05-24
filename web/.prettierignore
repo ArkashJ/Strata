@@ -1,0 +1,12 @@
+.next
+out
+build
+node_modules
+bun.lock
+*.ts
+*.tsx
+*.js
+*.jsx
+*.mjs
+*.cjs
+*.json

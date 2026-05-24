@@ -1,0 +1,9 @@
+kind: opt_out_registry
+slug: opt-out
+schema_version: 1
+description: >
+  Takedown registry stub for v0.2. Publishers will file opt-out requests keyed
+  by ``source_slug`` once the contribution flow lands. The validator hook that
+  rejects opt-out'd sources is wired at v0.5 alongside the rest of the
+  expert-layer ops.
+entries: []

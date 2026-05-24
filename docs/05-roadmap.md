@@ -8,12 +8,14 @@ Phased plan from docs-only (v0.1) to a usable v1.0. Versions are SemVer.
 - [x] Apache-2.0 license
 - [x] README, CLAUDE.md, CHANGELOG, VERSION
 - [x] `docs/00-vision.md` — thesis
-- [x] `docs/01-product-layers.md` — three layers
-- [x] `docs/02-network-graph.md` — pyramid UI spec
-- [x] `docs/03-data-model.md` — entity schemas (draft)
+- [x] `docs/01-primer.md` — three layers, five-layer data model, pyramid graph (consolidated from original 01/02/03 sketches in v0.2)
 - [x] `docs/04-user-journey.md` — P&C doc-gen walkthrough
 - [x] `docs/05-roadmap.md` — this file
 - [x] `docs/06-glossary.md`
+- [x] `docs/07-data-layer-brainstorm.md` — Q1–Q38 schema decisions (added in v0.2)
+- [x] `docs/08-product-surface-brainstorm.md` — U1–U12 UX decisions (added in v0.2)
+- [x] `docs/09-expert-layer-brainstorm.md` — E1–E5 annotation schema (added in v0.2)
+- [x] `docs/10-v0.2-backend-spec.md` — implementation blueprint (added in v0.2)
 
 **Exit criteria:** A reader who has never seen this project understands the
 thesis, the three layers, the data model, and the user journey in < 20 min.
@@ -22,15 +24,34 @@ thesis, the three layers, the data model, and the user journey in < 20 min.
 
 ## v0.2.0 — Seed library & schema lock
 
-- [ ] Lock the YAML schemas in `03-data-model.md` (resolve the 5 open
-      questions at the bottom).
-- [ ] Add `schemas/` directory with JSON Schema / Pydantic models for each
-      entity (Source, Primitive, Framework, Annotation, GraphNode).
-- [ ] Hand-seed ~50 primitives covering the GTM, P&C insurance, and SMB-SaaS
-      slices used in `04-user-journey.md`.
-- [ ] Write the first 10 frameworks from the seed list in `01-product-layers.md`.
+- [x] Lock the YAML schemas — see
+      [`07-data-layer-brainstorm.md`](07-data-layer-brainstorm.md) §"Final design"
+      (atomic_primitive, composite_primitive, framework, concept,
+      marketplace_concept, company_concept, tam_output) +
+      [`09-expert-layer-brainstorm.md`](09-expert-layer-brainstorm.md) (annotation).
+- [x] **Lens taxonomy locked** (Q39): six first-class lenses + four modifiers
+      on Concept; `analyst-paraphrase` source tier added (Q40). See
+      [`plans/data-collection-strategy.md`](plans/data-collection-strategy.md).
+- [ ] Pydantic v2 models in `backend/src/strata/models/` for each record type,
+      including the lens enum + modifiers + `required_primitive_roles` map.
+- [ ] **Six canonical frameworks** (one per lens):
+  - `bottoms_up_cost_efficiency` (L1)
+  - `top_down_revenue_capture` (L2)
+  - `adoption_curve_latent_demand` (L3) — requires `analog:` field
+  - `throughput_take_rate` (L4) — Q19 `marketplace_concept` consumer
+  - `consolidation_sum_then_discount` (L5)
+  - `productivity_uplift_value_split` (L6)
+- [ ] **Six seed concepts**, one per lens, exercising every source tier:
+      `doc-gen-pc-insurance` (L1+L2), `gtm-ops-tooling-na` (L1),
+      `midmarket-saas-spend-na` (L2 via analyst-paraphrase),
+      `payments-throughput-pc-insurance` (L4), `workplace-suite-consolidation` (L5),
+      `software-eng-productivity` (L6).
+- [ ] Ingest substrate per [`plans/execute.md`](plans/execute.md): BLS / FRED /
+      EDGAR / NAIC direct-API connectors + snapshot store + validator pipeline.
+      No vendor spend at v0.2.
 - [ ] Build a minimal CLI: `strata validate data/` (lints YAML against schemas).
 - [ ] CONTRIBUTING.md for primitives + frameworks + annotations.
+- [ ] Takedown endpoint for the `analyst-paraphrase` tier (Q40 requirement).
 
 **Exit criteria:** Three reviewers can independently submit a primitive in
 YAML, have it lint-pass, and have it referenced by an existing framework.
