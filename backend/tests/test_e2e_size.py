@@ -78,6 +78,23 @@ def test_independence_score_one_when_method_families_distinct() -> None:
     }
 
 
+def test_inputs_used_carry_enrichment_fields() -> None:
+    """InputUsed must have value, name, and unit populated by the evaluator."""
+    tam = size_concept(_registry(), "doc-gen-pc-insurance")
+    for s in tam.scenarios:
+        for iu in s.inputs_used:
+            assert iu.value is not None, f"{iu.primitive_slug} has no value"
+            assert iu.name is not None, f"{iu.primitive_slug} has no name"
+            assert iu.unit is not None, f"{iu.primitive_slug} has no unit"
+
+
+def test_tam_target_carries_concept_name() -> None:
+    """TAMTarget.concept_name must be populated by the evaluator."""
+    tam = size_concept(_registry(), "doc-gen-pc-insurance")
+    assert tam.target.concept_name is not None
+    assert len(tam.target.concept_name) > 0
+
+
 def test_unknown_concept_raises_evaluator_error() -> None:
     with pytest.raises(EvaluatorError):
         size_concept(_registry(), "no-such-concept-slug")

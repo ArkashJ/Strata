@@ -108,6 +108,14 @@ async def test_build_tam(client: AsyncClient) -> None:
     assert body["kind"] == "tam_output"
     assert len(body["scenarios"]) >= 1
     assert body["target"]["concept"] == "doc-gen-pc-insurance"
+    assert body["target"]["concept_name"] is not None
+    # Verify InputUsed enrichment fields are present in the API response
+    first_scenario = body["scenarios"][0]
+    assert first_scenario["inputs_used"], "inputs_used is empty"
+    first_input = first_scenario["inputs_used"][0]
+    assert first_input["value"] is not None
+    assert first_input["name"] is not None
+    assert first_input["unit"] is not None
 
 
 @pytest.mark.asyncio

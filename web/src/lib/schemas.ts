@@ -54,6 +54,10 @@ export const inputUsedSchema = z.object({
   role: inputRoleSchema,
   primitive_slug: z.string(),
   snapshot_sha256: z.string(),
+  // enrichment from evaluator
+  value: z.number().nullable().optional(),
+  name: z.string().nullable().optional(),
+  unit: unitSchema.nullable().optional(),
 });
 export type InputUsed = z.infer<typeof inputUsedSchema>;
 
@@ -77,6 +81,7 @@ export type Scenario = z.infer<typeof scenarioSchema>;
 
 export const tamTargetSchema = z.object({
   concept: z.string(),
+  concept_name: z.string().nullable().optional(),  // enrichment from evaluator
   geo: z.string().nullable().optional(),
   time: z.string().nullable().optional(),
   expansion_stage: z.string(),

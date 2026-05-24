@@ -16,7 +16,7 @@ import {
 import "reactflow/dist/style.css";
 import { useMemo } from "react";
 
-import { formatUSD } from "@/lib/format";
+import { formatCompact, formatUSD } from "@/lib/format";
 import type { InputUsed, Scenario, TAMOutput } from "@/lib/schemas";
 
 interface TargetNodeData extends Record<string, unknown> {
@@ -206,11 +206,13 @@ function PrimitiveCard({ data }: NodeProps<PrimitiveNodeData>) {
     >
       <Handle type="target" position={Position.Top} style={{ background: "transparent", border: 0 }} />
       <div className="text-[11px] text-[var(--fg-2)] leading-[1.3] line-clamp-2">
-        {input.primitive_slug.replace(/-/g, " ")}
+        {input.name ?? input.primitive_slug.replace(/-/g, " ")}
       </div>
-      <div className="font-mono text-[12px] text-[var(--fg-1)] mt-1.5 tabular-nums">
-        {input.role_name}
-        <span className="ml-1 text-[var(--fg-3)]">{input.role}</span>
+      <div className="tam-num text-[15px] text-[var(--fg-1)] mt-1.5 tabular-nums">
+        {input.value != null ? formatCompact(input.value, input.unit) : input.role_name}
+      </div>
+      <div className="text-[10px] text-[var(--fg-3)] mt-0.5">
+        {input.role.replace(/_/g, " ")}
       </div>
     </div>
   );

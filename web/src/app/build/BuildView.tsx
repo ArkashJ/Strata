@@ -51,6 +51,8 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
   const [lineageOpen, setLineageOpen] = useState(false);
   const values = tam.scenarios.map((s) => s.value);
   const midpoint = values.reduce((a, b) => a + b, 0) / values.length;
+  const minVal = Math.min(...values);
+  const maxVal = Math.max(...values);
 
   return (
     <main className="flex-1 flex flex-col">
@@ -76,7 +78,7 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
               TAM · {tam.target.geo ?? "Global"} · {tam.target.time ?? "latest"}
             </div>
             <h1 className="display text-[40px] mt-2 text-[var(--fg-1)] leading-[1.05]">
-              {tam.target.concept}
+              {tam.target.concept_name ?? tam.target.concept.replace(/-/g, " ")}
             </h1>
           </div>
 
@@ -87,6 +89,9 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
               </div>
               <div className="tam-num text-[48px] text-[var(--fg-1)] mt-1">
                 {formatUSD(midpoint)}
+              </div>
+              <div className="text-[13px] text-[var(--fg-3)] mt-1">
+                Range: {formatUSD(minVal)} — {formatUSD(maxVal)}
               </div>
             </div>
             <div className="text-[13px] text-[var(--fg-2)] pb-2">

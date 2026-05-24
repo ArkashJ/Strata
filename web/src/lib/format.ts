@@ -5,11 +5,19 @@ export function formatUSD(value: number): string {
   return `$${value.toLocaleString()}`;
 }
 
-export function formatCompact(value: number): string {
-  return Intl.NumberFormat("en", {
+export function formatCompact(
+  value: number,
+  unit?: { dimension?: string; currency?: string | null; denominator?: string | null } | null,
+): string {
+  if (unit?.dimension === "currency") {
+    return formatUSD(value);
+  }
+  const formatted = Intl.NumberFormat("en", {
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(value);
+  const suffix = unit?.denominator ? `/${unit.denominator}` : "";
+  return `${formatted}${suffix}`;
 }
 
 export function tierLabel(tier: string): string {

@@ -22,7 +22,7 @@ venv/
 # Node (future)
 node_modules/
 dist/
-build/
+/build/
 .next/
 out/
 
@@ -52,3 +52,4 @@ tmp/
 !web/src/lib/
 !web/src/lib/**
 .playwright-cli/
+.vercel
