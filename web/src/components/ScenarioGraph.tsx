@@ -110,7 +110,7 @@ function buildGraph(tam: TAMOutput): GraphData {
       id: "target",
       type: "target",
       position: { x: -160, y: 0 },
-      data: { kind: "target", name: tam.target.concept, midpoint },
+      data: { kind: "target", name: tam.target.concept_name ?? tam.target.concept.replace(/-/g, " "), midpoint },
       draggable: false,
     },
   ];
