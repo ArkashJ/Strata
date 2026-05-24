@@ -70,8 +70,8 @@ export const scenarioSchema = z.object({
   value: z.number(),
   unit: unitSchema,
   inputs_used: z.array(inputUsedSchema),
-  assumptions: z.record(z.string()).default({}),
-  banners: z.array(scenarioBannerSchema).default([]),
+  assumptions: z.record(z.string()),
+  banners: z.array(scenarioBannerSchema),
 });
 export type Scenario = z.infer<typeof scenarioSchema>;
 

@@ -16,10 +16,8 @@ import {
 import "reactflow/dist/style.css";
 import { useMemo } from "react";
 
-import { type BuildResponse, formatUSD } from "@/lib/api";
-
-type ScenarioInput = BuildResponse["scenarios"][number]["inputs_used"][number];
-type Scenario = BuildResponse["scenarios"][number];
+import { formatUSD } from "@/lib/format";
+import type { InputUsed, Scenario, TAMOutput } from "@/lib/schemas";
 
 interface TargetNodeData extends Record<string, unknown> {
   kind: "target";
@@ -32,7 +30,7 @@ interface FrameworkNodeData extends Record<string, unknown> {
 }
 interface PrimitiveNodeData extends Record<string, unknown> {
   kind: "primitive";
-  input: ScenarioInput;
+  input: InputUsed;
 }
 type StrataNode =
   | Node<TargetNodeData, "target">
@@ -54,12 +52,8 @@ const DEFAULT_EDGE_OPTIONS = {
 const FIT_VIEW_OPTIONS = { padding: 0.18 };
 const PRO_OPTIONS = { hideAttribution: true };
 
-/**
- * Centerpiece graph — Harvey AI workflow-canvas styling.
- * Target → frameworks → primitives, soft connecting curves on a sage canvas.
- */
-export function ScenarioGraph({ build }: { build: BuildResponse }) {
-  const { nodes, edges } = useMemo(() => buildGraph(build), [build]);
+export function ScenarioGraph({ tam }: { tam: TAMOutput }) {
+  const { nodes, edges } = useMemo(() => buildGraph(tam), [tam]);
 
   return (
     <div
@@ -103,28 +97,29 @@ interface GraphData {
   edges: Edge[];
 }
 
-function buildGraph(build: BuildResponse): GraphData {
-  const frameworkCount = build.scenarios.length;
+function buildGraph(tam: TAMOutput): GraphData {
+  const frameworkCount = tam.scenarios.length;
   const frameworkSpacing = 320;
   const frameworkStartX = -((frameworkCount - 1) * frameworkSpacing) / 2;
 
-  const midpoint = (build.triangulated_range.low + build.triangulated_range.high) / 2;
+  const values = tam.scenarios.map((s) => s.value);
+  const midpoint = values.reduce((a, b) => a + b, 0) / values.length;
 
   const nodes: StrataNode[] = [
     {
       id: "target",
       type: "target",
       position: { x: -160, y: 0 },
-      data: { kind: "target", name: build.target.concept_name, midpoint },
+      data: { kind: "target", name: tam.target.concept, midpoint },
       draggable: false,
     },
   ];
   const edges: Edge[] = [];
 
-  build.scenarios.forEach((scenario, fIdx) => {
+  tam.scenarios.forEach((scenario, fIdx) => {
     const fX = frameworkStartX + fIdx * frameworkSpacing;
     const fY = 240;
-    const fId = `f-${scenario.framework_slug}`;
+    const fId = `f-${scenario.framework}`;
     nodes.push({
       id: fId,
       type: "framework",
@@ -181,7 +176,7 @@ function TargetCard({ data }: NodeProps<TargetNodeData>) {
 
 function FrameworkCard({ data }: NodeProps<FrameworkNodeData>) {
   const { scenario } = data;
-  const familyLabel = scenario.method_family.replace(/_/g, " ");
+  const lensLabel = scenario.lens.replace(/_/g, " ");
   return (
     <div
       className="canvas-card w-[240px] px-4 py-3 text-left"
@@ -190,10 +185,10 @@ function FrameworkCard({ data }: NodeProps<FrameworkNodeData>) {
       <Handle type="target" position={Position.Top} style={{ background: "transparent", border: 0 }} />
       <Handle type="source" position={Position.Bottom} style={{ background: "transparent", border: 0 }} />
       <div className="text-[12px] text-[var(--fg-1)] font-medium truncate">
-        {scenario.framework_name}
+        {scenario.definition}
       </div>
       <div className="flex items-center gap-1.5 mt-1.5">
-        <span className="role-chip uppercase tracking-[0.04em]">{familyLabel}</span>
+        <span className="role-chip uppercase tracking-[0.04em]">{lensLabel}</span>
       </div>
       <div className="tam-num text-[20px] text-[var(--fg-1)] mt-2.5 tabular-nums">
         {formatUSD(scenario.value)}
@@ -211,14 +206,11 @@ function PrimitiveCard({ data }: NodeProps<PrimitiveNodeData>) {
     >
       <Handle type="target" position={Position.Top} style={{ background: "transparent", border: 0 }} />
       <div className="text-[11px] text-[var(--fg-2)] leading-[1.3] line-clamp-2">
-        {input.primitive_name}
+        {input.primitive_slug.replace(/-/g, " ")}
       </div>
       <div className="font-mono text-[12px] text-[var(--fg-1)] mt-1.5 tabular-nums">
-        {Intl.NumberFormat("en", {
-          notation: "compact",
-          maximumFractionDigits: 1,
-        }).format(input.value)}{" "}
-        <span className="text-[var(--fg-3)]">{input.unit_label}</span>
+        {input.role_name}
+        <span className="ml-1 text-[var(--fg-3)]">{input.role}</span>
       </div>
     </div>
   );
