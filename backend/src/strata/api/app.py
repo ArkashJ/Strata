@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from strata import __version__
-from strata.api.routes import build, concepts, frameworks, healthz, primitives
+from strata.api.routes import build, concepts, frameworks, healthz, primitives, resolve
 from strata.config import settings
 from strata.logging import configure_logging, get_logger
 
@@ -48,6 +48,7 @@ def create_app() -> FastAPI:
     app.include_router(primitives.router)
     app.include_router(frameworks.router)
     app.include_router(build.router)
+    app.include_router(resolve.router)
     return app
 
 

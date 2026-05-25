@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { LineageGraph } from "@/components/LineageGraph";
+import { ResolveView } from "@/components/ResolveView";
 import { ScenarioGraph } from "@/components/ScenarioGraph";
 import { formatUSD } from "@/lib/format";
 import { buildQuery, conceptsQuery } from "@/lib/queries";
@@ -32,16 +32,8 @@ export function BuildView() {
   }
 
   if (build.error || !build.data) {
-    return (
-      <main className="flex-1 flex flex-col items-center justify-center px-8 gap-4">
-        <p className="text-[14px] text-[var(--fg-2)]">
-          {build.error instanceof Error ? build.error.message : "No build available for this query."}
-        </p>
-        <Link href="/" className="text-[13px] text-[var(--accent)] hover:underline">
-          ← Back to search
-        </Link>
-      </main>
-    );
+    // Concept not found in registry — fall back to dynamic streaming resolution
+    return <ResolveView query={query} onBack={() => router.push("/")} />;
   }
 
   return <BuildResult tam={build.data} onBack={() => router.push("/")} />;

@@ -28,6 +28,7 @@ dependencies = [
     "structlog>=24.1,<25",
     "exa-py>=2.13.0",
     "python-dotenv>=1.2.2",
+    "anthropic>=0.104.1",
 ]
 
 [project.optional-dependencies]
