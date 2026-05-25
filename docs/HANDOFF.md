@@ -18,9 +18,9 @@
 | Validator pipeline | **Done** | Structural + semantic + cross-record (dangling refs, cycles, unit compat) |
 | Evaluator engine | **Done** | Multiplicative framework evaluation, independence scoring |
 | Content-hash minter | **Done** | `sha256(canonical_json(payload))` for `/tam/{hash}` URLs |
-| API routes | **Done** | 9 endpoints: `/healthz`, `/c`, `/c/{slug}`, `/p`, `/p/{slug}`, `/f`, `/f/{slug}`, `/build/{concept_slug}`, `/tam/{state_hash}` |
+| API routes | **Done** | 10 endpoints: `/healthz`, `/c`, `/c/{slug}`, `/p`, `/p/{slug}`, `/f`, `/f/{slug}`, `/build/{concept_slug}`, `/tam/{state_hash}`, `POST /resolve` (dynamic SSE) |
 | CLI (`strata`) | **Partial** | `strata version`, `strata validate`, `strata size` wired; other commands stubbed |
-| Tests | **45 passing** | Models, validator, evaluator, e2e sizing, API integration |
+| Tests | **110 passing** | Models, validator, evaluator, e2e sizing, API integration, all-concepts, enrichment, data validation |
 | Type checking | **0 pyright errors** | Strict mode, 14 warnings (all in Typer/TypeAdapter edge cases) |
 | Lint | **Clean** | ruff 100-char, py312 rule set |
 
@@ -44,11 +44,11 @@
 
 | Record type | Count | v0.2 target | Gap |
 |-------------|-------|-------------|-----|
-| Concepts | **1** | 6 | 5 missing |
-| Primitives (atomic) | **4** | ~50 | ~46 missing |
+| Concepts | **6** | 6 | 0 — all 6 lenses covered |
+| Primitives (atomic) | **14** | ~50 | ~36 missing (need real API connectors) |
 | Composites | **0** | ~10 | ~10 missing |
-| Frameworks | **2** | 6 | 4 missing |
-| Sources | **5** | ~50 | ~45 missing |
+| Frameworks | **5** | 6 | 1 missing (L3 latent_demand) |
+| Sources | **15** | ~50 | ~35 missing |
 | Annotations | **0** | ~5 | ~5 missing |
 | TAM outputs | **0** | ~3 | ~3 missing |
 
@@ -208,49 +208,65 @@ data/
 
 ## Known issues
 
-1. **Primitive cards in ScenarioGraph** show role names instead of values/units — needs API enrichment or a lookup against the registry
-2. **Build page heading** shows concept slug instead of full name — the `/build/{slug}` endpoint returns `target.concept` as a slug; need to join with concept record for the name
-3. **No range display** in build header — evaluator computes individual scenario values but doesn't emit a triangulated range
+<!-- FIXED 2026-05-24 session: items 1-3 resolved -->
+1. ~~**Primitive cards in ScenarioGraph** show role names instead of values/units~~ — FIXED: InputUsed enriched with value/name/unit from evaluator
+2. ~~**Build page heading** shows concept slug instead of full name~~ — FIXED: TAMTarget.concept_name populated by evaluator
+3. ~~**No range display** in build header~~ — FIXED: min-max range shown under midpoint
 4. **Lineage graph modal** opens on scroll interaction unexpectedly — needs proper trigger wiring
 5. **CORS** hardcoded to localhost:3000 + 3001 — production deploy needs env-driven origins
 6. **structlog** had a crash with `add_logger_name` + `PrintLoggerFactory` — fixed but not tested with `log_json=True`
+7. **Dynamic resolve** works but uses only one framework per query — no triangulation yet (independence always 0.0)
+8. **Snapshot hashes** are still placeholders — no actual source document downloads yet
 
 ---
 
-## What to do next (priority order)
+## What to do next — MVP launch critical path
 
-### Week 1: Data is the product
+<!-- Updated 2026-05-24. Phase strategy: Approach C (progressive decentralization).
+     MVP = internal tool for Arkash + friend to build TAMs.
+     Phase 2 (paid) and Phase 3 (contribution) come after MVP proves value. -->
 
-The entire value proposition is **defensible numbers with sources you can cite.** The code infrastructure is ~90% done for v0.2. The bottleneck is **real data from real sources.**
+### Sprint 1: Real data connectors (replaces seed YAML)
 
-1. Build BLS API connector — verify the 4 existing primitives, add 10 more
-2. Build FRED API connector — add macro primitives
-3. Manually verify NAIC + Gartner values against actual source documents
-4. Create proper source snapshots (download the actual pages, sha256 them)
-5. Add the 4 remaining frameworks (L3-L6) with their input schemas
-6. Add the 5 remaining concepts (one per lens)
+The dynamic `/resolve` endpoint proves the concept — now build proper connectors.
+See `docs/11-api-catalog.md` for full API list with auth/limits/SDKs.
 
-### Week 2: Fix the build page + polish
+1. **FRED API connector** (`fredapi`) — 800K macro series, free key
+2. **BLS API connector** — occupation headcounts + wages by SOC, free
+3. **SEC EDGAR XBRL connector** — public company financials, no auth needed
+4. **Census Bureau connector** (`census`) — business counts by NAICS
+5. Replace placeholder `snapshot_sha256` with real downloaded snapshots
 
-7. Fix primitive cards to show name/value/unit from API
-8. Fix concept name display (full name, not slug)
-9. Add triangulated range to evaluator output + header display
-10. Wire export (Copy URL works, add PDF/Markdown stubs)
+### Sprint 2: MVP workhorse UI
 
-### Week 3: Deploy + v0.3 planning
+The current build page is read-only. The MVP needs an interactive wiring view.
+Design spec from deep-research session (not a separate doc — kept here):
 
-11. Deploy backend to Railway, frontend to Vercel
-12. Decide graph library for pyramid (vis-network vs cytoscape.js)
-13. Begin pyramid three-axis constraint picker component
+- **Three-panel layout**: (left) concept + AI lens recommender, (center) formula wiring with sliders, (right) live scenario tree + provenance
+- **Lens recommender**: rules engine from Q1-Q5 decision tree, not LLM. Presents recommended lens + confidence + modifiers. "Help me choose" wizard, "Override" dropdown.
+- **Inline primitive discovery**: click empty wiring slot → search panel → existing library + "Search the web" (Exa) → draft primitive → validate → wire
+- **Scenario tree from variation points**: each wired primitive gets a slider range. Bear/base/bull generated automatically from combinations.
+
+### Sprint 3: Deploy + multi-framework triangulation
+
+6. Deploy backend to Railway, frontend to Vercel
+7. Multi-framework triangulation in `/resolve` (search for primitives matching 2-3 lenses, independence > 0)
+8. Export: Copy URL + PDF/Markdown stubs
+
+### Later (not MVP)
+
+- Prediction market connectors (Polymarket, Kalshi) — Phase 1 stretch
+- Pyramid three-axis constraint picker — v0.3
+- Contribution flow + auth — Phase 2
+- Chain-portable schema fields (contributor_id, content_hash, usage_count) — Phase 3
+- On-chain anchoring (Base/Solana) — Phase 4
 
 ---
 
-## The honest bottom line
+## The honest bottom line (updated 2026-05-24)
 
-**The code is solid. The data is thin.**
+**The pipeline works end-to-end. Data is expanding but still seed-quality.**
 
-We have a working end-to-end pipeline: YAML → Pydantic models → validator → evaluator → API → TanStack Query → ReactFlow graph. It's type-safe, tested, and deployable.
+We now have: 6 concepts across all 6 lenses, 14 primitives (2 Exa-verified against BLS), 5 frameworks, 110 passing tests, dynamic query resolution (Claude + Exa + SSE streaming), and a working ReactFlow build page showing real values.
 
-But the product is a **data product**, and right now we have 4 primitives in 1 vertical when the spec calls for ~50 across 6 concepts exercising all 6 lenses. The source URLs are real organizations but the specific values haven't been independently verified against the actual data tables. The snapshot hashes are placeholders.
-
-The next person picking this up should spend 80% of their time on **data collection and verification**, not code. The infrastructure to validate, store, and serve the data is built. What's missing is the data itself.
+What's still missing for MVP: real API connectors (FRED/BLS/EDGAR/Census) replacing seed YAML, interactive wiring UI with sliders, multi-framework triangulation, and deployment. The `/resolve` endpoint is a prototype of the dynamic pipeline — it needs to become the primary data path, not a fallback.

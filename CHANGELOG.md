@@ -8,11 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Dynamic TAM resolution** (`POST /resolve`) — Claude parses natural
+  language queries into lens + primitives, Exa deep-searches for real
+  market data, evaluator computes TAM, streams SSE events showing chain
+  of thought. Frontend `ResolveView` renders steps as they arrive.
+- **5 new verticals** seeded: GTM ops ($2.1B), midmarket SaaS ($84B),
+  P&C payments ($1B), workplace consolidation ($12.75B), software-eng
+  productivity ($3.9B). 10 new primitives, 3 new frameworks (L4/L5/L6).
+- **Exa data sourcing script** (`scripts/exa_source_lookup.py`) — verifies
+  primitive values against real web sources. BLS headcounts corrected.
+- **API catalog** (`docs/11-api-catalog.md`) — 50+ APIs researched across
+  10 categories with auth, free tiers, Python SDKs, integration priority.
+- **Comprehensive test suite** — 47 → 110 tests (all-concepts evaluation,
+  enrichment verification, full API endpoint coverage, data validation).
 - **Frontend deployed to Vercel** — live at
   [strata-pied-three.vercel.app](https://strata-pied-three.vercel.app).
   ReactQueryDevtools switched to `next/dynamic` with dev-only guard
   (`bundle-defer-third-party`).
 - GitHub repo description, homepage URL, and topics updated.
+
+### Fixed
+- `InputUsed` enriched with `value`, `name`, `unit` from evaluator —
+  primitive cards now show actual data instead of role names.
+- `TAMTarget.concept_name` populated — build heading shows full name.
+- Range display (min–max) added under triangulated midpoint.
+- Target card in ScenarioGraph shows concept name, not slug.
+- `.gitignore` `/build/` scoped to root — no longer ignores `web/src/app/build/`.
+- LineageGraph React 19 refs-in-render lint errors fixed.
+
+### Changed
+- BLS software developer headcount corrected: 4.4M → 2.18M (Exa-verified).
+- BLS sales rep headcount corrected: 4.6M → 1.46M (Exa-verified).
 
 - **`feat(v0.2)`: lens-aware concept end-to-end on `doc-gen-pc-insurance`.**
   First vertical slice of the Strata data layer — Pydantic models (Unit, Geo,

@@ -17,18 +17,20 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ---
 
-## Repo state (as of 2026-05-22)
+## Repo state (as of 2026-05-24)
 
 - **Version:** `0.2.0a0` (alpha). `VERSION` file pinned; tags follow `vX.Y.Z`.
-- **Phase:** Schemas locked, scaffolding in place, **no business logic implemented yet.**
-- **Backend (`backend/src/strata/`):** directory tree + `__init__.py` stubs +
-  `cli.py` skeleton (only `strata version` wired). Models, loader, registry,
-  validators, evaluator, scoring, API routes — all empty. Ops layer wired
-  (`config.py`, `logging.py`, `db/`, `api/app.py`, `/healthz`, Alembic).
-- **Frontend (`web/`):** Next.js 16 + React 19 scaffold with landing page +
-  `build/` workhorse view skeleton + `ScenarioGraph.tsx` stub.
-- **Data (`data/`):** structure defined in spec, no YAML files present yet.
-- **No tests directory** yet (despite `pyproject.toml` configuring pytest).
+- **Phase:** Schemas locked, **backend fully functional**, frontend PoC working.
+- **Backend (`backend/src/strata/`):** All business logic implemented —
+  models, loader, registry, validators, evaluator, scoring, 10 API routes
+  (including `POST /resolve` for dynamic TAM resolution via Claude + Exa).
+  110 tests passing, pyright strict clean, ruff clean.
+- **Frontend (`web/`):** Next.js 16 + React 19 with landing page, build view
+  (ReactFlow graph with enriched primitive cards), `ResolveView` (SSE
+  streaming chain-of-thought for dynamic queries), data explorer, lineage graph.
+- **Data (`data/`):** 6 concepts, 14 primitives, 5 frameworks, 15 sources.
+  All validate clean. BLS headcounts Exa-verified.
+- **Tests:** 110 passing in `backend/tests/`.
 - License: Apache-2.0.
 
 ---

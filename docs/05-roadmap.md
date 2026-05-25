@@ -32,24 +32,26 @@ thesis, the three layers, the data model, and the user journey in < 20 min.
 - [x] **Lens taxonomy locked** (Q39): six first-class lenses + four modifiers
       on Concept; `analyst-paraphrase` source tier added (Q40). See
       [`plans/data-collection-strategy.md`](plans/data-collection-strategy.md).
-- [ ] Pydantic v2 models in `backend/src/strata/models/` for each record type,
+- [x] Pydantic v2 models in `backend/src/strata/models/` for each record type,
       including the lens enum + modifiers + `required_primitive_roles` map.
-- [ ] **Six canonical frameworks** (one per lens):
+      <!-- DONE 2026-05-24: all 6 record types + Unit, Geo, Source DU, Annotation. InputUsed enriched with value/name/unit. -->
+- [x] **Five of six canonical frameworks** (L3 latent_demand deferred — needs analog field):
   - `bottoms_up_cost_efficiency` (L1)
   - `top_down_revenue_capture` (L2)
-  - `adoption_curve_latent_demand` (L3) — requires `analog:` field
-  - `throughput_take_rate` (L4) — Q19 `marketplace_concept` consumer
+  - ~~`adoption_curve_latent_demand` (L3)~~ — deferred, needs analog field + concept with latent_demand lens
+  - `throughput_take_rate` (L4)
   - `consolidation_sum_then_discount` (L5)
   - `productivity_uplift_value_split` (L6)
-- [ ] **Six seed concepts**, one per lens, exercising every source tier:
+- [x] **Six seed concepts**, one per lens, exercising every source tier:
       `doc-gen-pc-insurance` (L1+L2), `gtm-ops-tooling-na` (L1),
-      `midmarket-saas-spend-na` (L2 via analyst-paraphrase),
-      `payments-throughput-pc-insurance` (L4), `workplace-suite-consolidation` (L5),
-      `software-eng-productivity` (L6).
+      `midmarket-saas-spend-na` (L2), `payments-throughput-pc-insurance` (L4),
+      `workplace-suite-consolidation` (L5), `software-eng-productivity` (L6).
+      <!-- DONE 2026-05-24: 14 primitives, 15 sources, all validate clean. BLS headcounts Exa-verified. -->
 - [ ] Ingest substrate per [`plans/execute.md`](plans/execute.md): BLS / FRED /
       EDGAR / NAIC direct-API connectors + snapshot store + validator pipeline.
-      No vendor spend at v0.2.
-- [ ] Build a minimal CLI: `strata validate data/` (lints YAML against schemas).
+      <!-- PARTIAL: Exa deep-search connector built (scripts/exa_source_lookup.py + /resolve endpoint). Direct API connectors (FRED, BLS, EDGAR) not yet built. See docs/11-api-catalog.md for full API list. -->
+- [x] Build a minimal CLI: `strata validate data/` (lints YAML against schemas).
+      <!-- DONE: strata version, strata validate, strata size all wired. -->
 - [ ] CONTRIBUTING.md for primitives + frameworks + annotations.
 - [ ] Takedown endpoint for the `analyst-paraphrase` tier (Q40 requirement).
 
