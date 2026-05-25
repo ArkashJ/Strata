@@ -51,6 +51,7 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
       <header className="w-full px-8 py-5 flex items-center justify-between border-b border-[var(--border-1)]">
         <button
           onClick={onBack}
+          aria-label="Back to search"
           className="display text-[20px] text-[var(--fg-1)] hover:text-[var(--accent)] transition-colors"
         >
           ← Strata
@@ -63,7 +64,7 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-row gap-8 px-8 py-8 max-w-[1280px] mx-auto w-full">
+      <div className="flex-1 flex flex-col md:flex-row gap-8 px-8 py-8 max-w-[1280px] mx-auto w-full">
         <section className="flex-1 flex flex-col gap-6 min-w-0">
           <div>
             <div className="text-[11px] tracking-[0.04em] uppercase text-[var(--fg-3)]">
@@ -110,7 +111,7 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
           )}
         </section>
 
-        <aside className="w-[320px] shrink-0 flex flex-col gap-3">
+        <aside className="w-full md:w-[320px] md:shrink-0 flex flex-col gap-3">
           <RailSection title="Frameworks" count={tam.scenarios.length} defaultOpen>
             <ul className="flex flex-col gap-2 mt-1">
               {tam.scenarios.map((s) => (
@@ -198,6 +199,7 @@ function RailSection({
     <section className="canvas-card" style={{ borderRadius: "var(--r-3)" }}>
       <button
         type="button"
+        aria-expanded={open}
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-4 py-3 text-left"
       >

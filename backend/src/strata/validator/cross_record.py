@@ -39,6 +39,7 @@ def cross_record_check(registry: Registry) -> list[CrossRecordIssue]:
     issues: list[CrossRecordIssue] = []
     issues.extend(_concept_measurement_links(registry))
     issues.extend(_framework_variant_checks(registry))
+    issues.extend(_framework_role_coverage(registry))
     issues.extend(_secondary_lens_overlap_warning(registry))
     return issues
 
@@ -167,6 +168,38 @@ def _framework_variant_checks(registry: Registry) -> list[CrossRecordIssue]:
                             ),
                         )
                     )
+    return out
+
+
+def _framework_role_coverage(registry: Registry) -> list[CrossRecordIssue]:
+    """Warn when a framework's input names don't cover all required roles for
+    its declared lens (Q39 / REQUIRED_PRIMITIVE_ROLES).
+
+    Surfaced as a WARNING, not an error, because v0.2 frameworks intentionally
+    use simplified 2-input versions; full role coverage lands in later milestones.
+    """
+    from ..models._common import REQUIRED_PRIMITIVE_ROLES
+
+    out: list[CrossRecordIssue] = []
+    for fw in registry.iter_frameworks():
+        required = REQUIRED_PRIMITIVE_ROLES.get(fw.lens)
+        if required is None:
+            continue
+        input_names = {inp.name for inp in fw.inputs}
+        missing = set(required) - input_names
+        if missing:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.framework_missing_roles",
+                    severity=CrossRecordSeverity.WARNING,
+                    slug=fw.slug,
+                    message=(
+                        f"framework {fw.slug!r} lens={fw.lens.value} missing roles: "
+                        f"{', '.join(sorted(missing))} "
+                        f"(v0.2 simplification — full roles land later)"
+                    ),
+                )
+            )
     return out
 
 

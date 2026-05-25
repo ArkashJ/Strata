@@ -92,11 +92,12 @@ export function ResolveView({ query, onBack }: { query: string; onBack: () => vo
               if (!eventBlock.trim()) continue;
               const lines = eventBlock.split("\n");
               let eventType = "";
-              let data = "";
+              const dataLines: string[] = [];
               for (const line of lines) {
                 if (line.startsWith("event: ")) eventType = line.slice(7).trim();
-                if (line.startsWith("data: ")) data = line.slice(6).trim();
+                if (line.startsWith("data: ")) dataLines.push(line.slice(6).trim());
               }
+              const data = dataLines.join("\n");
 
               if (!data) continue;
 
@@ -147,6 +148,7 @@ export function ResolveView({ query, onBack }: { query: string; onBack: () => vo
       <header className="w-full px-8 py-5 flex items-center justify-between border-b border-[var(--border-1)]">
         <button
           type="button"
+          aria-label="Back to search"
           onClick={onBack}
           className="display text-[20px] text-[var(--fg-1)] hover:text-[var(--accent)] transition-colors"
         >
