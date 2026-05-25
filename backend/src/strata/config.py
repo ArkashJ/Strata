@@ -33,7 +33,11 @@ class Settings(BaseSettings):
     )
 
     cors_origins: list[str] = Field(
-        default_factory=lambda: ["http://localhost:3000", "http://localhost:3001"]
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "https://strata-pied-three.vercel.app",
+        ]
     )
 
     data_dir: str = "data"
