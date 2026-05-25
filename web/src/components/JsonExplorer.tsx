@@ -42,6 +42,7 @@ function JsonNode({ value, depth, path }: { value: unknown; depth: number; path:
     return (
       <span>
         <button
+          type="button"
           onClick={() => setCollapsed(!collapsed)}
           className="text-[var(--fg-3)] hover:text-[var(--fg-1)]"
         >
@@ -50,6 +51,7 @@ function JsonNode({ value, depth, path }: { value: unknown; depth: number; path:
         {!collapsed && (
           <div style={{ paddingLeft: indent > 0 ? 16 : 0 }}>
             {value.map((item, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: JSON array explorer, index is the label
               <div key={`${path}-${i}`} className="flex">
                 <span className="text-[var(--fg-4)] select-none mr-2">{i}:</span>
                 <JsonNode value={item} depth={depth + 1} path={`${path}[${i}]`} />
@@ -67,6 +69,7 @@ function JsonNode({ value, depth, path }: { value: unknown; depth: number; path:
     return (
       <span>
         <button
+          type="button"
           onClick={() => setCollapsed(!collapsed)}
           className="text-[var(--fg-3)] hover:text-[var(--fg-1)]"
         >

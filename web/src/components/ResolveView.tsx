@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { formatCompact, formatUSD, lensLabel, tierLabel } from "@/lib/format";
 import { env } from "@/lib/env";
+import { formatCompact, formatUSD, lensLabel, tierLabel } from "@/lib/format";
 
 interface PrimitiveNeeded {
   role: string;
@@ -132,6 +132,7 @@ export function ResolveView({ query, onBack }: { query: string; onBack: () => vo
   }, [query]);
 
   // Auto-scroll to bottom as steps arrive
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional — scroll on every step/result change
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [steps, result]);
@@ -141,6 +142,7 @@ export function ResolveView({ query, onBack }: { query: string; onBack: () => vo
       {/* Header */}
       <header className="w-full px-8 py-5 flex items-center justify-between border-b border-[var(--border-1)]">
         <button
+          type="button"
           onClick={onBack}
           className="display text-[20px] text-[var(--fg-1)] hover:text-[var(--accent)] transition-colors"
         >
@@ -163,24 +165,21 @@ export function ResolveView({ query, onBack }: { query: string; onBack: () => vo
         {/* Step feed */}
         <div className="flex flex-col gap-3 mt-6">
           {steps.map((step, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: append-only stream, index is stable
             <StepCard key={i} step={step} />
           ))}
         </div>
 
         {/* Result card */}
         {result && (
-          <div
-            className="canvas-card px-6 py-5 mt-4"
-            style={{ borderRadius: "var(--r-3)" }}
-          >
-            <div className="text-[11px] tracking-[0.04em] uppercase text-[var(--fg-3)]">
-              Result
-            </div>
+          <div className="canvas-card px-6 py-5 mt-4" style={{ borderRadius: "var(--r-3)" }}>
+            <div className="text-[11px] tracking-[0.04em] uppercase text-[var(--fg-3)]">Result</div>
             <div className="text-[18px] text-[var(--fg-1)] font-medium mt-1">
               {result.concept_name}
             </div>
             <div className="tam-num text-[48px] text-[var(--fg-1)] mt-2">
-              {result.formatted_tam ?? (result.tam_value !== undefined ? formatUSD(result.tam_value) : "—")}
+              {result.formatted_tam ??
+                (result.tam_value !== undefined ? formatUSD(result.tam_value) : "—")}
             </div>
             <div className="text-[13px] text-[var(--fg-2)] mt-2">
               {result.framework_name}
@@ -189,6 +188,7 @@ export function ResolveView({ query, onBack }: { query: string; onBack: () => vo
             {result.primitives_used && result.primitives_used.length > 0 && (
               <div className="mt-4 flex flex-col gap-2">
                 {result.primitives_used.map((p, idx) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static result list
                   <div key={idx} className="flex items-center justify-between text-[13px]">
                     <span className="text-[var(--fg-2)]">{p.name}</span>
                     <a
@@ -240,28 +240,21 @@ function StepCard({ step }: { step: Step }) {
 
     case "parsed":
       return (
-        <div
-          className="canvas-card px-4 py-3"
-          style={{ borderRadius: "var(--r-2)" }}
-        >
-          <div className="text-[12px] text-[var(--fg-1)] font-medium">
-            {step.concept_name}
-          </div>
+        <div className="canvas-card px-4 py-3" style={{ borderRadius: "var(--r-2)" }}>
+          <div className="text-[12px] text-[var(--fg-1)] font-medium">{step.concept_name}</div>
           {step.definition && (
             <div className="text-[11px] text-[var(--fg-3)] mt-1">{step.definition}</div>
           )}
           {step.lens && (
             <div className="flex gap-2 mt-2">
-              <span className="role-chip uppercase tracking-[0.04em]">
-                {lensLabel(step.lens)}
-              </span>
+              <span className="role-chip uppercase tracking-[0.04em]">{lensLabel(step.lens)}</span>
             </div>
           )}
           {step.primitives_needed && step.primitives_needed.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
-              {step.primitives_needed.map((p, i) => (
+              {step.primitives_needed.map((p) => (
                 <span
-                  key={i}
+                  key={p.role}
                   className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-2)] text-[var(--fg-3)]"
                 >
                   {p.role.replace(/_/g, " ")}
@@ -308,21 +301,16 @@ function StepCard({ step }: { step: Step }) {
       return (
         <div className="flex items-center gap-2 text-[13px] text-[var(--fg-2)]">
           <span className="text-[var(--accent)]">◆</span>
-          Framework:{" "}
-          <span className="text-[var(--fg-1)] font-medium">{step.name}</span>
+          Framework: <span className="text-[var(--fg-1)] font-medium">{step.name}</span>
           {step.formula && (
-            <span className="text-[var(--fg-3)] font-mono text-[11px]">
-              {step.formula}
-            </span>
+            <span className="text-[var(--fg-3)] font-mono text-[11px]">{step.formula}</span>
           )}
         </div>
       );
 
     default:
       return (
-        <div className="text-[13px] text-[var(--fg-3)]">
-          {step.message ?? JSON.stringify(step)}
-        </div>
+        <div className="text-[13px] text-[var(--fg-3)]">{step.message ?? JSON.stringify(step)}</div>
       );
   }
 }

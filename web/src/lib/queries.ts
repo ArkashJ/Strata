@@ -81,5 +81,5 @@ export const tamQuery = (stateHash: string) =>
       return validated(tamOutputSchema, data);
     },
     enabled: !!stateHash,
-    staleTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
   });

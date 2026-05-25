@@ -81,7 +81,7 @@ export type Scenario = z.infer<typeof scenarioSchema>;
 
 export const tamTargetSchema = z.object({
   concept: z.string(),
-  concept_name: z.string().nullable().optional(),  // enrichment from evaluator
+  concept_name: z.string().nullable().optional(), // enrichment from evaluator
   geo: z.string().nullable().optional(),
   time: z.string().nullable().optional(),
   expansion_stage: z.string(),

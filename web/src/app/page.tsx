@@ -41,13 +41,12 @@ export default function Landing() {
 
       <section className="flex-1 flex flex-col items-center justify-center px-8 -mt-16">
         <h1 className="display text-[48px] md:text-[64px] text-center max-w-[820px] text-[var(--fg-1)]">
-          A defensible{" "}
-          <em className="text-[var(--accent)] not-italic font-display italic">TAM</em>{" "}
+          A defensible <em className="text-[var(--accent)] not-italic font-display italic">TAM</em>{" "}
           in four minutes.
         </h1>
         <p className="mt-6 text-[15px] text-[var(--fg-2)] text-center max-w-[560px]">
-          Type any market. Strata picks the frameworks, pre-fills the primitives, and shows you
-          the range with sources you can cite in a memo.
+          Type any market. Strata picks the frameworks, pre-fills the primitives, and shows you the
+          range with sources you can cite in a memo.
         </p>
 
         <form
@@ -63,6 +62,7 @@ export default function Landing() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Doc-gen tooling for P&C insurance carriers, US"
+              // biome-ignore lint/a11y/noAutofocus: intentional — search field is the single purpose of this page
               autoFocus
               className="w-full h-[56px] pl-5 pr-32 rounded-[var(--r-3)]
                          bg-[var(--bg-1)] border border-[var(--border-2)]
@@ -87,6 +87,7 @@ export default function Landing() {
           <span>Try:</span>
           {SUGGESTIONS.map((suggestion) => (
             <button
+              type="button"
               key={suggestion}
               onClick={() => {
                 setQuery(suggestion);
