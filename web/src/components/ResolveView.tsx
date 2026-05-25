@@ -77,45 +77,49 @@ export function ResolveView({ query, onBack }: { query: string; onBack: () => vo
         const decoder = new TextDecoder();
         let buffer = "";
 
-        while (true) {
-          const { done: streamDone, value } = await reader.read();
-          if (streamDone) break;
+        try {
+          while (true) {
+            const { done: streamDone, value } = await reader.read();
+            if (streamDone) break;
 
-          buffer += decoder.decode(value, { stream: true });
+            buffer += decoder.decode(value, { stream: true });
 
-          // Parse SSE events from buffer — events are separated by double newlines
-          const events = buffer.split("\n\n");
-          buffer = events.pop() ?? ""; // Keep incomplete event in buffer
+            // Parse SSE events from buffer — events are separated by double newlines
+            const events = buffer.split("\n\n");
+            buffer = events.pop() ?? ""; // Keep incomplete event in buffer
 
-          for (const eventBlock of events) {
-            if (!eventBlock.trim()) continue;
-            const lines = eventBlock.split("\n");
-            let eventType = "";
-            let data = "";
-            for (const line of lines) {
-              if (line.startsWith("event: ")) eventType = line.slice(7).trim();
-              if (line.startsWith("data: ")) data = line.slice(6).trim();
-            }
+            for (const eventBlock of events) {
+              if (!eventBlock.trim()) continue;
+              const lines = eventBlock.split("\n");
+              let eventType = "";
+              let data = "";
+              for (const line of lines) {
+                if (line.startsWith("event: ")) eventType = line.slice(7).trim();
+                if (line.startsWith("data: ")) data = line.slice(6).trim();
+              }
 
-            if (!data) continue;
+              if (!data) continue;
 
-            let parsed: Step;
-            try {
-              parsed = JSON.parse(data) as Step;
-            } catch {
-              continue;
-            }
+              let parsed: Step;
+              try {
+                parsed = JSON.parse(data) as Step;
+              } catch {
+                continue;
+              }
 
-            if (eventType === "step") {
-              setSteps((prev) => [...prev, parsed]);
-            } else if (eventType === "result") {
-              setResult(parsed);
-            } else if (eventType === "error") {
-              setError(parsed.message ?? "Unknown error");
-            } else if (eventType === "done") {
-              setDone(true);
+              if (eventType === "step") {
+                setSteps((prev) => [...prev, parsed]);
+              } else if (eventType === "result") {
+                setResult(parsed);
+              } else if (eventType === "error") {
+                setError(parsed.message ?? "Unknown error");
+              } else if (eventType === "done") {
+                setDone(true);
+              }
             }
           }
+        } finally {
+          reader.releaseLock();
         }
 
         setDone(true);
@@ -281,7 +285,7 @@ function StepCard({ step }: { step: Step }) {
           </div>
           <div className="flex items-center gap-3">
             <span className="tam-num text-[15px] text-[var(--fg-1)] tabular-nums">
-              {formatCompactValue(step.value ?? 0, step.unit)}
+              {step.value !== undefined ? formatCompactValue(step.value, step.unit) : "—"}
             </span>
             {step.source_url && (
               <a

@@ -19,7 +19,7 @@ export function BuildView() {
   const concepts = useQuery(conceptsQuery);
   const matchedSlug = concepts.data?.find(
     (c) => c.name.toLowerCase().includes(query.toLowerCase()),
-  )?.slug ?? concepts.data?.[0]?.slug ?? "";
+  )?.slug ?? "";
 
   const build = useQuery(buildQuery(matchedSlug));
 
@@ -157,17 +157,25 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
 }
 
 function CopyButton() {
+  const [copied, setCopied] = useState(false);
   return (
     <button
+      type="button"
       className="px-3 py-1.5 rounded-[var(--r-2)] bg-[var(--bg-2)] text-[var(--fg-2)]
                  hover:bg-[var(--bg-3)] hover:text-[var(--fg-1)] transition-colors"
       onClick={() => {
         if (typeof window !== "undefined") {
-          navigator.clipboard.writeText(window.location.href);
+          navigator.clipboard
+            .writeText(window.location.href)
+            .then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            })
+            .catch(() => {});
         }
       }}
     >
-      Copy link
+      {copied ? "Copied!" : "Copy link"}
     </button>
   );
 }
@@ -189,6 +197,7 @@ function RailSection({
   return (
     <section className="canvas-card" style={{ borderRadius: "var(--r-3)" }}>
       <button
+        type="button"
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-4 py-3 text-left"
       >

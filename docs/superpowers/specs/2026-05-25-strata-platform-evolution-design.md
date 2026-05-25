@@ -19,11 +19,18 @@ thought → ReactFlow graph renders.
 types, evaluator, validator stubs, API routes for healthz/concepts/primitives/
 frameworks/build/resolve.
 
-**Data:** 6 concepts across all 6 lenses (L1–L6), 14 atomic primitives,
+**Data:** 6 concepts across 5 of 6 lenses (L1–L2, L4–L6; L3 latent_demand has no concept yet), 14 atomic primitives,
 5 frameworks, 0 composites, 0 stored TAM outputs.
 
 **Dynamic resolve:** POST `/resolve` → Claude (Sonnet) parses → Exa finds
 primitives → evaluates → SSE stream. Tested with novel queries.
+
+**Known architectural debt:** The `/resolve` endpoint reimplements framework
+selection and TAM computation inline (hardcoded `FRAMEWORK_TEMPLATES` dict,
+toy multiply loop) rather than calling `evaluator/engine.py`. This shadow
+evaluator bypasses schema validation, snapshot pinning, independence scoring,
+and the full framework variant system. Sprint 1A addresses this by hardening
+`/resolve` and reconnecting it to the real evaluator for matched concepts.
 
 ### What this spec designs
 
@@ -99,6 +106,9 @@ updates the framework output and TAM target in real-time.
 - On slider change: recalculate framework output client-side using the
   multiplicative formula (same math as `evaluator/engine.py`)
 - Debounce 100ms to avoid jank
+- **Note:** `rangeMin`/`rangeMax` belong in React state (zustand), NOT in
+  the Pydantic `InputUsed` model. Stored records must be reproducible from
+  source data alone — slider bounds are ephemeral view-layer config.
 
 #### 1b. Primitive swap
 
@@ -126,7 +136,7 @@ web/src/components/PrimitiveSwapDrawer.tsx — new swap drawer
 web/src/lib/evaluator.ts                  — client-side multiplicative calc
 web/src/app/build/BuildView.tsx           — integrate sliders + swap
 web/src/lib/schemas.ts                    — add rangeMin/rangeMax to InputUsed
-backend/src/strata/models/tam_output.py   — add range fields to InputUsed
+backend/src/strata/models/tam_output.py   — NO CHANGE (slider range is view state, not data)
 ```
 
 ---
@@ -237,7 +247,9 @@ web/src/components/DraftReview.tsx  — draft approval component (Phase 2)
 ### Problem
 
 Currently the API is open, no auth, no rate limiting. Phase 2 requires
-selling access to other VCs.
+selling access to other VCs. Note: the Postgres connection layer already
+exists (`backend/src/strata/db/` with SQLAlchemy 2.0 async engine and
+session factory) — Sprint 4 adds tables and routes, not infrastructure.
 
 ### Design
 
@@ -529,12 +541,17 @@ frameworks + scenario trees + community curation for TAM. The gaps:
 ## Build sequence (implementation order)
 
 ```
-Sprint 1: Contribution schema + ingest skeleton
-  - Add ContributionMeta to all models
+Sprint 1A: Resolve endpoint hardening + ingest skeleton
+  - Fix /resolve: async clients, error handling, no internal leaks
   - Create ingest/ module skeleton with Connector protocol
+  - Add `strata ingest pull` CLI command (skeleton)
   - Wire BLS connector (first real data pull)
+
+Sprint 1B: FRED connector + contribution schema
   - Wire FRED connector
-  - Add `strata ingest pull` CLI command
+  - Introduce shared StrataRecord base, add ContributionMeta
+  - Update all YAML fixtures with contribution blocks
+  - Clean pyright warnings before adding complexity
 
 Sprint 2: Interactive wiring
   - PrimitiveSlider component
@@ -549,6 +566,7 @@ Sprint 3: EDGAR connector + ingest UI
   - `strata ingest discover` CLI command
 
 Sprint 4: API auth + metering
+  - Initialize Alembic, create initial migration from existing db/ module
   - API key system (Postgres)
   - Rate limiting middleware (slowapi)
   - Usage tracking

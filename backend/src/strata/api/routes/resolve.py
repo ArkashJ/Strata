@@ -5,10 +5,11 @@ back SSE events as it parses, searches, and evaluates.
 """
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import os
 import re
-from pathlib import Path
 from typing import cast
 
 import anthropic
@@ -21,8 +22,8 @@ from pydantic import BaseModel
 
 router = APIRouter(tags=["resolve"])
 
-# Load .env from repo root for EXA_API_KEY
-load_dotenv(Path(__file__).parent.parent.parent.parent.parent.parent / ".env")
+# Load .env — walks up directory tree automatically
+load_dotenv()
 
 FRAMEWORK_TEMPLATES: dict[str, dict[str, str]] = {
     "cost_efficiency": {"name": "Bottoms-up cost efficiency", "formula": "persona_pool x cost_per_persona"},
@@ -32,6 +33,24 @@ FRAMEWORK_TEMPLATES: dict[str, dict[str, str]] = {
     "bundle_consolidation": {"name": "Consolidation sum-then-discount", "formula": "total_spend x consolidation_rate"},
     "productivity_uplift": {"name": "Productivity uplift value-split", "formula": "persona_count x value_per_persona"},
 }
+
+# Module-level lazy singletons — avoid re-creating clients on every call
+_anthropic_client: anthropic.Anthropic | None = None
+_exa_client: Exa | None = None
+
+
+def _get_anthropic() -> anthropic.Anthropic:
+    global _anthropic_client
+    if _anthropic_client is None:
+        _anthropic_client = anthropic.Anthropic()
+    return _anthropic_client
+
+
+def _get_exa() -> Exa:
+    global _exa_client
+    if _exa_client is None:
+        _exa_client = Exa(api_key=os.environ.get("EXA_API_KEY"))
+    return _exa_client
 
 
 class ResolveRequest(BaseModel):
@@ -59,7 +78,7 @@ def _select_framework(lens: str) -> dict[str, str]:
 
 
 def _parse_query_with_claude(query: str) -> dict[str, object]:
-    client = anthropic.Anthropic()  # uses ANTHROPIC_API_KEY from env
+    client = _get_anthropic()
 
     response = client.messages.create(
         model="claude-sonnet-4-20250514",
@@ -88,7 +107,8 @@ Return ONLY valid JSON, no markdown.""",
     )
 
     block = response.content[0]
-    assert isinstance(block, TextBlock), f"unexpected content block type: {type(block)}"
+    if not isinstance(block, TextBlock):
+        raise ValueError("Expected text response from Claude")
     text: str = block.text
     # Strip markdown code fences if present
     text = re.sub(r"^```(?:json)?\s*", "", text.strip())
@@ -97,7 +117,7 @@ Return ONLY valid JSON, no markdown.""",
 
 
 def _search_primitive_with_exa(prim_spec: dict[str, object]) -> dict[str, object] | None:
-    exa = Exa(api_key=os.environ.get("EXA_API_KEY"))
+    exa = _get_exa()
 
     try:
         results = exa.search(
@@ -122,7 +142,7 @@ def _search_primitive_with_exa(prim_spec: dict[str, object]) -> dict[str, object
             return None
 
         # Ask Claude to extract the number
-        client = anthropic.Anthropic()
+        client = _get_anthropic()
         extract = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=256,
@@ -143,7 +163,8 @@ Return ONLY valid JSON.""",
         )
 
         extract_block = extract.content[0]
-        assert isinstance(extract_block, TextBlock), f"unexpected content block type: {type(extract_block)}"
+        if not isinstance(extract_block, TextBlock):
+            raise ValueError("Expected text response from Claude")
         exa_text: str = extract_block.text
         exa_text = re.sub(r"^```(?:json)?\s*", "", exa_text.strip())
         exa_text = re.sub(r"\s*```$", "", exa_text.strip())
@@ -158,7 +179,15 @@ Return ONLY valid JSON.""",
             "source_tier": extracted.get("source_tier", "community"),
         }
 
+    except json.JSONDecodeError:
+        logging.getLogger(__name__).warning(
+            "Failed to parse extraction result for %s", prim_spec.get("role", "unknown")
+        )
+        return None
     except Exception:
+        logging.getLogger(__name__).warning(
+            "Exa search failed for %s", prim_spec.get("role", "unknown"), exc_info=True
+        )
         return None
 
 
@@ -169,7 +198,18 @@ async def resolve_query(body: ResolveRequest) -> StreamingResponse:
             # Step 1: Parse query with Claude
             yield _sse("step", {"type": "parsing", "message": f'Parsing: "{body.query}"...'})
 
-            parsed = _parse_query_with_claude(body.query)
+            parsed = await asyncio.to_thread(_parse_query_with_claude, body.query)
+
+            try:
+                # Validate parsed is a dict (json.loads already ran inside the sync fn,
+                # but we guard against it returning something unexpected)
+                if not isinstance(parsed, dict):
+                    raise ValueError("Unexpected response shape from Claude")
+            except Exception:
+                yield _sse("error", {"message": "Failed to parse AI response. Please try again."})
+                yield _sse("done", {})
+                return
+
             yield _sse(
                 "step",
                 {
@@ -200,7 +240,7 @@ async def resolve_query(body: ResolveRequest) -> StreamingResponse:
                     },
                 )
 
-                result = _search_primitive_with_exa(prim_spec)
+                result = await asyncio.to_thread(_search_primitive_with_exa, prim_spec)
                 if result:
                     found_primitives.append(result)
                     yield _sse(
@@ -257,8 +297,9 @@ async def resolve_query(body: ResolveRequest) -> StreamingResponse:
 
             yield _sse("done", {})
 
-        except Exception as e:
-            yield _sse("error", {"message": str(e)})
+        except Exception:
+            logging.getLogger(__name__).exception("resolve failed")
+            yield _sse("error", {"message": "An internal error occurred. Please try again."})
             yield _sse("done", {})
 
     return StreamingResponse(

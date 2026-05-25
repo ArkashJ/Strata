@@ -1,4 +1,6 @@
 export function formatUSD(value: number): string {
+  if (!Number.isFinite(value)) return "—";
+  if (value < 0) return `-${formatUSD(-value)}`;
   if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(0)}M`;
   if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
@@ -9,6 +11,7 @@ export function formatCompact(
   value: number,
   unit?: { dimension?: string; currency?: string | null; denominator?: string | null } | null,
 ): string {
+  if (!Number.isFinite(value)) return "—";
   if (unit?.dimension === "currency") {
     return formatUSD(value);
   }
