@@ -17,21 +17,74 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ---
 
-## Repo state (as of 2026-05-24)
+## Repo state (as of 2026-05-25)
 
 - **Version:** `0.2.0a0` (alpha). `VERSION` file pinned; tags follow `vX.Y.Z`.
-- **Phase:** Schemas locked, **backend fully functional**, frontend PoC working.
+- **Phase:** Schemas locked, **backend fully functional**, frontend PoC working,
+  dynamic query resolution proven end-to-end.
 - **Backend (`backend/src/strata/`):** All business logic implemented —
   models, loader, registry, validators, evaluator, scoring, 10 API routes
   (including `POST /resolve` for dynamic TAM resolution via Claude + Exa).
-  110 tests passing, pyright strict clean, ruff clean.
+  117 tests passing, pyright strict clean, ruff clean. `/resolve` hardened:
+  async event loop (asyncio.to_thread), no internal error leaks, JSON parse
+  safety, client singletons, specific exception handling.
 - **Frontend (`web/`):** Next.js 16 + React 19 with landing page, build view
   (ReactFlow graph with enriched primitive cards), `ResolveView` (SSE
   streaming chain-of-thought for dynamic queries), data explorer, lineage graph.
+  Critic-hardened: correct fallback to ResolveView, JSON.parse safety,
+  reader.releaseLock(), NaN/Infinity guards, mobile responsive, accessible.
 - **Data (`data/`):** 6 concepts, 14 primitives, 5 frameworks, 15 sources.
   All validate clean. BLS headcounts Exa-verified.
-- **Tests:** 110 passing in `backend/tests/`.
+- **Tests:** 117 passing in `backend/tests/` (including 7 /resolve SSE tests).
+- **Design spec:** `docs/superpowers/specs/2026-05-25-strata-platform-evolution-design.md`
+  covers 5 gaps (interactive wiring, ingest pipeline, auth, contribution schema,
+  data connectors) across 6 sprints. Critic-reviewed and corrected.
 - License: Apache-2.0.
+
+### Architecture flow
+
+```
+User types market query
+        │
+        ▼
+┌─ FRONTEND (Next.js 16) ────────────────────────────┐
+│  Landing (/) → Build (/build?q=)                    │
+│  If concept in registry → static ReactFlow graph    │
+│  If not → ResolveView streams SSE from /resolve     │
+└────────────────────────┬────────────────────────────┘
+                         │ HTTP / SSE
+┌─ BACKEND (FastAPI) ────┴────────────────────────────┐
+│  /c /p /f /build/{slug}  → Registry → Evaluator    │
+│  POST /resolve           → Claude parse → Exa search│
+│                            → evaluate → SSE stream  │
+│  Evaluator: multiply all inputs → scenario tree     │
+└────────────────────────┬────────────────────────────┘
+                         │
+┌─ DATA (YAML on disk) ──┴────────────────────────────┐
+│  6 concepts · 14 primitives · 5 frameworks          │
+│  Each primitive: value + unit + source + sha256 pin │
+└─────────────────────────────────────────────────────┘
+```
+
+### Six analysis lenses (Q39)
+
+| Lens | Math shape | Example |
+|------|-----------|---------|
+| L1 `cost_efficiency` | persona × cost | Harvey, Glean |
+| L2 `revenue_generation` | segment × spend | Brex, Rippling |
+| L3 `latent_demand` | population × adoption × WTP | Uber (not built yet) |
+| L4 `platform_throughput` | volume × take_rate | Stripe, Visa |
+| L5 `bundle_consolidation` | total_spend × consolidation | Notion, Linear |
+| L6 `productivity_uplift` | personas × value_split | Copilot, Cursor |
+
+### Phase strategy (Approach C — progressive decentralization)
+
+```
+Phase 1 (now):  Internal tool — CLI + API + ingest (FRED/BLS/EDGAR)
+Phase 2:        Paid product — API keys + metering + subscriptions
+Phase 3:        Community — contributor profiles + attribution + royalties
+Phase 4:        Optional chain anchor — Base/Solana hash anchoring
+```
 
 ---
 

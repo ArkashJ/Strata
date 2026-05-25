@@ -91,10 +91,48 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
 
 ## Status
 
-**Pre-alpha — v0.2.0a0.** Schemas locked, scaffolding in place, no business
-logic implemented yet. v0.1.0 was a thesis + spec snapshot; v0.2 wires the
-backend + frontend skeletons. See [`docs/05-roadmap.md`](docs/05-roadmap.md)
-for phasing.
+**Pre-alpha — v0.2.0a0.** Proof of concept working end-to-end.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     HOW IT WORKS                             │
+│                                                              │
+│  1. You type a market     "AI code review tools TAM"        │
+│                                    │                         │
+│  2. AI parses the query    lens: productivity_uplift         │
+│     into sizing params     need: developer count + tool cost │
+│                                    │                         │
+│  3. Exa searches the web   BLS: 28.7M developers            │
+│     for real data           Cledara: $4,500/dev/yr           │
+│                                    │                         │
+│  4. Framework computes     28.7M × $4,500 = $129.2B TAM     │
+│     the scenario tree      with every source cited           │
+│                                    │                         │
+│  5. Graph renders with     ReactFlow: Target → Frameworks   │
+│     clickable sources               → Primitive cards       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**What works today:**
+- **Static builds** — 6 pre-seeded concepts across 5 of 6 TAM lenses, each with
+  real values, enriched primitive cards, min-max range display
+- **Dynamic queries** — type ANY market → Claude parses → Exa finds real data →
+  evaluates framework → streams chain of thought via SSE
+- **117 tests**, pyright strict clean, ruff clean, frontend typecheck + build clean
+- **50+ APIs cataloged** for integration ([`docs/11-api-catalog.md`](docs/11-api-catalog.md))
+
+See [`docs/05-roadmap.md`](docs/05-roadmap.md) for phasing.
+
+### The six TAM lenses
+
+| # | Lens | Formula shape | Companies sized this way |
+|---|------|---------------|-------------------------|
+| L1 | Cost efficiency | persona × cost/persona | Harvey, Glean, Decagon |
+| L2 | Revenue generation | segment × spend/segment | Brex, Rippling, Ramp |
+| L3 | Latent demand | population × adoption × WTP | Uber, Duolingo (not yet built) |
+| L4 | Platform throughput | volume × take rate | Stripe, Shopify, Visa |
+| L5 | Bundle consolidation | total spend × consolidation rate | Notion, Linear, Monday |
+| L6 | Productivity uplift | personas × gain × vendor share | GitHub Copilot, Cursor |
 
 ## Deployment
 
@@ -192,38 +230,51 @@ bun run test
 
 ```
 .
-├── 📄 README.md · CHANGELOG.md · CLAUDE.md · LICENSE · VERSION
-├── 🐳 docker-compose.yml         Postgres + api + web
-├── 🔐 .env.example               STRATA_* env documentation
+├── README.md · CHANGELOG.md · CLAUDE.md · LICENSE · VERSION
+├── docker-compose.yml            Postgres + api + web
+├── .env.example                  STRATA_* env documentation
 │
-├── 🐍 backend/                   Python service (run `uv` from here)
+├── backend/                      Python 3.12 service (run `uv` from here)
 │   ├── pyproject.toml            uv-managed, pyright strict, ruff
-│   ├── uv.lock
-│   ├── alembic.ini · alembic/    migration config + env + versions
-│   ├── Dockerfile                uv-based, layered, healthcheck'd
-│   └── src/strata/
-│       ├── api/                  FastAPI app + routes (/healthz live)
-│       ├── config.py             pydantic-settings (STRATA_* env)
-│       ├── logging.py            structlog
-│       ├── db/                   SQLAlchemy 2.0 async engine + Base
-│       ├── models/ validator/ evaluator/ scoring/   (v0.3 work)
-│       └── cli.py                `strata` Typer entry point
+│   ├── src/strata/
+│   │   ├── api/routes/           10 endpoints: healthz, concepts, primitives,
+│   │   │                         frameworks, build, tam, resolve (SSE)
+│   │   ├── models/               6 record types + Unit, Geo, Source DU
+│   │   ├── evaluator/engine.py   size_concept() → TAMOutput (multiplicative)
+│   │   ├── validator/            structural + semantic + cross-record
+│   │   ├── scoring/              independence + disagreement
+│   │   ├── loader.py             YAML → Pydantic via kind discriminator
+│   │   ├── registry.py           in-memory slug-keyed store
+│   │   └── cli.py                `strata` Typer (version, validate, size)
+│   ├── scripts/
+│   │   └── exa_source_lookup.py  Exa deep-search data verification
+│   └── tests/                    117 tests (models, API, evaluator, resolve)
 │
-├── ⚛️  web/                       Next.js 16 + React 19 + bun
-│   ├── biome.json                lint + format (JS/TS)
-│   ├── eslint.config.mjs         next/core-web-vitals only
-│   ├── .prettierrc.json          md/css/yaml only
-│   ├── knip.json                 dead-code detection
-│   ├── vitest.config.ts          unit/component tests
-│   ├── Dockerfile                bun build → node runtime
+├── web/                          Next.js 16 + React 19 + bun
 │   └── src/
-│       ├── app/                  App Router pages
-│       ├── components/           UI components
-│       ├── stores/               Zustand client state
-│       └── lib/                  env, query-client, api-client, providers
+│       ├── app/page.tsx          Landing — search box + suggestion chips
+│       ├── app/build/            Build view — ReactFlow graph + right rail
+│       ├── components/
+│       │   ├── ScenarioGraph.tsx  Target → Framework → Primitive cards
+│       │   ├── ResolveView.tsx   SSE streaming chain-of-thought
+│       │   └── LineageGraph.tsx  Force-directed network
+│       └── lib/
+│           ├── schemas.ts        Zod schemas matching backend
+│           ├── queries.ts        TanStack Query hooks per endpoint
+│           └── format.ts         USD + compact number formatting
 │
-├── 📊 data/                       YAML records (primitives/frameworks/concepts/...)
-└── 📚 docs/                       design docs + decision records
+├── data/                         Source-of-truth YAML records
+│   ├── concepts/     6 files    (one per vertical)
+│   ├── primitives/  14 files    (sourced numbers)
+│   ├── frameworks/   5 files    (sizing formulas)
+│   └── sources/     15 files    (citation records)
+│
+└── docs/                         Design docs + decision records
+    ├── 07-data-layer-brainstorm  Q1-Q40 schema decisions (LOAD BEARING)
+    ├── 08-product-surface        U1-U12 UX decisions (LOAD BEARING)
+    ├── 11-api-catalog            50+ APIs for market sizing
+    ├── HANDOFF.md                Current state + MVP sprint plan
+    └── superpowers/specs/        Platform evolution design spec
 ```
 
 ## License
