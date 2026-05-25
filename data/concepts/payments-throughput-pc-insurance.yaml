@@ -1,0 +1,24 @@
+kind: concept
+slug: payments-throughput-pc-insurance
+schema_version: 1
+name: "P&C insurance payment processing throughput"
+definition: >
+  US property & casualty insurance premium payment processing — digital
+  premium collection, claims disbursement, and commission payments flowing
+  through payment-processor rails. Measures the addressable gross monetary
+  throughput on which payment infrastructure providers earn take-rate revenue.
+  Excludes life and health insurance lines; excludes non-digital (cheque/ACH
+  legacy) payment volumes.
+
+analysis_lens:
+  primary: platform_throughput
+  secondary: null
+
+modifiers: {}
+
+measurements:
+  - pc-premium-volume-digital-us-2024
+  - payment-processing-take-rate-2024
+
+competing_concepts: []
+requires_clearance: []

@@ -1,0 +1,24 @@
+kind: concept
+slug: workplace-suite-consolidation
+schema_version: 1
+name: "Enterprise workplace software suite consolidation"
+definition: >
+  Global enterprise market for workplace software suite consolidation —
+  replacing dispersed point solutions (messaging, video conferencing, project
+  management, digital whiteboard, file sharing) with unified suites. Measures
+  the portion of existing point-solution spend that migrates to consolidated
+  suite vendors within a 3-year horizon. Excludes ERP and CRM consolidation;
+  narrow scope to collaboration and productivity tooling.
+
+analysis_lens:
+  primary: bundle_consolidation
+  secondary: null
+
+modifiers: {}
+
+measurements:
+  - enterprise-workplace-point-solution-spend-2024
+  - consolidation-capture-rate-2024
+
+competing_concepts: []
+requires_clearance: []

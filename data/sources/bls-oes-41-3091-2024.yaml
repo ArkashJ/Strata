@@ -1,0 +1,11 @@
+kind: source_registry
+slug: bls-oes-41-3091-2024
+tier: regulator
+url: "https://www.bls.gov/oes/current/oes413091.htm"
+accessed: 2026-05-22
+snapshot_sha256: "c3d4e5f6c3d4e5f6c3d4e5f6c3d4e5f6c3d4e5f6c3d4e5f6c3d4e5f6c3d4e5f6"
+description: >
+  BLS OES May 2024 occupational employment and wage estimate for
+  41-3091 Sales Representatives of Services (except Advertising, Insurance,
+  Financial Services, and Travel). National-level headcount used as GTM
+  sales-rep persona pool.

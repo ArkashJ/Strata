@@ -1,0 +1,10 @@
+kind: source_registry
+slug: bls-oes-15-1252-2024
+tier: regulator
+url: "https://www.bls.gov/oes/current/oes151252.htm"
+accessed: 2026-05-22
+snapshot_sha256: "e1f2a3b4e1f2a3b4e1f2a3b4e1f2a3b4e1f2a3b4e1f2a3b4e1f2a3b4e1f2a3b4"
+description: >
+  BLS OES May 2024 occupational employment and wage estimate for
+  15-1252 Software Developers. National-level headcount used as the
+  software-engineering productivity-tooling persona pool.

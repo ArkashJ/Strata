@@ -1,0 +1,10 @@
+kind: source_registry
+slug: naic-premium-statistics-2024
+tier: regulator
+url: "https://content.naic.org/cipr-topics/statistical-data"
+accessed: 2026-05-22
+snapshot_sha256: "a7b8c9d0a7b8c9d0a7b8c9d0a7b8c9d0a7b8c9d0a7b8c9d0a7b8c9d0a7b8c9d0"
+description: >
+  NAIC CIPR statistical data 2024 — US P&C insurance direct written premium
+  volume. Digital-channel share of total DWP used as the payment-processing
+  throughput base for premium collection, claims disbursement, and commissions.

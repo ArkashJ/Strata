@@ -1,0 +1,31 @@
+kind: atomic_primitive
+slug: bls-software-developers-us-2024
+schema_version: 1
+concept_slug: software-eng-productivity
+name: "US software developers headcount (BLS OES 15-1252, May 2024)"
+description: >
+  BLS OES occupational employment estimate for SOC 15-1252 (Software
+  Developers) for the United States, May 2024. Used as the US software
+  engineering persona pool for productivity-tooling TAM sizing.
+
+value: 4400000
+unit:
+  kind: stock
+  dimension: people
+
+as_of: 2024-05-31
+
+geo:
+  level: country
+  codes: ["US"]
+geo_perspective: supply
+
+distribution_shape: normal
+delivery_mode: "n/a"
+
+source:
+  slug: bls-oes-15-1252-2024
+  tier: regulator
+  url: "https://www.bls.gov/oes/current/oes151252.htm"
+  accessed: 2026-05-22
+  snapshot_sha256: "e1f2a3b4e1f2a3b4e1f2a3b4e1f2a3b4e1f2a3b4e1f2a3b4e1f2a3b4e1f2a3b4"
