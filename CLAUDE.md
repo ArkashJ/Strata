@@ -24,10 +24,13 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   dynamic query resolution proven end-to-end.
 - **Backend (`backend/src/strata/`):** All business logic implemented —
   models, loader, registry, validators, evaluator, scoring, 10 API routes
-  (including `POST /resolve` for dynamic TAM resolution via Claude + Exa).
-  117 tests passing, pyright strict clean, ruff clean. `/resolve` hardened:
-  async event loop (asyncio.to_thread), no internal error leaks, JSON parse
-  safety, client singletons, specific exception handling.
+  (including `POST /resolve` for dynamic TAM resolution via Claude + Exa),
+  plus the **connectors** ingest layer (`connectors/bls.py` — BLS API v2
+  client with all 7 signatures, typed models, disk cache, Strata YAML
+  converters). 117 tests passing, pyright strict clean, ruff clean.
+  `/resolve` hardened: async event loop (asyncio.to_thread), no internal
+  error leaks, JSON parse safety, client singletons, specific exception
+  handling.
 - **Frontend (`web/`):** Next.js 16 + React 19 with landing page, build view
   (ReactFlow graph with enriched primitive cards), `ResolveView` (SSE
   streaming chain-of-thought for dynamic queries), data explorer, lineage graph.
@@ -60,9 +63,15 @@ User types market query
 │  Evaluator: multiply all inputs → scenario tree     │
 └────────────────────────┬────────────────────────────┘
                          │
-┌─ DATA (YAML on disk) ──┴────────────────────────────┐
+┌─ DATA BANK (YAML on disk → Postgres at v0.3) ──────┐
 │  6 concepts · 14 primitives · 5 frameworks          │
 │  Each primitive: value + unit + source + sha256 pin │
+└────────────────────────┬────────────────────────────┘
+                         │ populated by
+┌─ CONNECTORS (ingest) ──┴────────────────────────────┐
+│  BLSClient → cache → series_to_primitive_yaml()     │
+│  FREDClient, Census, EDGAR (planned)                │
+│  Live API = fallback for data not yet in the bank   │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -98,6 +107,10 @@ Phase 4:        Optional chain anchor — Base/Solana hash anchoring
 - **pytest** + **httpx** + **pytest-asyncio** for tests.
 - **YAML files on disk** are the source of truth at v0.2 (no DB yet; Postgres
   mirror lands at v0.3 per `docs/07-data-layer-brainstorm.md` Q27).
+- **Connectors** (`connectors/`) — typed API clients that ingest external data
+  into the data bank. BLS done; FRED, Census, EDGAR planned. Uses **httpx**
+  for HTTP, disk cache for raw responses, converter functions for YAML output.
+  See `backend/src/strata/connectors/CLAUDE.md`.
 
 ### Frontend (`web/`)
 - **Next.js 16.2.6** + **React 19.2.4**.

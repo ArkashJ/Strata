@@ -980,6 +980,7 @@ dependencies = [
     { name = "asyncpg" },
     { name = "exa-py" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
@@ -992,7 +993,6 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "pyright" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1007,7 +1007,7 @@ requires-dist = [
     { name = "asyncpg", specifier = ">=0.29,<1" },
     { name = "exa-py", specifier = ">=2.13.0" },
     { name = "fastapi", specifier = ">=0.115,<1" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27,<1" },
+    { name = "httpx", specifier = ">=0.27,<1" },
     { name = "pydantic", specifier = ">=2.7,<3" },
     { name = "pydantic-settings", specifier = ">=2.4,<3" },
     { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.380" },

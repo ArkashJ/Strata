@@ -33,14 +33,12 @@ class Settings(BaseSettings):
     )
 
     cors_origins: list[str] = Field(
-        default_factory=lambda: [
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "https://strata-pied-three.vercel.app",
-        ]
+        default_factory=lambda: ["*"]
     )
 
     data_dir: str = "data"
+
+    bls_api_key: str | None = None
 
 
 @lru_cache(maxsize=1)
