@@ -17,8 +17,12 @@ export function BuildView() {
   const query = params.get("q") ?? "";
 
   const concepts = useQuery(conceptsQuery);
+  const q = query.toLowerCase();
   const matchedSlug = concepts.data?.find(
-    (c) => c.name.toLowerCase().includes(query.toLowerCase()),
+    (c) =>
+      c.slug === q ||
+      c.name.toLowerCase().includes(q) ||
+      q.includes(c.name.toLowerCase()),
   )?.slug ?? "";
 
   const build = useQuery(buildQuery(matchedSlug));

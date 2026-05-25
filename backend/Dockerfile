@@ -13,15 +13,13 @@ WORKDIR /app
 
 # ---- deps layer ----
 COPY backend/pyproject.toml backend/uv.lock backend/README.md ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
+RUN uv sync --frozen --no-install-project --no-dev
 
 # ---- app layer ----
 COPY backend/src ./src
 COPY backend/alembic.ini ./alembic.ini
 COPY backend/alembic ./alembic
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev
 
 # ---- data layer (YAML seed files) ----
 COPY data/ ./data/

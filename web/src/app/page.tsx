@@ -21,7 +21,7 @@ export default function Landing() {
 
   return (
     <main className="flex-1 flex flex-col">
-      <header className="w-full px-8 py-6 flex items-center justify-between">
+      <header className="relative z-10 w-full px-8 py-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Logo />
           <span className="display text-[20px] text-[var(--fg-1)]">Strata</span>
