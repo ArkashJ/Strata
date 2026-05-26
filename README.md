@@ -151,16 +151,60 @@ See [`docs/05-roadmap.md`](docs/05-roadmap.md) for phasing.
 
 ## Deployment
 
-**Frontend:** [strata-pied-three.vercel.app](https://strata-pied-three.vercel.app) (Vercel, auto-deploys from `main`)
+### Frontend — Vercel
+[strata-pied-three.vercel.app](https://strata-pied-three.vercel.app) (auto-deploys from `main`)
 
-The frontend deploys as a static Next.js app. The backend API is not yet deployed — pages that fetch data will show loading states until a backend is available. Set `NEXT_PUBLIC_API_URL` in Vercel environment variables when the API goes live.
+Set `NEXT_PUBLIC_API_URL` in Vercel environment variables to point at the Railway API.
 
-To deploy manually:
+### Backend — Railway
+Railway deploys the API + Postgres from docker-compose.yml.
 
-```sh
-cd web
-vercel deploy --prod --scope arkashjs-projects
+**Service variables to set in Railway:**
 ```
+STRATA_ENV=prod
+STRATA_LOG_JSON=true
+STRATA_DATABASE_URL=${{Postgres.DATABASE_URL}}
+STRATA_CORS_ORIGINS=["https://strata-pied-three.vercel.app"]
+STRATA_BLS_API_KEY=<your key>
+STRATA_FRED_API_KEY=<your key>
+STRATA_CENSUS_API_KEY=<your key>
+```
+
+**After first deploy, seed the database:**
+```sh
+# Railway CLI or in the service shell
+alembic upgrade head
+python -m strata.cli db seed -d /app/data
+```
+
+The API auto-discovers data from Postgres. YAML files are baked into the
+Docker image as seed data — `strata db seed` loads them once, then Postgres
+is the source of truth for all reads.
+
+### Architecture at scale (1K concurrent users)
+
+```
+Vercel (frontend CDN)
+       │ HTTPS
+       ▼
+Railway (FastAPI + Postgres)
+  ┌─ FastAPI ──────────────────┐
+  │  Registry loads from DB    │  ← in-memory cache, TTL refresh
+  │  Connectors refresh data   │  ← background jobs (planned)
+  └────────────┬───────────────┘
+               │ asyncpg
+  ┌─ Postgres ─┴───────────────┐
+  │  primitives (307+ rows)    │  GIN index on JSONB (unit, geo, source)
+  │  sources (87+ rows)        │  B-tree on slug, concept_slug, as_of
+  │  concepts (6 rows)         │  
+  │  frameworks (5 rows)       │  
+  └────────────────────────────┘
+```
+
+YAML files remain in the repo for:
+- Version-controlled seed data
+- Local development without Postgres
+- CI test fixtures
 
 ## Stack
 
@@ -168,8 +212,8 @@ vercel deploy --prod --scope arkashjs-projects
 - **Python 3.12** managed by **uv**.
 - **FastAPI** + **Pydantic v2** + **pydantic-settings** for HTTP and config.
 - **SQLAlchemy 2.0** (async) + **asyncpg** + **Alembic** migrations.
-  *(Postgres mirror lands at v0.3 per `docs/07-data-layer-brainstorm.md` Q27;
-  infra is wired so the cutover is just adding models.)*
+  Postgres ORM models live in `db/models.py` — primitives, sources,
+  concepts, frameworks with JSONB columns and GIN indexes.
 - **structlog** for structured logs (JSON in prod, console in dev).
 - **OpenAPI** docs at `/docs` (Swagger) and `/redoc`, schema at `/openapi.json`.
 - **pyright strict** + **ruff** lint/format; **pytest** + **httpx** for tests.
@@ -197,6 +241,16 @@ cp .env.example .env        # optional — compose injects its own env
 docker compose up --build
 ```
 
+Then seed the database and verify:
+
+```sh
+cd backend
+uv run alembic upgrade head       # create tables
+uv run strata db seed -d ../data  # load 307 primitives into Postgres
+uv run strata db stats            # verify row counts
+uv run strata test-connectors     # smoke-test all 5 APIs
+```
+
 Then visit:
 - 🌐 web: <http://localhost:3000>
 - 📖 API docs: <http://localhost:8000/docs>
@@ -215,17 +269,28 @@ cp ../.env.example ../.env
 uv run uvicorn strata.api.app:app --reload --port 8000
 ```
 
-Migrations (still from `backend/`):
+Database setup (still from `backend/`):
 
 ```sh
-uv run alembic revision --autogenerate -m "init"
-uv run alembic upgrade head
+uv run alembic revision --autogenerate -m "init"  # generate migration
+uv run alembic upgrade head                        # create tables
+uv run strata db seed -d ../data                   # load 307 primitives → Postgres
+uv run strata db stats                             # verify: primitives 307, sources 87
+```
+
+CLI commands:
+
+```sh
+uv run strata stats -d ../data      # data bank counts (YAML)
+uv run strata test-connectors       # live smoke test all 5 APIs
+uv run strata validate ../data      # three-layer validator
+uv run strata size doc-gen-pc-insurance -d ../data  # evaluate a concept
 ```
 
 Tests + checks:
 
 ```sh
-uv run pytest
+uv run pytest                # 167 tests (models, API, connectors, evaluator, resolve)
 uv run ruff check .
 uv run pyright
 ```
@@ -254,16 +319,23 @@ bun run test
 │   ├── src/strata/
 │   │   ├── api/routes/           10 endpoints: healthz, concepts, primitives,
 │   │   │                         frameworks, build, tam, resolve (SSE)
-│   │   ├── models/               6 record types + Unit, Geo, Source DU
+│   │   ├── connectors/           6 typed API clients (BLS, FRED, Census,
+│   │   │                         EDGAR, World Bank, Kalshi) — 4,650+ lines
+│   │   ├── db/models.py          ORM: PrimitiveRow, SourceRow, ConceptRow,
+│   │   │                         FrameworkRow (JSONB + GIN indexes)
+│   │   ├── db/sync.py            YAML → Postgres upsert (idempotent)
+│   │   ├── models/               6 Pydantic record types + Unit, Geo, Source
 │   │   ├── evaluator/engine.py   size_concept() → TAMOutput (multiplicative)
 │   │   ├── validator/            structural + semantic + cross-record
 │   │   ├── scoring/              independence + disagreement
 │   │   ├── loader.py             YAML → Pydantic via kind discriminator
 │   │   ├── registry.py           in-memory slug-keyed store
-│   │   └── cli.py                `strata` Typer (version, validate, size)
+│   │   └── cli.py                strata: version, validate, size, stats,
+│   │                             test-connectors, db seed, db stats
 │   ├── scripts/
-│   │   └── exa_source_lookup.py  Exa deep-search data verification
-│   └── tests/                    117 tests (models, API, evaluator, resolve)
+│   │   ├── populate_data_bank.py       initial 29-query seeding
+│   │   └── populate_lens_primitives.py 86-query lens-aligned expansion
+│   └── tests/                    167 tests (models, API, connectors, evaluator)
 │
 ├── web/                          Next.js 16 + React 19 + bun
 │   └── src/
@@ -278,11 +350,11 @@ bun run test
 │           ├── queries.ts        TanStack Query hooks per endpoint
 │           └── format.ts         USD + compact number formatting
 │
-├── data/                         Source-of-truth YAML records
+├── data/                         YAML seed data (syncs to Postgres)
 │   ├── concepts/     6 files    (one per vertical)
-│   ├── primitives/  14 files    (sourced numbers)
+│   ├── primitives/ 307 files    (sourced numbers from 5 APIs)
 │   ├── frameworks/   5 files    (sizing formulas)
-│   └── sources/     15 files    (citation records)
+│   └── sources/     87 files    (citation records, SHA256-pinned)
 │
 └── docs/                         Design docs + decision records
     ├── 07-data-layer-brainstorm  Q1-Q40 schema decisions (LOAD BEARING)

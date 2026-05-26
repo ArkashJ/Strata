@@ -65,15 +65,17 @@ User types market query
 │  Evaluator: multiply all inputs → scenario tree     │
 └────────────────────────┬────────────────────────────┘
                          │
-┌─ DATA BANK (YAML on disk → Postgres at v0.3) ──────┐
-│  6 concepts · 307 primitives · 5 frameworks          │
+┌─ DATA STORE ────────────────────────────────────────┐
+│  Production: Postgres (primary, GIN+B-tree indexed) │
+│  Local dev:  YAML on disk → `strata db seed` → PG  │
+│  6 concepts · 307 primitives · 5 frameworks         │
 │  Each primitive: value + unit + source + sha256 pin │
 └────────────────────────┬────────────────────────────┘
                          │ populated by
 ┌─ CONNECTORS (ingest) ──┴────────────────────────────┐
-│  BLSClient → cache → series_to_primitive_yaml()     │
-│  FREDClient, CensusClient, EDGARClient, WorldBankClient│
-│  Live API = fallback for data not yet in the bank   │
+│  BLSClient · FREDClient · CensusClient              │
+│  EDGARClient · WorldBankClient · KalshiClient       │
+│  Each: typed → disk-cached → SHA256-pinned → DB     │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -303,6 +305,23 @@ private valuation. If any needs a schema exception, the schema isn't done.
 - Tests live at `backend/tests/`; the orphaned root `/tests/` is not picked up by `testpaths`.
 - `data/` lives at the repo root — pass `--data-dir ../data` when running `strata` commands from `backend/`.
 - Verification suite: `uv run pytest && uv run pyright && uv run ruff check . && uv run ruff format --check .`
+
+### Database commands (from `backend/`)
+- `uv run alembic upgrade head` — create/migrate Postgres tables.
+- `uv run strata db seed -d ../data` — upsert all YAML into Postgres (idempotent).
+- `uv run strata db stats` — show Postgres row counts.
+- `uv run strata test-connectors` — live smoke test all 5 APIs.
+- `uv run strata stats -d ../data` — show YAML data bank counts.
+
+### Data storage architecture
+- **Production (Railway):** Postgres is the primary store. YAML files are baked
+  into the Docker image as seed data. Run `strata db seed` once after deploy.
+- **Local dev:** YAML on disk → `strata db seed` → local Postgres. Or just use
+  YAML directly via the in-memory Registry (no DB required for dev).
+- **CI/tests:** Tests use YAML loader directly; no Postgres needed.
+- **Connectors write to disk cache** (`~/.strata/cache/{connector}/`) then to
+  YAML via converter functions. The `strata db seed` command loads YAML → DB.
+  Future: connectors will write directly to DB, skipping YAML entirely.
 
 ### Pydantic v2
 - Discriminated unions (e.g. `Source = Annotated[Union, Field(discriminator=...)]`) are typing constructs, not models — validate with `TypeAdapter(Source).validate_python(...)`, not `.model_validate(...)`.
