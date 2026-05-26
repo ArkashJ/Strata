@@ -79,6 +79,29 @@ from .fred import (
     observations_to_primitive_yaml,
     observations_to_source_yaml,
 )
+from .kalshi import (
+    Event as KalshiEvent,
+)
+from .kalshi import (
+    KalshiClient,
+    KalshiClientError,
+    KalshiEventCategory,
+    KalshiMarketResult,
+    KalshiMarketStatus,
+    KalshiResponse,
+    market_to_primitive_yaml,
+    market_to_source_yaml,
+    market_volume_to_primitive_yaml,
+)
+from .kalshi import (
+    Market as KalshiMarket,
+)
+from .kalshi import (
+    Orderbook as KalshiOrderbook,
+)
+from .kalshi import (
+    Trade as KalshiTrade,
+)
 from .worldbank import (
     Country as WBCountry,
 )
@@ -141,6 +164,17 @@ __all__ = [
     "FirmRecord",
     "Footnote",
     "IndustryRecord",
+    # Kalshi
+    "KalshiClient",
+    "KalshiClientError",
+    "KalshiEvent",
+    "KalshiEventCategory",
+    "KalshiMarket",
+    "KalshiMarketResult",
+    "KalshiMarketStatus",
+    "KalshiOrderbook",
+    "KalshiResponse",
+    "KalshiTrade",
     "Observation",
     "Release",
     "Series",
@@ -165,6 +199,9 @@ __all__ = [
     "indicator_to_source_yaml",
     "industry_to_primitive_yaml",
     "industry_to_source_yaml",
+    "market_to_primitive_yaml",
+    "market_to_source_yaml",
+    "market_volume_to_primitive_yaml",
     "observations_to_primitive_yaml",
     "observations_to_source_yaml",
     "series_to_primitive_yaml",
