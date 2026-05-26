@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     bls_api_key: str | None = None
     fred_api_key: str | None = None
     census_api_key: str | None = None
+    kalshi_api_key: str | None = None
+    kalshi_private_key_path: str | None = None
 
 
 @lru_cache(maxsize=1)
