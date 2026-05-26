@@ -1,4 +1,4 @@
-"""Data connectors for external APIs (BLS, FRED, EDGAR, etc.).
+"""Data connectors for external APIs (BLS, FRED, EDGAR, Census, etc.).
 
 Each connector provides a typed client, disk caching, and converters
 that emit Strata-compatible YAML dicts for AtomicPrimitive / Source records.
@@ -21,8 +21,67 @@ from .bls import (
     series_to_primitive_yaml,
     series_to_source_yaml,
 )
+from .census import (
+    CensusClient,
+    CensusClientError,
+    CensusDataset,
+    CensusGeoLevel,
+    CensusNAICS,
+    CensusResponse,
+    FirmRecord,
+    IndustryRecord,
+    firm_to_primitive_yaml,
+    firm_to_source_yaml,
+    industry_to_primitive_yaml,
+    industry_to_source_yaml,
+)
+from .edgar import (
+    CompanyConcept as EDGARCompanyConcept,
+)
+from .edgar import (
+    CompanyInfo as EDGARCompanyInfo,
+)
+from .edgar import (
+    EDGARClient,
+    EDGARClientError,
+    EDGARFormType,
+    EDGARPeriodType,
+    EDGARResponse,
+    EDGARTaxonomy,
+    concept_to_primitive_yaml,
+    concept_to_source_yaml,
+    frame_to_primitive_yaml,
+)
+from .edgar import (
+    Fact as EDGARFact,
+)
+from .edgar import (
+    Filing as EDGARFiling,
+)
+from .edgar import (
+    FrameEntry as EDGARFrameEntry,
+)
+from .fred import (
+    Category as FREDCategory,
+)
+from .fred import (
+    FREDClient,
+    FREDClientError,
+    FREDFrequency,
+    FREDOrderBy,
+    FREDResponse,
+    FREDSearchType,
+    FREDSortOrder,
+    FREDUnits,
+    Observation,
+    Release,
+    SeriesInfo,
+    observations_to_primitive_yaml,
+    observations_to_source_yaml,
+)
 
 __all__ = [
+    # BLS
     "BLSClient",
     "BLSClientError",
     "BLSPeriodKind",
@@ -30,10 +89,53 @@ __all__ = [
     "BLSStatus",
     "BLSSurvey",
     "Catalog",
+    # Census
+    "CensusClient",
+    "CensusClientError",
+    "CensusDataset",
+    "CensusGeoLevel",
+    "CensusNAICS",
+    "CensusResponse",
     "DataPoint",
+    # EDGAR
+    "EDGARClient",
+    "EDGARClientError",
+    "EDGARCompanyConcept",
+    "EDGARCompanyInfo",
+    "EDGARFact",
+    "EDGARFiling",
+    "EDGARFormType",
+    "EDGARFrameEntry",
+    "EDGARPeriodType",
+    "EDGARResponse",
+    "EDGARTaxonomy",
+    # FRED
+    "FREDCategory",
+    "FREDClient",
+    "FREDClientError",
+    "FREDFrequency",
+    "FREDOrderBy",
+    "FREDResponse",
+    "FREDSearchType",
+    "FREDSortOrder",
+    "FREDUnits",
+    "FirmRecord",
     "Footnote",
+    "IndustryRecord",
+    "Observation",
+    "Release",
     "Series",
+    "SeriesInfo",
     "SurveyInfo",
+    "concept_to_primitive_yaml",
+    "concept_to_source_yaml",
+    "firm_to_primitive_yaml",
+    "firm_to_source_yaml",
+    "frame_to_primitive_yaml",
+    "industry_to_primitive_yaml",
+    "industry_to_source_yaml",
+    "observations_to_primitive_yaml",
+    "observations_to_source_yaml",
     "series_to_primitive_yaml",
     "series_to_source_yaml",
 ]

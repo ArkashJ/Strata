@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     data_dir: str = "data"
 
     bls_api_key: str | None = None
+    fred_api_key: str | None = None
+    census_api_key: str | None = None
 
 
 @lru_cache(maxsize=1)
