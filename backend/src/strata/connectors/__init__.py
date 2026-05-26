@@ -79,6 +79,25 @@ from .fred import (
     observations_to_primitive_yaml,
     observations_to_source_yaml,
 )
+from .worldbank import (
+    Country as WBCountry,
+)
+from .worldbank import (
+    IndicatorInfo as WBIndicatorInfo,
+)
+from .worldbank import (
+    IndicatorValue as WBIndicatorValue,
+)
+from .worldbank import (
+    WBIncomeLevel,
+    WBIndicatorGroup,
+    WBRegion,
+    WBResponse,
+    WorldBankClient,
+    WorldBankClientError,
+    indicator_to_primitive_yaml,
+    indicator_to_source_yaml,
+)
 
 __all__ = [
     # BLS
@@ -127,11 +146,23 @@ __all__ = [
     "Series",
     "SeriesInfo",
     "SurveyInfo",
+    # World Bank
+    "WBCountry",
+    "WBIncomeLevel",
+    "WBIndicatorGroup",
+    "WBIndicatorInfo",
+    "WBIndicatorValue",
+    "WBRegion",
+    "WBResponse",
+    "WorldBankClient",
+    "WorldBankClientError",
     "concept_to_primitive_yaml",
     "concept_to_source_yaml",
     "firm_to_primitive_yaml",
     "firm_to_source_yaml",
     "frame_to_primitive_yaml",
+    "indicator_to_primitive_yaml",
+    "indicator_to_source_yaml",
     "industry_to_primitive_yaml",
     "industry_to_source_yaml",
     "observations_to_primitive_yaml",
