@@ -437,15 +437,102 @@ class KalshiClientError(RuntimeError):
 class KalshiClient:
     """Typed client for Kalshi prediction markets API v2.
 
+    Kalshi is a regulated prediction market where people bet real money on
+    real-world outcomes. This connector pulls that data into Strata's data bank
+    as atomic primitives, giving TAM models crowd-sourced probability estimates
+    and conviction signals that no analyst report provides.
+
+    How it fits into Strata's TAM engine::
+
+        KALSHI.COM (people bet real money on outcomes)
+                │
+                ▼  KalshiClient fetches + caches
+        ┌─ THIS CONNECTOR ─────────────────────────────┐
+        │  RSA-signed auth → fetch markets/events       │
+        │  → parse into typed Market dataclass          │
+        │  → disk cache (don't re-hit API for 1 hour)   │
+        └──────────────┬────────────────────────────────┘
+                       │  market_to_primitive_yaml()
+                       ▼
+        ┌─ DATA BANK ──────────────────────────────────┐
+        │  Two primitives per event:                    │
+        │  • Probability (what the crowd thinks)        │
+        │  • Volume (how sure they are / attention)     │
+        │  Every number → source URL + sha256 pin       │
+        └──────────────┬────────────────────────────────┘
+                       │
+                       ▼
+        ┌─ TAM ENGINE ─────────────────────────────────┐
+        │  Developer Tools TAM =                        │
+        │    1.46M devs (BLS)                           │
+        │    * 60.5% AI adoption (Kalshi)               │
+        │    * $840/yr spend (EDGAR)                    │
+        │    * (1 - 16.5% recession wt) (Kalshi)        │
+        │  = $X billion with confidence range           │
+        └──────────────────────────────────────────────┘
+
+    Why prediction markets for TAM:
+        - L3 (latent demand) needs adoption probability → Kalshi measures this directly
+        - L4 (platform throughput) needs volume → crypto market prices signal DeFi TAM
+        - All lenses need macro scenario weights → recession/growth/inflation probabilities
+        - Tighter bid-ask spread = more liquid market = higher confidence in the number
+
+    API endpoints used:
+        GET /markets              — list/filter markets (paginated, cursor-based)
+        GET /markets/{ticker}     — single market detail
+        GET /markets/{ticker}/orderbook — bid/ask depth
+        GET /markets/trades       — recent trade history
+        GET /events               — event groups with nested markets
+        GET /events/{ticker}      — single event with markets
+
+    Authentication:
+        RSA-PSS SHA256 signing. Each request signs: timestamp_ms + METHOD + path.
+        Headers: KALSHI-ACCESS-KEY, KALSHI-ACCESS-TIMESTAMP, KALSHI-ACCESS-SIGNATURE.
+
     Usage::
+
+        from strata.connectors import KalshiClient, market_to_primitive_yaml
 
         client = KalshiClient(
             api_key="your-key-id",
-            private_key_path=Path("~/.kalshi/private.key"),
+            private_key_path=Path("~/.kalshi/private_key.pem"),
         )
-        resp = client.get_markets(status="open", limit=100)
-        for m in resp.markets:
-            print(m.ticker, m.title, m.midpoint)
+
+        # Fetch a TAM-relevant event
+        resp = client.get_event("KXRECSSNBER-26")
+        market = resp.events[0].markets[0]
+        print(f"Recession probability: {market.midpoint:.1%}")  # 16.5%
+
+        # Convert to Strata primitive for the data bank
+        prim = market_to_primitive_yaml(
+            market,
+            concept_slug="us-economic-cycle-2026",
+            primitive_slug="kalshi-recession-2026-probability",
+            name="Probability: US recession in 2026 (Kalshi NBER)",
+            description="...",
+        )
+
+        # Also extract volume as a separate demand-signal primitive
+        from strata.connectors import market_volume_to_primitive_yaml
+        vol = market_volume_to_primitive_yaml(
+            market,
+            concept_slug="us-economic-cycle-2026",
+            primitive_slug="kalshi-recession-2026-volume",
+            name="Kalshi volume: US recession 2026",
+            description="...",
+        )
+
+    Key TAM-relevant event tickers:
+        KXRECSSNBER-26          — Recession probability (macro gate)
+        KXLAYOFFSYINFO-26       — Tech layoffs (labor TAM)
+        KXRATECUTCOUNT-26DEC31  — Fed rate cuts (discount rate)
+        KXIPOOPENAI             — OpenAI IPO timing (AI capital formation)
+        KXLLM1-26DEC31          — Best AI model (competitive dynamics)
+        KXCODINGMODEL-26DEC     — Best coding AI (developer tools TAM)
+        KXBTCY-27JAN0100        — Bitcoin year-end (crypto TAM)
+        KXETHY-27JAN0100        — Ethereum year-end (DeFi TAM)
+        KXAGICO-COMP            — AGI timeline (automation ceiling)
+        TESLAOPTIMUS-26DEC31    — Optimus release (robotics TAM timing)
     """
 
     def __init__(
