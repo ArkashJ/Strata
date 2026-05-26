@@ -93,16 +93,19 @@ with BLSClient(api_key="...") as client:
 | Return type | `BLSResponse` — status, series, surveys, popular_ids, cached, cache_age_seconds |
 | Error | `BLSClientError` |
 
-## Planned connectors
+## Connectors
 
 | Connector | Source tier | Priority | Status |
 |-----------|-----------|----------|--------|
 | BLS (OES, CPI, LAUS, JOLTS) | `regulator` | P0 | Done |
-| FRED (Federal Reserve) | `regulator` | P0 | Planned |
-| Census / SUSB | `regulator` | P1 | Planned |
-| SEC / EDGAR | `regulator` | P1 | Planned |
+| FRED (Federal Reserve) | `regulator` | P0 | Done |
+| Census / SUSB | `regulator` | P1 | Done |
+| SEC / EDGAR | `regulator` | P1 | Done |
+| World Bank Open Data | `aggregator` | P2 | Done |
+| **Kalshi (prediction markets)** | `prediction_market` | P1 | **Done** |
+| Dune Analytics (onchain) | `onchain` | P1 | Reference only (plan limits) |
 | Eurostat | `regulator` | P2 | Planned |
-| World Bank Open Data | `aggregator` | P2 | Planned |
+| Polymarket | `prediction_market` | P2 | Planned |
 
 ## Conventions
 

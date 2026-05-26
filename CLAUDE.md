@@ -25,9 +25,9 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 - **Backend (`backend/src/strata/`):** All business logic implemented —
   models, loader, registry, validators, evaluator, scoring, 10 API routes
   (including `POST /resolve` for dynamic TAM resolution via Claude + Exa),
-  plus the **connectors** ingest layer (`connectors/bls.py` — BLS API v2
-  client with all 7 signatures, typed models, disk cache, Strata YAML
-  converters). 117 tests passing, pyright strict clean, ruff clean.
+  plus the **connectors** ingest layer (6 connectors: BLS, FRED, Census,
+  EDGAR, World Bank, **Kalshi** — all typed clients, disk cache, Strata YAML
+  converters). 167 tests passing, pyright strict clean, ruff clean.
   `/resolve` hardened: async event loop (asyncio.to_thread), no internal
   error leaks, JSON parse safety, client singletons, specific exception
   handling.
@@ -36,9 +36,10 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   streaming chain-of-thought for dynamic queries), data explorer, lineage graph.
   Critic-hardened: correct fallback to ResolveView, JSON.parse safety,
   reader.releaseLock(), NaN/Infinity guards, mobile responsive, accessible.
-- **Data (`data/`):** 6 concepts, 14 primitives, 5 frameworks, 15 sources.
-  All validate clean. BLS headcounts Exa-verified.
-- **Tests:** 117 passing in `backend/tests/` (including 7 /resolve SSE tests).
+- **Data (`data/`):** 6 concepts, 216+ primitives (including 202 Kalshi
+  prediction market ingest), 5 frameworks, 15 sources. All validate clean.
+- **Tests:** 167 passing in `backend/tests/` (including 7 /resolve SSE tests,
+  50 connector tests).
 - **Design spec:** `docs/superpowers/specs/2026-05-25-strata-platform-evolution-design.md`
   covers 5 gaps (interactive wiring, ingest pipeline, auth, contribution schema,
   data connectors) across 6 sprints. Critic-reviewed and corrected.
@@ -108,8 +109,9 @@ Phase 4:        Optional chain anchor — Base/Solana hash anchoring
 - **YAML files on disk** are the source of truth at v0.2 (no DB yet; Postgres
   mirror lands at v0.3 per `docs/07-data-layer-brainstorm.md` Q27).
 - **Connectors** (`connectors/`) — typed API clients that ingest external data
-  into the data bank. BLS done; FRED, Census, EDGAR planned. Uses **httpx**
-  for HTTP, disk cache for raw responses, converter functions for YAML output.
+  into the data bank. 6 done (BLS, FRED, Census, EDGAR, World Bank, Kalshi),
+  Dune reference-ready. Uses **httpx** for HTTP, **cryptography** for Kalshi
+  RSA-PSS auth, disk cache for raw responses, converter functions for YAML.
   See `backend/src/strata/connectors/CLAUDE.md`.
 
 ### Frontend (`web/`)
