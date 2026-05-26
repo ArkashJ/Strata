@@ -1,9 +1,9 @@
 kind: atomic_primitive
 slug: edgar-meta-revenue-2023
 schema_version: 1
-concept_slug: meta-platforms-financials
-name: Meta Platforms, Inc. annual revenue (EDGAR 10-K, CY2023)
-description: SEC EDGAR XBRL Revenues for Meta Platforms, Inc., annual 10-K filing.
+concept_slug: big-tech-financials
+name: Meta Platforms, Inc. revenue (EDGAR 10-K, CY2023)
+description: SEC EDGAR XBRL Revenues for Meta Platforms, Inc..
 value: 40653000000.0
 unit:
   kind: flow

@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: edgar-v-revenue-2023
+schema_version: 1
+concept_slug: payments-platform
+name: VISA INC. revenue (EDGAR 10-K, CY2023)
+description: SEC EDGAR XBRL Revenues for VISA INC..
+value: 21846000000.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2020-11-19'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-1403161-revenues-cy2020
+  tier: regulator
+  url: https://data.sec.gov/api/xbrl/companyconcept/CIK0001403161/us-gaap/Revenues.json
+  accessed: '2026-05-25'
+  snapshot_sha256: 51ddd768e0818c1d071fc7294beec04442cf9b98bfa9ca3d17a5aee708850b7f

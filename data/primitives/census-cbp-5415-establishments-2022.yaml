@@ -3,7 +3,7 @@ slug: census-cbp-5415-establishments-2022
 schema_version: 1
 concept_slug: us-computer-systems-design
 name: US Computer systems design and related services establishments (Census CBP 2022)
-description: Census County Business Patterns establishments count for NAICS 5415.
+description: Census County Business Patterns establishments for NAICS 5415.
 value: 145211
 unit:
   kind: stock

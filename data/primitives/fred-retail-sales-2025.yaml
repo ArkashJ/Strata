@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: fred-retail-sales-2025
+schema_version: 1
+concept_slug: us-consumer-spending
+name: US advance retail sales (FRED RSAFS, 2025)
+description: Advance monthly retail and food services sales, millions of dollars.
+value: 711260.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-month
+  currency: USD
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-rsafs-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/RSAFS
+  accessed: '2026-05-25'
+  snapshot_sha256: b79b9afaf39487dfb11ea8a8f7a5058637e3eeb1e8d35a916c77e67869d754fd

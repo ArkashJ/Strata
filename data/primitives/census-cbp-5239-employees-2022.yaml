@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5239-employees-2022
+schema_version: 1
+concept_slug: us-other-financial-investment
+name: US Other financial investment activities employees (Census CBP 2022)
+description: Census County Business Patterns employees for NAICS 5239.
+value: 620457
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5239-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 98d7140b655acdd58a561eac7169441c1120d4e791e7c2b9281e2dce66141437

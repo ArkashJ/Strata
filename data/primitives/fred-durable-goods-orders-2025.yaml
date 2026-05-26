@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: fred-durable-goods-orders-2025
+schema_version: 1
+concept_slug: us-industrial-production
+name: US durable goods new orders (FRED DGORDER, 2025)
+description: Manufacturers' new orders for durable goods, millions of dollars.
+value: 291195.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-month
+  currency: USD
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-dgorder-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/DGORDER
+  accessed: '2026-05-25'
+  snapshot_sha256: 0c54cc82de9c83df282f6e7e80338048c913fe66362167d5250f7d3bac0f2495

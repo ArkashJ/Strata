@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: fred-federal-debt-total-2024
+schema_version: 1
+concept_slug: us-macroeconomy
+name: US federal debt total public (FRED GFDEBTN, 2024)
+description: Federal debt total public debt, millions of dollars.
+value: 34586533.0
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2024-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-gfdebtn-2024
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/GFDEBTN
+  accessed: '2026-05-25'
+  snapshot_sha256: 7d10742d61b15ac05796bad08a48736cce7bc4561c6e5db390ebc2a0da91bee8

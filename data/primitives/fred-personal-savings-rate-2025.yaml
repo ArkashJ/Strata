@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: fred-personal-savings-rate-2025
+schema_version: 1
+concept_slug: us-consumer-spending
+name: US personal savings rate (FRED PSAVERT, 2025)
+description: Personal savings as percentage of disposable income.
+value: 5.1
+unit:
+  kind: intensive
+  dimension: percent
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-psavert-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/PSAVERT
+  accessed: '2026-05-25'
+  snapshot_sha256: 8356c58d7f1ead9ebc312d005fceeb6204ca027979f1d7bad1cb03e5fc4beb25

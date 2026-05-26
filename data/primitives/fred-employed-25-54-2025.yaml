@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: fred-employed-25-54-2025
+schema_version: 1
+concept_slug: us-demographics
+name: US employed persons age 25-54 (FRED LNS12000060, 2025)
+description: Prime-age employed persons, thousands — core productive workforce.
+value: 105496.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-lns12000060-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/LNS12000060
+  accessed: '2026-05-25'
+  snapshot_sha256: 38f2e58d61457964d6589213e13f9e307371ebb0d215714646ed07a8dff21085

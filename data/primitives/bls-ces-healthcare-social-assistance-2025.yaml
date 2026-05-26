@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: bls-ces-healthcare-social-assistance-2025
+schema_version: 1
+concept_slug: doc-gen-pc-insurance
+name: US Healthcare/social assistance employment (CES), thousands (BLS CES 2025)
+description: BLS Current Employment Statistics, seasonally adjusted.
+value: 4039.3
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-12-28'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: bls-ces6561000001-2025
+  tier: regulator
+  url: https://www.bls.gov/ces/
+  accessed: '2026-05-25'
+  snapshot_sha256: b1aba3ddac925ce69f478abd6ede68c23bb512aaf8225a2dbd7abeb11a7eb656

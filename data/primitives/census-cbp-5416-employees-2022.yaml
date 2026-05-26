@@ -4,7 +4,7 @@ schema_version: 1
 concept_slug: us-management-consulting
 name: US Management, scientific, and technical consulting services employees (Census
   CBP 2022)
-description: Census County Business Patterns employees count for NAICS 5416.
+description: Census County Business Patterns employees for NAICS 5416.
 value: 1625072
 unit:
   kind: stock

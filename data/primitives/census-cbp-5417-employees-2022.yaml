@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5417-employees-2022
+schema_version: 1
+concept_slug: us-scientific-rd-services
+name: US Scientific research and development services employees (Census CBP 2022)
+description: Census County Business Patterns employees for NAICS 5417.
+value: 950883
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5417-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 30582fdece215a8414a65e7cb7ab8baaec8be9f62f3ebe70283eae420229f924

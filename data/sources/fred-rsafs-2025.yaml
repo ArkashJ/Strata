@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-rsafs-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/RSAFS
+accessed: '2026-05-25'
+snapshot_sha256: b79b9afaf39487dfb11ea8a8f7a5058637e3eeb1e8d35a916c77e67869d754fd
+description: FRED series RSAFS, 2025 data.

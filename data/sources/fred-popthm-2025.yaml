@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-popthm-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/POPTHM
+accessed: '2026-05-25'
+snapshot_sha256: 3be33f085d687d01054b6555af6248c4ce30f8f45d7c4dafdda70aa1d5f1995d
+description: FRED series POPTHM, 2025 data.

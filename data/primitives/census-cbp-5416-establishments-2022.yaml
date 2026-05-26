@@ -4,7 +4,7 @@ schema_version: 1
 concept_slug: us-management-consulting
 name: US Management, scientific, and technical consulting services establishments
   (Census CBP 2022)
-description: Census County Business Patterns establishments count for NAICS 5416.
+description: Census County Business Patterns establishments for NAICS 5416.
 value: 215682
 unit:
   kind: stock

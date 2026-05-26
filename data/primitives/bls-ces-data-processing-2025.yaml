@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: bls-ces-data-processing-2025
+schema_version: 1
+concept_slug: data-infrastructure
+name: US Data processing/hosting employment (CES), thousands (BLS CES 2025)
+description: BLS Current Employment Statistics, seasonally adjusted.
+value: 472.9
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-12-28'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: bls-ces5051800001-2025
+  tier: regulator
+  url: https://www.bls.gov/ces/
+  accessed: '2026-05-25'
+  snapshot_sha256: 269d94f5450771ce0ea2adee6cf989cefefe90c2db31e7da59f7f90384ab4327

@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: edgar-frame-us-rd-spend-2023
+schema_version: 1
+concept_slug: us-rd-investment
+name: Total US public company R&D spending (EDGAR XBRL frames, CY2023)
+description: Aggregated ResearchAndDevelopmentExpense from SEC EDGAR XBRL frames for
+  CY2023.
+value: 613173430783.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-frame-unknown-sum
+  tier: regulator
+  url: https://data.sec.gov/api/xbrl/frames/us-gaap/ResearchAndDevelopmentExpense/USD/CY2023.json
+  accessed: '2026-05-25'
+  snapshot_sha256: 0b8f037e877d04dd8fad782ea79713dab188d41c03573cbbd448502e0ebf0bd1

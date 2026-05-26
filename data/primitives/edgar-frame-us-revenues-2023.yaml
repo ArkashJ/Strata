@@ -3,8 +3,7 @@ slug: edgar-frame-us-revenues-2023
 schema_version: 1
 concept_slug: us-public-company-revenue
 name: Total US public company revenue (EDGAR XBRL frames, CY2023)
-description: Sum of all us-gaap Revenues reported in USD for CY2023 from SEC EDGAR
-  XBRL frames.
+description: Aggregated Revenues from SEC EDGAR XBRL frames for CY2023.
 value: 13227872360467.0
 unit:
   kind: flow

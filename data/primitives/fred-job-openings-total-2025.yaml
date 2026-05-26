@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: fred-job-openings-total-2025
+schema_version: 1
+concept_slug: us-labor-market
+name: US total job openings (FRED JTSJOL, 2025)
+description: JOLTS total nonfarm job openings, seasonally adjusted, thousands.
+value: 7431.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-jtsjol-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/JTSJOL
+  accessed: '2026-05-25'
+  snapshot_sha256: d70ba95d44fe4afb6046aac290ab05b8ae1902e512f6f219e699085187b1dce6

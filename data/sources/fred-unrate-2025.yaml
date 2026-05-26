@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-unrate-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/UNRATE
+accessed: '2026-05-25'
+snapshot_sha256: 7df4440c9825626a71e24f3de496a9d1bb6460e809f57883c6cf1aff98a8f1e5
+description: FRED series UNRATE, 2025 data.

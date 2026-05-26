@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-ny-gdp-mktp-cd-cn-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
+accessed: '2026-05-25'
+snapshot_sha256: 850158ab4c1c9cb2517ad03603eabe569aff40e90fab6c224cbbd9e6bc8bf52b
+description: World Bank NY.GDP.MKTP.CD for China, 2023 data.

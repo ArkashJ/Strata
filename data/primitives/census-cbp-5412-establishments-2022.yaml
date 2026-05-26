@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: census-cbp-5412-establishments-2022
+schema_version: 1
+concept_slug: us-accounting-tax-preparation
+name: US Accounting, tax preparation, bookkeeping, and payroll services establishments
+  (Census CBP 2022)
+description: Census County Business Patterns establishments for NAICS 5412.
+value: 135960
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5412-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 013502eb5101a9d51adbce7dbc0690a13df268f85fc877891b16ddfcbd325f11

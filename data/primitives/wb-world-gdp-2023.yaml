@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: wb-world-gdp-2023
+schema_version: 1
+concept_slug: global-gdp
+name: World GDP (World Bank, 2023)
+description: World Bank Open Data NY.GDP.MKTP.CD for WLD.
+value: 106741647821064.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: global
+  codes:
+  - GLOBAL
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-ny-gdp-mktp-cd-1w-2023
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
+  accessed: '2026-05-25'
+  snapshot_sha256: d7754294be4522f19ebc13ce114e04d85a0aa38b259bb89f14b247b73824d352

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5191-establishments-2022
+schema_version: 1
+concept_slug: us-internet-publishing-web-search
+name: US Other information services establishments (Census CBP 2022)
+description: Census County Business Patterns establishments for NAICS 5191.
+value: 12999
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5191-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 457fe6d3618a0b8012a0cb1c650a41715f03327e1ba756fd3aae72a7caf4b6c6

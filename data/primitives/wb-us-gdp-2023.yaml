@@ -1,9 +1,9 @@
 kind: atomic_primitive
 slug: wb-us-gdp-2023
 schema_version: 1
-concept_slug: global-gdp
+concept_slug: us-macroeconomy
 name: US GDP (World Bank, 2023)
-description: Gross Domestic Product in current US$ from World Bank Open Data.
+description: World Bank Open Data NY.GDP.MKTP.CD for US.
 value: 27292170793214.4
 unit:
   kind: flow

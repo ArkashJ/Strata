@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: edgar-ma-revenue-2023
+schema_version: 1
+concept_slug: payments-platform
+name: Mastercard Incorporated revenue (EDGAR 10-K, CY2023)
+description: SEC EDGAR XBRL Revenues for Mastercard Incorporated.
+value: 25098000000.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2026-02-11'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-1141391-revenues-cy2023
+  tier: regulator
+  url: https://data.sec.gov/api/xbrl/companyconcept/CIK0001141391/us-gaap/Revenues.json
+  accessed: '2026-05-25'
+  snapshot_sha256: c2e9951e379da4be22dba1d65229ecd59cf18bfebc968df085d41b54984f5bed

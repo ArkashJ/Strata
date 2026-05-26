@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-pce-2024
+tier: regulator
+url: https://fred.stlouisfed.org/series/PCE
+accessed: '2026-05-25'
+snapshot_sha256: 24f3f56fcdddec0080b6ab52ca841bb105722a14337bb6e9a406e0131690ed14
+description: FRED series PCE, 2024 data.

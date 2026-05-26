@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: wb-us-inflation-rate-2023
+schema_version: 1
+concept_slug: us-inflation
+name: US inflation rate CPI (World Bank, 2023)
+description: World Bank Open Data FP.CPI.TOTL.ZG for US.
+value: 4.11633838374488
+unit:
+  kind: intensive
+  dimension: percent
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-fp-cpi-totl-zg-us-2023
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/FP.CPI.TOTL.ZG
+  accessed: '2026-05-25'
+  snapshot_sha256: e70385f5dcf1cb7c728fc23b87d6451793d21acb82529b77de5d232fcdd56e37

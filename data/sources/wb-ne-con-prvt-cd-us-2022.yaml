@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-ne-con-prvt-cd-us-2022
+tier: aggregator
+url: https://data.worldbank.org/indicator/NE.CON.PRVT.CD
+accessed: '2026-05-25'
+snapshot_sha256: 820251ea431d9b3f834e1e50061419525fb1ee276ce36aee7bcd8a563f626c25
+description: World Bank NE.CON.PRVT.CD for United States, 2022 data.

@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-fp-cpi-totl-zg-us-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/FP.CPI.TOTL.ZG
+accessed: '2026-05-25'
+snapshot_sha256: e70385f5dcf1cb7c728fc23b87d6451793d21acb82529b77de5d232fcdd56e37
+description: World Bank FP.CPI.TOTL.ZG for United States, 2023 data.

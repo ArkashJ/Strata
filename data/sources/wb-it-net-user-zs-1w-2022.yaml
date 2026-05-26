@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-it-net-user-zs-1w-2022
+tier: aggregator
+url: https://data.worldbank.org/indicator/IT.NET.USER.ZS
+accessed: '2026-05-25'
+snapshot_sha256: e16f02749b82c87a2b5891d13f36e74ac39c1c20c5fe0741828f21cee57f436c
+description: World Bank IT.NET.USER.ZS for World, 2022 data.

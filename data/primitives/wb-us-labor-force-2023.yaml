@@ -3,11 +3,12 @@ slug: wb-us-labor-force-2023
 schema_version: 1
 concept_slug: us-labor-market
 name: US total labor force (World Bank, 2023)
-description: Total labor force from World Bank / ILO modeled estimates.
+description: World Bank Open Data SL.TLF.TOTL.IN for US.
 value: 172300802.0
 unit:
   kind: stock
   dimension: people
+  currency: USD
 as_of: '2023-12-31'
 geo:
   level: country

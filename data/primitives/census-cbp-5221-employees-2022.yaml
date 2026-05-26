@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5221-employees-2022
+schema_version: 1
+concept_slug: us-depository-credit-intermediation
+name: US Depository credit intermediation employees (Census CBP 2022)
+description: Census County Business Patterns employees for NAICS 5221.
+value: 1927517
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5221-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 0706b1881d0926f79d309029949932238c90f755ec1d9d650582424e2e3cd74a

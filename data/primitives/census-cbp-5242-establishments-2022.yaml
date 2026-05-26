@@ -4,7 +4,7 @@ schema_version: 1
 concept_slug: us-insurance-agencies
 name: US Agencies, brokerages, and other insurance related activities establishments
   (Census CBP 2022)
-description: Census County Business Patterns establishments count for NAICS 5242.
+description: Census County Business Patterns establishments for NAICS 5242.
 value: 150382
 unit:
   kind: stock

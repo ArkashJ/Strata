@@ -1,9 +1,9 @@
 kind: atomic_primitive
 slug: edgar-googl-revenue-2023
 schema_version: 1
-concept_slug: alphabet-financials
-name: Alphabet Inc. annual revenue (EDGAR 10-K, CY2023)
-description: SEC EDGAR XBRL Revenues for Alphabet Inc., annual 10-K filing.
+concept_slug: big-tech-financials
+name: Alphabet Inc. revenue (EDGAR 10-K, CY2023)
+description: SEC EDGAR XBRL Revenues for Alphabet Inc..
 value: 307394000000.0
 unit:
   kind: flow

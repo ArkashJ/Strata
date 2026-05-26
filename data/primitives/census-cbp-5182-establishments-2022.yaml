@@ -4,7 +4,7 @@ schema_version: 1
 concept_slug: us-data-processing-hosting
 name: US Data processing, hosting, and related services establishments (Census CBP
   2022)
-description: Census County Business Patterns establishments count for NAICS 5182.
+description: Census County Business Patterns establishments for NAICS 5182.
 value: 17539
 unit:
   kind: stock

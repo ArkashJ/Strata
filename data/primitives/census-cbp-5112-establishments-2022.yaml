@@ -3,7 +3,7 @@ slug: census-cbp-5112-establishments-2022
 schema_version: 1
 concept_slug: us-software-publishers
 name: US Software publishers establishments (Census CBP 2022)
-description: Census County Business Patterns establishments count for NAICS 5112.
+description: Census County Business Patterns establishments for NAICS 5112.
 value: 17438
 unit:
   kind: stock

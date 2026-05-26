@@ -3,7 +3,7 @@ slug: census-cbp-5112-employees-2022
 schema_version: 1
 concept_slug: us-software-publishers
 name: US Software publishers employees (Census CBP 2022)
-description: Census County Business Patterns employees count for NAICS 5112.
+description: Census County Business Patterns employees for NAICS 5112.
 value: 874707
 unit:
   kind: stock

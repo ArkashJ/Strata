@@ -1,9 +1,9 @@
 kind: atomic_primitive
 slug: wb-us-gdp-per-capita-2023
 schema_version: 1
-concept_slug: global-gdp
+concept_slug: us-macroeconomy
 name: US GDP per capita (World Bank, 2023)
-description: GDP per capita in current US$ from World Bank Open Data.
+description: World Bank Open Data NY.GDP.PCAP.CD for US.
 value: 81032.262117545
 unit:
   kind: intensive

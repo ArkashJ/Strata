@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5411-establishments-2022
+schema_version: 1
+concept_slug: us-legal-services
+name: US Legal services establishments (Census CBP 2022)
+description: Census County Business Patterns establishments for NAICS 5411.
+value: 181941
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5411-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 8acb315f055648e28be8eb8f853bce5613b61d035ba9a6dfbf7b634bd12bdeb2

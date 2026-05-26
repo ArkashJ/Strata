@@ -1,9 +1,9 @@
 kind: atomic_primitive
 slug: edgar-msft-revenue-2023
 schema_version: 1
-concept_slug: microsoft-financials
-name: MICROSOFT CORPORATION annual revenue (EDGAR 10-K, CY2023)
-description: SEC EDGAR XBRL Revenues for MICROSOFT CORPORATION, annual 10-K filing.
+concept_slug: big-tech-financials
+name: MICROSOFT CORPORATION revenue (EDGAR 10-K, CY2023)
+description: SEC EDGAR XBRL Revenues for MICROSOFT CORPORATION.
 value: 62484000000.0
 unit:
   kind: flow

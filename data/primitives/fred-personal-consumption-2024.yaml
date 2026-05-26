@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: fred-personal-consumption-2024
+schema_version: 1
+concept_slug: us-consumer-spending
+name: US personal consumption expenditures (FRED PCE, 2024)
+description: BEA personal consumption expenditures via FRED, billions of dollars.
+value: 19303.3
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2024-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-pce-2024
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/PCE
+  accessed: '2026-05-25'
+  snapshot_sha256: 24f3f56fcdddec0080b6ab52ca841bb105722a14337bb6e9a406e0131690ed14

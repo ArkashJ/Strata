@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: wb-india-gdp-2023
+schema_version: 1
+concept_slug: india-macroeconomy
+name: India GDP (World Bank, 2023)
+description: World Bank Open Data NY.GDP.MKTP.CD for IN.
+value: 3638489096033.86
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - IN
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-ny-gdp-mktp-cd-in-2023
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
+  accessed: '2026-05-25'
+  snapshot_sha256: 0f29853ad0a098b94592d095ed969b5ad8246d707d2bf66775f08b7706c06304

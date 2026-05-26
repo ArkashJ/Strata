@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-psavert-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/PSAVERT
+accessed: '2026-05-25'
+snapshot_sha256: 8356c58d7f1ead9ebc312d005fceeb6204ca027979f1d7bad1cb03e5fc4beb25
+description: FRED series PSAVERT, 2025 data.

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5411-employees-2022
+schema_version: 1
+concept_slug: us-legal-services
+name: US Legal services employees (Census CBP 2022)
+description: Census County Business Patterns employees for NAICS 5411.
+value: 1183593
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5411-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 0c9fe27dad8a5772162d3e3521faa649b5d40cbefcda77455bc7b559c327c993

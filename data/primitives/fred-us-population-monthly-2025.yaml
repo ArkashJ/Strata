@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: fred-us-population-monthly-2025
+schema_version: 1
+concept_slug: us-demographics
+name: US total population, monthly (FRED POPTHM, 2025)
+description: Resident population estimate, thousands.
+value: 341268.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-popthm-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/POPTHM
+  accessed: '2026-05-25'
+  snapshot_sha256: 3be33f085d687d01054b6555af6248c4ce30f8f45d7c4dafdda70aa1d5f1995d

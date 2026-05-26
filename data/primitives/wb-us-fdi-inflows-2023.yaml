@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: wb-us-fdi-inflows-2023
+schema_version: 1
+concept_slug: us-financial-flows
+name: US FDI net inflows (World Bank, 2023)
+description: World Bank Open Data BX.KLT.DINV.CD.WD for US.
+value: 361944000000.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-bx-klt-dinv-cd-wd-us-2023
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/BX.KLT.DINV.CD.WD
+  accessed: '2026-05-25'
+  snapshot_sha256: b0854b682fe34516a8821cf0b2ff60d09eb5b25f65667069244b67fb194a667f

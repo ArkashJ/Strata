@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: fred-avg-hourly-earnings-private-2025
+schema_version: 1
+concept_slug: us-labor-market
+name: US average hourly earnings, private sector (FRED AHETPI, 2025)
+description: Average hourly earnings of production and nonsupervisory employees.
+value: 30.79
+unit:
+  kind: intensive
+  dimension: currency
+  denominator: per-hour
+  currency: USD
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-ahetpi-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/AHETPI
+  accessed: '2026-05-25'
+  snapshot_sha256: 8b9fcfc7c2538f8499fea18bcbf915cf2db93ab99ce9305fe9095f8934d98cd8

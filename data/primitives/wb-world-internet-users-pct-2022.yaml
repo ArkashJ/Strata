@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: wb-world-internet-users-pct-2022
+schema_version: 1
+concept_slug: global-digital-adoption
+name: World internet users % (World Bank, 2022)
+description: World Bank Open Data IT.NET.USER.ZS for WLD.
+value: 67.0
+unit:
+  kind: intensive
+  dimension: percent
+  currency: USD
+as_of: '2022-12-31'
+geo:
+  level: global
+  codes:
+  - GLOBAL
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-it-net-user-zs-1w-2022
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/IT.NET.USER.ZS
+  accessed: '2026-05-25'
+  snapshot_sha256: e16f02749b82c87a2b5891d13f36e74ac39c1c20c5fe0741828f21cee57f436c

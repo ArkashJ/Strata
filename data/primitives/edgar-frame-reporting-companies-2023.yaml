@@ -2,8 +2,8 @@ kind: atomic_primitive
 slug: edgar-frame-reporting-companies-2023
 schema_version: 1
 concept_slug: us-public-companies
-name: US public companies reporting revenue (EDGAR XBRL, CY2023)
-description: Count of entities reporting us-gaap Revenues in USD for CY2023.
+name: US companies reporting revenue (EDGAR XBRL frames, CY2023)
+description: Aggregated Revenues from SEC EDGAR XBRL frames for CY2023.
 value: 2666.0
 unit:
   kind: stock

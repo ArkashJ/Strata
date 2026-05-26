@@ -3,11 +3,12 @@ slug: wb-us-population-2023
 schema_version: 1
 concept_slug: us-demographics
 name: US total population (World Bank, 2023)
-description: Total population estimate from World Bank Open Data.
+description: World Bank Open Data SP.POP.TOTL for US.
 value: 336806231.0
 unit:
   kind: stock
   dimension: people
+  currency: USD
 as_of: '2023-12-31'
 geo:
   level: country

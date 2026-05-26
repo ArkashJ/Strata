@@ -1,0 +1,7 @@
+kind: source_registry
+slug: census-cbp-5222-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: 923b43593fe813d4250c4ed3d125d3135034507cdcb970c47013f7f6eaa009db
+description: Census CBP NAICS 5222 (Nondepository credit intermediation), 2022 data.

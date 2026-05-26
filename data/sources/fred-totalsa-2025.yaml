@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-totalsa-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/TOTALSA
+accessed: '2026-05-25'
+snapshot_sha256: 2c0be330ce972e41fa0315517bb15be5f26c16b980283527f0fa7d8732373a66
+description: FRED series TOTALSA, 2025 data.
