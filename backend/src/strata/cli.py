@@ -131,5 +131,167 @@ def _unit_label(unit: Unit) -> str:
     return label
 
 
+# ── Database sub-commands ────────────────────────────────────────────
+
+db_app = typer.Typer(name="db", help="Database management commands.", no_args_is_help=True)
+app.add_typer(db_app)
+
+
+@db_app.command("seed")
+def db_seed(data_dir: Path = _DATA_DIR_OPT) -> None:
+    """Sync YAML data bank into Postgres (upsert — safe to run repeatedly)."""
+    import asyncio
+
+    from strata.db.sync import sync_yaml_to_db
+
+    typer.echo(f"Syncing {data_dir} → Postgres ...")
+    try:
+        counts = asyncio.run(sync_yaml_to_db(data_dir))
+    except Exception as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    for table, count in counts.items():
+        typer.echo(f"  {table:20} {count:>6} rows upserted")
+    typer.echo("Done.")
+
+
+@db_app.command("stats")
+def db_stats() -> None:
+    """Show row counts for all data bank tables in Postgres."""
+    import asyncio
+
+    from strata.db.sync import get_db_stats
+
+    try:
+        counts = asyncio.run(get_db_stats())
+    except Exception as exc:
+        typer.echo(f"ERROR connecting to database: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo("Data bank (Postgres):")
+    for table, count in counts.items():
+        typer.echo(f"  {table:20} {count:>6} rows")
+    total = sum(counts.values())
+    typer.echo(f"  {'TOTAL':20} {total:>6} rows")
+
+
+# ── Data bank stats (YAML) ──────────────────────────────────────────
+
+@app.command("stats")
+def stats(data_dir: Path = _DATA_DIR_OPT) -> None:
+    """Show data bank statistics from YAML files."""
+    from strata.loader import load_data_dir
+    from strata.registry import Registry
+
+    try:
+        records = load_data_dir(data_dir)
+    except LoaderError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    reg = Registry.from_loaded(records)
+    typer.echo("Data bank (YAML):")
+    typer.echo(f"  {'atomic_primitives':20} {len(reg.atomic):>6}")
+    typer.echo(f"  {'concepts':20} {len(reg.concepts):>6}")
+    typer.echo(f"  {'frameworks':20} {len(reg.frameworks):>6}")
+    typer.echo(f"  {'sources':20} {len(records.source_registries):>6}")
+    typer.echo(f"  {'annotations':20} {len(reg.annotations):>6}")
+
+    by_lens: dict[str, int] = {}
+    for p in reg.atomic.values():
+        concept = reg.concepts.get(p.concept_slug)
+        if concept:
+            lens = concept.analysis_lens.primary.value
+            by_lens[lens] = by_lens.get(lens, 0) + 1
+        else:
+            by_lens["unlinked"] = by_lens.get("unlinked", 0) + 1
+    typer.echo("\nPrimitives by lens:")
+    for lens, count in sorted(by_lens.items(), key=lambda x: -x[1]):
+        typer.echo(f"  {lens:24} {count:>4}")
+
+
+# ── Connector smoke tests ───────────────────────────────────────────
+
+@app.command("test-connectors")
+def test_connectors() -> None:
+    """Run live smoke tests against all 5 data source APIs."""
+    from strata.config import get_settings
+
+    settings = get_settings()
+
+    typer.echo("Testing data source APIs...\n")
+    passed = 0
+    failed = 0
+
+    # BLS
+    try:
+        from strata.connectors.bls import BLSClient
+
+        with BLSClient(api_key=settings.bls_api_key) as client:
+            resp = client.get_series("CUUR0000SA0")
+            assert resp.series, "No series returned"
+            typer.echo(f"  ✓ BLS     — CPI series, {len(resp.series[0].data)} data points")
+            passed += 1
+    except Exception as exc:
+        typer.echo(f"  ✗ BLS     — {exc}")
+        failed += 1
+
+    # FRED
+    try:
+        from strata.connectors.fred import FREDClient
+
+        with FREDClient(api_key=settings.fred_api_key) as client:
+            resp = client.get_observations("GDP", limit=3, sort_order="desc")
+            assert resp.observations, "No observations"
+            typer.echo(f"  ✓ FRED    — GDP series, latest={resp.observations[0].value}")
+            passed += 1
+    except Exception as exc:
+        typer.echo(f"  ✗ FRED    — {exc}")
+        failed += 1
+
+    # Census
+    try:
+        from strata.connectors.census import CensusClient
+
+        with CensusClient(api_key=settings.census_api_key) as client:
+            resp = client.get_cbp(2022, naics="5112")
+            assert resp.records, "No records"
+            rec = resp.records[0]
+            typer.echo(f"  ✓ Census  — NAICS 5112: {rec.establishments:,} estab, {rec.employees:,} emp")
+            passed += 1
+    except Exception as exc:
+        typer.echo(f"  ✗ Census  — {exc}")
+        failed += 1
+
+    # EDGAR
+    try:
+        from strata.connectors.edgar import EDGARClient
+
+        with EDGARClient() as client:
+            resp = client.get_company_concept("0000320193", concept="Revenues")
+            assert resp.concept, "No concept"
+            typer.echo(f"  ✓ EDGAR   — Apple revenue, {len(resp.concept.units.get('USD', ()))} facts")
+            passed += 1
+    except Exception as exc:
+        typer.echo(f"  ✗ EDGAR   — {exc}")
+        failed += 1
+
+    # World Bank
+    try:
+        from strata.connectors.worldbank import WorldBankClient
+
+        with WorldBankClient() as client:
+            resp = client.get_indicator("SP.POP.TOTL", country="US", date_range="2023:2023")
+            assert resp.values, "No values"
+            typer.echo(f"  ✓ WBank   — US population={resp.values[0].value:,.0f}")
+            passed += 1
+    except Exception as exc:
+        typer.echo(f"  ✗ WBank   — {exc}")
+        failed += 1
+
+    typer.echo(f"\n{passed} passed, {failed} failed")
+    if failed:
+        raise typer.Exit(code=1)
+
+
 if __name__ == "__main__":
     app()

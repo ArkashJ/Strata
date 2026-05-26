@@ -13,8 +13,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from strata.config import settings
 from strata.db.base import Base
 
-# Import any modules that register models on Base.metadata here.
-# e.g. `from strata.db import models  # noqa: F401` — none yet at v0.2.
+from strata.db import models as _models  # noqa: F401  # registers tables on Base.metadata
 
 config = context.config
 config.set_main_option("sqlalchemy.url", str(settings.database_url))

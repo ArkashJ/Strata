@@ -7,6 +7,7 @@ that needs config; never read `os.environ` directly outside this module.
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, PostgresDsn
@@ -15,9 +16,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 Env = Literal["dev", "test", "prod"]
 
 
+def _find_env_file() -> str:
+    """Search CWD and parent directories for .env."""
+    for candidate in [Path(".env"), Path("../.env"), Path("../../.env")]:
+        if candidate.exists():
+            return str(candidate.resolve())
+    return ".env"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_find_env_file(),
         env_file_encoding="utf-8",
         env_prefix="STRATA_",
         extra="ignore",
