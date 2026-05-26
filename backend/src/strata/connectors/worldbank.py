@@ -556,7 +556,7 @@ def indicator_to_primitive_yaml(
     AtomicPrimitive schema (models/primitive.py).
     """
     point = _pick_value(values, year)
-    source_slug = f"wb-{point.indicator_id.lower()}-{point.country_code.lower()}-{point.date}"
+    source_slug = f"wb-{point.indicator_id.lower().replace('.', '-')}-{point.country_code.lower()}-{point.date}"
     sha = _snapshot_hash(point.indicator_id, point.country_code, point.date, point.value)
 
     unit: dict[str, str] = {"kind": unit_kind, "dimension": unit_dimension}
@@ -598,7 +598,7 @@ def indicator_to_source_yaml(
 ) -> dict[str, Any]:
     """Convert World Bank indicator values to a Strata source_registry YAML dict."""
     point = _pick_value(values, year)
-    source_slug = f"wb-{point.indicator_id.lower()}-{point.country_code.lower()}-{point.date}"
+    source_slug = f"wb-{point.indicator_id.lower().replace('.', '-')}-{point.country_code.lower()}-{point.date}"
     sha = _snapshot_hash(point.indicator_id, point.country_code, point.date, point.value)
 
     return {

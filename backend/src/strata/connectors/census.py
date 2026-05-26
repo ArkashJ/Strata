@@ -321,7 +321,7 @@ class CensusClient:
         timeout: float = 30.0,
     ) -> None:
         self._key = api_key
-        self._http = httpx.Client(timeout=timeout)
+        self._http = httpx.Client(timeout=timeout, follow_redirects=True)
         default_cache = Path.home() / ".strata" / "cache" / "census"
         self._cache = _DiskCache(cache_dir or default_cache, cache_ttl)
 

@@ -400,6 +400,7 @@ class EDGARClient:
     ) -> None:
         self._http = httpx.Client(
             timeout=timeout,
+            follow_redirects=True,
             headers={
                 "User-Agent": user_agent,
                 "Accept": "application/json",
@@ -588,7 +589,7 @@ class EDGARClient:
 
     def get_company_tickers(self) -> EDGARResponse:
         """Retrieve the full ticker-to-CIK mapping."""
-        url = f"{_BASE}/files/company_tickers.json"
+        url = "https://www.sec.gov/files/company_tickers.json"
         raw, was_cached, age = self._request_response(url, kind="tickers")
 
         tickers = _parse_tickers(raw)
@@ -725,7 +726,7 @@ def concept_to_primitive_yaml(
     AtomicPrimitive schema (models/primitive.py).
     """
     fact = _pick_fact(concept, year=year, form_filter=form_filter, unit_filter=unit_filter)
-    source_slug = f"edgar-{concept.cik}-{concept.tag.lower()}-{fact.frame or 'latest'}"
+    source_slug = f"edgar-{concept.cik}-{concept.tag.lower()}-{(fact.frame or 'latest').lower()}"
     sha = _snapshot_hash(concept.cik, concept.tag, fact.frame, fact.value)
 
     unit: dict[str, str] = {"kind": unit_kind, "dimension": unit_dimension}
@@ -767,7 +768,7 @@ def concept_to_source_yaml(
 ) -> dict[str, Any]:
     """Convert an EDGAR CompanyConcept to a Strata source_registry YAML dict."""
     fact = _pick_fact(concept, year=year)
-    source_slug = f"edgar-{concept.cik}-{concept.tag.lower()}-{fact.frame or year}"
+    source_slug = f"edgar-{concept.cik}-{concept.tag.lower()}-{str(fact.frame or year).lower()}"
     sha = _snapshot_hash(concept.cik, concept.tag, fact.frame, fact.value)
 
     return {
