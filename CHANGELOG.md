@@ -8,6 +8,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **5 data connectors** — typed API clients with disk caching and Strata YAML
+  converters for all major US government data sources:
+  - **BLS** (Bureau of Labor Statistics) — 7 API v2 signatures, OES employment
+    + wage data, CPI, JOLTS, QCEW. 748 lines.
+  - **FRED** (Federal Reserve Economic Data) — 7 endpoints, GDP, employment,
+    interest rates, money supply, consumption. 753 lines.
+  - **Census Bureau** — CBP (County Business Patterns) + SUSB (Statistics of
+    US Businesses), establishment/employee/payroll by NAICS. 790 lines.
+  - **SEC EDGAR** — XBRL company financials, 5 endpoints (submissions, facts,
+    concept, frames, tickers), ticker-to-CIK resolver. 856 lines.
+  - **World Bank** — Indicators API, auto-pagination, 11 pre-defined indicator
+    codes, income-level + region filtering. 614 lines.
+  All follow a 6-layer pattern: enums → TypedDicts → frozen dataclasses →
+  unified response → disk cache → client + YAML converters. 3,700+ lines of
+  typed, pyright-strict connector code.
+- **307 atomic primitives** populated from live API queries across all six
+  TAM analysis lenses:
+  - L1 cost_efficiency: BLS employment (software devs, managers), FRED wages
+  - L2 revenue_generation: EDGAR company revenue (AAPL/MSFT/GOOGL/AMZN/META +
+    V/MA/PYPL), FRED GDP/PCE/retail, Census industry payroll
+  - L3 latent_demand: World Bank population (337M), internet (93.5%),
+    mobile (109/100), FRED prime-age employed (105M)
+  - L4 platform_throughput: EDGAR payment companies, Census banking,
+    World Bank FDI ($362B)
+  - L5 bundle_consolidation: Census professional services (legal/accounting),
+    EDGAR SaaS platforms (NOW/WDAY)
+  - L6 productivity_uplift: BLS CES software/data employment, Census R&D,
+    EDGAR total US R&D spend ($600B)
+  - Cross-lens: 6 major economy GDPs, world population/labor force, inflation
+- **87 source records** — all SHA256-pinned, traceable to API responses.
+- **50 connector tests** — parsing, caching, converters, cross-connector
+  consistency. Test suite: 117 → 167 tests.
+- **Population scripts** (`backend/scripts/`) — `populate_data_bank.py` for
+  initial seeding, `populate_lens_primitives.py` for lens-aligned expansion.
+- **Dune connector context prompt** — `docs/dune-connector-context-prompt.md`
+  for building the Dune Analytics connector in a separate session.
+- **Config expansion** — `STRATA_FRED_API_KEY`, `STRATA_CENSUS_API_KEY` added
+  to pydantic-settings config and `.env.example`.
+
+### Fixed
+- Census connector: `follow_redirects=True` (302 on api.census.gov).
+- EDGAR connector: correct company_tickers URL (`www.sec.gov` not `data.sec.gov`),
+  `follow_redirects=True`, lowercase frame values in source slugs.
+- World Bank connector: dots replaced with dashes in indicator IDs for valid slugs.
+- Amazon EDGAR: uses `RevenueFromContractWithCustomerExcludingAssessedTax` tag.
+
 - **Dynamic TAM resolution** (`POST /resolve`) — Claude parses natural
   language queries into lens + primitives, Exa deep-searches for real
   market data, evaluator computes TAM, streams SSE events showing chain

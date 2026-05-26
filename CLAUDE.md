@@ -36,8 +36,9 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   streaming chain-of-thought for dynamic queries), data explorer, lineage graph.
   Critic-hardened: correct fallback to ResolveView, JSON.parse safety,
   reader.releaseLock(), NaN/Infinity guards, mobile responsive, accessible.
-- **Data (`data/`):** 6 concepts, 216+ primitives (including 202 Kalshi
-  prediction market ingest), 5 frameworks, 15 sources. All validate clean.
+- **Data (`data/`):** 6 concepts, **307 atomic primitives** from 5 APIs
+  (BLS, FRED, Census, EDGAR, World Bank) + Kalshi prediction markets,
+  5 frameworks, **87 sources**. All validate clean. Covers all 6 lenses.
 - **Tests:** 167 passing in `backend/tests/` (including 7 /resolve SSE tests,
   50 connector tests).
 - **Design spec:** `docs/superpowers/specs/2026-05-25-strata-platform-evolution-design.md`
@@ -65,13 +66,13 @@ User types market query
 └────────────────────────┬────────────────────────────┘
                          │
 ┌─ DATA BANK (YAML on disk → Postgres at v0.3) ──────┐
-│  6 concepts · 14 primitives · 5 frameworks          │
+│  6 concepts · 307 primitives · 5 frameworks          │
 │  Each primitive: value + unit + source + sha256 pin │
 └────────────────────────┬────────────────────────────┘
                          │ populated by
 ┌─ CONNECTORS (ingest) ──┴────────────────────────────┐
 │  BLSClient → cache → series_to_primitive_yaml()     │
-│  FREDClient, Census, EDGAR (planned)                │
+│  FREDClient, CensusClient, EDGARClient, WorldBankClient│
 │  Live API = fallback for data not yet in the bank   │
 └─────────────────────────────────────────────────────┘
 ```
@@ -109,9 +110,16 @@ Phase 4:        Optional chain anchor — Base/Solana hash anchoring
 - **YAML files on disk** are the source of truth at v0.2 (no DB yet; Postgres
   mirror lands at v0.3 per `docs/07-data-layer-brainstorm.md` Q27).
 - **Connectors** (`connectors/`) — typed API clients that ingest external data
-  into the data bank. 6 done (BLS, FRED, Census, EDGAR, World Bank, Kalshi),
-  Dune reference-ready. Uses **httpx** for HTTP, **cryptography** for Kalshi
-  RSA-PSS auth, disk cache for raw responses, converter functions for YAML.
+  into the data bank. All follow a 6-layer pattern: enums → TypedDicts →
+  frozen dataclasses → unified response → disk cache → client + YAML converters.
+  | Connector | Lines | Source Tier | Key Data |
+  |-----------|-------|-------------|----------|
+  | BLS | 748 | regulator | Employment, wages, CPI, JOLTS |
+  | FRED | 753 | regulator | GDP, rates, money supply, consumption |
+  | Census | 790 | regulator | Industry stats by NAICS (CBP/SUSB) |
+  | EDGAR | 856 | regulator | Company financials, XBRL frames |
+  | World Bank | 614 | aggregator | Global GDP, population, adoption |
+  | Kalshi | — | prediction_market | Event contracts, probabilities |
   See `backend/src/strata/connectors/CLAUDE.md`.
 
 ### Frontend (`web/`)

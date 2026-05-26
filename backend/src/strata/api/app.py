@@ -28,7 +28,16 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Strata API",
         version=__version__,
-        description="Open-source community-curated market-sizing engine.",
+        description=(
+            "Open-source community-curated market-sizing engine for VCs and operators.\n\n"
+            "**Data bank:** 307 atomic primitives from BLS, FRED, Census, EDGAR, and World Bank. "
+            "All SHA256-pinned to source snapshots.\n\n"
+            "**Six TAM lenses:** cost_efficiency, revenue_generation, latent_demand, "
+            "platform_throughput, bundle_consolidation, productivity_uplift.\n\n"
+            "**Dynamic resolution:** POST /resolve accepts natural language market queries, "
+            "parses them into lens + primitives via Claude, searches for data via Exa, "
+            "and streams results via SSE."
+        ),
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url="/redoc",

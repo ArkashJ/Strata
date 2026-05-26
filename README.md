@@ -118,8 +118,23 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
   real values, enriched primitive cards, min-max range display
 - **Dynamic queries** — type ANY market → Claude parses → Exa finds real data →
   evaluates framework → streams chain of thought via SSE
-- **117 tests**, pyright strict clean, ruff clean, frontend typecheck + build clean
+- **5 data connectors** — BLS, FRED, Census, EDGAR, World Bank — all typed clients
+  with disk caching and YAML converters (3,700+ lines of pyright-strict code)
+- **307 atomic primitives** from live API queries across all six lenses + 87 sources
+- **167 tests**, pyright strict clean, ruff clean, frontend typecheck + build clean
 - **50+ APIs cataloged** for integration ([`docs/11-api-catalog.md`](docs/11-api-catalog.md))
+
+### Data bank coverage by lens
+
+| Lens | Primitives | Key Sources |
+|------|-----------|-------------|
+| L1 cost_efficiency | Employment headcounts, wages, CES industry data | BLS OES, FRED, Census CBP |
+| L2 revenue_generation | Company revenues, GDP, retail sales, industry payroll | EDGAR, FRED, Census, World Bank |
+| L3 latent_demand | Population (337M), internet (93.5%), mobile (109/100) | World Bank, FRED, Census |
+| L4 platform_throughput | Payment co. revenues (V/MA/PYPL), banking establishments | EDGAR, Census, World Bank FDI |
+| L5 bundle_consolidation | Professional services establishments, SaaS revenues | Census, EDGAR (NOW/WDAY) |
+| L6 productivity_uplift | Developer counts, R&D spend ($600B), tech employment | BLS CES, Census, EDGAR frames |
+| Cross-lens | 6 major GDPs, world population, inflation, unemployment | World Bank, FRED |
 
 See [`docs/05-roadmap.md`](docs/05-roadmap.md) for phasing.
 
