@@ -143,12 +143,12 @@ async def sync_yaml_to_db(data_dir: Path) -> dict[str, int]:
     """Load all YAML from data_dir and upsert into Postgres. Returns counts."""
     loaded = load_data_dir(data_dir)
 
-    prim_rows = [_primitive_to_row(p.model_dump()) for p in loaded.atomic_primitives]
+    prim_rows = [_primitive_to_row(p.model_dump(mode="json")) for p in loaded.atomic_primitives]
     src_rows = [_source_to_row(raw) for _, raw in loaded.source_registries]
 
     concept_rows = []
     for c in loaded.concepts:
-        d = c.model_dump()
+        d = c.model_dump(mode="json")
         concept_rows.append({
             "slug": d["slug"],
             "schema_version": d.get("schema_version", 1),
@@ -162,7 +162,7 @@ async def sync_yaml_to_db(data_dir: Path) -> dict[str, int]:
 
     fw_rows = []
     for f in loaded.frameworks:
-        d = f.model_dump()
+        d = f.model_dump(mode="json")
         fw_rows.append({
             "slug": d["slug"],
             "schema_version": d.get("schema_version", 1),

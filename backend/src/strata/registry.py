@@ -1,7 +1,7 @@
 """In-memory registry keyed by ``(record_type, slug)``.
 
 The registry is rebuilt every CLI invocation — YAML on disk is the source of
-truth at v0.2 (no DB yet; Postgres mirror lands at v0.3).
+truth for dev/test; Postgres is the source of truth in prod.
 """
 
 from __future__ import annotations
@@ -32,6 +32,30 @@ class Registry:
     frameworks: dict[str, Framework]
     annotations: dict[str, Annotation]
     tam_outputs: dict[str, TAMOutput]
+
+    @classmethod
+    async def from_db(cls) -> Registry:
+        """Build the registry from Postgres. Used in prod."""
+        from .db.engine import SessionLocal
+        from .db.queries import (
+            load_concepts_from_db,
+            load_frameworks_from_db,
+            load_primitives_from_db,
+        )
+
+        async with SessionLocal() as session:
+            primitives = await load_primitives_from_db(session)
+            concepts = await load_concepts_from_db(session)
+            frameworks = await load_frameworks_from_db(session)
+
+        return cls(
+            atomic=_index(primitives, lambda r: r.slug, "atomic_primitive"),
+            composite={},
+            concepts=_index(concepts, lambda r: r.slug, "concept"),
+            frameworks=_index(frameworks, lambda r: r.slug, "framework"),
+            annotations={},
+            tam_outputs={},
+        )
 
     @classmethod
     def from_loaded(cls, records: LoadedRecords) -> Registry:

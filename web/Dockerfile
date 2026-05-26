@@ -1,10 +1,10 @@
 # Web image. Bun for install + build; Node runtime for `next start` in prod.
-FROM oven/bun:1.1 AS deps
+FROM oven/bun:1.3 AS deps
 WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
-FROM oven/bun:1.1 AS builder
+FROM oven/bun:1.3 AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

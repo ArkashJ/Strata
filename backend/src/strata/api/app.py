@@ -17,9 +17,16 @@ log = get_logger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
+async def lifespan(application: FastAPI) -> AsyncGenerator[None]:
     configure_logging()
     log.info("strata.startup", env=settings.env, version=__version__)
+
+    if settings.env == "prod":
+        from strata.registry import Registry
+
+        log.info("strata.registry.loading_from_db")
+        application.state.registry = await Registry.from_db()
+        log.info("strata.registry.loaded_from_db")
     yield
     log.info("strata.shutdown")
 
