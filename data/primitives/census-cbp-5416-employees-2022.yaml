@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: census-cbp-5416-employees-2022
+schema_version: 1
+concept_slug: us-management-consulting
+name: US Management, scientific, and technical consulting services employees (Census
+  CBP 2022)
+description: Census County Business Patterns employees count for NAICS 5416.
+value: 1625072
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5416-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 3ff03cc93b5bb433b77f0b5177731eeb574774a60de223880d88fcb07fb1d7e8

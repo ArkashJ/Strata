@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: edgar-msft-revenue-2023
+schema_version: 1
+concept_slug: microsoft-financials
+name: MICROSOFT CORPORATION annual revenue (EDGAR 10-K, CY2023)
+description: SEC EDGAR XBRL Revenues for MICROSOFT CORPORATION, annual 10-K filing.
+value: 62484000000.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2010-07-30'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-789019-revenues-cy2010
+  tier: regulator
+  url: https://data.sec.gov/api/xbrl/companyconcept/CIK0000789019/us-gaap/Revenues.json
+  accessed: '2026-05-25'
+  snapshot_sha256: c8294b60e29bfaeb178038d3ae49aa71401fc81ffcb90fdc008aac6a6d8d5771

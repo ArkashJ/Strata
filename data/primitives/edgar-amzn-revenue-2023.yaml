@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: edgar-amzn-revenue-2023
+schema_version: 1
+concept_slug: amazon-financials
+name: AMAZON.COM, INC. annual revenue (EDGAR 10-K, CY2023)
+description: SEC EDGAR XBRL Revenues for AMAZON.COM, INC., annual 10-K filing.
+value: 574785000000.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2026-02-06'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-1018724-revenuefromcontractwithcustomerexcludingassessedtax-cy2023
+  tier: regulator
+  url: https://data.sec.gov/api/xbrl/companyconcept/CIK0001018724/us-gaap/RevenueFromContractWithCustomerExcludingAssessedTax.json
+  accessed: '2026-05-25'
+  snapshot_sha256: 802b1dc58370ab1b28bcb3569cc738f240f3ca924263218da33995732f4fdf90

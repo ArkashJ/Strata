@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5182-employees-2022
+schema_version: 1
+concept_slug: us-data-processing-hosting
+name: US Data processing, hosting, and related services employees (Census CBP 2022)
+description: Census County Business Patterns employees count for NAICS 5182.
+value: 570188
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5182-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: d9ca4220be232247b5376733d6af1dba53b7893e6ec44abb7c09d6b9c69019e1

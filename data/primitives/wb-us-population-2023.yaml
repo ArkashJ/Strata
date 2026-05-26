@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: wb-us-population-2023
+schema_version: 1
+concept_slug: us-demographics
+name: US total population (World Bank, 2023)
+description: Total population estimate from World Bank Open Data.
+value: 336806231.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sp-pop-totl-us-2023
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/SP.POP.TOTL
+  accessed: '2026-05-25'
+  snapshot_sha256: af1fe23e2300b80a874b0baa1155b2f7d6b64e8076d023682ac089946b6bea16

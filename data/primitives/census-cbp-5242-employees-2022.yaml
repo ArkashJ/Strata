@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: census-cbp-5242-employees-2022
+schema_version: 1
+concept_slug: us-insurance-agencies
+name: US Agencies, brokerages, and other insurance related activities employees (Census
+  CBP 2022)
+description: Census County Business Patterns employees count for NAICS 5242.
+value: 1322268
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5242-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: ec8fd6402c3066bd1b16cbcaad4f0226585597d92cf3fd08bf8062f51155d423

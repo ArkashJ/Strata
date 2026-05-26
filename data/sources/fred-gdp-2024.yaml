@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-gdp-2024
+tier: regulator
+url: https://fred.stlouisfed.org/series/GDP
+accessed: '2026-05-25'
+snapshot_sha256: b791433bb4a00dfcb435f7053e38938570228e67b403a828afdd4ca479222733
+description: FRED series GDP, 2024 data.

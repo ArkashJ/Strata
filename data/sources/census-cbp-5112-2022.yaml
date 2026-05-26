@@ -1,0 +1,7 @@
+kind: source_registry
+slug: census-cbp-5112-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: 189a848140e37a61e11248064357b0c4a91b8f27b36aac110c299aafc63fcb2a
+description: Census CBP NAICS 5112 (Software publishers), 2022 data.

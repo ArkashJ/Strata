@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: fred-us-gdp-nominal-2024
+schema_version: 1
+concept_slug: us-macroeconomy
+name: US nominal GDP (FRED, Q4 2024)
+description: Bureau of Economic Analysis nominal GDP via FRED series GDP.
+value: 28708.161
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2024-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-gdp-2024
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/GDP
+  accessed: '2026-05-25'
+  snapshot_sha256: b791433bb4a00dfcb435f7053e38938570228e67b403a828afdd4ca479222733

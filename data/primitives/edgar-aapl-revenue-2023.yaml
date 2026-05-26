@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: edgar-aapl-revenue-2023
+schema_version: 1
+concept_slug: apple-financials
+name: Apple Inc. annual revenue (EDGAR 10-K, CY2023)
+description: SEC EDGAR XBRL Revenues for Apple Inc., annual 10-K filing.
+value: 265595000000.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2018-11-05'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-320193-revenues-cy2018
+  tier: regulator
+  url: https://data.sec.gov/api/xbrl/companyconcept/CIK0000320193/us-gaap/Revenues.json
+  accessed: '2026-05-25'
+  snapshot_sha256: c4e34dd2825909082c65bd341bfc389af731cda49a207e3d0660c1f80beb2b91

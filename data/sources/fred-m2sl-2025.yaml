@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-m2sl-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/M2SL
+accessed: '2026-05-25'
+snapshot_sha256: 45c5d36255440bb20578244a256a7043d9e73537d353ce663d1ec430b9685fe6
+description: FRED series M2SL, 2025 data.

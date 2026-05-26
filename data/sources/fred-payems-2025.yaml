@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-payems-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/PAYEMS
+accessed: '2026-05-25'
+snapshot_sha256: fc70c9ff60644ecf7bc8b43f6fc53790344800258323954e6325b9c34e7ee0a4
+description: FRED series PAYEMS, 2025 data.
