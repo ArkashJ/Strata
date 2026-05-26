@@ -1,0 +1,31 @@
+kind: atomic_primitive
+slug: kalshi-kxvirginiaredistricting-26-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Will the Virginia redistricting referendum pass? (Kalshi, top market)
+description: 'Kalshi prediction market: Will the Virginia redistricting referendum
+  pass?. Event KXVIRGINIAREDISTRICTING-26, market KXVIRGINIAREDISTRICTING-26. Category:
+  Elections.'
+value: 0.9985
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.998
+  - 0.999
+  basis: Kalshi bid-ask spread (KXVIRGINIAREDISTRICTING-26)
+source:
+  slug: kalshi-kxvirginiaredistricting-26-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXVIRGINIAREDISTRICTING-26
+  accessed: '2026-05-25'
+  snapshot_sha256: edd1d91616526d4451fdca53884d6d4dbe62d6d5124137eafadf0ee1eedeaee8

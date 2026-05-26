@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxpresnomd-28-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: 2028 Democratic presidential nominee'
+description: 'Cumulative trading volume on Kalshi market for: 2028 Democratic presidential
+  nominee.'
+value: 6405278.7
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxpresnomd-28-gn-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXPRESNOMD-28-GN
+  accessed: '2026-05-25'
+  snapshot_sha256: 072e4e767b9d9ab30ba7632624d9ffcc1a4ca99f7960bbf1ad4106d233a1517b

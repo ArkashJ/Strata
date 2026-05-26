@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxcitrini-28jul01-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Will the Citrini scenario happen?'
+description: 'Cumulative trading volume on Kalshi market for: Will the Citrini scenario
+  happen?.'
+value: 25812043.62
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxcitrini-28jul01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXCITRINI-28JUL01
+  accessed: '2026-05-25'
+  snapshot_sha256: 65612bc178c86b8038abd8d2be66176859634c6b60633b7cc5e80780b2ba592c

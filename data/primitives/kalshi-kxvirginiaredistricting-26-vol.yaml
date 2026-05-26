@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxvirginiaredistricting-26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Will the Virginia redistricting referendum pass?'
+description: 'Cumulative trading volume on Kalshi market for: Will the Virginia redistricting
+  referendum pass?.'
+value: 5679342.15
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxvirginiaredistricting-26-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXVIRGINIAREDISTRICTING-26
+  accessed: '2026-05-25'
+  snapshot_sha256: edd1d91616526d4451fdca53884d6d4dbe62d6d5124137eafadf0ee1eedeaee8

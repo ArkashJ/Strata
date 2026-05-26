@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-starlink-ipo-timing
+schema_version: 1
+concept_slug: satellite-internet-market
+name: 'Probability: Starlink IPO by Jun 2027 (Kalshi)'
+description: Kalshi probability for Starlink IPO timing.
+value: 0.14
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.12
+  - 0.16
+  basis: Kalshi bid-ask spread (KXIPOSTARLINK-27JUN30)
+source:
+  slug: kalshi-kxipostarlink-27jun30-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXIPOSTARLINK-27JUN30
+  accessed: '2026-05-25'
+  snapshot_sha256: a47e112e01c82dc2838e9441d66e37a3f3da1d39b8169945d8ae79a092ea119d

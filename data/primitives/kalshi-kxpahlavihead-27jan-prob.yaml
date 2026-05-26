@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxpahlavihead-27jan-prob
+schema_version: 1
+concept_slug: company-events-2026
+name: Will Reza Pahlavi lead Iran in 2026? (Kalshi, top market)
+description: 'Kalshi prediction market: Will Reza Pahlavi lead Iran in 2026?. Event
+  KXPAHLAVIHEAD-27JAN, market KXPAHLAVIHEAD-27JAN-RPAH. Category: Companies.'
+value: 0.085
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.08
+  - 0.09
+  basis: Kalshi bid-ask spread (KXPAHLAVIHEAD-27JAN-RPAH)
+source:
+  slug: kalshi-kxpahlavihead-27jan-rpah-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXPAHLAVIHEAD-27JAN-RPAH
+  accessed: '2026-05-25'
+  snapshot_sha256: 65ac9b5ba9916c98a4a5ca0ae895cb35c5b92e5d069bf89669294997c0a83866

@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-senatetx-26-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Texas Senate winner? (Kalshi, top market)
+description: 'Kalshi prediction market: Texas Senate winner?. Event SENATETX-26, market
+  SENATETX-26-D. Category: Elections.'
+value: 0.455
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.45
+  - 0.46
+  basis: Kalshi bid-ask spread (SENATETX-26-D)
+source:
+  slug: kalshi-senatetx-26-d-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/SENATETX-26-D
+  accessed: '2026-05-25'
+  snapshot_sha256: 2f63581fa945ca71fcefa0aa527366279b6d99736f911f560f0bc1cfd83fb26f

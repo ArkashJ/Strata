@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxgovcaprimary-26-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: California Governor primary advancers? (Person) (Kalshi, top market)
+description: 'Kalshi prediction market: California Governor primary advancers? (Person).
+  Event KXGOVCAPRIMARY-26, market KXGOVCAPRIMARY-26-CBIA. Category: Elections.'
+value: 0.051
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.034
+  - 0.068
+  basis: Kalshi bid-ask spread (KXGOVCAPRIMARY-26-CBIA)
+source:
+  slug: kalshi-kxgovcaprimary-26-cbia-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGOVCAPRIMARY-26-CBIA
+  accessed: '2026-05-25'
+  snapshot_sha256: 77a4f43f30b51a17b19a79a460387a780a999728297be5b6c176dc14ddadd943

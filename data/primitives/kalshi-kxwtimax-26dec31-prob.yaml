@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxwtimax-26dec31-prob
+schema_version: 1
+concept_slug: financial-markets-2026
+name: How high will oil (WTI) get by Dec 31, 2026? (Kalshi, top market)
+description: 'Kalshi prediction market: How high will oil (WTI) get by Dec 31, 2026?.
+  Event KXWTIMAX-26DEC31, market KXWTIMAX-26DEC31-T180. Category: Financials.'
+value: 0.1405
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.131
+  - 0.15
+  basis: Kalshi bid-ask spread (KXWTIMAX-26DEC31-T180)
+source:
+  slug: kalshi-kxwtimax-26dec31-t180-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXWTIMAX-26DEC31-T180
+  accessed: '2026-05-25'
+  snapshot_sha256: e93ac6e238bb451ad902c7ce55c5d9cf2a6a02ae0c3c4dce0225843a10576db3

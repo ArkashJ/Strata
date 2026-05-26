@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-inflation-2026-volume
+schema_version: 1
+concept_slug: us-inflation-2026
+name: 'Kalshi volume: inflation ceiling'
+description: Volume on CPI ceiling market.
+value: 184541.59
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxlcpimaxyoy-27-p4-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXLCPIMAXYOY-27-P4
+  accessed: '2026-05-25'
+  snapshot_sha256: 70609de6654ae8b5489c681a143a520d40b892521a076174c9ccc8d39e111242

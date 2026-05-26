@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxprimarymov-ky4r26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Margin of victory in the KY-04 Republican primary?'
+description: 'Cumulative trading volume on Kalshi market for: Margin of victory in
+  the KY-04 Republican primary?.'
+value: 608678.32
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxprimarymov-ky4r26-tmas-p2-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXPRIMARYMOV-KY4R26-TMAS-P2
+  accessed: '2026-05-25'
+  snapshot_sha256: f81a113db62be9713ead91c9e15bc2c43120312ae61ecf43fe470a89e890bc60

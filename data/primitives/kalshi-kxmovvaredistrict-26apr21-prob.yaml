@@ -1,0 +1,31 @@
+kind: atomic_primitive
+slug: kalshi-kxmovvaredistrict-26apr21-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Virginia redistricting referendum margin of victory? (Kalshi, top market)
+description: 'Kalshi prediction market: Virginia redistricting referendum margin of
+  victory?. Event KXMOVVAREDISTRICT-26APR21, market KXMOVVAREDISTRICT-26APR21-YES-P1.
+  Category: Elections.'
+value: 0.011
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.01
+  - 0.012
+  basis: Kalshi bid-ask spread (KXMOVVAREDISTRICT-26APR21-YES-P1)
+source:
+  slug: kalshi-kxmovvaredistrict-26apr21-yes-p1-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXMOVVAREDISTRICT-26APR21-YES-P1
+  accessed: '2026-05-25'
+  snapshot_sha256: c7b931eada7371bd30a2952014e144a7d19969b42b4ad745896730fdbd279f7d

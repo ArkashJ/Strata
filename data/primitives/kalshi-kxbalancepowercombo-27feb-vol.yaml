@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxbalancepowercombo-27feb-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: 2026 2026 Midterms: Congress Balance of Power?'
+description: 'Cumulative trading volume on Kalshi market for: 2026 2026 Midterms:
+  Congress Balance of Power?.'
+value: 2280042.34
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxbalancepowercombo-27feb-rr-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBALANCEPOWERCOMBO-27FEB-RR
+  accessed: '2026-05-25'
+  snapshot_sha256: 282fa0e6066e7ff93d9b32e0344ecd7831530b8f65ed3783c41731c0c2588d0a

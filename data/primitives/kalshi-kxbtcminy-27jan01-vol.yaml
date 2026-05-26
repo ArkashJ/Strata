@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxbtcminy-27jan01-vol
+schema_version: 1
+concept_slug: crypto-markets-2026
+name: 'Kalshi volume: How low will Bitcoin get in 2026?'
+description: 'Cumulative trading volume on Kalshi market for: How low will Bitcoin
+  get in 2026?.'
+value: 991130.41
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxbtcminy-27jan01-60000-00-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBTCMINY-27JAN01-60000.00
+  accessed: '2026-05-25'
+  snapshot_sha256: d6289d807a9ad183b1c2d92e830d085040299a974b6e5d0a1ba1735c245fecb4

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxeconstatcpiyoy-26may-vol
+schema_version: 1
+concept_slug: macro-economics-2026
+name: 'Kalshi volume: CPI year-over-year in May 2026?'
+description: 'Cumulative trading volume on Kalshi market for: CPI year-over-year in
+  May 2026?.'
+value: 514898.84
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxeconstatcpiyoy-26may-t2-8-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXECONSTATCPIYOY-26MAY-T2.8
+  accessed: '2026-05-25'
+  snapshot_sha256: 976600b93398f2dcbdf489c3a408197fcd92a0d184b3e6a0870c99b225cb8285

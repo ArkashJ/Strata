@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxinxy-26dec31h1600-vol
+schema_version: 1
+concept_slug: financial-markets-2026
+name: 'Kalshi volume: S&P close price end of 2026?'
+description: 'Cumulative trading volume on Kalshi market for: S&P close price end
+  of 2026?.'
+value: 386603.19
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxinxy-26dec31h1600-t4000-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXINXY-26DEC31H1600-T4000
+  accessed: '2026-05-25'
+  snapshot_sha256: 0ab643762a06c465386b82618e531418b8de7b6fc6ad74e3969360ab07aeb128

@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxdhsfund-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: When will DHS be funded again? (Kalshi, top market)
+description: 'Kalshi prediction market: When will DHS be funded again?. Event KXDHSFUND,
+  market KXDHSFUND-26MAY01. Category: Politics.'
+value: 0.9985
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.998
+  - 0.999
+  basis: Kalshi bid-ask spread (KXDHSFUND-26MAY01)
+source:
+  slug: kalshi-kxdhsfund-26may01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXDHSFUND-26MAY01
+  accessed: '2026-05-25'
+  snapshot_sha256: 51fb23a606dc36eba1c835d78387748b73e772c6433b8d1c9139d08bb55e66d2

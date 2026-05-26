@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxredistricting-26-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Which states will redistrict before the midterms? (Kalshi, top market)
+description: 'Kalshi prediction market: Which states will redistrict before the midterms?.
+  Event KXREDISTRICTING-26, market KXREDISTRICTING-26-VIR. Category: Elections.'
+value: 0.0625
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.062
+  - 0.063
+  basis: Kalshi bid-ask spread (KXREDISTRICTING-26-VIR)
+source:
+  slug: kalshi-kxredistricting-26-vir-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXREDISTRICTING-26-VIR
+  accessed: '2026-05-25'
+  snapshot_sha256: 14263a5df8ebba58dc4c1f20f55682d3ffcaf3a6a7cb3ff4d067ea5723eb819e

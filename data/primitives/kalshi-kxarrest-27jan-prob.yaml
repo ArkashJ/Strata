@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxarrest-27jan-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Who will be arrested before 2027? (Kalshi, top market)
+description: 'Kalshi prediction market: Who will be arrested before 2027?. Event KXARREST-27JAN,
+  market KXARREST-27JAN-JCOM. Category: Politics.'
+value: 0.995
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.994
+  - 0.996
+  basis: Kalshi bid-ask spread (KXARREST-27JAN-JCOM)
+source:
+  slug: kalshi-kxarrest-27jan-jcom-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXARREST-27JAN-JCOM
+  accessed: '2026-05-25'
+  snapshot_sha256: f6bbb2d4fb3f5faf21eca29ae88ff1e911ef60a446e6b44f730dd07a8ea0a18d

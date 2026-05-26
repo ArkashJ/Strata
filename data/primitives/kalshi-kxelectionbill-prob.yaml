@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: kalshi-kxelectionbill-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Will proof of citizenship be required for federal voter registration? (Kalshi,
+  top market)
+description: 'Kalshi prediction market: Will proof of citizenship be required for
+  federal voter registration?. Event KXELECTIONBILL, market KXELECTIONBILL-26MAY01.
+  Category: Politics.'
+value: 0.009
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 1.0
+  basis: Kalshi bid-ask spread (KXELECTIONBILL-26MAY01)
+source:
+  slug: kalshi-kxelectionbill-26may01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXELECTIONBILL-26MAY01
+  accessed: '2026-05-25'
+  snapshot_sha256: 417bc8d789c721b892efa83ea108e372338ccdc9f31363dea10f19794c866fc4

@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxpresnomr-28-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: 2028 Republican presidential nominee (Kalshi, top market)
+description: 'Kalshi prediction market: 2028 Republican presidential nominee. Event
+  KXPRESNOMR-28, market KXPRESNOMR-28-MR. Category: Elections.'
+value: 0.285
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.28
+  - 0.29
+  basis: Kalshi bid-ask spread (KXPRESNOMR-28-MR)
+source:
+  slug: kalshi-kxpresnomr-28-mr-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXPRESNOMR-28-MR
+  accessed: '2026-05-25'
+  snapshot_sha256: 4f98dec812c17a68dbacb9206be512047ff3dc9ee127420c6449b9ecca2337cb

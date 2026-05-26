@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxusairanagreement-27-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: US-Iran nuclear deal? (Kalshi, top market)
+description: 'Kalshi prediction market: US-Iran nuclear deal?. Event KXUSAIRANAGREEMENT-27,
+  market KXUSAIRANAGREEMENT-27-26JUN. Category: Politics.'
+value: 0.0715
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.071
+  - 0.072
+  basis: Kalshi bid-ask spread (KXUSAIRANAGREEMENT-27-26JUN)
+source:
+  slug: kalshi-kxusairanagreement-27-26jun-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXUSAIRANAGREEMENT-27-26JUN
+  accessed: '2026-05-25'
+  snapshot_sha256: 11ef7204b1c91154011e696f307a909062b6512081c6a9d951fa15fb6e498f77

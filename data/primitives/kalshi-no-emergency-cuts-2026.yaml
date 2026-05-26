@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-no-emergency-cuts-2026
+schema_version: 1
+concept_slug: us-monetary-policy-2026
+name: 'Probability: zero emergency rate cuts in 2026 (Kalshi)'
+description: Kalshi probability of no emergency rate cuts in 2026.
+value: 0.906
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.901
+  - 0.911
+  basis: Kalshi bid-ask spread (KXEMERCUTS-26-T0)
+source:
+  slug: kalshi-kxemercuts-26-t0-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXEMERCUTS-26-T0
+  accessed: '2026-05-25'
+  snapshot_sha256: c0b6c22abbe510f357784cde0363ed161f62e76c90562015e0d722227b18aa2e

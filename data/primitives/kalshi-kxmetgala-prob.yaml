@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxmetgala-prob
+schema_version: 1
+concept_slug: media-entertainment-2026
+name: Who will attend The Met Gala? (Kalshi, top market)
+description: 'Kalshi prediction market: Who will attend The Met Gala?. Event KXMETGALA,
+  market KXMETGALA-26-SYD. Category: Entertainment.'
+value: 0.01
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 0.01
+  basis: Kalshi bid-ask spread (KXMETGALA-26-SYD)
+source:
+  slug: kalshi-kxmetgala-26-syd-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXMETGALA-26-SYD
+  accessed: '2026-05-25'
+  snapshot_sha256: c4bade740d5c38cbf3520c11074aa103dbb026033a1eb64f82593c42a88a7d98

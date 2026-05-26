@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-spacex-ipo-2026-volume
+schema_version: 1
+concept_slug: spacex-ipo-timing
+name: 'Kalshi volume: SpaceX IPO'
+description: Volume on SpaceX IPO market.
+value: 3476874.55
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxipospacex-26jun01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXIPOSPACEX-26JUN01
+  accessed: '2026-05-25'
+  snapshot_sha256: 491412b5b9ce12d8f891a92bf2db7c6c92d99fcc5c8dd6ab44cca37aec0135c5

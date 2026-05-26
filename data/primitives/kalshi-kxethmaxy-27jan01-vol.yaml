@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxethmaxy-27jan01-vol
+schema_version: 1
+concept_slug: crypto-markets-2026
+name: 'Kalshi volume: How high will Ethereum get in 2026?'
+description: 'Cumulative trading volume on Kalshi market for: How high will Ethereum
+  get in 2026?.'
+value: 406353.94
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxethmaxy-27jan01-6000-00-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXETHMAXY-27JAN01-6000.00
+  accessed: '2026-05-25'
+  snapshot_sha256: ed055e0761352105109d99e8dfb27f2a66e21ed6c4239e8fd6130f697dfcbe3f

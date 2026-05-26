@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxtrumpout27-27-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Donald Trump announces departure as President? (Excluding death)'
+description: 'Cumulative trading volume on Kalshi market for: Donald Trump announces
+  departure as President? (Excluding death).'
+value: 4888227.73
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxtrumpout27-27-djt-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXTRUMPOUT27-27-DJT
+  accessed: '2026-05-25'
+  snapshot_sha256: 4960ac0fec45d70051541e6533e850753b8cd5e1ea9a11780cd8bbd112204db2

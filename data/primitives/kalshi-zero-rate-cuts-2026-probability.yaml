@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-zero-rate-cuts-2026-probability
+schema_version: 1
+concept_slug: us-monetary-policy-2026
+name: 'Probability: zero Fed rate cuts in 2026 (Kalshi)'
+description: Kalshi probability of zero rate cuts in 2026.
+value: 0.65
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.642
+  - 0.658
+  basis: Kalshi bid-ask spread (KXRATECUTCOUNT-26DEC31-T0)
+source:
+  slug: kalshi-kxratecutcount-26dec31-t0-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXRATECUTCOUNT-26DEC31-T0
+  accessed: '2026-05-25'
+  snapshot_sha256: b845863643039d1d02190435bea4ee9320720ec20d259d3263718333e14fa1fd

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxgreenlandprice-29jan21-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: How much will the US acquire Greenland for?'
+description: 'Cumulative trading volume on Kalshi market for: How much will the US
+  acquire Greenland for?.'
+value: 580495.02
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxgreenlandprice-29jan21-noacq-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGREENLANDPRICE-29JAN21-NOACQ
+  accessed: '2026-05-25'
+  snapshot_sha256: a2edaddf82a0dc39379ceb01cf45a1e96b1d94930819e798599ce5d05a5503e3

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxbtc2026200-27jan01-vol
+schema_version: 1
+concept_slug: crypto-markets-2026
+name: 'Kalshi volume: Will Bitcoin be above $200k by 2027?'
+description: 'Cumulative trading volume on Kalshi market for: Will Bitcoin be above
+  $200k by 2027?.'
+value: 4553030.64
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxbtc2026200-27jan01-200000-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBTC2026200-27JAN01-200000
+  accessed: '2026-05-25'
+  snapshot_sha256: 48ae6be1dd12d7be01d863d8a2a7b142060c96cce803f6684079d703a53d3fcd

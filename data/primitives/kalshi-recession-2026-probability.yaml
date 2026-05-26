@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-recession-2026-probability
+schema_version: 1
+concept_slug: us-economic-cycle-2026
+name: 'Probability: US recession in 2026 (Kalshi NBER)'
+description: Kalshi probability NBER declares US recession in 2026.
+value: 0.165
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.16
+  - 0.17
+  basis: Kalshi bid-ask spread (KXRECSSNBER-26)
+source:
+  slug: kalshi-kxrecssnber-26-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXRECSSNBER-26
+  accessed: '2026-05-25'
+  snapshot_sha256: ebb4b12a647fe01926fd185d74161a3374e532a0bc0c9fa7a41fd5bce2f22be5

@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxpresperson-28-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: 2028 U.S. Presidential Election winner? (Kalshi, top market)
+description: 'Kalshi prediction market: 2028 U.S. Presidential Election winner?. Event
+  KXPRESPERSON-28, market KXPRESPERSON-28-MRUB. Category: Elections.'
+value: 0.185
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.18
+  - 0.19
+  basis: Kalshi bid-ask spread (KXPRESPERSON-28-MRUB)
+source:
+  slug: kalshi-kxpresperson-28-mrub-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXPRESPERSON-28-MRUB
+  accessed: '2026-05-25'
+  snapshot_sha256: ee620186656f572cb9c3bad2dd05ff38f862e72da0b70e546d04a3cb501ea75d

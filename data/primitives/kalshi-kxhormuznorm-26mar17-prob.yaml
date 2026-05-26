@@ -1,0 +1,31 @@
+kind: atomic_primitive
+slug: kalshi-kxhormuznorm-26mar17-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: When will traffic at the Strait of Hormuz return to normal? (Kalshi, top market)
+description: 'Kalshi prediction market: When will traffic at the Strait of Hormuz
+  return to normal?. Event KXHORMUZNORM-26MAR17, market KXHORMUZNORM-26MAR17-B260501.
+  Category: Politics.'
+value: 0.001
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 1.0
+  basis: Kalshi bid-ask spread (KXHORMUZNORM-26MAR17-B260501)
+source:
+  slug: kalshi-kxhormuznorm-26mar17-b260501-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXHORMUZNORM-26MAR17-B260501
+  accessed: '2026-05-25'
+  snapshot_sha256: f9e409512ea1b8f71aeb98c0a80b995df8721342d20f09922dbe4420b3b2839f

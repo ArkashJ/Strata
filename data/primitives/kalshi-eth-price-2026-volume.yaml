@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-eth-price-2026-volume
+schema_version: 1
+concept_slug: ethereum-ecosystem-2026
+name: 'Kalshi volume: ETH price'
+description: Volume on ETH price market.
+value: 1206282.83
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxethy-27jan0100-b2375-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXETHY-27JAN0100-B2375
+  accessed: '2026-05-25'
+  snapshot_sha256: 78447e1bc0ea6a7be7eb1e52f05c4a047589cbbcc6af13b2c397ff89b49b6668

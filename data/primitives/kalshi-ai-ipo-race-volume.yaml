@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-ai-ipo-race-volume
+schema_version: 1
+concept_slug: ai-ipo-race
+name: 'Kalshi volume: AI IPO race'
+description: Volume on AI IPO race market.
+value: 84221.07
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxoaianth-40-anth-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXOAIANTH-40-ANTH
+  accessed: '2026-05-25'
+  snapshot_sha256: 582669d73ff076999e3990023bb98cc0269f70cc096b14b084509709cfb1587d

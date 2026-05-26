@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-kxmayorla-26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Los Angeles Mayor winner?'
+description: 'Cumulative trading volume on Kalshi market for: Los Angeles Mayor winner?.'
+value: 17089262.51
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxmayorla-26-spra-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXMAYORLA-26-SPRA
+  accessed: '2026-05-25'
+  snapshot_sha256: 9b0355ae86a8f9c2dfb31f5a0a10f8275660310ba8f23bd604a036613c8c883f

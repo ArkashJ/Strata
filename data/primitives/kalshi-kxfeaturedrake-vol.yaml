@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxfeaturedrake-vol
+schema_version: 1
+concept_slug: media-entertainment-2026
+name: 'Kalshi volume: Who will be featured on ''Iceman''?'
+description: 'Cumulative trading volume on Kalshi market for: Who will be featured
+  on ''Iceman''?.'
+value: 909332.59
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxfeaturedrake-27-fut-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXFEATUREDRAKE-27-FUT
+  accessed: '2026-05-25'
+  snapshot_sha256: ebae65fdf24f1d39d25899a17d15f2d5330ab67ce126b71006871b200b2e746c

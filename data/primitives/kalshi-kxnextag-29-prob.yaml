@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxnextag-29-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Who will be Trump's next Attorney General? (Kalshi, top market)
+description: 'Kalshi prediction market: Who will be Trump''s next Attorney General?.
+  Event KXNEXTAG-29, market KXNEXTAG-29-TBLA. Category: Politics.'
+value: 0.37
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.36
+  - 0.38
+  basis: Kalshi bid-ask spread (KXNEXTAG-29-TBLA)
+source:
+  slug: kalshi-kxnextag-29-tbla-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXNEXTAG-29-TBLA
+  accessed: '2026-05-25'
+  snapshot_sha256: 76fca085fa8a62774494ff34a41e54ef93fba3283621fb674a4120878cb88ee0

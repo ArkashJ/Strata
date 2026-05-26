@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxwtimax-26dec31-vol
+schema_version: 1
+concept_slug: financial-markets-2026
+name: 'Kalshi volume: How high will oil (WTI) get by Dec 31, 2026?'
+description: 'Cumulative trading volume on Kalshi market for: How high will oil (WTI)
+  get by Dec 31, 2026?.'
+value: 590032.08
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxwtimax-26dec31-t180-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXWTIMAX-26DEC31-T180
+  accessed: '2026-05-25'
+  snapshot_sha256: e93ac6e238bb451ad902c7ce55c5d9cf2a6a02ae0c3c4dce0225843a10576db3

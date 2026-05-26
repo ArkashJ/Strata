@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxbondiout-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: When will Pam Bondi depart as Attorney General? (Kalshi, top market)
+description: 'Kalshi prediction market: When will Pam Bondi depart as Attorney General?.
+  Event KXBONDIOUT, market KXBONDIOUT-26APR03. Category: Politics.'
+value: 0.07
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 1.0
+  basis: Kalshi bid-ask spread (KXBONDIOUT-26APR03)
+source:
+  slug: kalshi-kxbondiout-26apr03-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBONDIOUT-26APR03
+  accessed: '2026-05-25'
+  snapshot_sha256: 7af040883ede2235b71dcea07014803d0e9210c9ad4ef3ebf51cc9ad798f2da7

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-senatetx-26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Texas Senate winner?'
+description: 'Cumulative trading volume on Kalshi market for: Texas Senate winner?.'
+value: 1728968.43
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-senatetx-26-d-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/SENATETX-26-D
+  accessed: '2026-05-25'
+  snapshot_sha256: 2f63581fa945ca71fcefa0aa527366279b6d99736f911f560f0bc1cfd83fb26f

@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxcava-26mayrest-prob
+schema_version: 1
+concept_slug: company-events-2026
+name: CAVA restaurants in Q1 (Kalshi, top market)
+description: 'Kalshi prediction market: CAVA restaurants in Q1. Event KXCAVA-26MAYREST,
+  market KXCAVA-26MAYREST-460. Category: Companies.'
+value: 0.01
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 0.01
+  basis: Kalshi bid-ask spread (KXCAVA-26MAYREST-460)
+source:
+  slug: kalshi-kxcava-26mayrest-460-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXCAVA-26MAYREST-460
+  accessed: '2026-05-25'
+  snapshot_sha256: bf820366924320e663e19aa845f770dc3c9fbec53a68e00d9270e1551a42affa

@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-tesla-optimus-release-2026
+schema_version: 1
+concept_slug: humanoid-robotics-2026
+name: 'Probability: Tesla Optimus released in 2026 (Kalshi)'
+description: Kalshi probability Tesla releases Optimus in 2026.
+value: 0.145
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.14
+  - 0.15
+  basis: Kalshi bid-ask spread (TESLAOPTIMUS-26DEC31)
+source:
+  slug: kalshi-teslaoptimus-26dec31-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/TESLAOPTIMUS-26DEC31
+  accessed: '2026-05-25'
+  snapshot_sha256: b6172ea58e0daa3e5cbf5cdb0a5e4b32ecd3010693f5b9ab1bfb33f3b6fc2706

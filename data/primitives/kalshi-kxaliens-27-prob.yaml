@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxaliens-27-prob
+schema_version: 1
+concept_slug: tech-adoption-2026
+name: Will the U.S. confirm that aliens exist? (Kalshi, top market)
+description: 'Kalshi prediction market: Will the U.S. confirm that aliens exist?.
+  Event KXALIENS-27, market KXALIENS-27. Category: Science and Technology.'
+value: 0.1735
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.173
+  - 0.174
+  basis: Kalshi bid-ask spread (KXALIENS-27)
+source:
+  slug: kalshi-kxaliens-27-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXALIENS-27
+  accessed: '2026-05-25'
+  snapshot_sha256: 05f069b3bfde67661da0d90dfced806a614900706abd0cc8bc061af50e1c6c74

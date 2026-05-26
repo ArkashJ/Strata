@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: kalshi-kxtrumpout27-27-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Donald Trump announces departure as President? (Excluding death) (Kalshi, top
+  market)
+description: 'Kalshi prediction market: Donald Trump announces departure as President?
+  (Excluding death). Event KXTRUMPOUT27-27, market KXTRUMPOUT27-27-DJT. Category:
+  Elections.'
+value: 0.0875
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.086
+  - 0.089
+  basis: Kalshi bid-ask spread (KXTRUMPOUT27-27-DJT)
+source:
+  slug: kalshi-kxtrumpout27-27-djt-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXTRUMPOUT27-27-DJT
+  accessed: '2026-05-25'
+  snapshot_sha256: 4960ac0fec45d70051541e6533e850753b8cd5e1ea9a11780cd8bbd112204db2

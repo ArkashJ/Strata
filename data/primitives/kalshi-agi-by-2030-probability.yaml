@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-agi-by-2030-probability
+schema_version: 1
+concept_slug: agi-timeline
+name: 'Probability: AGI achieved by company (Kalshi)'
+description: Kalshi prediction on AGI timeline.
+value: 0.045
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.04
+  - 0.05
+  basis: Kalshi bid-ask spread (KXAGICO-COMP-26Q2)
+source:
+  slug: kalshi-kxagico-comp-26q2-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXAGICO-COMP-26Q2
+  accessed: '2026-05-25'
+  snapshot_sha256: 980dc4bcd92efe1bdf6036d83b47b7bc19b3005aba7d90dabba454539b7fc897

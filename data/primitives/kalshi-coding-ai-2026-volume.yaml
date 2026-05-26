@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-coding-ai-2026-volume
+schema_version: 1
+concept_slug: ai-coding-market-2026
+name: 'Kalshi volume: coding AI'
+description: Volume on coding AI market.
+value: 169935.35
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxcodingmodel-26dec-anth-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXCODINGMODEL-26DEC-ANTH
+  accessed: '2026-05-25'
+  snapshot_sha256: f858dfd8debcaef1c90402c31bb3bfedfaa964d1fc00f2c460639145f490d124

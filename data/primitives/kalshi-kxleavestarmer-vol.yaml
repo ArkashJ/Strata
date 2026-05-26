@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxleavestarmer-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: Keir Starmer departure announced?'
+description: 'Cumulative trading volume on Kalshi market for: Keir Starmer departure
+  announced?.'
+value: 930686.52
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxleavestarmer-26jul01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXLEAVESTARMER-26JUL01
+  accessed: '2026-05-25'
+  snapshot_sha256: 280d74e810ea1ce9b4b0b0d93568eaa05b025c7c9ba859ff782bf1dfea99d8cd

@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxtakeoveracqwb-27jun30-prob
+schema_version: 1
+concept_slug: company-events-2026
+name: Who will successfully take over Warner Brothers? (Kalshi, top market)
+description: 'Kalshi prediction market: Who will successfully take over Warner Brothers?.
+  Event KXTAKEOVERACQWB-27JUN30, market KXTAKEOVERACQWB-27JUN30-PSKY. Category: Companies.'
+value: 0.805
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.8
+  - 0.81
+  basis: Kalshi bid-ask spread (KXTAKEOVERACQWB-27JUN30-PSKY)
+source:
+  slug: kalshi-kxtakeoveracqwb-27jun30-psky-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXTAKEOVERACQWB-27JUN30-PSKY
+  accessed: '2026-05-25'
+  snapshot_sha256: d7ce2f85650eab0ae5f76a820aa05151ef9ab04ba75c57e66ab0da8347712a35

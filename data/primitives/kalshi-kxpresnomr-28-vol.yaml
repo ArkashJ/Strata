@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxpresnomr-28-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: 2028 Republican presidential nominee'
+description: 'Cumulative trading volume on Kalshi market for: 2028 Republican presidential
+  nominee.'
+value: 4090739.85
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxpresnomr-28-mr-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXPRESNOMR-28-MR
+  accessed: '2026-05-25'
+  snapshot_sha256: 4f98dec812c17a68dbacb9206be512047ff3dc9ee127420c6449b9ecca2337cb

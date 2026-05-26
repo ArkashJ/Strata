@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-anthropic-ipo-first-probability
+schema_version: 1
+concept_slug: ai-ipo-race
+name: 'Probability: Anthropic IPOs before OpenAI (Kalshi)'
+description: Kalshi probability Anthropic IPOs before OpenAI.
+value: 0.275
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.27
+  - 0.28
+  basis: Kalshi bid-ask spread (KXOAIANTH-40-ANTH)
+source:
+  slug: kalshi-kxoaianth-40-anth-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXOAIANTH-40-ANTH
+  accessed: '2026-05-25'
+  snapshot_sha256: 582669d73ff076999e3990023bb98cc0269f70cc096b14b084509709cfb1587d
