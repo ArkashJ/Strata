@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: wb-germany-gdp-2023
+schema_version: 1
+concept_slug: germany-macroeconomy
+name: Germany GDP (World Bank, 2023)
+description: World Bank Open Data NY.GDP.MKTP.CD for DE.
+value: 4562207532490.28
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - DE
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-ny-gdp-mktp-cd-de-2023
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
+  accessed: '2026-05-25'
+  snapshot_sha256: bcbe21941d9c8af3ed35de7e8a324dbafaa3140ac4db6c3f7e54c14652db2ad9

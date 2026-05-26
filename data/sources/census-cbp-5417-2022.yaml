@@ -1,0 +1,8 @@
+kind: source_registry
+slug: census-cbp-5417-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: b08e06f4cfd269c21a819b441a0b59e5d180af4033299522ece06b1b962efd1d
+description: Census CBP NAICS 5417 (Scientific research and development services),
+  2022 data.

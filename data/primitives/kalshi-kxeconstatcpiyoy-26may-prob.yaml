@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxeconstatcpiyoy-26may-prob
+schema_version: 1
+concept_slug: macro-economics-2026
+name: CPI year-over-year in May 2026? (Kalshi, top market)
+description: 'Kalshi prediction market: CPI year-over-year in May 2026?. Event KXECONSTATCPIYOY-26MAY,
+  market KXECONSTATCPIYOY-26MAY-T2.8. Category: Economics.'
+value: 0.01
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 0.01
+  basis: Kalshi bid-ask spread (KXECONSTATCPIYOY-26MAY-T2.8)
+source:
+  slug: kalshi-kxeconstatcpiyoy-26may-t2-8-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXECONSTATCPIYOY-26MAY-T2.8
+  accessed: '2026-05-25'
+  snapshot_sha256: 976600b93398f2dcbdf489c3a408197fcd92a0d184b3e6a0870c99b225cb8285

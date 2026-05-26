@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-jtsjol-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/JTSJOL
+accessed: '2026-05-25'
+snapshot_sha256: d70ba95d44fe4afb6046aac290ab05b8ae1902e512f6f219e699085187b1dce6
+description: FRED series JTSJOL, 2025 data.

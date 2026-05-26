@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxipo-26-prob
+schema_version: 1
+concept_slug: company-events-2026
+name: Which Companies will officially announce an IPO this year? (Kalshi, top market)
+description: 'Kalshi prediction market: Which Companies will officially announce an
+  IPO this year?. Event KXIPO-26, market KXIPO-26-SPACEX. Category: Companies.'
+value: 0.995
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.99
+  - 1.0
+  basis: Kalshi bid-ask spread (KXIPO-26-SPACEX)
+source:
+  slug: kalshi-kxipo-26-spacex-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXIPO-26-SPACEX
+  accessed: '2026-05-25'
+  snapshot_sha256: 1b01977dba6541720af5ff9b5de65b06ff68f9dd586f0e18a6b7852984dded03

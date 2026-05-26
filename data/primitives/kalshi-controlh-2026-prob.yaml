@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-controlh-2026-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Which party will win the U.S. House? (Kalshi, top market)
+description: 'Kalshi prediction market: Which party will win the U.S. House?. Event
+  CONTROLH-2026, market CONTROLH-2026-R. Category: Elections.'
+value: 0.235
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.23
+  - 0.24
+  basis: Kalshi bid-ask spread (CONTROLH-2026-R)
+source:
+  slug: kalshi-controlh-2026-r-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/CONTROLH-2026-R
+  accessed: '2026-05-25'
+  snapshot_sha256: cbd0982424d31ad4d37cf11b5c6a3870e312717295237da39dd3f8308c483dd2

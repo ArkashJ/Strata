@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: census-cbp-5416-establishments-2022
+schema_version: 1
+concept_slug: us-management-consulting
+name: US Management, scientific, and technical consulting services establishments
+  (Census CBP 2022)
+description: Census County Business Patterns establishments for NAICS 5416.
+value: 215682
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5416-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: cbef64a3dd5dd7509fb936fa761afcc15314ca5177759f2af4d0f0b7a9061453

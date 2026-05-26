@@ -1,0 +1,25 @@
+kind: concept
+slug: software-eng-productivity
+schema_version: 1
+name: "Software engineering productivity tooling"
+definition: >
+  US market for software engineering productivity tooling — AI-assisted
+  coding assistants, automated testing platforms, developer workflow
+  optimization, and CI/CD augmentation tools sold to professional software
+  developers. Measures annualized vendor revenue addressable from the US
+  software developer headcount at observed per-user pricing. Excludes
+  infrastructure (IaaS/PaaS/cloud compute) and developer-tool bundles
+  embedded in cloud platform subscriptions.
+
+analysis_lens:
+  primary: productivity_uplift
+  secondary: null
+
+modifiers: {}
+
+measurements:
+  - bls-software-developers-us-2024
+  - dev-tool-arpu-2024
+
+competing_concepts: []
+requires_clearance: []

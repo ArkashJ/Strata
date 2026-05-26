@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxfeddecision-26jun-prob
+schema_version: 1
+concept_slug: macro-economics-2026
+name: Fed decision in Jun 2026? (Kalshi, top market)
+description: 'Kalshi prediction market: Fed decision in Jun 2026?. Event KXFEDDECISION-26JUN,
+  market KXFEDDECISION-26JUN-C25. Category: Economics.'
+value: 0.025
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.02
+  - 0.03
+  basis: Kalshi bid-ask spread (KXFEDDECISION-26JUN-C25)
+source:
+  slug: kalshi-kxfeddecision-26jun-c25-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXFEDDECISION-26JUN-C25
+  accessed: '2026-05-25'
+  snapshot_sha256: d3d4107b0e0853868646a766f81398e214dac5da9a7ffbc0278bb63232ce7f4d

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxtxrsenrunoffmov-26may26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Texas Republican Senate Runoff: Margin of Victory'
+description: 'Cumulative trading volume on Kalshi market for: Texas Republican Senate
+  Runoff: Margin of Victory.'
+value: 418297.11
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxtxrsenrunoffmov-26may26-kpax-p60-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXTXRSENRUNOFFMOV-26MAY26-KPAX-P60
+  accessed: '2026-05-25'
+  snapshot_sha256: a7f10f1edb3d938c1de750ae336c59a9a7611856d984d831354c74de5aeba62f

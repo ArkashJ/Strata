@@ -1,0 +1,274 @@
+{
+  "total_checked": 14,
+  "needs_update": 8,
+  "clean": 6,
+  "errors": 0,
+  "flagged": [
+    {
+      "slug": "pc-saas-spend-per-carrier-2024",
+      "expected_value": 185000,
+      "unit_hint": "USD/carrier/year",
+      "verdict": "VERDICT: Value differs \u2014 found 48,083 vs expected 185,000 (74.0% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://datos-insights.com/blog/property-casualty-insurer-it-budgets-and-projects-2024-steady-as-they-go/",
+        "https://www.simplesolve.com/blog/why-cios-say-they-will-spend-3.7-of-premium-on-tech-in-2021",
+        "https://hginsights.com/resource/insurance-industry-report/"
+      ]
+    },
+    {
+      "slug": "pc-premium-volume-digital-us-2024",
+      "expected_value": 500000000000,
+      "unit_hint": "USD total",
+      "verdict": "VERDICT: Value differs \u2014 found $344.1B (344,112,348,754) vs expected $500.0B (500,000,000,000) (31.2% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://content.naic.org/sites/default/files/2024-annual-property-casualty-and-title-insurance-industries-analysis-report.pdf",
+        "https://content.naic.org/sites/default/files/2024-year-end-snapshot.pdf",
+        "https://content.naic.org/sites/default/files/pc-and-title-2024mid-year-industry-report.pdf"
+      ]
+    },
+    {
+      "slug": "bls-sales-reps-headcount-2024",
+      "expected_value": 4600000,
+      "unit_hint": "headcount (persons)",
+      "verdict": "VERDICT: Value differs \u2014 found 1.6M (1,623,800) vs expected 4.6M (4,600,000) (64.7% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://www.bls.gov/ooh/Sales/Wholesale-and-manufacturing-sales-representatives.htm",
+        "https://data.bls.gov/projections/nationalMatrix?ioType=o&queryParams=41-4000",
+        "https://data.bls.gov/projections/nationalMatrix?ioType=o&queryParams=41-4011"
+      ]
+    },
+    {
+      "slug": "census-midmarket-companies-na-2024",
+      "expected_value": 200000,
+      "unit_hint": "count (companies)",
+      "verdict": "VERDICT: Value differs \u2014 found 2,025 vs expected 200,000 (99.0% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://www.census.gov/econ/overview/mu0800.html",
+        "https://www.census.gov/data/developers/data-sets/cbp-zbp/cbp-api.html",
+        "https://www.census.gov/programs-surveys/cbp/data/datasets.html"
+      ]
+    },
+    {
+      "slug": "avg-saas-spend-midmarket-2024",
+      "expected_value": 420000,
+      "unit_hint": "USD/company/year",
+      "verdict": "VERDICT: Value differs \u2014 found 325,000 vs expected 420,000 (22.6% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://productiv.com/state-of-saas/2024-saas-trends-spend/",
+        "https://www.crn.com/news/cloud/2024/here-s-the-annual-public-cloud-and-saas-bill-in-2024-report",
+        "https://www.analysysmason.com/contentassets/e5187a9660b64aa7a15a9aa5fd3d3df2/analysys_mason_smb_it_spending_forecast_may2024_rsmb1.pdf"
+      ]
+    },
+    {
+      "slug": "bls-software-developers-us-2024",
+      "expected_value": 4400000,
+      "unit_hint": "headcount (persons)",
+      "verdict": "VERDICT: Value differs \u2014 found 2.2M (2,183,300) vs expected 4.4M (4,400,000) (50.4% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://www.bls.gov/oes/2023/may/oes151252.htm",
+        "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm",
+        "https://www.bls.gov/oes/2019/may/oes151256.htm"
+      ]
+    },
+    {
+      "slug": "enterprise-workplace-point-solution-spend-2024",
+      "expected_value": 85000000000,
+      "unit_hint": "USD total",
+      "verdict": "VERDICT: Value differs \u2014 found 57,404 vs expected $85.0B (85,000,000,000) (100.0% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://www.marketsandmarkets.com/Market-Reports/digital-workplace-market-81457101.html",
+        "https://www.grandviewresearch.com/industry-analysis/enterprise-collaboration-market-report",
+        "https://www.grandviewresearch.com/industry-analysis/team-collaboration-software-market"
+      ]
+    },
+    {
+      "slug": "consolidation-capture-rate-2024",
+      "expected_value": 0.15,
+      "unit_hint": "fraction (e.g. 0.15 = 15%)",
+      "verdict": "VERDICT: Value differs \u2014 found 1.0 vs expected 0.1500 (15.00%) (85.0% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://www.contentgrip.com/businesses-consolidate-tools-to-adopt-ai/",
+        "https://fptsoftware.com/resource-center/blogs/8-reasons-why-companies-consolidate-vendors",
+        "https://www.formstack.com/blog/why-2025-is-the-year-of-vendor-consolidation"
+      ]
+    }
+  ],
+  "all": [
+    {
+      "slug": "bls-pc-claims-adjusters-headcount",
+      "expected_value": 322500,
+      "unit_hint": "headcount (persons)",
+      "verdict": "VERDICT: Value consistent \u2014 closest match 337,900 vs expected 322,500 (4.8% diff). NO CHANGE needed.",
+      "needs_update": false,
+      "top_urls": [
+        "https://data.bls.gov/projections/nationalMatrix?ioType=o&queryParams=13-1031",
+        "https://www.bls.gov/ooh/business-and-financial/claims-adjusters-appraisers-examiners-and-investigators.htm",
+        "https://www.bls.gov/oes/2022/may/oes131031.htm"
+      ]
+    },
+    {
+      "slug": "naic-active-pc-carriers-2024",
+      "expected_value": 2541,
+      "unit_hint": "count (companies)",
+      "verdict": "VERDICT: Value consistent \u2014 closest match 2,546 vs expected 2,541 (0.2% diff). NO CHANGE needed.",
+      "needs_update": false,
+      "top_urls": [
+        "https://content.naic.org/sites/default/files/inline-files/PC_RBC_Statistics_2024.pdf",
+        "https://content.naic.org/publications",
+        "https://content.naic.org/sites/default/files/capital-markets-pe-owned-ye2024.pdf"
+      ]
+    },
+    {
+      "slug": "pc-claims-adjuster-cost-per-seat",
+      "expected_value": 480,
+      "unit_hint": "USD/seat/year",
+      "verdict": "VERDICT: Value consistent \u2014 closest match 500.0 vs expected 480 (4.2% diff). NO CHANGE needed.",
+      "needs_update": false,
+      "top_urls": [
+        "https://www.salesforce.com/uk/financial-services/pricing/insurance-claims-management-pricing/",
+        "https://www.itqlick.com/compare/insurancesuite/waterstreet",
+        "https://www.softwareadvice.com/insurance/waterstreet-profile/"
+      ]
+    },
+    {
+      "slug": "pc-saas-spend-per-carrier-2024",
+      "expected_value": 185000,
+      "unit_hint": "USD/carrier/year",
+      "verdict": "VERDICT: Value differs \u2014 found 48,083 vs expected 185,000 (74.0% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://datos-insights.com/blog/property-casualty-insurer-it-budgets-and-projects-2024-steady-as-they-go/",
+        "https://www.simplesolve.com/blog/why-cios-say-they-will-spend-3.7-of-premium-on-tech-in-2021",
+        "https://hginsights.com/resource/insurance-industry-report/"
+      ]
+    },
+    {
+      "slug": "pc-premium-volume-digital-us-2024",
+      "expected_value": 500000000000,
+      "unit_hint": "USD total",
+      "verdict": "VERDICT: Value differs \u2014 found $344.1B (344,112,348,754) vs expected $500.0B (500,000,000,000) (31.2% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://content.naic.org/sites/default/files/2024-annual-property-casualty-and-title-insurance-industries-analysis-report.pdf",
+        "https://content.naic.org/sites/default/files/2024-year-end-snapshot.pdf",
+        "https://content.naic.org/sites/default/files/pc-and-title-2024mid-year-industry-report.pdf"
+      ]
+    },
+    {
+      "slug": "payment-processing-take-rate-2024",
+      "expected_value": 0.002,
+      "unit_hint": "fraction (e.g. 0.002 = 0.2%)",
+      "verdict": "VERDICT: Value consistent \u2014 closest match 0.0312 (3.12%) vs expected 0.0020 (0.20%) (2.9% diff). NO CHANGE needed.",
+      "needs_update": false,
+      "top_urls": [
+        "https://www.clearlypayments.com/blog/statistics-on-how-much-merchants-pay-for-payment-processing-in-2024/",
+        "https://www.nerdwallet.com/business/software/learn/credit-card-processing-fees",
+        "https://www.uschamber.com/co/run/finance/calculate-credit-card-fees"
+      ]
+    },
+    {
+      "slug": "bls-sales-reps-headcount-2024",
+      "expected_value": 4600000,
+      "unit_hint": "headcount (persons)",
+      "verdict": "VERDICT: Value differs \u2014 found 1.6M (1,623,800) vs expected 4.6M (4,600,000) (64.7% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://www.bls.gov/ooh/Sales/Wholesale-and-manufacturing-sales-representatives.htm",
+        "https://data.bls.gov/projections/nationalMatrix?ioType=o&queryParams=41-4000",
+        "https://data.bls.gov/projections/nationalMatrix?ioType=o&queryParams=41-4011"
+      ]
+    },
+    {
+      "slug": "gtm-ops-tool-cost-per-rep-2024",
+      "expected_value": 1440,
+      "unit_hint": "USD/rep/year",
+      "verdict": "VERDICT: Value consistent \u2014 closest match 1,428 vs expected 1,440 (0.8% diff). NO CHANGE needed.",
+      "needs_update": false,
+      "top_urls": [
+        "https://www.salesforce.com/sales/engagement-platform/pricing/",
+        "https://thecroreport.com/blog/outreach-pricing-2026/",
+        "https://www.landbase.com/blog/salesloft-pricing"
+      ]
+    },
+    {
+      "slug": "census-midmarket-companies-na-2024",
+      "expected_value": 200000,
+      "unit_hint": "count (companies)",
+      "verdict": "VERDICT: Value differs \u2014 found 2,025 vs expected 200,000 (99.0% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://www.census.gov/econ/overview/mu0800.html",
+        "https://www.census.gov/data/developers/data-sets/cbp-zbp/cbp-api.html",
+        "https://www.census.gov/programs-surveys/cbp/data/datasets.html"
+      ]
+    },
+    {
+      "slug": "avg-saas-spend-midmarket-2024",
+      "expected_value": 420000,
+      "unit_hint": "USD/company/year",
+      "verdict": "VERDICT: Value differs \u2014 found 325,000 vs expected 420,000 (22.6% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://productiv.com/state-of-saas/2024-saas-trends-spend/",
+        "https://www.crn.com/news/cloud/2024/here-s-the-annual-public-cloud-and-saas-bill-in-2024-report",
+        "https://www.analysysmason.com/contentassets/e5187a9660b64aa7a15a9aa5fd3d3df2/analysys_mason_smb_it_spending_forecast_may2024_rsmb1.pdf"
+      ]
+    },
+    {
+      "slug": "bls-software-developers-us-2024",
+      "expected_value": 4400000,
+      "unit_hint": "headcount (persons)",
+      "verdict": "VERDICT: Value differs \u2014 found 2.2M (2,183,300) vs expected 4.4M (4,400,000) (50.4% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://www.bls.gov/oes/2023/may/oes151252.htm",
+        "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm",
+        "https://www.bls.gov/oes/2019/may/oes151256.htm"
+      ]
+    },
+    {
+      "slug": "dev-tool-arpu-2024",
+      "expected_value": 1800,
+      "unit_hint": "USD/developer/year",
+      "verdict": "VERDICT: Value consistent \u2014 closest match 2,024 vs expected 1,800 (12.4% diff). NO CHANGE needed.",
+      "needs_update": false,
+      "top_urls": [
+        "https://stripe.com/resources/more/what-is-average-revenue-per-user-why-it-matters-and-how-to-calculate-it",
+        "https://saasdb.app/learn/sectors/devtools-saas-metrics/",
+        "https://saasdb.app/learn/industries/devtools/"
+      ]
+    },
+    {
+      "slug": "enterprise-workplace-point-solution-spend-2024",
+      "expected_value": 85000000000,
+      "unit_hint": "USD total",
+      "verdict": "VERDICT: Value differs \u2014 found 57,404 vs expected $85.0B (85,000,000,000) (100.0% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://www.marketsandmarkets.com/Market-Reports/digital-workplace-market-81457101.html",
+        "https://www.grandviewresearch.com/industry-analysis/enterprise-collaboration-market-report",
+        "https://www.grandviewresearch.com/industry-analysis/team-collaboration-software-market"
+      ]
+    },
+    {
+      "slug": "consolidation-capture-rate-2024",
+      "expected_value": 0.15,
+      "unit_hint": "fraction (e.g. 0.15 = 15%)",
+      "verdict": "VERDICT: Value differs \u2014 found 1.0 vs expected 0.1500 (15.00%) (85.0% diff). UPDATE RECOMMENDED.",
+      "needs_update": true,
+      "top_urls": [
+        "https://www.contentgrip.com/businesses-consolidate-tools-to-adopt-ai/",
+        "https://fptsoftware.com/resource-center/blogs/8-reasons-why-companies-consolidate-vendors",
+        "https://www.formstack.com/blog/why-2025-is-the-year-of-vendor-consolidation"
+      ]
+    }
+  ]
+}

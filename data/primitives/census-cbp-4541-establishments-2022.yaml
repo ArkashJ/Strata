@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-4541-establishments-2022
+schema_version: 1
+concept_slug: us-electronic-shopping
+name: US Electronic shopping and mail-order houses establishments (Census CBP 2022)
+description: Census County Business Patterns establishments for NAICS 4541.
+value: 55633
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-4541-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 84676d4badc7a96a8a33ccddb469e0120b43c7e85b3fb6844982f055b6a04db6

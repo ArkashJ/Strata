@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxgovganomd-26-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Georgia Democratic Governor nominee? (Kalshi, top market)
+description: 'Kalshi prediction market: Georgia Democratic Governor nominee?. Event
+  KXGOVGANOMD-26, market KXGOVGANOMD-26-MT. Category: Elections.'
+value: 0.001
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 0.001
+  basis: Kalshi bid-ask spread (KXGOVGANOMD-26-MT)
+source:
+  slug: kalshi-kxgovganomd-26-mt-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGOVGANOMD-26-MT
+  accessed: '2026-05-25'
+  snapshot_sha256: 5d6772668dc5c6ccbd23bd12d28f09f847540284f6fbf95c288ce1e3526dade3

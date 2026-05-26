@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxgovohnomr-26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Ohio Republican Governor nominee?'
+description: 'Cumulative trading volume on Kalshi market for: Ohio Republican Governor
+  nominee?.'
+value: 1381644.72
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxgovohnomr-26-cput-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGOVOHNOMR-26-CPUT
+  accessed: '2026-05-25'
+  snapshot_sha256: c2a092363c780b9e7587926b039a1c0a02493034b7bfe7e0cb8538d2acea1cda

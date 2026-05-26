@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-it-cel-sets-p2-us-2022
+tier: aggregator
+url: https://data.worldbank.org/indicator/IT.CEL.SETS.P2
+accessed: '2026-05-25'
+snapshot_sha256: 540d6383584114d0536087c321dc551a3bbb97de9b1dbbaa16acdea8dc64cafa
+description: World Bank IT.CEL.SETS.P2 for United States, 2022 data.

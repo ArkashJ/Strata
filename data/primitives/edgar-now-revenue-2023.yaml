@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: edgar-now-revenue-2023
+schema_version: 1
+concept_slug: saas-consolidation
+name: ServiceNow, Inc. revenue (EDGAR 10-K, CY2023)
+description: SEC EDGAR XBRL Revenues for ServiceNow, Inc..
+value: 1933026000.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2018-02-28'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-1373715-revenues-cy2017
+  tier: regulator
+  url: https://data.sec.gov/api/xbrl/companyconcept/CIK0001373715/us-gaap/Revenues.json
+  accessed: '2026-05-25'
+  snapshot_sha256: 4141961983b30ebdad2f619a9857ec3677fd04466a87010114bc7a4d4d957f2e

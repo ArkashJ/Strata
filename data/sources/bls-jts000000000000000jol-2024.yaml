@@ -1,0 +1,7 @@
+kind: source_registry
+slug: bls-jts000000000000000jol-2024
+tier: regulator
+url: https://www.bls.gov/jlt/
+accessed: '2026-05-25'
+snapshot_sha256: 69df2ca8f2c49c6d86812379d8b8cd6ad0efd34d186d8b90dec71f377c11ae53
+description: BLS series JTS000000000000000JOL, 2024 data.

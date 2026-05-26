@@ -1,0 +1,31 @@
+kind: atomic_primitive
+slug: kalshi-kxgreenlandprice-29jan21-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: How much will the US acquire Greenland for? (Kalshi, top market)
+description: 'Kalshi prediction market: How much will the US acquire Greenland for?.
+  Event KXGREENLANDPRICE-29JAN21, market KXGREENLANDPRICE-29JAN21-NOACQ. Category:
+  Politics.'
+value: 0.805
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.8
+  - 0.81
+  basis: Kalshi bid-ask spread (KXGREENLANDPRICE-29JAN21-NOACQ)
+source:
+  slug: kalshi-kxgreenlandprice-29jan21-noacq-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGREENLANDPRICE-29JAN21-NOACQ
+  accessed: '2026-05-25'
+  snapshot_sha256: a2edaddf82a0dc39379ceb01cf45a1e96b1d94930819e798599ce5d05a5503e3

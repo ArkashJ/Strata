@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: bls-jolts-openings-2024
+schema_version: 1
+concept_slug: us-labor-market
+name: Job openings total nonfarm (BLS JOLTS, 2024)
+description: JOLTS total nonfarm job openings, seasonally adjusted, in thousands.
+value: 7295.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-28'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: bls-jts000000000000000jol-2024
+  tier: regulator
+  url: https://www.bls.gov/jlt/
+  accessed: '2026-05-25'
+  snapshot_sha256: 69df2ca8f2c49c6d86812379d8b8cd6ad0efd34d186d8b90dec71f377c11ae53

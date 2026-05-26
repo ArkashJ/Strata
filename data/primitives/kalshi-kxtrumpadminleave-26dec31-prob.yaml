@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: kalshi-kxtrumpadminleave-26dec31-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Who will leave their role in the Trump administration in 2026? (Kalshi, top
+  market)
+description: 'Kalshi prediction market: Who will leave their role in the Trump administration
+  in 2026?. Event KXTRUMPADMINLEAVE-26DEC31, market KXTRUMPADMINLEAVE-26DEC31-KPAT.
+  Category: Politics.'
+value: 0.675
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.67
+  - 0.68
+  basis: Kalshi bid-ask spread (KXTRUMPADMINLEAVE-26DEC31-KPAT)
+source:
+  slug: kalshi-kxtrumpadminleave-26dec31-kpat-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXTRUMPADMINLEAVE-26DEC31-KPAT
+  accessed: '2026-05-25'
+  snapshot_sha256: d0727f0789d5ad6d23085e89525e3918ed9ab6b7318747d0026d59de0f71917c

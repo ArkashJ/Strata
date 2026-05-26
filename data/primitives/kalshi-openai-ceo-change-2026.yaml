@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-openai-ceo-change-2026
+schema_version: 1
+concept_slug: ai-market-structure-2026
+name: 'Probability: Sam Altman replaced as OpenAI CEO in 2026 (Kalshi)'
+description: Kalshi probability of OpenAI CEO change.
+value: 0.22
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.19
+  - 0.25
+  basis: Kalshi bid-ask spread (KXOPENAICEOCHANGE-26)
+source:
+  slug: kalshi-kxopenaiceochange-26-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXOPENAICEOCHANGE-26
+  accessed: '2026-05-25'
+  snapshot_sha256: fc351e16d69666a190428d856db90388c01f39b1f32882c79923be1f3979e859

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxipospacex-vol
+schema_version: 1
+concept_slug: macro-economics-2026
+name: 'Kalshi volume: When will SpaceX officially announce an IPO?'
+description: 'Cumulative trading volume on Kalshi market for: When will SpaceX officially
+  announce an IPO?.'
+value: 3476874.55
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxipospacex-26jun01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXIPOSPACEX-26JUN01
+  accessed: '2026-05-25'
+  snapshot_sha256: 491412b5b9ce12d8f891a92bf2db7c6c92d99fcc5c8dd6ab44cca37aec0135c5

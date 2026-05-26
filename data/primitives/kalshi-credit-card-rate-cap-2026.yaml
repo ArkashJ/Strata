@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-credit-card-rate-cap-2026
+schema_version: 1
+concept_slug: consumer-credit-regulation-2026
+name: 'Probability: credit card rates capped in 2026 (Kalshi)'
+description: Kalshi probability of credit card rate cap regulation.
+value: 0.115
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.11
+  - 0.12
+  basis: Kalshi bid-ask spread (KXCCLIMIT-27)
+source:
+  slug: kalshi-kxcclimit-27-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXCCLIMIT-27
+  accessed: '2026-05-25'
+  snapshot_sha256: 7839a5376d391a44780dca2bfdc987ca39497af5c1fc1464c0304ac1646145af

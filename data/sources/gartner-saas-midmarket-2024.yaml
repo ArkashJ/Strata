@@ -1,0 +1,10 @@
+kind: source_registry
+slug: gartner-saas-midmarket-2024
+tier: analyst
+url: "https://www.gartner.com/en/information-technology"
+accessed: 2026-05-22
+snapshot_sha256: "f6a7b8c9f6a7b8c9f6a7b8c9f6a7b8c9f6a7b8c9f6a7b8c9f6a7b8c9f6a7b8c9"
+description: >
+  Gartner IT research 2024 estimate for average annual SaaS spend per
+  midmarket company (100–999 employees) in North America, covering
+  horizontal and vertical software categories.

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: fred-us-nonfarm-payroll-2025
+schema_version: 1
+concept_slug: us-labor-market
+name: US total nonfarm payroll (FRED PAYEMS, 2025)
+description: BLS Current Employment Statistics via FRED. Thousands of persons.
+value: 158268.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-payems-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/PAYEMS
+  accessed: '2026-05-25'
+  snapshot_sha256: fc70c9ff60644ecf7bc8b43f6fc53790344800258323954e6325b9c34e7ee0a4

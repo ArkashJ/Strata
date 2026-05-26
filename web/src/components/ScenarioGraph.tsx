@@ -5,10 +5,10 @@ import {
   BackgroundVariant,
   Controls,
   type Edge,
+  Handle,
   type Node,
   type NodeProps,
   type NodeTypes,
-  Handle,
   Position,
   ReactFlow,
   ReactFlowProvider,
@@ -16,7 +16,7 @@ import {
 import "reactflow/dist/style.css";
 import { useMemo } from "react";
 
-import { formatUSD } from "@/lib/format";
+import { formatCompact, formatUSD } from "@/lib/format";
 import type { InputUsed, Scenario, TAMOutput } from "@/lib/schemas";
 
 interface TargetNodeData extends Record<string, unknown> {
@@ -110,7 +110,11 @@ function buildGraph(tam: TAMOutput): GraphData {
       id: "target",
       type: "target",
       position: { x: -160, y: 0 },
-      data: { kind: "target", name: tam.target.concept, midpoint },
+      data: {
+        kind: "target",
+        name: tam.target.concept_name ?? tam.target.concept.replace(/-/g, " "),
+        midpoint,
+      },
       draggable: false,
     },
   ];
@@ -162,7 +166,11 @@ function TargetCard({ data }: NodeProps<TargetNodeData>) {
       className="canvas-card w-[320px] px-5 py-4 text-left"
       style={{ borderRadius: "var(--r-3)" }}
     >
-      <Handle type="source" position={Position.Bottom} style={{ background: "transparent", border: 0 }} />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: "transparent", border: 0 }}
+      />
       <div className="flex items-center gap-2 mb-2">
         <span className="role-chip role-chip--accent">Target TAM</span>
       </div>
@@ -182,8 +190,16 @@ function FrameworkCard({ data }: NodeProps<FrameworkNodeData>) {
       className="canvas-card w-[240px] px-4 py-3 text-left"
       style={{ borderRadius: "var(--r-3)" }}
     >
-      <Handle type="target" position={Position.Top} style={{ background: "transparent", border: 0 }} />
-      <Handle type="source" position={Position.Bottom} style={{ background: "transparent", border: 0 }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "transparent", border: 0 }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: "transparent", border: 0 }}
+      />
       <div className="text-[12px] text-[var(--fg-1)] font-medium truncate">
         {scenario.definition}
       </div>
@@ -204,14 +220,18 @@ function PrimitiveCard({ data }: NodeProps<PrimitiveNodeData>) {
       className="canvas-card w-[180px] px-3 py-2.5 text-left"
       style={{ borderRadius: "var(--r-3)" }}
     >
-      <Handle type="target" position={Position.Top} style={{ background: "transparent", border: 0 }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "transparent", border: 0 }}
+      />
       <div className="text-[11px] text-[var(--fg-2)] leading-[1.3] line-clamp-2">
-        {input.primitive_slug.replace(/-/g, " ")}
+        {input.name ?? input.primitive_slug.replace(/-/g, " ")}
       </div>
-      <div className="font-mono text-[12px] text-[var(--fg-1)] mt-1.5 tabular-nums">
-        {input.role_name}
-        <span className="ml-1 text-[var(--fg-3)]">{input.role}</span>
+      <div className="tam-num text-[15px] text-[var(--fg-1)] mt-1.5 tabular-nums">
+        {input.value != null ? formatCompact(input.value, input.unit) : input.role_name}
       </div>
+      <div className="text-[10px] text-[var(--fg-3)] mt-0.5">{input.role.replace(/_/g, " ")}</div>
     </div>
   );
 }

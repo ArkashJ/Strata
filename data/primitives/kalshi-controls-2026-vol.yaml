@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-controls-2026-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Which party will win the U.S. Senate?'
+description: 'Cumulative trading volume on Kalshi market for: Which party will win
+  the U.S. Senate?.'
+value: 2579799.45
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-controls-2026-r-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/CONTROLS-2026-R
+  accessed: '2026-05-25'
+  snapshot_sha256: 586ca7f27b5f237fa790f9f4d94a0b0c9aed927c9cd14e206b69c9c78ac6358d

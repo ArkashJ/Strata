@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxbondiout-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: When will Pam Bondi depart as Attorney General?'
+description: 'Cumulative trading volume on Kalshi market for: When will Pam Bondi
+  depart as Attorney General?.'
+value: 1989449.0
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxbondiout-26apr03-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBONDIOUT-26APR03
+  accessed: '2026-05-25'
+  snapshot_sha256: 7af040883ede2235b71dcea07014803d0e9210c9ad4ef3ebf51cc9ad798f2da7

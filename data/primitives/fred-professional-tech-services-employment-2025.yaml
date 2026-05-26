@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: fred-professional-tech-services-employment-2025
+schema_version: 1
+concept_slug: us-tech-employment
+name: US professional/tech services employment (FRED CES6054000001, 2025)
+description: Total employees in professional and technical services (NAICS 54), thousands.
+value: 10792.7
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-ces6054000001-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/CES6054000001
+  accessed: '2026-05-25'
+  snapshot_sha256: 6643f83cc5f8cfbfe184a7bf3d7c3f4f97aa053e865c5bf7d57f76734e677773

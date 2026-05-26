@@ -1,0 +1,7 @@
+kind: source_registry
+slug: bls-ces5051800001-2025
+tier: regulator
+url: https://www.bls.gov/ces/
+accessed: '2026-05-25'
+snapshot_sha256: 269d94f5450771ce0ea2adee6cf989cefefe90c2db31e7da59f7f90384ab4327
+description: BLS series CES5051800001, 2025 data.

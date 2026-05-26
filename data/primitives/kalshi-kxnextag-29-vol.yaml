@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxnextag-29-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: Who will be Trump''s next Attorney General?'
+description: 'Cumulative trading volume on Kalshi market for: Who will be Trump''s
+  next Attorney General?.'
+value: 1458274.89
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxnextag-29-tbla-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXNEXTAG-29-TBLA
+  accessed: '2026-05-25'
+  snapshot_sha256: 76fca085fa8a62774494ff34a41e54ef93fba3283621fb674a4120878cb88ee0

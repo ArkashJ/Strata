@@ -1,0 +1,7 @@
+kind: source_registry
+slug: edgar-789019-revenues-cy2010
+tier: regulator
+url: https://data.sec.gov/api/xbrl/companyconcept/CIK0000789019/us-gaap/Revenues.json
+accessed: '2026-05-25'
+snapshot_sha256: c8294b60e29bfaeb178038d3ae49aa71401fc81ffcb90fdc008aac6a6d8d5771
+description: SEC EDGAR Revenues for CIK 789019, 2023 data.

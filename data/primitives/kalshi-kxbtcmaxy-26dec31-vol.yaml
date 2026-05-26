@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxbtcmaxy-26dec31-vol
+schema_version: 1
+concept_slug: crypto-markets-2026
+name: 'Kalshi volume: How high will Bitcoin get in 2026?'
+description: 'Cumulative trading volume on Kalshi market for: How high will Bitcoin
+  get in 2026?.'
+value: 891896.72
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxbtcmaxy-26dec31-99999-99-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBTCMAXY-26DEC31-99999.99
+  accessed: '2026-05-25'
+  snapshot_sha256: 245574637a11c6e6e90dd95d9cb14aee4d538d95035b5183d5172f209c20c7a0

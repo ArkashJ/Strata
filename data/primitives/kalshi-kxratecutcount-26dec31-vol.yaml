@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxratecutcount-26dec31-vol
+schema_version: 1
+concept_slug: macro-economics-2026
+name: 'Kalshi volume: Number of rate cuts in 2026?'
+description: 'Cumulative trading volume on Kalshi market for: Number of rate cuts
+  in 2026?.'
+value: 1073023.63
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxratecutcount-26dec31-t0-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXRATECUTCOUNT-26DEC31-T0
+  accessed: '2026-05-25'
+  snapshot_sha256: b845863643039d1d02190435bea4ee9320720ec20d259d3263718333e14fa1fd

@@ -1,15 +1,15 @@
 "use client";
 
 import {
-  BarChart,
   Bar,
-  XAxis,
-  YAxis,
+  BarChart,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
   Cell,
   ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 
 import { type Scenario, formatUSD } from "@/lib/api";
@@ -60,7 +60,9 @@ export function ScenarioBarChart({ scenarios }: Props) {
             return (
               <div className="canvas-card px-3 py-2" style={{ borderRadius: "var(--r-2)" }}>
                 <div className="text-[12px] text-[var(--fg-1)] font-medium">{d.fullName}</div>
-                <div className="tam-num text-[16px] text-[var(--fg-1)] mt-1">{formatUSD(d.value)}</div>
+                <div className="tam-num text-[16px] text-[var(--fg-1)] mt-1">
+                  {formatUSD(d.value)}
+                </div>
                 <div className="text-[11px] text-[var(--fg-3)] mt-0.5">
                   {d.method.replace(/_/g, " ")}
                 </div>

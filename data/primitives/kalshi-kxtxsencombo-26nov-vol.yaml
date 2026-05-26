@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-kxtxsencombo-26nov-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: 2026 Texas Senate matchup?'
+description: 'Cumulative trading volume on Kalshi market for: 2026 Texas Senate matchup?.'
+value: 2203331.35
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxtxsencombo-26nov-talpax-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXTXSENCOMBO-26NOV-TALPAX
+  accessed: '2026-05-25'
+  snapshot_sha256: 207db0e31dda5a3d6290b6c5543db93f930f71917199cef40a493f267c9bf9e3

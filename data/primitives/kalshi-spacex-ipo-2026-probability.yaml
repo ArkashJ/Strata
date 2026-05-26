@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-spacex-ipo-2026-probability
+schema_version: 1
+concept_slug: spacex-ipo-timing
+name: 'Probability: SpaceX IPO by Jun 2026 (Kalshi)'
+description: Kalshi probability SpaceX announces IPO by June 2026.
+value: 0.025
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.02
+  - 0.03
+  basis: Kalshi bid-ask spread (KXIPOSPACEX-26JUN01)
+source:
+  slug: kalshi-kxipospacex-26jun01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXIPOSPACEX-26JUN01
+  accessed: '2026-05-25'
+  snapshot_sha256: 491412b5b9ce12d8f891a92bf2db7c6c92d99fcc5c8dd6ab44cca37aec0135c5

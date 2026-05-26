@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxbtcmax100-26-prob
+schema_version: 1
+concept_slug: crypto-markets-2026
+name: When will Bitcoin cross $100k again? (Kalshi, top market)
+description: 'Kalshi prediction market: When will Bitcoin cross $100k again?. Event
+  KXBTCMAX100-26, market KXBTCMAX100-26-MAY. Category: Crypto.'
+value: 0.01
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 0.01
+  basis: Kalshi bid-ask spread (KXBTCMAX100-26-MAY)
+source:
+  slug: kalshi-kxbtcmax100-26-may-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBTCMAX100-26-MAY
+  accessed: '2026-05-25'
+  snapshot_sha256: b17790a46dd84c98e17337e7ef6e7096b1d30747bec001e92a74a39c658cc7a0

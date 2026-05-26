@@ -36,12 +36,17 @@ output_unit:
 
 applicable_to:
   - doc-gen-pc-insurance
+  - midmarket-saas-spend-na
 
 variants:
   - scope: doc-gen-pc-insurance
     default_inputs:
       target_segment_count: naic-active-pc-carriers-2024
       spend_per_target: pc-saas-spend-per-carrier-2024
+  - scope: midmarket-saas-spend-na
+    default_inputs:
+      target_segment_count: census-midmarket-companies-na-2024
+      spend_per_target: avg-saas-spend-midmarket-2024
 
 expansion_stage_parameter: false
 horizon_class: snapshot

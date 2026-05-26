@@ -17,19 +17,85 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ---
 
-## Repo state (as of 2026-05-22)
+## Repo state (as of 2026-05-25)
 
 - **Version:** `0.2.0a0` (alpha). `VERSION` file pinned; tags follow `vX.Y.Z`.
-- **Phase:** Schemas locked, scaffolding in place, **no business logic implemented yet.**
-- **Backend (`backend/src/strata/`):** directory tree + `__init__.py` stubs +
-  `cli.py` skeleton (only `strata version` wired). Models, loader, registry,
-  validators, evaluator, scoring, API routes — all empty. Ops layer wired
-  (`config.py`, `logging.py`, `db/`, `api/app.py`, `/healthz`, Alembic).
-- **Frontend (`web/`):** Next.js 16 + React 19 scaffold with landing page +
-  `build/` workhorse view skeleton + `ScenarioGraph.tsx` stub.
-- **Data (`data/`):** structure defined in spec, no YAML files present yet.
-- **No tests directory** yet (despite `pyproject.toml` configuring pytest).
+- **Phase:** Schemas locked, **backend fully functional**, frontend PoC working,
+  dynamic query resolution proven end-to-end.
+- **Backend (`backend/src/strata/`):** All business logic implemented —
+  models, loader, registry, validators, evaluator, scoring, 10 API routes
+  (including `POST /resolve` for dynamic TAM resolution via Claude + Exa),
+  plus the **connectors** ingest layer (6 connectors: BLS, FRED, Census,
+  EDGAR, World Bank, **Kalshi** — all typed clients, disk cache, Strata YAML
+  converters). 167 tests passing, pyright strict clean, ruff clean.
+  `/resolve` hardened: async event loop (asyncio.to_thread), no internal
+  error leaks, JSON parse safety, client singletons, specific exception
+  handling.
+- **Frontend (`web/`):** Next.js 16 + React 19 with landing page, build view
+  (ReactFlow graph with enriched primitive cards), `ResolveView` (SSE
+  streaming chain-of-thought for dynamic queries), data explorer, lineage graph.
+  Critic-hardened: correct fallback to ResolveView, JSON.parse safety,
+  reader.releaseLock(), NaN/Infinity guards, mobile responsive, accessible.
+- **Data (`data/`):** 6 concepts, **307 atomic primitives** from 5 APIs
+  (BLS, FRED, Census, EDGAR, World Bank) + Kalshi prediction markets,
+  5 frameworks, **87 sources**. All validate clean. Covers all 6 lenses.
+- **Tests:** 167 passing in `backend/tests/` (including 7 /resolve SSE tests,
+  50 connector tests).
+- **Design spec:** `docs/superpowers/specs/2026-05-25-strata-platform-evolution-design.md`
+  covers 5 gaps (interactive wiring, ingest pipeline, auth, contribution schema,
+  data connectors) across 6 sprints. Critic-reviewed and corrected.
 - License: Apache-2.0.
+
+### Architecture flow
+
+```
+User types market query
+        │
+        ▼
+┌─ FRONTEND (Next.js 16) ────────────────────────────┐
+│  Landing (/) → Build (/build?q=)                    │
+│  If concept in registry → static ReactFlow graph    │
+│  If not → ResolveView streams SSE from /resolve     │
+└────────────────────────┬────────────────────────────┘
+                         │ HTTP / SSE
+┌─ BACKEND (FastAPI) ────┴────────────────────────────┐
+│  /c /p /f /build/{slug}  → Registry → Evaluator    │
+│  POST /resolve           → Claude parse → Exa search│
+│                            → evaluate → SSE stream  │
+│  Evaluator: multiply all inputs → scenario tree     │
+└────────────────────────┬────────────────────────────┘
+                         │
+┌─ DATA BANK (YAML on disk → Postgres at v0.3) ──────┐
+│  6 concepts · 307 primitives · 5 frameworks          │
+│  Each primitive: value + unit + source + sha256 pin │
+└────────────────────────┬────────────────────────────┘
+                         │ populated by
+┌─ CONNECTORS (ingest) ──┴────────────────────────────┐
+│  BLSClient → cache → series_to_primitive_yaml()     │
+│  FREDClient, CensusClient, EDGARClient, WorldBankClient│
+│  Live API = fallback for data not yet in the bank   │
+└─────────────────────────────────────────────────────┘
+```
+
+### Six analysis lenses (Q39)
+
+| Lens | Math shape | Example |
+|------|-----------|---------|
+| L1 `cost_efficiency` | persona × cost | Harvey, Glean |
+| L2 `revenue_generation` | segment × spend | Brex, Rippling |
+| L3 `latent_demand` | population × adoption × WTP | Uber (not built yet) |
+| L4 `platform_throughput` | volume × take_rate | Stripe, Visa |
+| L5 `bundle_consolidation` | total_spend × consolidation | Notion, Linear |
+| L6 `productivity_uplift` | personas × value_split | Copilot, Cursor |
+
+### Phase strategy (Approach C — progressive decentralization)
+
+```
+Phase 1 (now):  Internal tool — CLI + API + ingest (FRED/BLS/EDGAR)
+Phase 2:        Paid product — API keys + metering + subscriptions
+Phase 3:        Community — contributor profiles + attribution + royalties
+Phase 4:        Optional chain anchor — Base/Solana hash anchoring
+```
 
 ---
 
@@ -43,6 +109,18 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 - **pytest** + **httpx** + **pytest-asyncio** for tests.
 - **YAML files on disk** are the source of truth at v0.2 (no DB yet; Postgres
   mirror lands at v0.3 per `docs/07-data-layer-brainstorm.md` Q27).
+- **Connectors** (`connectors/`) — typed API clients that ingest external data
+  into the data bank. All follow a 6-layer pattern: enums → TypedDicts →
+  frozen dataclasses → unified response → disk cache → client + YAML converters.
+  | Connector | Lines | Source Tier | Key Data |
+  |-----------|-------|-------------|----------|
+  | BLS | 748 | regulator | Employment, wages, CPI, JOLTS |
+  | FRED | 753 | regulator | GDP, rates, money supply, consumption |
+  | Census | 790 | regulator | Industry stats by NAICS (CBP/SUSB) |
+  | EDGAR | 856 | regulator | Company financials, XBRL frames |
+  | World Bank | 614 | aggregator | Global GDP, population, adoption |
+  | Kalshi | — | prediction_market | Event contracts, probabilities |
+  See `backend/src/strata/connectors/CLAUDE.md`.
 
 ### Frontend (`web/`)
 - **Next.js 16.2.6** + **React 19.2.4**.

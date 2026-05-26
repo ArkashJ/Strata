@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxpresnomd-28-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: 2028 Democratic presidential nominee (Kalshi, top market)
+description: 'Kalshi prediction market: 2028 Democratic presidential nominee. Event
+  KXPRESNOMD-28, market KXPRESNOMD-28-GN. Category: Elections.'
+value: 0.235
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.23
+  - 0.24
+  basis: Kalshi bid-ask spread (KXPRESNOMD-28-GN)
+source:
+  slug: kalshi-kxpresnomd-28-gn-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXPRESNOMD-28-GN
+  accessed: '2026-05-25'
+  snapshot_sha256: 072e4e767b9d9ab30ba7632624d9ffcc1a4ca99f7960bbf1ad4106d233a1517b

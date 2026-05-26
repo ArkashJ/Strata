@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxipo-26-vol
+schema_version: 1
+concept_slug: company-events-2026
+name: 'Kalshi volume: Which Companies will officially announce an IPO this year?'
+description: 'Cumulative trading volume on Kalshi market for: Which Companies will
+  officially announce an IPO this year?.'
+value: 285074.18
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxipo-26-spacex-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXIPO-26-SPACEX
+  accessed: '2026-05-25'
+  snapshot_sha256: 1b01977dba6541720af5ff9b5de65b06ff68f9dd586f0e18a6b7852984dded03

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: fred-industrial-production-2025
+schema_version: 1
+concept_slug: us-industrial-production
+name: US industrial production index (FRED INDPRO, 2025)
+description: Industrial production index (2017=100).
+value: 100.0647
+unit:
+  kind: intensive
+  dimension: events
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-indpro-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/INDPRO
+  accessed: '2026-05-25'
+  snapshot_sha256: a55485f240081c26c7d445239831e2c225aa6a289abc9780d416445031b54be9

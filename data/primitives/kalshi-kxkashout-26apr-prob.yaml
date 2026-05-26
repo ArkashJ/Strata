@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxkashout-26apr-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Kash Patel out as FBI Director? (Kalshi, top market)
+description: 'Kalshi prediction market: Kash Patel out as FBI Director?. Event KXKASHOUT-26APR,
+  market KXKASHOUT-26APR-MAY01. Category: Politics.'
+value: 0.003
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 1.0
+  basis: Kalshi bid-ask spread (KXKASHOUT-26APR-MAY01)
+source:
+  slug: kalshi-kxkashout-26apr-may01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXKASHOUT-26APR-MAY01
+  accessed: '2026-05-25'
+  snapshot_sha256: ceabfc349e3d3367c8a9f458b5343f25579cab3c7d6291b95afdde195a5c62cc

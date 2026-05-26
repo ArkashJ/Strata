@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxmediareleasest-27jan01-vol
+schema_version: 1
+concept_slug: media-entertainment-2026
+name: 'Kalshi volume: Will Stranger Things release a new episode this year?'
+description: 'Cumulative trading volume on Kalshi market for: Will Stranger Things
+  release a new episode this year?.'
+value: 2313467.14
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxmediareleasest-27jan01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXMEDIARELEASEST-27JAN01
+  accessed: '2026-05-25'
+  snapshot_sha256: 52a9cda7803bd08985d1668601bb3c4ae5c8f41288f36caa4a47744c17d8e0d7

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxspacexstarship-12-vol
+schema_version: 1
+concept_slug: company-events-2026
+name: 'Kalshi volume: SpaceX Starship 12th launch?'
+description: 'Cumulative trading volume on Kalshi market for: SpaceX Starship 12th
+  launch?.'
+value: 669746.0
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxspacexstarship-12-26mar31-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXSPACEXSTARSHIP-12-26MAR31
+  accessed: '2026-05-25'
+  snapshot_sha256: e79b9222dfb1a92dd24023111d349479e480e398ddb0928899bd0520734ee2dc

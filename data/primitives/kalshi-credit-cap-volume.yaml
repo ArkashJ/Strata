@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-credit-cap-volume
+schema_version: 1
+concept_slug: consumer-credit-regulation-2026
+name: 'Kalshi volume: credit cap'
+description: Volume on credit cap market.
+value: 346607.47
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxcclimit-27-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXCCLIMIT-27
+  accessed: '2026-05-25'
+  snapshot_sha256: 7839a5376d391a44780dca2bfdc987ca39497af5c1fc1464c0304ac1646145af

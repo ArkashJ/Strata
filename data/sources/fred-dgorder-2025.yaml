@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-dgorder-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/DGORDER
+accessed: '2026-05-25'
+snapshot_sha256: 0c54cc82de9c83df282f6e7e80338048c913fe66362167d5250f7d3bac0f2495
+description: FRED series DGORDER, 2025 data.

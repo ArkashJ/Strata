@@ -41,12 +41,17 @@ output_unit:
 
 applicable_to:
   - doc-gen-pc-insurance
+  - gtm-ops-tooling-na
 
 variants:
   - scope: doc-gen-pc-insurance
     default_inputs:
       persona_pool: bls-pc-claims-adjusters-headcount
       cost_per_persona: pc-claims-adjuster-cost-per-seat
+  - scope: gtm-ops-tooling-na
+    default_inputs:
+      persona_pool: bls-sales-reps-headcount-2024
+      cost_per_persona: gtm-ops-tool-cost-per-rep-2024
 
 expansion_stage_parameter: false
 horizon_class: snapshot

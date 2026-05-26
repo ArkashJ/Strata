@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-ny-gdp-mktp-cd-de-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
+accessed: '2026-05-25'
+snapshot_sha256: bcbe21941d9c8af3ed35de7e8a324dbafaa3140ac4db6c3f7e54c14652db2ad9
+description: World Bank NY.GDP.MKTP.CD for Germany, 2023 data.

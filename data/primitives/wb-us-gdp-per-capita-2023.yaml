@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: wb-us-gdp-per-capita-2023
+schema_version: 1
+concept_slug: us-macroeconomy
+name: US GDP per capita (World Bank, 2023)
+description: World Bank Open Data NY.GDP.PCAP.CD for US.
+value: 81032.262117545
+unit:
+  kind: intensive
+  dimension: currency
+  denominator: per-person
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-ny-gdp-pcap-cd-us-2023
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/NY.GDP.PCAP.CD
+  accessed: '2026-05-25'
+  snapshot_sha256: 9b70438e648c01ef76b7d9063f3811e1cd6f7204c46a455355cf4b85ca20c277

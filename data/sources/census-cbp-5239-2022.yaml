@@ -1,0 +1,7 @@
+kind: source_registry
+slug: census-cbp-5239-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: ff2be310bd77aa2ab5532a5be8772b134f1ba7740034766a59700b51a7e3fabc
+description: Census CBP NAICS 5239 (Other financial investment activities), 2022 data.

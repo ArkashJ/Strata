@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-sl-tlf-totl-in-us-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/SL.TLF.TOTL.IN
+accessed: '2026-05-25'
+snapshot_sha256: cdb6236ac92c6342a7f179abde7789c6343058d695f86b4dee268e2bfd479610
+description: World Bank SL.TLF.TOTL.IN for United States, 2023 data.

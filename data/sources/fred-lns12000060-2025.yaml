@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-lns12000060-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/LNS12000060
+accessed: '2026-05-25'
+snapshot_sha256: 38f2e58d61457964d6589213e13f9e307371ebb0d215714646ed07a8dff21085
+description: FRED series LNS12000060, 2025 data.

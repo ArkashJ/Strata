@@ -1,0 +1,7 @@
+kind: source_registry
+slug: census-cbp-5191-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: 457fe6d3618a0b8012a0cb1c650a41715f03327e1ba756fd3aae72a7caf4b6c6
+description: Census CBP NAICS 5191 (Other information services), 2022 data.

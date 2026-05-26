@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: edgar-googl-revenue-2023
+schema_version: 1
+concept_slug: big-tech-financials
+name: Alphabet Inc. revenue (EDGAR 10-K, CY2023)
+description: SEC EDGAR XBRL Revenues for Alphabet Inc..
+value: 307394000000.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2026-02-05'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-1652044-revenues-cy2023
+  tier: regulator
+  url: https://data.sec.gov/api/xbrl/companyconcept/CIK0001652044/us-gaap/Revenues.json
+  accessed: '2026-05-25'
+  snapshot_sha256: 66e4ceb82af9b3a7645d85c896d230445c2b35571d02087d5f26d765fcd2dc14

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: census-cbp-5182-establishments-2022
+schema_version: 1
+concept_slug: us-data-processing-hosting
+name: US Data processing, hosting, and related services establishments (Census CBP
+  2022)
+description: Census County Business Patterns establishments for NAICS 5182.
+value: 17539
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5182-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: c89a675decbf9b50321c466ba92a6be523976a5d5fe3d974281ad83145d1ae13

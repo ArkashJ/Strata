@@ -1,0 +1,8 @@
+kind: source_registry
+slug: census-cbp-5412-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: 013502eb5101a9d51adbce7dbc0690a13df268f85fc877891b16ddfcbd325f11
+description: Census CBP NAICS 5412 (Accounting, tax preparation, bookkeeping, and
+  payroll services), 2022 data.

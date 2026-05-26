@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from strata import __version__
-from strata.api.routes import build, concepts, frameworks, healthz, primitives
+from strata.api.routes import build, concepts, frameworks, healthz, primitives, resolve
 from strata.config import settings
 from strata.logging import configure_logging, get_logger
 
@@ -28,7 +28,16 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Strata API",
         version=__version__,
-        description="Open-source community-curated market-sizing engine.",
+        description=(
+            "Open-source community-curated market-sizing engine for VCs and operators.\n\n"
+            "**Data bank:** 307 atomic primitives from BLS, FRED, Census, EDGAR, and World Bank. "
+            "All SHA256-pinned to source snapshots.\n\n"
+            "**Six TAM lenses:** cost_efficiency, revenue_generation, latent_demand, "
+            "platform_throughput, bundle_consolidation, productivity_uplift.\n\n"
+            "**Dynamic resolution:** POST /resolve accepts natural language market queries, "
+            "parses them into lens + primitives via Claude, searches for data via Exa, "
+            "and streams results via SSE."
+        ),
         lifespan=lifespan,
         docs_url="/docs",
         redoc_url="/redoc",
@@ -38,7 +47,6 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
-        allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -48,6 +56,7 @@ def create_app() -> FastAPI:
     app.include_router(primitives.router)
     app.include_router(frameworks.router)
     app.include_router(build.router)
+    app.include_router(resolve.router)
     return app
 
 

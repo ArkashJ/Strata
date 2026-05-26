@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxsaveact-27-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Will the SAVE Act become law? (Kalshi, top market)
+description: 'Kalshi prediction market: Will the SAVE Act become law?. Event KXSAVEACT-27,
+  market KXSAVEACT-27-JAN04. Category: Politics.'
+value: 0.0935
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.093
+  - 0.094
+  basis: Kalshi bid-ask spread (KXSAVEACT-27-JAN04)
+source:
+  slug: kalshi-kxsaveact-27-jan04-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXSAVEACT-27-JAN04
+  accessed: '2026-05-25'
+  snapshot_sha256: c44deb27903584f593e9d4a01853fd544e0fa68b19786cd90aace29827b3a54f

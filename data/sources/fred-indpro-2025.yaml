@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-indpro-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/INDPRO
+accessed: '2026-05-25'
+snapshot_sha256: a55485f240081c26c7d445239831e2c225aa6a289abc9780d416445031b54be9
+description: FRED series INDPRO, 2025 data.

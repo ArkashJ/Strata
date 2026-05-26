@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { type BuildResponse, type Scenario, formatUSD, getBuild } from "@/lib/api";
+import { JsonExplorer } from "@/components/JsonExplorer";
 import { ScenarioBarChart } from "@/components/ScenarioBarChart";
 import { WaterfallChart } from "@/components/WaterfallChart";
-import { JsonExplorer } from "@/components/JsonExplorer";
+import { type BuildResponse, type Scenario, formatUSD, getBuild } from "@/lib/api";
 
 const CONCEPT_SLUG = "pc-doc-gen-tam-us";
 
@@ -65,7 +65,8 @@ export default function DataDashboard() {
           <div className="flex items-baseline gap-4 mt-3">
             <span className="tam-num text-[32px] text-[var(--fg-1)]">{formatUSD(midpoint)}</span>
             <span className="text-[13px] text-[var(--fg-2)]">
-              range {formatUSD(build.triangulated_range.low)} – {formatUSD(build.triangulated_range.high)}
+              range {formatUSD(build.triangulated_range.low)} –{" "}
+              {formatUSD(build.triangulated_range.high)}
             </span>
           </div>
         </div>
@@ -80,15 +81,14 @@ export default function DataDashboard() {
             </section>
 
             <section className="canvas-card p-6" style={{ borderRadius: "var(--r-4)" }}>
-              <h2 className="text-[15px] font-medium text-[var(--fg-1)] mb-2">
-                Input waterfall
-              </h2>
+              <h2 className="text-[15px] font-medium text-[var(--fg-1)] mb-2">Input waterfall</h2>
               <p className="text-[12px] text-[var(--fg-3)] mb-4">
                 Select a scenario to see how its inputs multiply into the final TAM value.
               </p>
               <div className="flex gap-2 mb-4">
                 {build.scenarios.map((s) => (
                   <button
+                    type="button"
                     key={s.framework_slug}
                     onClick={() => setActiveScenario(s)}
                     className={`px-3 py-1.5 rounded-[var(--r-2)] text-[12px] font-medium transition-colors ${
@@ -111,9 +111,7 @@ export default function DataDashboard() {
             </section>
 
             <section className="canvas-card p-6" style={{ borderRadius: "var(--r-4)" }}>
-              <h2 className="text-[15px] font-medium text-[var(--fg-1)] mb-4">
-                Primitives table
-              </h2>
+              <h2 className="text-[15px] font-medium text-[var(--fg-1)] mb-4">Primitives table</h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-[13px]">
                   <thead>
@@ -132,12 +130,13 @@ export default function DataDashboard() {
                           key={`${s.framework_slug}-${input.primitive_slug}`}
                           className="border-t border-[var(--border-1)]"
                         >
-                          <td className="py-2.5 pr-4 text-[var(--fg-1)]">
-                            {input.primitive_name}
-                          </td>
+                          <td className="py-2.5 pr-4 text-[var(--fg-1)]">{input.primitive_name}</td>
                           <td className="py-2.5 pr-4 font-mono tabular-nums text-[var(--fg-1)]">
                             {input.value >= 1000
-                              ? Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(input.value)
+                              ? Intl.NumberFormat("en", {
+                                  notation: "compact",
+                                  maximumFractionDigits: 1,
+                                }).format(input.value)
                               : input.value}
                           </td>
                           <td className="py-2.5 pr-4 text-[var(--fg-3)]">{input.unit_label}</td>
@@ -154,11 +153,9 @@ export default function DataDashboard() {
             </section>
 
             <section className="canvas-card p-6" style={{ borderRadius: "var(--r-4)" }}>
-              <h2 className="text-[15px] font-medium text-[var(--fg-1)] mb-4">
-                Architecture
-              </h2>
+              <h2 className="text-[15px] font-medium text-[var(--fg-1)] mb-4">Architecture</h2>
               <pre className="font-mono text-[12px] text-[var(--fg-2)] leading-[1.6] overflow-x-auto whitespace-pre">
-{`
+                {`
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         STRATA  DATA  FLOW                                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -244,6 +241,7 @@ function TabButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`px-3 py-1 rounded-[var(--r-1)] text-[12px] font-medium transition-colors ${
         active

@@ -1,0 +1,23 @@
+kind: concept
+slug: gtm-ops-tooling-na
+schema_version: 1
+name: "GTM operations tooling North America"
+definition: >
+  North American go-to-market (GTM) operations tooling market — CRM workflow
+  automation, lead routing, territory management, and revenue-operations
+  software for B2B sales teams. Narrow scope: dedicated GTM-ops platforms
+  serving account executive and sales-development-rep personas; excludes
+  core CRM licences (Salesforce, HubSpot) and marketing automation.
+
+analysis_lens:
+  primary: cost_efficiency
+  secondary: null
+
+modifiers: {}
+
+measurements:
+  - bls-sales-reps-headcount-2024
+  - gtm-ops-tool-cost-per-rep-2024
+
+competing_concepts: []
+requires_clearance: []

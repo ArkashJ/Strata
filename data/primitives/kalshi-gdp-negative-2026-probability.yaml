@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-gdp-negative-2026-probability
+schema_version: 1
+concept_slug: us-gdp-growth-2026
+name: 'Probability: negative US GDP growth in 2026 (Kalshi)'
+description: Kalshi probability of negative GDP growth in 2026.
+value: 0.042
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.037
+  - 0.047
+  basis: Kalshi bid-ask spread (KXGDPYEAR-26-T0.1)
+source:
+  slug: kalshi-kxgdpyear-26-t0-1-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGDPYEAR-26-T0.1
+  accessed: '2026-05-25'
+  snapshot_sha256: fb8c26b7f8ddcb5110cb6e09e50dd9e7f1ed10c19dcef3f6f444f836f79dfb22

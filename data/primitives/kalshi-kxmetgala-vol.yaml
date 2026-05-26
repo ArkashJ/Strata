@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxmetgala-vol
+schema_version: 1
+concept_slug: media-entertainment-2026
+name: 'Kalshi volume: Who will attend The Met Gala?'
+description: 'Cumulative trading volume on Kalshi market for: Who will attend The
+  Met Gala?.'
+value: 767317.06
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxmetgala-26-syd-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXMETGALA-26-SYD
+  accessed: '2026-05-25'
+  snapshot_sha256: c4bade740d5c38cbf3520c11074aa103dbb026033a1eb64f82593c42a88a7d98

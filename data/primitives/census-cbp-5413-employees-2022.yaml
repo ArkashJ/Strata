@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5413-employees-2022
+schema_version: 1
+concept_slug: us-architectural-engineering
+name: US Architectural, engineering, and related services employees (Census CBP 2022)
+description: Census County Business Patterns employees for NAICS 5413.
+value: 1663011
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5413-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: e762f6019bbfabe01929aca0d6eaf26ca3ae453d2daf0173954c529ca58d2b1f

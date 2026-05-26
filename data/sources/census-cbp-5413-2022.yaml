@@ -1,0 +1,8 @@
+kind: source_registry
+slug: census-cbp-5413-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: 51654151066f3f9263333493cf2cb9ab92c8044ac0fa056c99be535918be7c1d
+description: Census CBP NAICS 5413 (Architectural, engineering, and related services),
+  2022 data.

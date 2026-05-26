@@ -1,4 +1,6 @@
-# Backend image. Uses the official uv distroless-ish base.
+# Backend image. Build context is always the REPO ROOT.
+#   docker compose up          (context: . in docker-compose.yml)
+#   railway up                 (context: repo root by default)
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS base
 
 ENV UV_LINK_MODE=copy \
@@ -10,18 +12,17 @@ ENV UV_LINK_MODE=copy \
 WORKDIR /app
 
 # ---- deps layer ----
-COPY pyproject.toml uv.lock README.md ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev
+COPY backend/pyproject.toml backend/uv.lock backend/README.md ./
+RUN uv sync --frozen --no-install-project --no-dev
 
 # ---- app layer ----
-COPY src ./src
-COPY alembic.ini ./alembic.ini
-COPY alembic ./alembic
-# Data dir is COPY'd when building from repo root context (docker build -f backend/Dockerfile .)
-# For local dev, mount -v ./data:/app/data instead.
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+COPY backend/src ./src
+COPY backend/alembic.ini ./alembic.ini
+COPY backend/alembic ./alembic
+RUN uv sync --frozen --no-dev
+
+# ---- data layer (YAML seed files) ----
+COPY data/ ./data/
 
 ENV PATH="/app/.venv/bin:$PATH"
 EXPOSE 8000

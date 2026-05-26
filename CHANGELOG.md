@@ -8,6 +8,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **5 data connectors** — typed API clients with disk caching and Strata YAML
+  converters for all major US government data sources:
+  - **BLS** (Bureau of Labor Statistics) — 7 API v2 signatures, OES employment
+    + wage data, CPI, JOLTS, QCEW. 748 lines.
+  - **FRED** (Federal Reserve Economic Data) — 7 endpoints, GDP, employment,
+    interest rates, money supply, consumption. 753 lines.
+  - **Census Bureau** — CBP (County Business Patterns) + SUSB (Statistics of
+    US Businesses), establishment/employee/payroll by NAICS. 790 lines.
+  - **SEC EDGAR** — XBRL company financials, 5 endpoints (submissions, facts,
+    concept, frames, tickers), ticker-to-CIK resolver. 856 lines.
+  - **World Bank** — Indicators API, auto-pagination, 11 pre-defined indicator
+    codes, income-level + region filtering. 614 lines.
+  All follow a 6-layer pattern: enums → TypedDicts → frozen dataclasses →
+  unified response → disk cache → client + YAML converters. 3,700+ lines of
+  typed, pyright-strict connector code.
+- **307 atomic primitives** populated from live API queries across all six
+  TAM analysis lenses:
+  - L1 cost_efficiency: BLS employment (software devs, managers), FRED wages
+  - L2 revenue_generation: EDGAR company revenue (AAPL/MSFT/GOOGL/AMZN/META +
+    V/MA/PYPL), FRED GDP/PCE/retail, Census industry payroll
+  - L3 latent_demand: World Bank population (337M), internet (93.5%),
+    mobile (109/100), FRED prime-age employed (105M)
+  - L4 platform_throughput: EDGAR payment companies, Census banking,
+    World Bank FDI ($362B)
+  - L5 bundle_consolidation: Census professional services (legal/accounting),
+    EDGAR SaaS platforms (NOW/WDAY)
+  - L6 productivity_uplift: BLS CES software/data employment, Census R&D,
+    EDGAR total US R&D spend ($600B)
+  - Cross-lens: 6 major economy GDPs, world population/labor force, inflation
+- **87 source records** — all SHA256-pinned, traceable to API responses.
+- **50 connector tests** — parsing, caching, converters, cross-connector
+  consistency. Test suite: 117 → 167 tests.
+- **Population scripts** (`backend/scripts/`) — `populate_data_bank.py` for
+  initial seeding, `populate_lens_primitives.py` for lens-aligned expansion.
+- **Dune connector context prompt** — `docs/dune-connector-context-prompt.md`
+  for building the Dune Analytics connector in a separate session.
+- **Config expansion** — `STRATA_FRED_API_KEY`, `STRATA_CENSUS_API_KEY` added
+  to pydantic-settings config and `.env.example`.
+
+### Fixed
+- Census connector: `follow_redirects=True` (302 on api.census.gov).
+- EDGAR connector: correct company_tickers URL (`www.sec.gov` not `data.sec.gov`),
+  `follow_redirects=True`, lowercase frame values in source slugs.
+- World Bank connector: dots replaced with dashes in indicator IDs for valid slugs.
+- Amazon EDGAR: uses `RevenueFromContractWithCustomerExcludingAssessedTax` tag.
+
+- **Dynamic TAM resolution** (`POST /resolve`) — Claude parses natural
+  language queries into lens + primitives, Exa deep-searches for real
+  market data, evaluator computes TAM, streams SSE events showing chain
+  of thought. Frontend `ResolveView` renders steps as they arrive.
+- **5 new verticals** seeded: GTM ops ($2.1B), midmarket SaaS ($84B),
+  P&C payments ($1B), workplace consolidation ($12.75B), software-eng
+  productivity ($3.9B). 10 new primitives, 3 new frameworks (L4/L5/L6).
+- **Exa data sourcing script** (`scripts/exa_source_lookup.py`) — verifies
+  primitive values against real web sources. BLS headcounts corrected.
+- **API catalog** (`docs/11-api-catalog.md`) — 50+ APIs researched across
+  10 categories with auth, free tiers, Python SDKs, integration priority.
+- **Comprehensive test suite** — 47 → 110 tests (all-concepts evaluation,
+  enrichment verification, full API endpoint coverage, data validation).
+- **Frontend deployed to Vercel** — live at
+  [strata-pied-three.vercel.app](https://strata-pied-three.vercel.app).
+  ReactQueryDevtools switched to `next/dynamic` with dev-only guard
+  (`bundle-defer-third-party`).
+- GitHub repo description, homepage URL, and topics updated.
+
+### Fixed
+- `InputUsed` enriched with `value`, `name`, `unit` from evaluator —
+  primitive cards now show actual data instead of role names.
+- `TAMTarget.concept_name` populated — build heading shows full name.
+- Range display (min–max) added under triangulated midpoint.
+- Target card in ScenarioGraph shows concept name, not slug.
+- `.gitignore` `/build/` scoped to root — no longer ignores `web/src/app/build/`.
+- LineageGraph React 19 refs-in-render lint errors fixed.
+
+### Changed
+- BLS software developer headcount corrected: 4.4M → 2.18M (Exa-verified).
+- BLS sales rep headcount corrected: 4.6M → 1.46M (Exa-verified).
+
 - **`feat(v0.2)`: lens-aware concept end-to-end on `doc-gen-pc-insurance`.**
   First vertical slice of the Strata data layer — Pydantic models (Unit, Geo,
   Source with the 9-tier enum incl. `analyst-paraphrase`, AtomicPrimitive,
@@ -146,5 +224,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `VERSION` file pinned to `0.1.0`.
 - Empty `data/` directory reserved for primitives, frameworks, annotations.
 
-[Unreleased]: https://example.com/strata/compare/v0.1.0...HEAD
-[0.1.0]: https://example.com/strata/releases/tag/v0.1.0
+[Unreleased]: https://github.com/ArkashJ/Strata/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ArkashJ/Strata/releases/tag/v0.1.0

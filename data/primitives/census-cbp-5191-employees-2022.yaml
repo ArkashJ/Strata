@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5191-employees-2022
+schema_version: 1
+concept_slug: us-internet-publishing-web-search
+name: US Other information services employees (Census CBP 2022)
+description: Census County Business Patterns employees for NAICS 5191.
+value: 390971
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5191-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 9ecce5e15734bd6eefccb55324ccc5774bb014d6dfbc388544f0ea6674adc380

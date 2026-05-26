@@ -26,6 +26,7 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "a11y": { "noAutofocus": "warn" },
       "style": { "noNonNullAssertion": "warn", "useImportType": "error" },
       "suspicious": { "noExplicitAny": "warn" },
       "correctness": { "noUnusedImports": "error", "noUnusedVariables": "warn" }

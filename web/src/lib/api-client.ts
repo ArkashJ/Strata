@@ -14,10 +14,7 @@ export class ApiError extends Error {
   }
 }
 
-export async function api<T = unknown>(
-  path: string,
-  init: RequestInit = {},
-): Promise<T> {
+export async function api<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${env.NEXT_PUBLIC_API_URL}${path}`, {
     ...init,
     headers: {
@@ -27,7 +24,12 @@ export async function api<T = unknown>(
   });
 
   const text = await res.text();
-  const body: unknown = text ? JSON.parse(text) : null;
+  let body: unknown = null;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    // Non-JSON response (e.g. HTML error page from proxy)
+  }
 
   if (!res.ok) {
     throw new ApiError(res.status, `${res.status} ${res.statusText}`, body);

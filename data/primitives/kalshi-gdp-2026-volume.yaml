@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-gdp-2026-volume
+schema_version: 1
+concept_slug: us-gdp-growth-2026
+name: 'Kalshi volume: GDP growth'
+description: Volume on GDP market.
+value: 28465.26
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxgdpyear-26-t0-1-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGDPYEAR-26-T0.1
+  accessed: '2026-05-25'
+  snapshot_sha256: fb8c26b7f8ddcb5110cb6e09e50dd9e7f1ed10c19dcef3f6f444f836f79dfb22

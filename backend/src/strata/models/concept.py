@@ -18,8 +18,10 @@ from ._common import AnalysisLens, Slug
 
 class ConceptKind(StrEnum):
     CONCEPT = "concept"
-    MARKETPLACE_CONCEPT = "marketplace_concept"
-    COMPANY_CONCEPT = "company_concept"
+    # MARKETPLACE_CONCEPT and COMPANY_CONCEPT are v0.5 features — deferred until
+    # the corresponding Pydantic model classes and loader discriminator land.
+    # Adding them here would cause the loader to crash if any YAML uses those
+    # kind values, since no model handles them yet.
 
 
 class OpexConversionModifier(BaseModel):

@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: wb-us-gdp-2023
+schema_version: 1
+concept_slug: us-macroeconomy
+name: US GDP (World Bank, 2023)
+description: World Bank Open Data NY.GDP.MKTP.CD for US.
+value: 27292170793214.4
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-ny-gdp-mktp-cd-us-2023
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
+  accessed: '2026-05-25'
+  snapshot_sha256: 23e4a5c87c1edeeeb4643efe0c9f1a88eb14869589f8226d407330616ac8fede

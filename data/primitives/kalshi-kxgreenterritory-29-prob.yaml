@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxgreenterritory-29-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Will the US take control of any part of Greenland? (Kalshi, top market)
+description: 'Kalshi prediction market: Will the US take control of any part of Greenland?.
+  Event KXGREENTERRITORY-29, market KXGREENTERRITORY-29. Category: Politics.'
+value: 0.35
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.34
+  - 0.36
+  basis: Kalshi bid-ask spread (KXGREENTERRITORY-29)
+source:
+  slug: kalshi-kxgreenterritory-29-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGREENTERRITORY-29
+  accessed: '2026-05-25'
+  snapshot_sha256: 09ad5d50ae46e0b3a264a40f90aecf7532bde44330d0a93b6bfdfc3df17f392c

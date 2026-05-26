@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-a939rc0q052sbea-2024
+tier: regulator
+url: https://fred.stlouisfed.org/series/A939RC0Q052SBEA
+accessed: '2026-05-25'
+snapshot_sha256: a9de6cd69fe86b3812940164e66b1c8b1ee8b5ef317edd3b52a03411d7ce6b6b
+description: FRED series A939RC0Q052SBEA, 2024 data.

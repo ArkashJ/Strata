@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-anthropic-best-coding-ai-2026
+schema_version: 1
+concept_slug: ai-coding-market-2026
+name: 'Probability: Anthropic best coding AI end of 2026 (Kalshi)'
+description: Kalshi probability Anthropic best coding model end of 2026.
+value: 0.605
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.59
+  - 0.62
+  basis: Kalshi bid-ask spread (KXCODINGMODEL-26DEC-ANTH)
+source:
+  slug: kalshi-kxcodingmodel-26dec-anth-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXCODINGMODEL-26DEC-ANTH
+  accessed: '2026-05-25'
+  snapshot_sha256: f858dfd8debcaef1c90402c31bb3bfedfaa964d1fc00f2c460639145f490d124

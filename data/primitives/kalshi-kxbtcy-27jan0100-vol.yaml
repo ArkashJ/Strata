@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxbtcy-27jan0100-vol
+schema_version: 1
+concept_slug: crypto-markets-2026
+name: 'Kalshi volume: Bitcoin price at the end of 2026'
+description: 'Cumulative trading volume on Kalshi market for: Bitcoin price at the
+  end of 2026.'
+value: 1902818.12
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxbtcy-27jan0100-b77500-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBTCY-27JAN0100-B77500
+  accessed: '2026-05-25'
+  snapshot_sha256: df7e7567761e1014f4d912409934a0d6a4e587f5a46d83c3ce0b4f059073d60f

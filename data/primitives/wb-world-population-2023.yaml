@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: wb-world-population-2023
+schema_version: 1
+concept_slug: global-demographics
+name: World total population (World Bank, 2023)
+description: World Bank Open Data SP.POP.TOTL for WLD.
+value: 8064057930.0
+unit:
+  kind: stock
+  dimension: people
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: global
+  codes:
+  - GLOBAL
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sp-pop-totl-1w-2023
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/SP.POP.TOTL
+  accessed: '2026-05-25'
+  snapshot_sha256: 9707ad42cd00ad42dce8b80f80d9646f28cb5bd90ee2f73221b37df2861e5079

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-agi-timeline-volume
+schema_version: 1
+concept_slug: agi-timeline
+name: 'Kalshi volume: AGI timeline'
+description: Volume on AGI achievement market.
+value: 12102.36
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxagico-comp-26q2-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXAGICO-COMP-26Q2
+  accessed: '2026-05-25'
+  snapshot_sha256: 980dc4bcd92efe1bdf6036d83b47b7bc19b3005aba7d90dabba454539b7fc897

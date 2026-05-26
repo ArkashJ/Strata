@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-ny-gdp-pcap-cd-us-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/NY.GDP.PCAP.CD
+accessed: '2026-05-25'
+snapshot_sha256: 9b70438e648c01ef76b7d9063f3811e1cd6f7204c46a455355cf4b85ca20c277
+description: World Bank NY.GDP.PCAP.CD for United States, 2023 data.

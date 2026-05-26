@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxhormuznorm-26mar17-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: When will traffic at the Strait of Hormuz return to normal?'
+description: 'Cumulative trading volume on Kalshi market for: When will traffic at
+  the Strait of Hormuz return to normal?.'
+value: 2943365.69
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxhormuznorm-26mar17-b260501-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXHORMUZNORM-26MAR17-B260501
+  accessed: '2026-05-25'
+  snapshot_sha256: f9e409512ea1b8f71aeb98c0a80b995df8721342d20f09922dbe4420b3b2839f

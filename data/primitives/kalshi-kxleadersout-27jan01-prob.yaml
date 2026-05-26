@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxleadersout-27jan01-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Which leaders will leave office in 2026? (Kalshi, top market)
+description: 'Kalshi prediction market: Which leaders will leave office in 2026?.
+  Event KXLEADERSOUT-27JAN01, market KXLEADERSOUT-27JAN01-XJINCHI. Category: Politics.'
+value: 0.016
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.015
+  - 0.017
+  basis: Kalshi bid-ask spread (KXLEADERSOUT-27JAN01-XJINCHI)
+source:
+  slug: kalshi-kxleadersout-27jan01-xjinchi-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXLEADERSOUT-27JAN01-XJINCHI
+  accessed: '2026-05-25'
+  snapshot_sha256: 671d681f832628db09a9fe9a24ed21553a80889103551aeb5684239bfd4945d6

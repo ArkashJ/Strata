@@ -1,0 +1,7 @@
+kind: source_registry
+slug: census-cbp-5411-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: 8acb315f055648e28be8eb8f853bce5613b61d035ba9a6dfbf7b634bd12bdeb2
+description: Census CBP NAICS 5411 (Legal services), 2022 data.

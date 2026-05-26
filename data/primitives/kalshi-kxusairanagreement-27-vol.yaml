@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-kxusairanagreement-27-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: US-Iran nuclear deal?'
+description: 'Cumulative trading volume on Kalshi market for: US-Iran nuclear deal?.'
+value: 2392531.01
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxusairanagreement-27-26jun-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXUSAIRANAGREEMENT-27-26JUN
+  accessed: '2026-05-25'
+  snapshot_sha256: 11ef7204b1c91154011e696f307a909062b6512081c6a9d951fa15fb6e498f77

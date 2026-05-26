@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-btc-above-77k-2026-probability
+schema_version: 1
+concept_slug: bitcoin-price-2026
+name: 'Probability: Bitcoin above 77.5k end of 2026 (Kalshi)'
+description: Kalshi probability Bitcoin ends 2026 above 77500.
+value: 0.0695
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.067
+  - 0.072
+  basis: Kalshi bid-ask spread (KXBTCY-27JAN0100-B77500)
+source:
+  slug: kalshi-kxbtcy-27jan0100-b77500-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBTCY-27JAN0100-B77500
+  accessed: '2026-05-25'
+  snapshot_sha256: df7e7567761e1014f4d912409934a0d6a4e587f5a46d83c3ce0b4f059073d60f

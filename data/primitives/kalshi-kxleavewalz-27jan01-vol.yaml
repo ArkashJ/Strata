@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxleavewalz-27jan01-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: Tim Walz out as Governor of Minnesota?'
+description: 'Cumulative trading volume on Kalshi market for: Tim Walz out as Governor
+  of Minnesota?.'
+value: 1690900.27
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxleavewalz-27jan01-twal-26jul01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXLEAVEWALZ-27JAN01-TWAL-26JUL01
+  accessed: '2026-05-25'
+  snapshot_sha256: 1a1b56aa7591a624e9be4a36a961f14c818edb6a564216ecce9a7082a3c8a7d6

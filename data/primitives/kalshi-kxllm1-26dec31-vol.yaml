@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxllm1-26dec31-vol
+schema_version: 1
+concept_slug: tech-adoption-2026
+name: 'Kalshi volume: Best AI at the end of 2026?'
+description: 'Cumulative trading volume on Kalshi market for: Best AI at the end of
+  2026?.'
+value: 1158382.65
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxllm1-26dec31-a-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXLLM1-26DEC31-A
+  accessed: '2026-05-25'
+  snapshot_sha256: 2aafcfafcc64425e42e99da19ece42c04f6a0e57432c8250c15a113388a5aca7

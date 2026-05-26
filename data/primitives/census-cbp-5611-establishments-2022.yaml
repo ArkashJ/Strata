@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5611-establishments-2022
+schema_version: 1
+concept_slug: us-office-administrative-services
+name: US Office administrative services establishments (Census CBP 2022)
+description: Census County Business Patterns establishments for NAICS 5611.
+value: 37269
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5611-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 3ac04749d22234d0f25d98ed1ecf873e0ef7a5013bc089779aa511b9b24a106e

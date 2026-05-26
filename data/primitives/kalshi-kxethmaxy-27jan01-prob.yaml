@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxethmaxy-27jan01-prob
+schema_version: 1
+concept_slug: crypto-markets-2026
+name: How high will Ethereum get in 2026? (Kalshi, top market)
+description: 'Kalshi prediction market: How high will Ethereum get in 2026?. Event
+  KXETHMAXY-27JAN01, market KXETHMAXY-27JAN01-6000.00. Category: Crypto.'
+value: 0.045
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.04
+  - 0.05
+  basis: Kalshi bid-ask spread (KXETHMAXY-27JAN01-6000.00)
+source:
+  slug: kalshi-kxethmaxy-27jan01-6000-00-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXETHMAXY-27JAN01-6000.00
+  accessed: '2026-05-25'
+  snapshot_sha256: ed055e0761352105109d99e8dfb27f2a66e21ed6c4239e8fd6130f697dfcbe3f

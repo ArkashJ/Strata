@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxspacexstarship-12-prob
+schema_version: 1
+concept_slug: company-events-2026
+name: SpaceX Starship 12th launch? (Kalshi, top market)
+description: 'Kalshi prediction market: SpaceX Starship 12th launch?. Event KXSPACEXSTARSHIP-12,
+  market KXSPACEXSTARSHIP-12-26MAR31. Category: Companies.'
+value: 0.01
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 1.0
+  basis: Kalshi bid-ask spread (KXSPACEXSTARSHIP-12-26MAR31)
+source:
+  slug: kalshi-kxspacexstarship-12-26mar31-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXSPACEXSTARSHIP-12-26MAR31
+  accessed: '2026-05-25'
+  snapshot_sha256: e79b9222dfb1a92dd24023111d349479e480e398ddb0928899bd0520734ee2dc

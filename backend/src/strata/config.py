@@ -33,10 +33,16 @@ class Settings(BaseSettings):
     )
 
     cors_origins: list[str] = Field(
-        default_factory=lambda: ["http://localhost:3000", "http://localhost:3001"]
+        default_factory=lambda: ["*"]
     )
 
     data_dir: str = "data"
+
+    bls_api_key: str | None = None
+    fred_api_key: str | None = None
+    census_api_key: str | None = None
+    kalshi_api_key: str | None = None
+    kalshi_private_key_path: str | None = None
 
 
 @lru_cache(maxsize=1)

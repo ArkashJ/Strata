@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-sol-max-price-2026
+schema_version: 1
+concept_slug: solana-ecosystem-2026
+name: 'Probability: Solana peaks above bracket in 2026 (Kalshi)'
+description: Kalshi probability for Solana price ceiling.
+value: 0.19
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.18
+  - 0.2
+  basis: Kalshi bid-ask spread (KXSOLMAXY-27JAN01-170)
+source:
+  slug: kalshi-kxsolmaxy-27jan01-170-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXSOLMAXY-27JAN01-170
+  accessed: '2026-05-25'
+  snapshot_sha256: 6a8f3c1a94f90c80d34639551033b749baaba183dc1824b1ad7f079c76f5bfdb

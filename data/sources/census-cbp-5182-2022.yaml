@@ -1,0 +1,8 @@
+kind: source_registry
+slug: census-cbp-5182-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: c89a675decbf9b50321c466ba92a6be523976a5d5fe3d974281ad83145d1ae13
+description: Census CBP NAICS 5182 (Data processing, hosting, and related services),
+  2022 data.

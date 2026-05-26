@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: fred-real-gdp-2024
+schema_version: 1
+concept_slug: us-macroeconomy
+name: US real GDP (FRED GDPC1, 2024)
+description: Bureau of Economic Analysis real GDP in chained 2017 dollars via FRED.
+value: 23082.119
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2024-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-gdpc1-2024
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/GDPC1
+  accessed: '2026-05-25'
+  snapshot_sha256: b76c0685da72b421c35292684c8fe7acc733a6dbdd7c054fa88d68c333b5675e

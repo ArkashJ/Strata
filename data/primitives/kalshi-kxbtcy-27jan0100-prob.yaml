@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxbtcy-27jan0100-prob
+schema_version: 1
+concept_slug: crypto-markets-2026
+name: Bitcoin price at the end of 2026 (Kalshi, top market)
+description: 'Kalshi prediction market: Bitcoin price at the end of 2026. Event KXBTCY-27JAN0100,
+  market KXBTCY-27JAN0100-B77500. Category: Crypto.'
+value: 0.0695
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.067
+  - 0.072
+  basis: Kalshi bid-ask spread (KXBTCY-27JAN0100-B77500)
+source:
+  slug: kalshi-kxbtcy-27jan0100-b77500-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBTCY-27JAN0100-B77500
+  accessed: '2026-05-25'
+  snapshot_sha256: df7e7567761e1014f4d912409934a0d6a4e587f5a46d83c3ce0b4f059073d60f

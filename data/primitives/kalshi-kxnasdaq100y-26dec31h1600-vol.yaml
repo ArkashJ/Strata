@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxnasdaq100y-26dec31h1600-vol
+schema_version: 1
+concept_slug: financial-markets-2026
+name: 'Kalshi volume: Nasdaq-100 close price end of 2026?'
+description: 'Cumulative trading volume on Kalshi market for: Nasdaq-100 close price
+  end of 2026?.'
+value: 1048028.75
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxnasdaq100y-26dec31h1600-t19000-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXNASDAQ100Y-26DEC31H1600-T19000
+  accessed: '2026-05-25'
+  snapshot_sha256: 9d2c063f851d436810347664e0b16f52eb677cdaca9380b85630684d41f72c58

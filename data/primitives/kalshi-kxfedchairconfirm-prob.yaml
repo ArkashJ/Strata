@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxfedchairconfirm-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Who will be confirmed as Fed chair? (Kalshi, top market)
+description: 'Kalshi prediction market: Who will be confirmed as Fed chair?. Event
+  KXFEDCHAIRCONFIRM, market KXFEDCHAIRCONFIRM-JSHE. Category: Politics.'
+value: 0.001
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 0.001
+  basis: Kalshi bid-ask spread (KXFEDCHAIRCONFIRM-JSHE)
+source:
+  slug: kalshi-kxfedchairconfirm-jshe-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXFEDCHAIRCONFIRM-JSHE
+  accessed: '2026-05-25'
+  snapshot_sha256: a2010ecad6d9b4e79ad964ec87de0f84ad080c2e31591dda87e70850937ab965

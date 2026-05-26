@@ -1,0 +1,8 @@
+kind: source_registry
+slug: census-cbp-5416-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: cbef64a3dd5dd7509fb936fa761afcc15314ca5177759f2af4d0f0b7a9061453
+description: Census CBP NAICS 5416 (Management, scientific, and technical consulting
+  services), 2022 data.

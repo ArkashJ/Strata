@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-sl-tlf-totl-in-1w-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/SL.TLF.TOTL.IN
+accessed: '2026-05-25'
+snapshot_sha256: 9bb427ef8366ce6228e1c5ca38a1c4d9e3c85075ca6e74c165c9e451ac9da66f
+description: World Bank SL.TLF.TOTL.IN for World, 2023 data.

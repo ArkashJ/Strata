@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxsenatetxr-26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Texas Republican Senate nominee?'
+description: 'Cumulative trading volume on Kalshi market for: Texas Republican Senate
+  nominee?.'
+value: 8196314.79
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxsenatetxr-26-kp-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXSENATETXR-26-KP
+  accessed: '2026-05-25'
+  snapshot_sha256: 982972f7d33b7cab961654ad77ecdfa667e072ff1a1ff7428d3dd601bda72fb7

@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxnasdaq100y-26dec31h1600-prob
+schema_version: 1
+concept_slug: financial-markets-2026
+name: Nasdaq-100 close price end of 2026? (Kalshi, top market)
+description: 'Kalshi prediction market: Nasdaq-100 close price end of 2026?. Event
+  KXNASDAQ100Y-26DEC31H1600, market KXNASDAQ100Y-26DEC31H1600-T19000. Category: Financials.'
+value: 0.1
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.09
+  - 0.11
+  basis: Kalshi bid-ask spread (KXNASDAQ100Y-26DEC31H1600-T19000)
+source:
+  slug: kalshi-kxnasdaq100y-26dec31h1600-t19000-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXNASDAQ100Y-26DEC31H1600-T19000
+  accessed: '2026-05-25'
+  snapshot_sha256: 9d2c063f851d436810347664e0b16f52eb677cdaca9380b85630684d41f72c58

@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxmuskoai-26-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Will Elon win his case against OpenAI? (Kalshi, top market)
+description: 'Kalshi prediction market: Will Elon win his case against OpenAI?. Event
+  KXMUSKOAI-26, market KXMUSKOAI-26. Category: Politics.'
+value: 0.0075
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.007
+  - 0.008
+  basis: Kalshi bid-ask spread (KXMUSKOAI-26)
+source:
+  slug: kalshi-kxmuskoai-26-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXMUSKOAI-26
+  accessed: '2026-05-25'
+  snapshot_sha256: 87d2fde74d2e635655e1ccd83f531add0836870310315dafd95cf2a944148eb5

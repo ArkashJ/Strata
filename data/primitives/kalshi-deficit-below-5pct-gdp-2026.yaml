@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-deficit-below-5pct-gdp-2026
+schema_version: 1
+concept_slug: us-fiscal-position-2026
+name: 'Probability: US deficit below 5pct GDP FY2026 (Kalshi)'
+description: Kalshi probability of US deficit below 5 percent GDP.
+value: 0.015
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.01
+  - 0.02
+  basis: Kalshi bid-ask spread (KXDEFGDP-26OCT20-T5)
+source:
+  slug: kalshi-kxdefgdp-26oct20-t5-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXDEFGDP-26OCT20-T5
+  accessed: '2026-05-25'
+  snapshot_sha256: 11f1d6d560f28b6b6a0e5e97e045179a4a4ec088402448f5d3a6db4a57bd46c3

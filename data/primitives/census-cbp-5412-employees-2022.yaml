@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: census-cbp-5412-employees-2022
+schema_version: 1
+concept_slug: us-accounting-tax-preparation
+name: US Accounting, tax preparation, bookkeeping, and payroll services employees
+  (Census CBP 2022)
+description: Census County Business Patterns employees for NAICS 5412.
+value: 1231004
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5412-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: e89b870ac1815eaa319b3c610130c590d3d697566ce59ff8c11c81a7a4add3fe

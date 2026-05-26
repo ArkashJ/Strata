@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-controls-2026-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Which party will win the U.S. Senate? (Kalshi, top market)
+description: 'Kalshi prediction market: Which party will win the U.S. Senate?. Event
+  CONTROLS-2026, market CONTROLS-2026-R. Category: Elections.'
+value: 0.525
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.52
+  - 0.53
+  basis: Kalshi bid-ask spread (CONTROLS-2026-R)
+source:
+  slug: kalshi-controls-2026-r-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/CONTROLS-2026-R
+  accessed: '2026-05-25'
+  snapshot_sha256: 586ca7f27b5f237fa790f9f4d94a0b0c9aed927c9cd14e206b69c9c78ac6358d

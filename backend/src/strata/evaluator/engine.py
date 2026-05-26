@@ -83,7 +83,7 @@ def size_concept(registry: Registry, concept_slug: str) -> TAMOutput:
         schema_version=1,
         created_by="strata-evaluator",
         created_at=datetime.now(tz=UTC),
-        target=TAMTarget(concept=concept.slug),
+        target=TAMTarget(concept=concept.slug, concept_name=concept.name),
         scenarios=scenarios,
         method_families_used=tuple(method_families),
         independence_score=_independence(builds),
@@ -142,6 +142,9 @@ def _build_scenario(
                 role=input_def.role,
                 primitive_slug=primitive_slug,
                 snapshot_sha256=atomic.source.snapshot_sha256,
+                value=atomic.value,
+                name=atomic.name,
+                unit=atomic.unit,
             )
         )
         banners.extend(_banners_for(atomic))

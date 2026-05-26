@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxfeaturedrake-prob
+schema_version: 1
+concept_slug: media-entertainment-2026
+name: Who will be featured on 'Iceman'? (Kalshi, top market)
+description: 'Kalshi prediction market: Who will be featured on ''Iceman''?. Event
+  KXFEATUREDRAKE, market KXFEATUREDRAKE-27-FUT. Category: Entertainment.'
+value: 0.995
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.99
+  - 1.0
+  basis: Kalshi bid-ask spread (KXFEATUREDRAKE-27-FUT)
+source:
+  slug: kalshi-kxfeaturedrake-27-fut-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXFEATUREDRAKE-27-FUT
+  accessed: '2026-05-25'
+  snapshot_sha256: ebae65fdf24f1d39d25899a17d15f2d5330ab67ce126b71006871b200b2e746c

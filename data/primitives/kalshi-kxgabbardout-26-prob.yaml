@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxgabbardout-26-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Tulsi Gabbard out as Director of National Intelligence? (Kalshi, top market)
+description: 'Kalshi prediction market: Tulsi Gabbard out as Director of National
+  Intelligence?. Event KXGABBARDOUT-26, market KXGABBARDOUT-26-JUN01. Category: Politics.'
+value: 0.0205
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.018
+  - 0.023
+  basis: Kalshi bid-ask spread (KXGABBARDOUT-26-JUN01)
+source:
+  slug: kalshi-kxgabbardout-26-jun01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGABBARDOUT-26-JUN01
+  accessed: '2026-05-25'
+  snapshot_sha256: 50060f47d3fe71754b8076a91dcae4cfcd606b0362ece77518ac72b0c22ab869

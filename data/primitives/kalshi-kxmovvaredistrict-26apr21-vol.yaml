@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxmovvaredistrict-26apr21-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Virginia redistricting referendum margin of victory?'
+description: 'Cumulative trading volume on Kalshi market for: Virginia redistricting
+  referendum margin of victory?.'
+value: 2649717.03
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxmovvaredistrict-26apr21-yes-p1-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXMOVVAREDISTRICT-26APR21-YES-P1
+  accessed: '2026-05-25'
+  snapshot_sha256: c7b931eada7371bd30a2952014e144a7d19969b42b4ad745896730fdbd279f7d

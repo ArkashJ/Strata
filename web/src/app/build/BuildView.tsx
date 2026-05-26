@@ -1,11 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { LineageGraph } from "@/components/LineageGraph";
+import { ResolveView } from "@/components/ResolveView";
 import { ScenarioGraph } from "@/components/ScenarioGraph";
 import { formatUSD } from "@/lib/format";
 import { buildQuery, conceptsQuery } from "@/lib/queries";
@@ -17,9 +17,13 @@ export function BuildView() {
   const query = params.get("q") ?? "";
 
   const concepts = useQuery(conceptsQuery);
+  const q = query.toLowerCase();
   const matchedSlug = concepts.data?.find(
-    (c) => c.name.toLowerCase().includes(query.toLowerCase()),
-  )?.slug ?? concepts.data?.[0]?.slug ?? "";
+    (c) =>
+      c.slug === q ||
+      c.name.toLowerCase().includes(q) ||
+      q.includes(c.name.toLowerCase()),
+  )?.slug ?? "";
 
   const build = useQuery(buildQuery(matchedSlug));
 
@@ -32,16 +36,8 @@ export function BuildView() {
   }
 
   if (build.error || !build.data) {
-    return (
-      <main className="flex-1 flex flex-col items-center justify-center px-8 gap-4">
-        <p className="text-[14px] text-[var(--fg-2)]">
-          {build.error instanceof Error ? build.error.message : "No build available for this query."}
-        </p>
-        <Link href="/" className="text-[13px] text-[var(--accent)] hover:underline">
-          ← Back to search
-        </Link>
-      </main>
-    );
+    // Concept not found in registry — fall back to dynamic streaming resolution
+    return <ResolveView query={query} onBack={() => router.push("/")} />;
   }
 
   return <BuildResult tam={build.data} onBack={() => router.push("/")} />;
@@ -51,12 +47,15 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
   const [lineageOpen, setLineageOpen] = useState(false);
   const values = tam.scenarios.map((s) => s.value);
   const midpoint = values.reduce((a, b) => a + b, 0) / values.length;
+  const minVal = Math.min(...values);
+  const maxVal = Math.max(...values);
 
   return (
     <main className="flex-1 flex flex-col">
       <header className="w-full px-8 py-5 flex items-center justify-between border-b border-[var(--border-1)]">
         <button
           onClick={onBack}
+          aria-label="Back to search"
           className="display text-[20px] text-[var(--fg-1)] hover:text-[var(--accent)] transition-colors"
         >
           ← Strata
@@ -69,14 +68,14 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-row gap-8 px-8 py-8 max-w-[1280px] mx-auto w-full">
+      <div className="flex-1 flex flex-col md:flex-row gap-8 px-8 py-8 max-w-[1280px] mx-auto w-full">
         <section className="flex-1 flex flex-col gap-6 min-w-0">
           <div>
             <div className="text-[11px] tracking-[0.04em] uppercase text-[var(--fg-3)]">
               TAM · {tam.target.geo ?? "Global"} · {tam.target.time ?? "latest"}
             </div>
             <h1 className="display text-[40px] mt-2 text-[var(--fg-1)] leading-[1.05]">
-              {tam.target.concept}
+              {tam.target.concept_name ?? tam.target.concept.replace(/-/g, " ")}
             </h1>
           </div>
 
@@ -87,6 +86,9 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
               </div>
               <div className="tam-num text-[48px] text-[var(--fg-1)] mt-1">
                 {formatUSD(midpoint)}
+              </div>
+              <div className="text-[13px] text-[var(--fg-3)] mt-1">
+                Range: {formatUSD(minVal)} — {formatUSD(maxVal)}
               </div>
             </div>
             <div className="text-[13px] text-[var(--fg-2)] pb-2">
@@ -113,7 +115,7 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
           )}
         </section>
 
-        <aside className="w-[320px] shrink-0 flex flex-col gap-3">
+        <aside className="w-full md:w-[320px] md:shrink-0 flex flex-col gap-3">
           <RailSection title="Frameworks" count={tam.scenarios.length} defaultOpen>
             <ul className="flex flex-col gap-2 mt-1">
               {tam.scenarios.map((s) => (
@@ -160,17 +162,25 @@ function BuildResult({ tam, onBack }: { tam: TAMOutput; onBack: () => void }) {
 }
 
 function CopyButton() {
+  const [copied, setCopied] = useState(false);
   return (
     <button
+      type="button"
       className="px-3 py-1.5 rounded-[var(--r-2)] bg-[var(--bg-2)] text-[var(--fg-2)]
                  hover:bg-[var(--bg-3)] hover:text-[var(--fg-1)] transition-colors"
       onClick={() => {
         if (typeof window !== "undefined") {
-          navigator.clipboard.writeText(window.location.href);
+          navigator.clipboard
+            .writeText(window.location.href)
+            .then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            })
+            .catch(() => {});
         }
       }}
     >
-      Copy link
+      {copied ? "Copied!" : "Copy link"}
     </button>
   );
 }
@@ -192,6 +202,8 @@ function RailSection({
   return (
     <section className="canvas-card" style={{ borderRadius: "var(--r-3)" }}>
       <button
+        type="button"
+        aria-expanded={open}
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-4 py-3 text-left"
       >

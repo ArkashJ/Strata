@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: fred-total-checkable-deposits-2024
+schema_version: 1
+concept_slug: us-financial-flows
+name: US total checkable deposits (FRED BOGZ1FL073164003Q, 2024)
+description: Total checkable deposits and currency at commercial banks, billions.
+value: 1831267.0
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2024-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-bogz1fl073164003q-2024
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/BOGZ1FL073164003Q
+  accessed: '2026-05-25'
+  snapshot_sha256: df4afd7e9f32d959c07850e60d3261cc499af72eced2bfd44d7abc0354202585

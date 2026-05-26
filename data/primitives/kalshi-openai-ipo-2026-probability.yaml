@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-openai-ipo-2026-probability
+schema_version: 1
+concept_slug: openai-ipo-timing
+name: 'Probability: OpenAI IPO by Jun 2026 (Kalshi)'
+description: Kalshi probability OpenAI announces IPO by June 2026.
+value: 0.01
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 0.01
+  basis: Kalshi bid-ask spread (KXIPOOPENAI-26JUN01)
+source:
+  slug: kalshi-kxipoopenai-26jun01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXIPOOPENAI-26JUN01
+  accessed: '2026-05-25'
+  snapshot_sha256: 666d5972186a04b63593a7390dbbb25487f514f659d921695d5c1352c4ca98e0

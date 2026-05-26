@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-ny-gdp-mktp-cd-jp-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
+accessed: '2026-05-25'
+snapshot_sha256: 0db0fad4fc70c96280868e002249f4cd4dbb3fc503e6ed5762bc81231c3f8a94
+description: World Bank NY.GDP.MKTP.CD for Japan, 2023 data.

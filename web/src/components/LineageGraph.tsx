@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import { formatUSD } from "@/lib/format";
 import type { TAMOutput } from "@/lib/schemas";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type NodeKind = "concept" | "framework" | "primitive";
 
@@ -55,6 +55,10 @@ export function LineageGraph({ tam, open, onClose }: Props) {
   const [detail, setDetail] = useState<GraphNode | null>(null);
   const [edgeDetail, setEdgeDetail] = useState<GraphEdge | null>(null);
   const graphDataRef = useRef<{ nodes: GraphNode[]; edges: GraphEdge[] }>({ nodes: [], edges: [] });
+  const [graphData, setGraphData] = useState<{ nodes: GraphNode[]; edges: GraphEdge[] }>({
+    nodes: [],
+    edges: [],
+  });
 
   const buildGraphData = useCallback(() => {
     const nodes: GraphNode[] = [];
@@ -108,6 +112,7 @@ export function LineageGraph({ tam, open, onClose }: Props) {
     }
 
     graphDataRef.current = { nodes, edges };
+    setGraphData({ nodes, edges });
     return { nodes, edges };
   }, [tam]);
 
@@ -138,17 +143,27 @@ export function LineageGraph({ tam, open, onClose }: Props) {
           const isRoot = n.kind === "concept";
           const colour =
             n.kind === "framework" && n.lens
-              ? METHOD_COLOURS[n.lens] ?? KIND_COLOURS.framework
+              ? (METHOD_COLOURS[n.lens] ?? KIND_COLOURS.framework)
               : KIND_COLOURS[n.kind];
           return {
             id: n.id,
             label: n.label,
             shape: isRoot ? ("circle" as const) : ("dot" as const),
             color: colour,
-            size: isRoot ? 30 : n.kind === "framework" ? 18 : 12 + (sharedPrimitives.has(n.id) ? 4 : 0),
+            size: isRoot
+              ? 30
+              : n.kind === "framework"
+                ? 18
+                : 12 + (sharedPrimitives.has(n.id) ? 4 : 0),
             font: isRoot
               ? { color: "#fff", size: 13, face: "system-ui, sans-serif", strokeWidth: 0 }
-              : { size: 11, face: "system-ui, sans-serif", color: "#1f2937", strokeWidth: 3, strokeColor: "#ffffff" },
+              : {
+                  size: 11,
+                  face: "system-ui, sans-serif",
+                  color: "#1f2937",
+                  strokeWidth: 3,
+                  strokeColor: "#ffffff",
+                },
             borderWidth: isRoot ? 3 : sharedPrimitives.has(n.id) ? 3 : 2,
             widthConstraint: isRoot ? { maximum: 130 } : undefined,
             margin: isRoot ? { top: 10, right: 10, bottom: 10, left: 10 } : undefined,
@@ -172,6 +187,7 @@ export function LineageGraph({ tam, open, onClose }: Props) {
       );
 
       const network = new Network(
+        // biome-ignore lint/style/noNonNullAssertion: guarded by `if (!canvasRef.current) return` above
         canvasRef.current!,
         { nodes: visNodes, edges: visEdges },
         {
@@ -194,7 +210,9 @@ export function LineageGraph({ tam, open, onClose }: Props) {
       );
 
       const freezeSim = () => {
-        try { network.stopSimulation(); } catch (_) {}
+        try {
+          network.stopSimulation();
+        } catch (_) {}
         network.setOptions({ physics: { enabled: false } });
       };
       network.on("stabilizationIterationsDone", freezeSim);
@@ -205,16 +223,26 @@ export function LineageGraph({ tam, open, onClose }: Props) {
         if (params.nodes?.length) {
           const id = String(params.nodes[0]);
           const node = graphDataRef.current.nodes.find((nd) => nd.id === id);
-          if (node) { setPinned({ kind: "node", id }); setDetail(node); setEdgeDetail(null); }
+          if (node) {
+            setPinned({ kind: "node", id });
+            setDetail(node);
+            setEdgeDetail(null);
+          }
           return;
         }
         if (params.edges?.length) {
           const eid = String(params.edges[0]);
           const edge = graphDataRef.current.edges.find((ed) => ed.id === eid);
-          if (edge) { setPinned({ kind: "edge", id: eid }); setEdgeDetail(edge); setDetail(null); }
+          if (edge) {
+            setPinned({ kind: "edge", id: eid });
+            setEdgeDetail(edge);
+            setDetail(null);
+          }
           return;
         }
-        setPinned(null); setDetail(null); setEdgeDetail(null);
+        setPinned(null);
+        setDetail(null);
+        setEdgeDetail(null);
       });
 
       network.on("hoverNode", (params: { node: string }) => {
@@ -245,7 +273,9 @@ export function LineageGraph({ tam, open, onClose }: Props) {
 
   useEffect(() => {
     if (!open) return;
-    const handleEsc = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
   }, [open, onClose]);
@@ -254,7 +284,7 @@ export function LineageGraph({ tam, open, onClose }: Props) {
 
   const sharedPrimitives = new Set<string>();
   const primUsageCount = new Map<string, string[]>();
-  for (const e of graphDataRef.current.edges) {
+  for (const e of graphData.edges) {
     if (e.to.startsWith("p-") && e.from.startsWith("f-")) {
       const fws = primUsageCount.get(e.to) ?? [];
       fws.push(e.from);
@@ -266,10 +296,14 @@ export function LineageGraph({ tam, open, onClose }: Props) {
   }
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss, Escape handled by useEffect above
     <div
+      role="presentation"
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: "rgba(0,0,0,0.5)" }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         className="bg-[var(--bg-1)] rounded-[var(--r-4)] shadow-[var(--shadow-overlay)] flex overflow-hidden"
@@ -296,6 +330,7 @@ export function LineageGraph({ tam, open, onClose }: Props) {
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-1)]">
             <span className="text-[13px] font-medium text-[var(--fg-1)]">Inspector</span>
             <button
+              type="button"
               onClick={onClose}
               className="w-7 h-7 flex items-center justify-center rounded-[var(--r-2)]
                          text-[var(--fg-3)] hover:bg-[var(--bg-2)] hover:text-[var(--fg-1)] transition-colors"
@@ -310,11 +345,11 @@ export function LineageGraph({ tam, open, onClose }: Props) {
                 node={detail}
                 pinned={pinned?.kind === "node" && pinned.id === detail.id}
                 sharedPrimitives={sharedPrimitives}
-                edges={graphDataRef.current.edges}
-                nodes={graphDataRef.current.nodes}
+                edges={graphData.edges}
+                nodes={graphData.nodes}
               />
             ) : edgeDetail ? (
-              <EdgeDetail edge={edgeDetail} nodes={graphDataRef.current.nodes} />
+              <EdgeDetail edge={edgeDetail} nodes={graphData.nodes} />
             ) : (
               <div className="text-[var(--fg-3)] text-center mt-8">
                 <p className="text-[14px]">Hover or click a node</p>
@@ -329,7 +364,11 @@ export function LineageGraph({ tam, open, onClose }: Props) {
 }
 
 function NodeDetail({
-  node, pinned, sharedPrimitives, edges, nodes,
+  node,
+  pinned,
+  sharedPrimitives,
+  edges,
+  nodes,
 }: {
   node: GraphNode;
   pinned: boolean;
@@ -346,14 +385,23 @@ function NodeDetail({
   return (
     <div>
       <div className="flex items-center gap-2 mb-1">
-        <span className="inline-block w-3 h-3 rounded-full" style={{ background: KIND_COLOURS[node.kind].background }} />
-        <span className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)]">{node.kind}</span>
+        <span
+          className="inline-block w-3 h-3 rounded-full"
+          style={{ background: KIND_COLOURS[node.kind].background }}
+        />
+        <span className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)]">
+          {node.kind}
+        </span>
         {pinned && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent-tint)] text-[var(--accent)]">pinned</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--accent-tint)] text-[var(--accent)]">
+            pinned
+          </span>
         )}
       </div>
 
-      <h3 className="text-[15px] font-medium text-[var(--fg-1)] mt-1 leading-tight">{node.label}</h3>
+      <h3 className="text-[15px] font-medium text-[var(--fg-1)] mt-1 leading-tight">
+        {node.label}
+      </h3>
 
       {node.value !== undefined && (
         <div className="tam-num text-[20px] text-[var(--fg-1)] mt-2">{formatUSD(node.value)}</div>
@@ -361,7 +409,9 @@ function NodeDetail({
 
       {node.lens && (
         <div className="mt-2">
-          <span className="role-chip uppercase tracking-[0.04em]">{node.lens.replace(/_/g, " ")}</span>
+          <span className="role-chip uppercase tracking-[0.04em]">
+            {node.lens.replace(/_/g, " ")}
+          </span>
         </div>
       )}
 
@@ -373,17 +423,23 @@ function NodeDetail({
 
       {isShared && (
         <div className="mt-3 px-3 py-2 rounded-[var(--r-2)] bg-[rgba(229,72,77,0.08)] text-[12px] text-[#e5484d]">
-          Shared across {connectedEdges.filter((e) => e.from.startsWith("f-")).length} frameworks — affects independence score
+          Shared across {connectedEdges.filter((e) => e.from.startsWith("f-")).length} frameworks —
+          affects independence score
         </div>
       )}
 
       {connectedNodes.length > 0 && (
         <div className="mt-4">
-          <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)] mb-2">Connected to</div>
+          <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)] mb-2">
+            Connected to
+          </div>
           <ul className="flex flex-col gap-1">
             {connectedNodes.map((cn) => (
               <li key={cn.id} className="flex items-center gap-2 text-[12px] text-[var(--fg-2)]">
-                <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ background: KIND_COLOURS[cn.kind].background }} />
+                <span
+                  className="inline-block w-2 h-2 rounded-full shrink-0"
+                  style={{ background: KIND_COLOURS[cn.kind].background }}
+                />
                 {cn.label}
               </li>
             ))}
@@ -393,7 +449,9 @@ function NodeDetail({
 
       {connectedEdges.length > 0 && (
         <div className="mt-4">
-          <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)] mb-2">Signals</div>
+          <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)] mb-2">
+            Signals
+          </div>
           <ul className="flex flex-col gap-1 text-[12px] text-[var(--fg-2)]">
             {connectedEdges.flatMap((e) =>
               e.signals.map((s) => (
@@ -414,7 +472,9 @@ function EdgeDetail({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode[] }) {
   const toNode = nodes.find((n) => n.id === edge.to);
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)] mb-2">Connection</div>
+      <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)] mb-2">
+        Connection
+      </div>
       <div className="flex items-center gap-2 text-[13px] text-[var(--fg-1)]">
         <span className="font-medium">{fromNode?.label ?? edge.from}</span>
         <span className="text-[var(--fg-4)]">→</span>
@@ -422,7 +482,9 @@ function EdgeDetail({ edge, nodes }: { edge: GraphEdge; nodes: GraphNode[] }) {
       </div>
       {edge.signals.length > 0 && (
         <div className="mt-3">
-          <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)] mb-2">Signals</div>
+          <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)] mb-2">
+            Signals
+          </div>
           <ul className="flex flex-col gap-1 text-[12px] text-[var(--fg-2)]">
             {edge.signals.map((s) => (
               <li key={s} className="flex items-center gap-1.5">
@@ -445,8 +507,8 @@ function Legend({ colour, label }: { colour: string; label: string }) {
   );
 }
 
-function truncate(s: string, n: number): string {
-  s = (s || "").trim();
+function truncate(raw: string, n: number): string {
+  const s = (raw || "").trim();
   if (s.length <= n) return s;
   return `${s.slice(0, n - 1)}…`;
 }

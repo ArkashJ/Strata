@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxbrpres-26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Brazil Presidential election winner?'
+description: 'Cumulative trading volume on Kalshi market for: Brazil Presidential
+  election winner?.'
+value: 466858.38
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxbrpres-26-fbol-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBRPRES-26-FBOL
+  accessed: '2026-05-25'
+  snapshot_sha256: fb3721d726939bc94cb81eb96563288998e90f200bb9ae47255cf5781951c6d1

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: bls-ces-software-publishing-2025
+schema_version: 1
+concept_slug: software-eng-productivity
+name: US Software publishing employment (CES), thousands (BLS CES 2025)
+description: BLS Current Employment Statistics, seasonally adjusted.
+value: 346.1
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-12-28'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: bls-ces5051200001-2025
+  tier: regulator
+  url: https://www.bls.gov/ces/
+  accessed: '2026-05-25'
+  snapshot_sha256: 08352ce025631639e5e203ff3ddf08df874e9ae99f8c86fe1af56a49ee85ec9d

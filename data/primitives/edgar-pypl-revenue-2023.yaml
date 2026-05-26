@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: edgar-pypl-revenue-2023
+schema_version: 1
+concept_slug: payments-platform
+name: PayPal Holdings, Inc. revenue (EDGAR 10-K, CY2023)
+description: SEC EDGAR XBRL Revenues for PayPal Holdings, Inc..
+value: 29771000000.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2026-02-03'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-1633917-revenues-cy2023
+  tier: regulator
+  url: https://data.sec.gov/api/xbrl/companyconcept/CIK0001633917/us-gaap/Revenues.json
+  accessed: '2026-05-25'
+  snapshot_sha256: 030e707d8a0eaf72517304c3cc8e5149a99dcd6ca0ef781a94600a82d133d431

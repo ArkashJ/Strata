@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxcabout-26mar-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Who will leave Trump's Cabinet next? (Kalshi, top market)
+description: 'Kalshi prediction market: Who will leave Trump''s Cabinet next?. Event
+  KXCABOUT-26MAR, market KXCABOUT-26MAR-PBON. Category: Politics.'
+value: 0.995
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.99
+  - 1.0
+  basis: Kalshi bid-ask spread (KXCABOUT-26MAR-PBON)
+source:
+  slug: kalshi-kxcabout-26mar-pbon-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXCABOUT-26MAR-PBON
+  accessed: '2026-05-25'
+  snapshot_sha256: a5c6772e2ccbe19df3cfccb61d03115483ee68d1e9aedc2dcd0ad94f6ff7d6f2

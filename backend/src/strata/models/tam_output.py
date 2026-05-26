@@ -47,6 +47,7 @@ class TAMTarget(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     concept: Slug
+    concept_name: str | None = None  # human-readable name; populated by evaluator
     geo: str | None = None
     time: str | None = None
     expansion_stage: ExpansionStage = ExpansionStage.NOT_APPLICABLE
@@ -63,6 +64,10 @@ class InputUsed(BaseModel):
     role: InputRole
     primitive_slug: Slug
     snapshot_sha256: Sha256Hex
+    # Display enrichment — populated by evaluator, absent in stored YAML
+    value: float | None = None
+    name: str | None = None
+    unit: Unit | None = None
 
 
 class ScenarioBanner(BaseModel):

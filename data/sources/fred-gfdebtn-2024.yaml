@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-gfdebtn-2024
+tier: regulator
+url: https://fred.stlouisfed.org/series/GFDEBTN
+accessed: '2026-05-25'
+snapshot_sha256: 7d10742d61b15ac05796bad08a48736cce7bc4561c6e5db390ebc2a0da91bee8
+description: FRED series GFDEBTN, 2024 data.

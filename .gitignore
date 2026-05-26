@@ -22,7 +22,7 @@ venv/
 # Node (future)
 node_modules/
 dist/
-build/
+/build/
 .next/
 out/
 
@@ -51,3 +51,5 @@ tmp/
 # Override global ignore: web/src/lib/ is real source, not a compiled output dir.
 !web/src/lib/
 !web/src/lib/**
+.playwright-cli/
+.vercel

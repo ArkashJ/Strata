@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: consolidation-capture-rate-2024
+schema_version: 1
+concept_slug: workplace-suite-consolidation
+name: "Enterprise workplace software consolidation capture rate (McKinsey, 2024)"
+description: >
+  McKinsey Digital 2024 — share of dispersed enterprise point-solution
+  workplace-software spend that migrates to unified suites within a
+  3-year planning horizon. Expressed as a decimal fraction
+  (0.15 = 15% consolidation capture rate).
+
+value: 0.15
+unit:
+  kind: dimensionless
+  dimension: percent
+
+as_of: 2024-12-31
+
+geo:
+  level: global
+  codes: []
+geo_perspective: demand
+
+distribution_shape: normal
+delivery_mode: "n/a"
+
+source:
+  slug: mckinsey-digital-2024
+  tier: analyst
+  url: "https://www.mckinsey.com/capabilities/mckinsey-digital"
+  accessed: 2026-05-22
+  snapshot_sha256: "d0e1f2a3d0e1f2a3d0e1f2a3d0e1f2a3d0e1f2a3d0e1f2a3d0e1f2a3d0e1f2a3"

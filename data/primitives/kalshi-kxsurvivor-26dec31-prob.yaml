@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxsurvivor-26dec31-prob
+schema_version: 1
+concept_slug: media-entertainment-2026
+name: Who will win Survivor Season 50? (Kalshi, top market)
+description: 'Kalshi prediction market: Who will win Survivor Season 50?. Event KXSURVIVOR-26DEC31,
+  market KXSURVIVOR-26DEC31-AUB. Category: Entertainment.'
+value: 0.995
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.99
+  - 1.0
+  basis: Kalshi bid-ask spread (KXSURVIVOR-26DEC31-AUB)
+source:
+  slug: kalshi-kxsurvivor-26dec31-aub-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXSURVIVOR-26DEC31-AUB
+  accessed: '2026-05-25'
+  snapshot_sha256: 0016f2042e39fd02ca6f3511c0413cb0461e91233005ecf8ad3ef5e3557465ed

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-sol-2026-volume
+schema_version: 1
+concept_slug: solana-ecosystem-2026
+name: 'Kalshi volume: SOL ceiling'
+description: Volume on SOL price market.
+value: 41495.26
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxsolmaxy-27jan01-170-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXSOLMAXY-27JAN01-170
+  accessed: '2026-05-25'
+  snapshot_sha256: 6a8f3c1a94f90c80d34639551033b749baaba183dc1824b1ad7f079c76f5bfdb

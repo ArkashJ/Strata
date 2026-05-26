@@ -1,0 +1,23 @@
+kind: concept
+slug: midmarket-saas-spend-na
+schema_version: 1
+name: "Midmarket SaaS spend North America"
+definition: >
+  Total annual SaaS software spending by North American midmarket companies
+  (100–999 employees) — covering horizontal productivity suites, vertical
+  industry software, finance/HR/IT management tools, and emerging AI-native
+  applications delivered as subscription software. Excludes on-premise
+  licences, custom-built software, and infrastructure (IaaS/PaaS).
+
+analysis_lens:
+  primary: revenue_generation
+  secondary: null
+
+modifiers: {}
+
+measurements:
+  - census-midmarket-companies-na-2024
+  - avg-saas-spend-midmarket-2024
+
+competing_concepts: []
+requires_clearance: []

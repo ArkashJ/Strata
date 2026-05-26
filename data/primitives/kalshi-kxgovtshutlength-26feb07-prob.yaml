@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxgovtshutlength-26feb07-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: How long will the government shutdown last? (Kalshi, top market)
+description: 'Kalshi prediction market: How long will the government shutdown last?.
+  Event KXGOVTSHUTLENGTH-26FEB07, market KXGOVTSHUTLENGTH-26FEB07-G50. Category: Politics.'
+value: 0.995
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.99
+  - 1.0
+  basis: Kalshi bid-ask spread (KXGOVTSHUTLENGTH-26FEB07-G50)
+source:
+  slug: kalshi-kxgovtshutlength-26feb07-g50-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGOVTSHUTLENGTH-26FEB07-G50
+  accessed: '2026-05-25'
+  snapshot_sha256: af1d1cfc7057e1cb4e735c7920d4a46b6a335a2877b48f9ab45beb8018e67e1c
