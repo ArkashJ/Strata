@@ -23,7 +23,7 @@ get a different set of TAMs.
            ▼                           │
 ┌──────────────────────────────────────┴─────────┐
 │  scripts/tam_77_pipeline.py                    │
-│  --portfolio data/portfolios/<name>.yaml        │
+│  --portfolio portfolios/<name>.yaml        │
 │                                                │
 │  for each company:                             │
 │    1. Claude classifies onto 1 of 5 frameworks │
@@ -62,7 +62,7 @@ get a different set of TAMs.
 
 ## What changes per portfolio
 
-- The YAML catalog at `data/portfolios/<your-portfolio>.yaml`.
+- The YAML catalog at `portfolios/<your-portfolio>.yaml`.
 - The concepts + primitives + framework variants emitted into `data/`.
 - The TAMs in the output bundle.
 
@@ -71,7 +71,7 @@ get a different set of TAMs.
 1. **Author the portfolio YAML**
 
    ```yaml
-   # data/portfolios/<your-fund>.yaml
+   # portfolios/<your-fund>.yaml
    portfolio_name: "Acme Capital — Vintage 2027"
    companies:
      - name: "ExampleCo"
@@ -99,7 +99,7 @@ get a different set of TAMs.
    export STRATA_FRED_API_KEY=...    # optional
    export STRATA_CENSUS_API_KEY=...  # optional
    uv run python scripts/tam_77_pipeline.py \
-       --portfolio ../data/portfolios/your-fund.yaml \
+       --portfolio ../portfolios/your-fund.yaml \
        --include-handcrafted
    ```
 
@@ -190,4 +190,4 @@ any portfolio run:
   corrected approach).
 - `docs/tam-77-corrected.md` — generated output for the Benmore 24-company
   portfolio.
-- `data/portfolios/benmore-tam-77.yaml` — the catalog the pipeline consumed.
+- `portfolios/benmore-tam-77.yaml` — the catalog the pipeline consumed.

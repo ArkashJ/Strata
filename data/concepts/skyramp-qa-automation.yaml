@@ -10,7 +10,7 @@ analysis_lens:
   primary: cost_efficiency
 modifiers: {}
 measurements:
-- global-ai-addressable-qa-engineers-2024
-- qa-tooling-wallet-per-engineer-2024
+- global-ai-addressable-qa-personas-2024
+- qa-tooling-spend-per-dev-2024
 competing_concepts: []
 requires_clearance: []
