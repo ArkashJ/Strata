@@ -272,9 +272,7 @@ def _parse_catalog(raw: dict[str, Any]) -> Catalog:
 def _parse_series(raw: dict[str, Any]) -> Series:
     data = tuple(_parse_data_point(dp) for dp in raw.get("data", []))
     catalog_raw = raw.get("catalog")
-    catalog = (
-        _parse_catalog(dict(catalog_raw)) if isinstance(catalog_raw, dict) else None
-    )
+    catalog = _parse_catalog(dict(catalog_raw)) if isinstance(catalog_raw, dict) else None
     return Series(
         series_id=str(raw["seriesID"]),
         data=data,
@@ -443,9 +441,7 @@ class BLSClient:
             resp = _parse_api_response(data, kind=kind)
             return replace(resp, cached=True, cache_age_seconds=round(age, 1))
 
-        http_resp = (
-            self._http.get(url) if method == "GET" else self._http.post(url, json=payload)
-        )
+        http_resp = self._http.get(url) if method == "GET" else self._http.post(url, json=payload)
         http_resp.raise_for_status()
 
         raw: dict[str, Any] = http_resp.json()
@@ -469,17 +465,13 @@ class BLSClient:
         aspects: bool = False,
     ) -> dict[str, Any]:
         if len(series_ids) > MAX_SERIES:
-            raise BLSClientError(
-                f"Max {MAX_SERIES} series per request, got {len(series_ids)}"
-            )
+            raise BLSClientError(f"Max {MAX_SERIES} series per request, got {len(series_ids)}")
         if (
             start_year is not None
             and end_year is not None
             and (end_year - start_year + 1) > MAX_YEARS
         ):
-            raise BLSClientError(
-                f"Max {MAX_YEARS} year span, got {end_year - start_year + 1}"
-            )
+            raise BLSClientError(f"Max {MAX_YEARS} year span, got {end_year - start_year + 1}")
 
         payload: dict[str, Any] = {"seriesid": series_ids}
         if start_year is not None:
@@ -545,9 +537,7 @@ class BLSClient:
 
     def get_latest(self, series_id: str) -> BLSResponse:
         """Retrieve the most recent data point for a series."""
-        return self._request(
-            "GET", f"{_BASE}/timeseries/data/{series_id}?latest=true"
-        )
+        return self._request("GET", f"{_BASE}/timeseries/data/{series_id}?latest=true")
 
     # ── Signature 5: popular series (GET) ────────────────────────
 
@@ -568,9 +558,7 @@ class BLSClient:
 
     def get_survey(self, abbreviation: str) -> BLSResponse:
         """Retrieve metadata for a single BLS survey."""
-        return self._request(
-            "GET", f"{_BASE}/surveys/{abbreviation}", kind="survey"
-        )
+        return self._request("GET", f"{_BASE}/surveys/{abbreviation}", kind="survey")
 
     # ── Bulk helpers ─────────────────────────────────────────────
 
