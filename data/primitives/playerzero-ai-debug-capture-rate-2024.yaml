@@ -1,0 +1,40 @@
+kind: atomic_primitive
+slug: playerzero-ai-debug-capture-rate-2024
+schema_version: 1
+concept_slug: playerzero-code-quality
+name: AI Debug-Assist Capture Rate of Observability Pool
+description: 'Realistic share of the global observability/APM/code-quality spend that
+  an AI code-quality/debug-assist layer like PlayerZero can capture. Decomposition:
+  ~17% of observability spend is in the code-quality/debug-assist slice addressable
+  by AI agents (excluding infra metrics, log storage, network monitoring which are
+  not AI-debug-addressable); within that slice, PlayerZero competes with GitHub Copilot
+  Workspace, Sentry AI, Datadog Bits AI, Cursor, and incumbents extending into AI
+  debug — realistic capture for a pure-play AI debug vendor is ~45% of the addressable
+  slice. 0.17 × 0.45 ≈ 0.077 → rounded to 0.08. This embeds addressability (which
+  workloads AI can touch) and capture (competitive share).'
+value: 0.08
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.05
+  - 0.12
+  basis: Capture rate could be lower (3-5%) if incumbents (Datadog, GitHub) bundle
+    AI debug for free, or higher (10-12%) if AI debug-assist becomes a distinct category
+    with budget separate from APM.
+source:
+  slug: strata-ai-debug-capture-2024
+  tier: community-modeled
+  url: https://strata.internal/models/ai-debug-capture-rate
+  accessed: '2026-05-26'
+  snapshot_sha256: c81caeedd471198c35b2cb1487d6d0d004f0cc96ee1cf7b1b8c440f8307df806

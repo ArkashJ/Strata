@@ -1,0 +1,42 @@
+kind: atomic_primitive
+slug: us-cpa-firm-professional-tax-software-revenue-2024
+schema_version: 1
+concept_slug: accrual-ai-tax-software
+name: US CPA-firm professional tax & accounting software revenue (incumbents)
+description: 'Annual revenue of the three incumbent professional tax software suites
+  sold to US CPA firms: Intuit ProConnect/Lacerte/ProSeries (~$600M segment of Intuit''s
+  Small Business & Self-Employed), Thomson Reuters Tax & Accounting Professionals
+  segment US portion (~$2.4B), and Wolters Kluwer Tax & Accounting NA (~$1.5B). Excludes
+  consumer TurboTax and corporate enterprise tax. Sum ≈ $4.5B. This is the AI-addressable
+  incumbent pool, not the full $15B US tax software market.'
+value: 4500000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 3800000000
+  - 5200000000
+  basis: Segment disclosures bundle CPA-firm tax with adjacent products (audit, practice
+    mgmt); allocation to pure tax-prep for CPA firms requires apportionment.
+source:
+  slug: incumbent-10k-segment-2024
+  tier: analyst-paraphrase
+  url: https://investors.intuit.com/financials/sec-filings
+  accessed: '2026-05-26'
+  snapshot_sha256: 329995b20cddfbdbc299c133ba6e47f2a5b70125481596fe2242f2e8ec8b9cf1
+  original_publisher: Company 10-Ks (Intuit FY2024, Thomson Reuters FY2024, Wolters
+    Kluwer FY2024 segment disclosures)
+  paraphrase_reviewer: arkash
+  paraphrase_text: 'Sum of US CPA-firm professional tax suite revenue: Intuit ProConnect/Lacerte/ProSeries
+    ~$0.6B; Thomson Reuters Tax & Accounting Pros US ~$2.4B; Wolters Kluwer Tax &
+    Accounting NA ~$1.5B. Total ~$4.5B addressable incumbent pool.'

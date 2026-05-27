@@ -1,0 +1,37 @@
+kind: atomic_primitive
+slug: global-ai-addressable-qa-personas-2024
+schema_version: 1
+concept_slug: skyramp-qa-automation
+name: Global AI-addressable QA / test-equivalent developer personas
+description: BLS OEWS reports ~1.9M US software developers + QA analysts/testers (SOC
+  15-1252 + 15-1253). Scaling US -> global at ~2.3x (industry dev-population surveys
+  put global devs at ~28M, but only ~4.4M sit at orgs with formal QA tooling budgets).
+  Of those, ~25% of engineering time maps to QA/testing-equivalent work, and ~60%
+  are at orgs mature enough to adopt AI test-gen in the medium term. Net addressable
+  persona pool = 4.4M * 0.25 * 0.60 ≈ 660K personas. Addressability is embedded here,
+  not in the framework.
+value: 660000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 450000
+  - 900000
+  basis: Range reflects uncertainty in global-vs-US dev multiplier (2.0x-2.8x) and
+    QA-time share (20-30%).
+source:
+  slug: bls-oews-softdev-qa-2024-scaled
+  tier: community-modeled
+  url: https://www.bls.gov/oes/current/oes151252.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: 0ee471fe63fdc64819fdbbd53beed3a02a06d300502ff3d70108a91883a0ca9a

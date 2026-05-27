@@ -1,0 +1,35 @@
+kind: atomic_primitive
+slug: us-addressable-actuary-underwriter-personas-2024
+schema_version: 1
+concept_slug: effective-ai-insurance-knowledge
+name: US AI-Addressable Actuary + Underwriter Personas
+description: 'BLS OES 2023 reports ~27,700 actuaries (SOC 15-2011) and ~108,400 insurance
+  underwriters (SOC 13-2053) in the US, total ~136,100. Applying a 35% AI-addressability
+  factor (knowledge-work tasks: rate analysis memos, submission triage, exposure scoring,
+  reserving narratives) that are LLM-tractable within DOI-compliant guardrails yields
+  ~47,600 addressable personas. The remaining 65% involves regulated sign-off, in-person
+  broker relationships, and bespoke catastrophe modeling not yet automatable.'
+value: 47600
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 35000
+  - 60000
+  basis: Addressability factor (35%) is community-modeled; could range 25-45% depending
+    on DOI tolerance for AI-generated underwriting memos.
+source:
+  slug: bls-oes-actuaries-underwriters-2023
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes152011.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: 40ead3cb421076670c7f6d2e064b5cfca45e74a712e9ace73fcbcbee66992460

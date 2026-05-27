@@ -1,0 +1,17 @@
+kind: concept
+slug: moda-ai-design
+schema_version: 1
+name: Moda — AI Brand-Design Agents
+definition: AI brand-design agents that automate marketing creative and brand asset
+  production for in-house marketing/content teams globally. Displaces a share of (a)
+  design SaaS tool spend (Adobe CC, Figma, Canva Teams) and (b) external creative
+  agency / freelance designer spend. Global SaaS, sold worldwide with no regulatory
+  gating.
+analysis_lens:
+  primary: bundle_consolidation
+modifiers: {}
+measurements:
+- global-brand-design-spend-pool-2024
+- ai-brand-design-agent-capture-rate-2024
+competing_concepts: []
+requires_clearance: []

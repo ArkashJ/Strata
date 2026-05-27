@@ -1,0 +1,40 @@
+kind: atomic_primitive
+slug: us-decision-ai-capturable-cost-per-persona-2024
+schema_version: 1
+concept_slug: signallabs-healthcare-decision-ai
+name: Capturable annual cost per US healthcare decision persona
+description: Annual $ a HIPAA-bound decision-AI vendor can credibly capture per addressable
+  persona. Fully-loaded labor cost is ~$110-140K (BLS OES median wage ~$80-104K x
+  1.3 benefits load). Decision-AI captures a realistic ~40-50% value split (productivity
+  assist, not full replacement) -> ~$55K/persona/yr. Capture % is embedded in the
+  value per Q15.
+value: 55000
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: persona-year
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 35000
+  - 75000
+  basis: Value-split % (30-55%) is community-modeled; wage base from BLS is firm.
+source:
+  slug: decision-ai-value-split-2024
+  tier: analyst-paraphrase
+  url: https://www.bls.gov/oes/current/oes119111.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: c77336c28b32927a2e20a2a487c4388079a2b0871f3fdc89610ec52cee64a74f
+  original_publisher: BLS OES 2024 + community-modeled value-split
+  paraphrase_reviewer: arkash
+  paraphrase_text: BLS OES 2024 medical/health services managers median wage ~$104K;
+    fully-loaded ~$135K. Decision-AI vendor capturable share modeled at ~40% for HIPAA-bound
+    assist (not replacement) -> ~$55K/persona/yr ACV ceiling.

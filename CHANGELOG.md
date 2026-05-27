@@ -8,8 +8,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **5 data connectors** — typed API clients with disk caching and Strata YAML
-  converters for all major US government data sources:
+- **Corrected 24-company TAM pipeline** (`scripts/tam_77_pipeline.py`) — replaces the v1
+  hardcoded-multiplier approach with a Claude-driven classification pipeline that
+  threads through Strata's actual primitive/framework/evaluator DAG. Per company:
+  (1) Claude (claude-opus-4-7) classifies onto one of the 5 existing frameworks
+  via tool-use, returning concept definition + 2 input primitives with
+  geo/unit/source-tier metadata; (2) connector hints are best-effort enriched
+  against live BLS / Census / FRED / openFDA / World Bank APIs with response-body
+  SHA256 pinning; (3) concept YAML, primitive YAMLs (with deterministic SHA256
+  for analyst-paraphrase / community-modeled values), and framework variants are
+  written into `data/`; (4) the registry is reloaded and `size_concept(slug)`
+  produces a real `TAMOutput` with permanent state-hash. Outputs:
+  `backend/tam_77_results_v2.json` + `docs/tam-77-corrected.md`.
+- **3 hand-crafted worked-example concepts** wired into the DAG:
+  - `yotta-india-cloud` — India-only sovereign cloud (top-down-revenue-capture). TAM $4.0B India, $0 intl.
+  - `voice-ai-infra-global` — infra-stack take-rate over $108B voice-AI application stack (throughput-take-rate). TAM $13.5B global.
+  - `piramidal-eeg-multi-geo` — multi-jurisdiction (FDA / CE / CDSCO / ANVISA / APAC) EEG foundation model, sized as throughput-take-rate.
+- **12 methodology corrections** to the original 77-query estimates, documented
+  per company in `docs/tam-77-corrected.md`: geographic over-scaling fixed for
+  Yotta + 7 US-only-regulated companies; TAM ceilings vs SAM corrected for
+  Endeavor / Zero RFI / Minerva by embedding addressability % into primitive
+  values rather than the framework formula (Q15); infra layers (MetaVoice,
+  Supermemory, Sieve) re-sized as application-stack × infra share rather than
+  nascent API ARR.
+- **77-query TAM estimation suite v1 baseline** — historical script (`scripts/tam_77_estimates.py`)
+  that pulls real data from 15 connectors and computes TAM estimates for 24
+  portfolio companies across 4 geographies (NA, Europe, APAC, RoW). Source
+  attribution per estimate (S1/S2/S3 confidence tiers). Geographic scaling
+  via World Bank GDP ratios. Kept on disk as the pre-correction reference;
+  superseded by the v2 pipeline above. Original results in `docs/tam-77-results.md`.
+- **19 TAM coverage tests** (`tests/test_tam_query_coverage.py`) — maps all
+  77 queries to connector data sources, verifies disambiguation pairs produce
+  distinct TAMs, validates all 14 client classes importable.
+- **9 new data connectors** (15 total) — typed API clients with disk caching
+  and Strata YAML converters for international, financial, energy, agriculture,
+  aviation, healthcare, and regulatory data:
+  - **OECD** — SDMX REST API, 22 query methods covering GDP, labour, trade,
+    health spending, R&D, education, productivity across 38 OECD member
+    countries. Source tier: aggregator. 1,187 lines.
+  - **Eurostat** — JSON-stat API, 17 methods for EU sector statistics,
+    national accounts, trade, demographic data for all EU member states.
+    Source tier: regulator. 957 lines.
+  - **UN Comtrade** — 16 methods for bilateral trade flows by HS commodity
+    code, 200+ countries, exports/imports breakdowns. Source tier:
+    aggregator. 1,050 lines.
+  - **FDIC BankFind** — 16 methods for bank financials, institutions,
+    failures, locations, historical summaries. Source tier: regulator.
+    1,208 lines.
+  - **CMS Open Data** — 16 methods for Medicare/Medicaid enrollment,
+    spending, drug costs, providers, national health expenditure. Source
+    tier: regulator. 1,229 lines.
+  - **EIA** — API v2, 20 methods for electricity prices/sales/generation,
+    petroleum, natural gas, coal, renewables, STEO forecasts, international
+    energy. Source tier: regulator. 1,187 lines.
+  - **USDA NASS QuickStats** — 16 methods for crop/livestock production,
+    acreage, yield, prices, farm income/expenses. Source tier: regulator.
+    1,145 lines.
+  - **FAA** — 15 methods for airports, passengers, status, state summaries,
+    proximity search. Source tier: regulator. 994 lines.
+  - **openFDA** — 20 methods for drug adverse events, drug labels, device
+    510(k)/PMA clearances, device/food recalls, enforcement actions. Source
+    tier: regulator. 1,218 lines.
+  All follow the established 6-layer pattern. 10,175 lines of new connector
+  code (15,437 total across 15 connectors, ~170 query methods).
+- **118 new connector tests** (168 total) — parsing, client init, cache
+  roundtrip, YAML converter output shape, edge cases, cross-connector
+  consistency for all 9 new connectors.
+- **4 new API key settings** in config.py — `STRATA_EIA_API_KEY`,
+  `STRATA_USDA_NASS_API_KEY`, `STRATA_OPENFDA_API_KEY`,
+  `STRATA_COMTRADE_API_KEY`.
+- **GitHub issues #35–#43** — tracking issues for all 9 new connectors.
+- **5 data connectors** (original 6) — typed API clients with disk caching and
+  Strata YAML converters for all major US government data sources:
   - **BLS** (Bureau of Labor Statistics) — 7 API v2 signatures, OES employment
     + wage data, CPI, JOLTS, QCEW. 748 lines.
   - **FRED** (Federal Reserve Economic Data) — 7 endpoints, GDP, employment,

@@ -1,0 +1,41 @@
+kind: atomic_primitive
+slug: global-cati-phone-survey-spend-2024
+schema_version: 1
+concept_slug: miravoice-phone-surveys
+name: Global CATI / phone-survey data collection spend pool
+description: Global market research industry revenue is ~$84B (ESOMAR Global Market
+  Research 2023). Quantitative research accounts for ~55% (~$46B). Telephone/CATI
+  data collection has fallen to ~6-8% of quantitative spend (down from 20%+ a decade
+  ago) = ~$3.0B globally. This is the incumbent CATI labor + call-center spend pool
+  an AI voice survey vendor can displace.
+value: 3000000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 2200000000
+  - 4000000000
+  basis: CATI share of quant data collection varies 6-10% across ESOMAR/Greenbook/Insights
+    Assoc estimates; declining trend adds downside.
+source:
+  slug: esomar-gmr-2023
+  tier: analyst-paraphrase
+  url: https://esomar.org/global-market-research-report
+  accessed: '2026-05-26'
+  snapshot_sha256: f0d66abae85e37dfd471d3a0e41dd47b5d865ee8e7414ddc882fbc992d795b7c
+  original_publisher: ESOMAR
+  paraphrase_reviewer: arkash
+  paraphrase_text: 'ESOMAR Global Market Research 2023 reports ~$84B industry revenue;
+    quantitative ~55%; CATI/telephone modes ~6-8% of quant data collection -> ~$3B
+    global CATI spend pool. Decomposition: US ~$1.1B, EU ~$0.9B, APAC ~$0.6B, RoW
+    ~$0.4B.'

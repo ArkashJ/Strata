@@ -1,0 +1,37 @@
+kind: atomic_primitive
+slug: memory-layer-share-of-ai-app-stack-2024
+schema_version: 1
+concept_slug: supermemory-ai-memory-infra
+name: Memory/context infra share of AI application stack spend
+description: 'Share of AI application stack spend captured by the memory/long-term-context
+  infrastructure layer (vector store + retrieval + memory orchestration). Benchmarked
+  off observed infra-layer economics: vector DBs ~2-3% of AI app spend, retrieval/memory
+  orchestration ~2-3%, combined memory layer ~4-6%. Midpoint 5% used. This already
+  embeds addressability (only AI apps that need persistent memory, ~70% of stack)
+  and capture share within the memory sub-layer.'
+value: 0.05
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.03
+  - 0.08
+  basis: Analogy to vector DB / retrieval infra share of AI app stack from Menlo Ventures
+    2024 State of GenAI + a16z infra stack breakdowns. Memory layer is emergent so
+    high uncertainty.
+source:
+  slug: memory-infra-share-modeled-2024
+  tier: community-modeled
+  url: https://menlovc.com/2024-the-state-of-generative-ai-in-the-enterprise/
+  accessed: '2026-05-26'
+  snapshot_sha256: 8362380ea878418fae45b05b989a87ca847b4e4637001fdab9e16eed32397733

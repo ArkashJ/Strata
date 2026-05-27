@@ -41,9 +41,7 @@ class Settings(BaseSettings):
         description="Async DSN. Must use the asyncpg driver.",
     )
 
-    cors_origins: list[str] = Field(
-        default_factory=lambda: ["*"]
-    )
+    cors_origins: list[str] = Field(default_factory=lambda: ["*"])
 
     data_dir: str = "data"
 
@@ -52,6 +50,11 @@ class Settings(BaseSettings):
     census_api_key: str | None = None
     kalshi_api_key: str | None = None
     kalshi_private_key_path: str | None = None
+
+    eia_api_key: str | None = None
+    usda_nass_api_key: str | None = None
+    openfda_api_key: str | None = None
+    comtrade_api_key: str | None = None
 
 
 @lru_cache(maxsize=1)

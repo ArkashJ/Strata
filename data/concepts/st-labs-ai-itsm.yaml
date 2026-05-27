@@ -1,0 +1,17 @@
+kind: concept
+slug: st-labs-ai-itsm
+schema_version: 1
+name: ST Labs — AI-native ITSM
+definition: ST Labs is an AI-native IT Service Management (ITSM) platform displacing
+  incumbent ITSM suites (ServiceNow ITSM module, Atlassian Jira Service Management,
+  Freshworks Freshservice, BMC Helix, Ivanti) for enterprise and mid-market IT teams.
+  Global SaaS, no regulatory regime. TAM is the share-shiftable portion of the global
+  ITSM software spend pool.
+analysis_lens:
+  primary: bundle_consolidation
+modifiers: {}
+measurements:
+- global-itsm-incumbent-revenue-pool-2024
+- ai-native-itsm-share-shift-rate-2024
+competing_concepts: []
+requires_clearance: []

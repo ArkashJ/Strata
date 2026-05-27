@@ -1,0 +1,16 @@
+kind: concept
+slug: zerorfi-construction-rfi
+schema_version: 1
+name: Zero RFI — AI for US Commercial Construction RFI / Owner's-Rep Workflow
+definition: AI software for construction Request-for-Information (RFI) and change-order
+  management, targeted at owner's representatives and project engineers on US commercial
+  construction projects. Scope is US-only (procurement, AIA contract regime, US commercial
+  GC ecosystem); excludes residential and infrastructure heavy-civil.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+- us-commercial-construction-rfi-personas-2024
+- construction-rfi-ai-acv-per-seat-2024
+competing_concepts: []
+requires_clearance: []

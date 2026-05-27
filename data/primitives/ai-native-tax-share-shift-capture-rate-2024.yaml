@@ -1,0 +1,37 @@
+kind: atomic_primitive
+slug: ai-native-tax-share-shift-capture-rate-2024
+schema_version: 1
+concept_slug: accrual-ai-tax-software
+name: Realistic AI-native share-shift capture of US CPA tax software incumbents
+description: 'Estimated long-run (7-10 year) share an AI-native challenger can capture
+  from Intuit/TR/WK in US CPA-firm tax software. Incumbents have deep moats: multi-year
+  workpaper lock-in, IRS e-file MeF integrations, state-by-state form coverage (~50
+  states x federal), and tight integration with practice-mgmt + audit suites. Historical
+  precedent: cloud-native challengers (e.g., Canopy, TaxDome) captured ~10-20% over
+  a decade in adjacent practice-mgmt. AI-native premium + generational CPA retirement
+  supports 25% capture ceiling. This embeds the realistic capture %, not 100% displacement.'
+value: 0.25
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.15
+  - 0.35
+  basis: Range reflects uncertainty in switching velocity given workpaper lock-in
+    vs. tailwind from CPA workforce shortage and AI productivity gap.
+source:
+  slug: strata-share-shift-model-2024
+  tier: community-modeled
+  url: https://strata.internal/models/share-shift-tax-ai
+  accessed: '2026-05-26'
+  snapshot_sha256: 734029b0f8428e5955243e1144a2792cf67e9ef70be07cd4273bfbc4ff5e31a3

@@ -367,9 +367,7 @@ class WorldBankClient:
                         msg_texts.append(str(md.get("value", md)))
                     else:
                         msg_texts.append(str(m))
-                raise WorldBankClientError(
-                    f"World Bank API error: {'; '.join(msg_texts)}"
-                )
+                raise WorldBankClientError(f"World Bank API error: {'; '.join(msg_texts)}")
             raise WorldBankClientError(
                 f"World Bank API returned unexpected dict: {list(body_dict.keys())}"
             )
@@ -479,9 +477,7 @@ class WorldBankClient:
         params: dict[str, str] = {"per_page": "1000"}
         if date_range is not None:
             params["date"] = date_range
-        return self._request_all_pages(
-            url, params, kind="indicator", per_page=1000
-        )
+        return self._request_all_pages(url, params, kind="indicator", per_page=1000)
 
     # ── cache management ─────────────────────────────────────────
 

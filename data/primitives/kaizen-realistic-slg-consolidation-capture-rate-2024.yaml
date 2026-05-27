@@ -1,0 +1,36 @@
+kind: atomic_primitive
+slug: kaizen-realistic-slg-consolidation-capture-rate-2024
+schema_version: 1
+concept_slug: kaizen-labs-govtech
+name: Realistic capture rate for AI-native GovTech challenger vs incumbents
+description: Share of the incumbent resident-services + payments pool a credible AI-native
+  challenger can realistically capture over the planning horizon. SLG procurement
+  is sticky (5-10yr contracts, RFP cycles, cooperative purchasing gatekeeping); even
+  fast-growing challengers like OpenGov and Granicus took ~15yrs to reach low-single-digit
+  share. Bounded to 20-30% to reflect a successful but realistic share-shift, not
+  full displacement.
+value: 0.25
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.15
+  - 0.35
+  basis: SLG procurement stickiness; cooperative purchasing dynamics; AI-native differentiation
+    premium offset by incumbent AI bolt-ons.
+source:
+  slug: strata-community-modeled-slg-capture-2024
+  tier: community-modeled
+  url: https://www.strata.cc/methodology/consolidation-capture
+  accessed: '2026-05-26'
+  snapshot_sha256: be973443dcd80e5a5cf772f0375e2df6d96088d314183719ed9689524380786b

@@ -1,0 +1,41 @@
+kind: atomic_primitive
+slug: yotta-india-regulated-enterprises-targetable-2024
+schema_version: 1
+concept_slug: yotta-india-cloud
+name: "Indian regulated enterprises addressable by sovereign cloud (2024)"
+description: >
+  Count of Indian enterprises in regulated sectors (BFSI under RBI/IRDAI/SEBI;
+  central + state government; large healthcare systems under DPDP localization;
+  critical-infrastructure operators) with annual IT spend materially impacted
+  by data-localization mandates and thus addressable by sovereign-DC providers
+  like Yotta, CtrlS, NxtGen. Excludes SMBs and pure-export tech firms whose
+  workloads can run on hyperscaler PoPs outside India.
+
+value: 50000
+unit:
+  kind: stock
+  dimension: organizations
+
+as_of: 2024-12-31
+
+geo:
+  level: country
+  codes: ["IN"]
+geo_perspective: demand
+
+distribution_shape: power_law
+delivery_mode: "n/a"
+
+source:
+  slug: rbi-iba-banking-stats-2024
+  tier: analyst-paraphrase
+  url: "https://www.rbi.org.in/Scripts/PublicationsView.aspx?id=22566"
+  accessed: 2026-05-26
+  snapshot_sha256: "31626d3c22e99be1a8201cf61117d86c98771cbff799d7b21f0ec5fc0bdeeb2a"
+  original_publisher: "Reserve Bank of India + Indian Banks' Association"
+  paraphrase_reviewer: "arkash"
+  paraphrase_text: >
+    RBI Banking Statistics + IBA member directory + government enterprise
+    registries indicate ~50,000 Indian organizations across BFSI, public
+    sector, large healthcare, and critical infrastructure carry workloads
+    subject to RBI/DPDP data-localization mandates as of 2024.

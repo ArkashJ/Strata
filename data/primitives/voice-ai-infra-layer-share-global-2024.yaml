@@ -1,0 +1,42 @@
+kind: atomic_primitive
+slug: voice-ai-infra-layer-share-global-2024
+schema_version: 1
+concept_slug: voice-ai-infra-global
+name: "Voice-AI infra layer share of application stack revenue (2024, modeled)"
+description: >
+  Estimated share of voice-AI application stack revenue that accrues to the
+  infra layer (TTS / STT / voice APIs) as the layer matures over the next
+  3-5 years. Analog: cloud infrastructure (AWS / Azure / GCP) historically
+  captures ~10-15% of total cloud spend; newer / higher-differentiation
+  layers can capture more. Voice infra is in early growth (similar to cloud
+  IaaS in 2010) so the 12.5% midpoint reflects today's pricing tension
+  rather than a mature-market equilibrium. Community-modeled — flagged for
+  downstream verification once voice-API ARR data from the 2026 vintage
+  hyperscalers (Anthropic + OpenAI) is disclosed.
+
+value: 0.125
+unit:
+  kind: dimensionless
+  dimension: percent
+
+as_of: 2024-12-31
+expiry: 2027-05-26  # Q20: community-modeled primitives carry a 12-month-plus expiry; revisit when 2026-vintage voice-API ARR data lands.
+
+geo:
+  level: global
+  codes: ["WLD"]
+geo_perspective: supply
+
+distribution_shape: normal
+delivery_mode: "n/a"
+
+uncertainty:
+  range: [0.10, 0.15]
+  basis: "Cloud-infra-share analog (10-15% mature); voice infra in growth phase pulls toward upper bound."
+
+source:
+  slug: voice-ai-infra-share-modeled-2026
+  tier: community-modeled
+  url: "https://github.com/anthropics/strata/blob/main/docs/superpowers/specs/2026-05-26-tam-77-corrected-methodology.md"
+  accessed: 2026-05-26
+  snapshot_sha256: "81ca3a93fa0c5daec06682ef70360e3736dd0eec404956926dcac2349b473677"

@@ -1,0 +1,36 @@
+kind: atomic_primitive
+slug: vendor-capture-per-qual-researcher-2024
+schema_version: 1
+concept_slug: gather-customer-research
+name: Vendor-captured ACV per addressable qualitative researcher persona
+description: Fully-loaded cost of a qualitative researcher / expert-network seat /
+  VoC tooling per persona ≈ $180K/yr (salary+benefits ~$130K + expert network/survey
+  tooling ~$50K). Vendor capture share for AI displacement ≈ 40% → $72K ACV per addressable
+  persona. Capture % is baked in here, not in the framework.
+value: 72000
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: persona-year
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 45000
+  - 110000
+  basis: Salary anchor is BLS-regulated; tooling stack cost and 40% vendor capture
+    share are community-modeled.
+source:
+  slug: gather-vendor-capture-model-2024
+  tier: community-modeled
+  url: https://www.bls.gov/oes/current/oes131161.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: 1566c33ddf6e22eec8dff2c4bb36820b0a1fda8b92c6088298b9d264fcfd5441

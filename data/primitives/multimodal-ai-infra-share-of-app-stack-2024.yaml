@@ -1,0 +1,35 @@
+kind: atomic_primitive
+slug: multimodal-ai-infra-share-of-app-stack-2024
+schema_version: 1
+concept_slug: sieve-multimodal-infra
+name: Infra-layer share of multimodal video/audio AI application stack revenue
+description: 'Realistic share of application-stack revenue that flows to multimodal
+  AI infrastructure providers (processing, transformation, generation APIs). Benchmarked
+  against analogous infra take rates: Stripe ~3% of e-commerce GMV, Twilio ~5-8% of
+  comms application stack, Cloudinary/Mux ~5-7% of media app stack. Multimodal AI
+  is GPU-heavy with higher COGS pass-through, so 6% mid-point is defensible.'
+value: 0.06
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.04
+  - 0.08
+  basis: Analog-based; comparable media/comms infra layers run 3-8% of application
+    stack
+source:
+  slug: strata-infra-take-rate-2024
+  tier: community-modeled
+  url: https://www.strata.internal/models/infra-take-rate-benchmarks
+  accessed: '2026-05-26'
+  snapshot_sha256: fad98159fc880dbff0b6f2737016ce98f06e3feace98592b27fdc0bdc003ca76

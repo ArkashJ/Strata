@@ -1,0 +1,36 @@
+kind: atomic_primitive
+slug: ai-voice-survey-realistic-capture-rate-2024
+schema_version: 1
+concept_slug: miravoice-phone-surveys
+name: Realistic AI voice survey capture rate of CATI spend pool
+description: 'Capture rate reflects: (a) ~70% of CATI surveys are technically AI-voice-feasible
+  today (consumer B2C quant studies, short instruments) - B2B/political/long-form
+  complex skip-logic still need humans near-term; (b) within the feasible slice, a
+  multi-vendor AI voice survey category can realistically consolidate ~50-60% of spend
+  over a 5-7yr horizon (rest stays human due to client preference, regulatory constraints
+  in EU). Net consolidation_rate = 0.70 x 0.55 = ~0.38.'
+value: 0.38
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.25
+  - 0.55
+  basis: Feasibility share (50-80%) and category consolidation ceiling (40-65%) both
+    uncertain; GDPR consent friction in EU could compress capture.
+source:
+  slug: strata-modeled-voice-survey-capture-2024
+  tier: community-modeled
+  url: https://strata.internal/models/ai-voice-survey-capture
+  accessed: '2026-05-26'
+  snapshot_sha256: 54455bfe7d5e2dff6a71e9c9057fe27b89a21c74183c82db45ee4b9dc60364e9

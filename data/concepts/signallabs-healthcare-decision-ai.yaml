@@ -1,0 +1,17 @@
+kind: concept
+slug: signallabs-healthcare-decision-ai
+schema_version: 1
+name: SignalLabs — US Healthcare Payer/Provider Decision AI
+definition: 'SignalLabs sells an AI decision-intelligence layer to US health payers
+  and provider systems for HIPAA-bound clinical and administrative decisions (prior
+  authorization, utilization review, care-pathway routing). Scope: US only; international
+  healthcare AI is a structurally separate stack per spec. Regulatory regime: HIPAA
+  + state insurance + CMS payer rules.'
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+- us-ai-addressable-payer-provider-decision-personas-2024
+- us-decision-ai-capturable-cost-per-persona-2024
+competing_concepts: []
+requires_clearance: []

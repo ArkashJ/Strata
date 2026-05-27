@@ -37,6 +37,7 @@ output_unit:
 applicable_to:
   - doc-gen-pc-insurance
   - midmarket-saas-spend-na
+  - yotta-india-cloud
 
 variants:
   - scope: doc-gen-pc-insurance
@@ -47,6 +48,10 @@ variants:
     default_inputs:
       target_segment_count: census-midmarket-companies-na-2024
       spend_per_target: avg-saas-spend-midmarket-2024
+  - scope: yotta-india-cloud
+    default_inputs:
+      target_segment_count: yotta-india-regulated-enterprises-targetable-2024
+      spend_per_target: yotta-india-sovereign-cloud-spend-per-enterprise-2024
 
 expansion_stage_parameter: false
 horizon_class: snapshot

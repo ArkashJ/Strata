@@ -25,9 +25,11 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 - **Backend (`backend/src/strata/`):** All business logic implemented —
   models, loader, registry, validators, evaluator, scoring, 10 API routes
   (including `POST /resolve` for dynamic TAM resolution via Claude + Exa),
-  plus the **connectors** ingest layer (6 connectors: BLS, FRED, Census,
-  EDGAR, World Bank, **Kalshi** — all typed clients, disk cache, Strata YAML
-  converters). 167 tests passing, pyright strict clean, ruff clean.
+  plus the **connectors** ingest layer (15 connectors: BLS, FRED, Census,
+  EDGAR, World Bank, Kalshi, **OECD, Eurostat, UN Comtrade, FDIC, CMS,
+  EIA, USDA NASS, FAA, openFDA** — all typed clients, disk cache, Strata
+  YAML converters, ~170 query methods). 167+ tests passing, pyright strict
+  clean, ruff clean.
   `/resolve` hardened: async event loop (asyncio.to_thread), no internal
   error leaks, JSON parse safety, client singletons, specific exception
   handling.
@@ -36,11 +38,23 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   streaming chain-of-thought for dynamic queries), data explorer, lineage graph.
   Critic-hardened: correct fallback to ResolveView, JSON.parse safety,
   reader.releaseLock(), NaN/Infinity guards, mobile responsive, accessible.
-- **Data (`data/`):** 6 concepts, **307 atomic primitives** from 5 APIs
-  (BLS, FRED, Census, EDGAR, World Bank) + Kalshi prediction markets,
-  5 frameworks, **87 sources**. All validate clean. Covers all 6 lenses.
-- **Tests:** 167 passing in `backend/tests/` (including 7 /resolve SSE tests,
-  50 connector tests).
+- **Data (`data/`):** **30 concepts** (6 originals + 3 hand-crafted worked
+  examples + 21 portfolio-pipeline-generated), **350+ atomic primitives**
+  from 5 connector APIs + Exa-sourced analyst-paraphrase + community-modeled
+  multipliers, 5 frameworks with 30 variants, 87 sources. All validate clean.
+- **Portfolios (`portfolios/`):** sibling directory to `data/` holding
+  portfolio catalogs the TAM pipeline consumes. One file at v0.2
+  (`portfolios/tam-77-sample.yaml`); add a new YAML here per fund / strategy
+  desk. Kept outside `data/` so the registry loader does not try to parse
+  them as records.
+- **TAM-77 pipeline:** `backend/scripts/tam_77_pipeline.py` is the
+  portfolio-agnostic Claude-driven classifier that threads each company
+  through the primitive/framework/evaluator DAG and writes YAML artifacts.
+  Pattern documented in `docs/12-portfolio-tam-pipeline-howto.md`; outputs
+  for the TAM-77 sample portfolio in `docs/tam-77-corrected.md`.
+- **Tests:** 310 passing in `backend/tests/` (including 6 v2 acceptance
+  tests in `test_tam_v2_acceptance.py`, 7 /resolve SSE tests, 168
+  connector tests).
 - **Design spec:** `docs/superpowers/specs/2026-05-25-strata-platform-evolution-design.md`
   covers 5 gaps (interactive wiring, ingest pipeline, auth, contribution schema,
   data connectors) across 6 sprints. Critic-reviewed and corrected.
@@ -75,6 +89,9 @@ User types market query
 ┌─ CONNECTORS (ingest) ──┴────────────────────────────┐
 │  BLSClient · FREDClient · CensusClient              │
 │  EDGARClient · WorldBankClient · KalshiClient       │
+│  OECDClient · EurostatClient · ComtradeClient       │
+│  FDICClient · CMSClient · EIAClient                 │
+│  NASSClient · FAAClient · OpenFDAClient             │
 │  Each: typed → disk-cached → SHA256-pinned → DB     │
 └─────────────────────────────────────────────────────┘
 ```
@@ -116,12 +133,21 @@ Phase 4:        Optional chain anchor — Base/Solana hash anchoring
   frozen dataclasses → unified response → disk cache → client + YAML converters.
   | Connector | Lines | Source Tier | Key Data |
   |-----------|-------|-------------|----------|
-  | BLS | 748 | regulator | Employment, wages, CPI, JOLTS |
-  | FRED | 753 | regulator | GDP, rates, money supply, consumption |
-  | Census | 790 | regulator | Industry stats by NAICS (CBP/SUSB) |
+  | BLS | 747 | regulator | Employment, wages, CPI, JOLTS |
+  | FRED | 752 | regulator | GDP, rates, money supply, consumption |
+  | Census | 789 | regulator | Industry stats by NAICS (CBP/SUSB) |
   | EDGAR | 856 | regulator | Company financials, XBRL frames |
-  | World Bank | 614 | aggregator | Global GDP, population, adoption |
-  | Kalshi | — | prediction_market | Event contracts, probabilities |
+  | World Bank | 613 | aggregator | Global GDP, population, adoption |
+  | Kalshi | 995 | prediction_market | Event contracts, probabilities |
+  | OECD | 1187 | aggregator | 38-country GDP, labour, trade, health, R&D |
+  | Eurostat | 957 | regulator | EU sector stats, demographics, energy |
+  | UN Comtrade | 1050 | aggregator | Bilateral trade flows by HS code |
+  | FDIC | 1208 | regulator | Bank financials, institutions, failures |
+  | CMS | 1229 | regulator | Medicare/Medicaid enrollment, spending |
+  | EIA | 1187 | regulator | Electricity, petroleum, gas, coal, renewables |
+  | USDA NASS | 1145 | regulator | Crop/livestock production, prices |
+  | FAA | 994 | regulator | Airports, passengers, aviation data |
+  | openFDA | 1218 | regulator | Drug events, device 510k/PMA, recalls |
   See `backend/src/strata/connectors/CLAUDE.md`.
 
 ### Frontend (`web/`)

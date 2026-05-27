@@ -319,4 +319,4 @@ playwright-cli screenshot --filename=/path/to/docs/screenshots/client-guide/NN-n
 playwright-cli close
 ```
 
-**Engineer-facing docs:** See `docs/HANDOFF.md` for technical architecture, `CLAUDE.md` for development conventions.
+**Engineer-facing docs:** See `CLAUDE.md` for technical architecture and development conventions, and `docs/10-v0.2-backend-spec.md` for the backend implementation blueprint.

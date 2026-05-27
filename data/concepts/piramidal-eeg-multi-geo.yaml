@@ -1,0 +1,38 @@
+kind: concept
+slug: piramidal-eeg-multi-geo
+schema_version: 1
+name: "Piramidal — clinical EEG foundation model, multi-jurisdiction"
+definition: >
+  Piramidal builds a foundation model for clinical EEG / neurodiagnostics.
+  The product is medical-software (SaMD-class) and so is regulated per
+  jurisdiction. Unlike a US-only FDA-first strategy, Piramidal can pursue
+  multiple regulatory regimes in parallel because EEG is a Class II /
+  Class IIa device pathway across most major regulators:
+    - US FDA (510(k)) — hardest, longest pathway, largest single market.
+    - EU CE (MDR Class IIa) — second largest, increasingly costly post-MDR.
+    - India CDSCO (Class B/C) — faster timeline, lower entry cost, large
+      patient pool, growing private-hospital chain spend.
+    - Brazil ANVISA (Class II) — moderate pathway, LATAM gateway market.
+    - Selected APAC (Japan PMDA, Korea MFDS, Singapore HSA) — long-tail.
+
+  TAM is sized as the sum of EEG / neurodiagnostics market revenue across
+  these regulatory regimes, multiplied by the share addressable by an AI
+  foundation model in the 3-5 year window. "Lower-regulation" does not mean
+  "low quality" — it means faster timeline to revenue, often with appropriate
+  data residency and local-language reporting requirements.
+
+# Q39 lens taxonomy. Primary platform_throughput — global market revenue x
+# AI capture share. Modeling regulatory regimes as a single bundled
+# market with paraphrased per-geo decomposition in the source notes
+# (composite primitive support lands at v0.3).
+analysis_lens:
+  primary: platform_throughput
+
+modifiers: {}
+
+measurements:
+  - global-eeg-neurodiagnostics-market-multi-geo-2024
+  - eeg-ai-foundation-model-addressability-2024
+
+competing_concepts: []
+requires_clearance: []

@@ -1,0 +1,28 @@
+kind: concept
+slug: yotta-india-cloud
+schema_version: 1
+name: "Yotta — India sovereign cloud & data center"
+definition: >
+  Yotta Data Services operates physical data centers and sovereign cloud
+  services in India. Constrained to India by physical infrastructure
+  footprint and RBI / DPDP data-localization mandates: regulated workloads
+  (BFSI, government, healthcare, critical infrastructure) cannot run on
+  foreign hyperscaler PoPs and must use in-country sovereign capacity.
+  International TAM is structurally $0 — Yotta cannot operate outside
+  India without rebuilding the regulatory + physical stack abroad.
+
+# Q39 lens taxonomy. Primary revenue_generation — target_segment x spend
+# math shape (Indian regulated enterprises x annual sovereign-cloud ARPU).
+# No secondary lens at v0.2; cost_efficiency math doesn't apply to a
+# capacity provider whose unit cost is depreciated DC capex, not labour.
+analysis_lens:
+  primary: revenue_generation
+
+modifiers: {}
+
+measurements:
+  - yotta-india-regulated-enterprises-targetable-2024
+  - yotta-india-sovereign-cloud-spend-per-enterprise-2024
+
+competing_concepts: []
+requires_clearance: []

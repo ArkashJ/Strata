@@ -1,0 +1,43 @@
+kind: atomic_primitive
+slug: servicenow-implementation-dev-spend-pool-2024
+schema_version: 1
+concept_slug: echelon-servicenow-agents
+name: Global ServiceNow implementation & custom-development services spend pool
+description: Annual third-party + internal spend by ServiceNow customers on ServiceNow
+  app build/customization/maintenance work. Derived from ServiceNow FY2024 subscription
+  revenue ~$10.6B, applying an industry-standard services multiplier of ~2.5x (SI
+  partners like Accenture, Deloitte, Cognizant report $25-30B in ServiceNow-attached
+  services). This is the incumbent labor + SI spend pool that ServiceNow dev agents
+  target for displacement.
+value: 27000000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 22000000000
+  - 32000000000
+  basis: SI-attach multiplier ranges 2.0x-3.0x across analyst surveys; ServiceNow
+    rev growth ~22% YoY adds further uncertainty.
+source:
+  slug: servicenow-10k-2024
+  tier: analyst-paraphrase
+  url: https://www.servicenow.com/company/investor-relations.html
+  accessed: '2026-05-26'
+  snapshot_sha256: 026203461ff2fc64570c1ce2df4c228722cff0513f4fd2c7ca8dd52b401eb9cd
+  original_publisher: ServiceNow 10-K FY2024 + analyst SI-attach ratios (Gartner ITSM
+    services)
+  paraphrase_reviewer: arkash
+  paraphrase_text: ServiceNow FY24 subscription rev ~$10.6B. SI ecosystem (Accenture,
+    Deloitte, Cognizant, DXC) reports ~2.5x services-to-license attach on ServiceNow
+    practices, implying ~$26-28B global annual implementation/customization/maintenance
+    spend.

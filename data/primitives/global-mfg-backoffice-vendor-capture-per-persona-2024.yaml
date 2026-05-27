@@ -1,0 +1,39 @@
+kind: atomic_primitive
+slug: global-mfg-backoffice-vendor-capture-per-persona-2024
+schema_version: 1
+concept_slug: endeavor-mfg-back-office
+name: Annual vendor capture per addressable back-office persona
+description: 'Fully-loaded annual cost of a mfg/distribution back-office worker globally
+  ≈ $55K (blended: US ~$70K fully-loaded per BLS OES + benefits; EU ~$65K; major EM
+  industrial ~$25K; weighted by where the 2.5M addressable personas sit). Vendor capture
+  rate ~55% of labor cost displaced (premium share for AI agents replacing structured
+  workflows, net of implementation/services discount). $55K * 0.55 ≈ $30K vendor ACV
+  per persona automated. This embeds the capture % per Q15 (no separate multiplier
+  in framework).'
+value: 30000
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: persona-year
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 22000
+  - 40000
+  basis: Blended global fully-loaded labor cost $45-70K * capture rate 45-60% of displaced
+    labor.
+source:
+  slug: endeavor-vendor-capture-model-2024
+  tier: community-modeled
+  url: https://www.bls.gov/oes/current/oes_43-3031.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: df413a9f9ca3ed7e4dba0c7f641dfa033aaf168edc08f38d61160dc86a41e1d9

@@ -1,0 +1,17 @@
+kind: concept
+slug: accrual-ai-tax-software
+schema_version: 1
+name: Accrual — AI Tax Software for US CPA Firms
+definition: AI-native tax-preparation and workpaper software sold to US CPA firms,
+  displacing incumbent professional tax suites (Intuit Lacerte/ProConnect, Thomson
+  Reuters UltraTax/CS Professional Suite, Wolters Kluwer CCH Axcess). Scope is US
+  federal + state tax code only; excludes consumer DIY (TurboTax) and in-house corporate
+  tax departments.
+analysis_lens:
+  primary: bundle_consolidation
+modifiers: {}
+measurements:
+- us-cpa-firm-professional-tax-software-revenue-2024
+- ai-native-tax-share-shift-capture-rate-2024
+competing_concepts: []
+requires_clearance: []

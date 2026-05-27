@@ -1,0 +1,42 @@
+kind: atomic_primitive
+slug: qa-tooling-spend-per-dev-2024
+schema_version: 1
+concept_slug: skyramp-qa-automation
+name: Annual QA / test tooling spend per addressable persona
+description: Blended annual QA tooling spend per developer-persona covering test management,
+  automation frameworks, performance/load, and emerging AI test-gen seats. Triangulated
+  from analyst coverage of the software testing tools market (~$50B global) divided
+  across the broader dev population, with a per-seat ceiling that reflects realistic
+  vendor capture (~$1,200/yr) rather than total dev tooling budget.
+value: 1200
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: persona-year
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 800
+  - 1800
+  basis: Per-seat capture varies by org maturity and tool consolidation; AI test-gen
+    specifically may command premium ($2K+) but blended across the persona pool sits
+    near $1.2K.
+source:
+  slug: gartner-test-automation-paraphrase-2024
+  tier: analyst-paraphrase
+  url: https://www.gartner.com/reviews/market/software-test-automation
+  accessed: '2026-05-26'
+  snapshot_sha256: d71fc8a9cd0a13ddda027a0cc1c0ff03d688af60ab8cc8495f0dcf0facd31249
+  original_publisher: Gartner
+  paraphrase_reviewer: arkash
+  paraphrase_text: Gartner's software test tools coverage implies enterprise QA tooling
+    spend in the $800-$1,500 per developer-seat per year range across test mgmt, automation,
+    performance, and AI-assisted test-gen categories combined.

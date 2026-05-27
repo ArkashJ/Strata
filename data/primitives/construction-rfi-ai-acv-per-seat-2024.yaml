@@ -1,0 +1,38 @@
+kind: atomic_primitive
+slug: construction-rfi-ai-acv-per-seat-2024
+schema_version: 1
+concept_slug: zerorfi-construction-rfi
+name: Realistic AI RFI/Change-Order SaaS ACV per Seat (US, 2024)
+description: Annual contract value per addressable seat for an AI RFI/change-order
+  workflow tool, benchmarked against Procore (~$375/user/mo for full PM suite), Autodesk
+  Construction Cloud, and Document Crunch pricing. We use $3,500/seat/yr as the realistic
+  willingness-to-pay for an AI-specific RFI module — well below fully-loaded labor
+  cost ($120K+) because the vendor only captures workflow value, not labor replacement.
+  This bakes in a realistic value-capture rate.
+value: 3500
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: persona-year
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 2000
+  - 6000
+  basis: Triangulated from public Procore/Autodesk pricing; AI-specific RFI modules
+    are early and ACV could range $2K-$6K/seat.
+source:
+  slug: construction-ai-acv-benchmark-2024
+  tier: community-modeled
+  url: https://www.procore.com/pricing
+  accessed: '2026-05-26'
+  snapshot_sha256: e24dcaefc712a378f25e8d9f7d0e7bb26654145aad8d0f9e4ad5ecfb152af6bb

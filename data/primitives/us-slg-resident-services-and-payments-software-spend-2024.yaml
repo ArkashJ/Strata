@@ -1,0 +1,41 @@
+kind: atomic_primitive
+slug: us-slg-resident-services-and-payments-software-spend-2024
+schema_version: 1
+concept_slug: kaizen-labs-govtech
+name: US state & local resident-services + payments software spend (incumbent pool)
+description: Annual US state and local government spend on resident-services software,
+  citizen engagement, permitting/licensing, and payments processing software — the
+  incumbent vendor revenue pool Kaizen would displace. Built from Tyler Technologies
+  (~$2.0B SLG revenue), Granicus (~$0.3B), GovOS, NIC/PaymentVision, Accela, OpenGov,
+  CivicPlus, and long-tail vendors. Excludes core ERP/financials and public-safety
+  which Kaizen does not target. US-only by procurement scope.
+value: 6500000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 5000000000
+  - 8000000000
+  basis: Vendor revenue triangulation; boundary between resident-services and ERP
+    is fuzzy.
+source:
+  slug: tyler-10k-govtech100-2024
+  tier: analyst-paraphrase
+  url: https://www.tylertech.com/about-us/investor-relations
+  accessed: '2026-05-26'
+  snapshot_sha256: 8ede0993d8ee88d1288e7a77c60a770cd59f8e4dde9f437d80a6fab081e5cffa
+  original_publisher: Gartner / Tyler Technologies 10-K / GovTech 100
+  paraphrase_reviewer: arkash
+  paraphrase_text: 'US SLG citizen-services + payments software TAM ~$6-7B/yr: Tyler
+    SLG ~$2B, Granicus ~$0.3B, Accela/OpenGov/GovOS/CivicPlus/NIC payments collectively
+    ~$3-4B. Excludes ERP and public safety. Intl TAM=0 (US procurement scope).'

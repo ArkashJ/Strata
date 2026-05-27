@@ -1,0 +1,36 @@
+kind: atomic_primitive
+slug: ai-canvas-capture-rate-of-stock-and-agency-production-2027
+schema_version: 1
+concept_slug: melius-creative-canvas
+name: Realistic AI creative canvas capture rate of stock + agency production pool
+description: Share of the combined stock-media + addressable agency-production pool
+  that AI-native creative canvas tools (Melius, Canva AI, Adobe Firefly tier, Runway,
+  etc.) credibly capture in steady state. Stock media is more displaceable (~35-40%)
+  since gen-AI directly substitutes; agency production is partially displaceable (~15-20%)
+  as agencies retain brand/strategy and adopt AI internally. Blended ≈ 22%.
+value: 0.22
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.15
+  - 0.32
+  basis: Range reflects uncertainty on (a) how fast marketers in-house creative work
+    and (b) whether agencies cannibalize their own production with AI vs. lose to
+    standalone canvases.
+source:
+  slug: strata-ai-creative-capture-model-2024
+  tier: community-modeled
+  url: https://strata.internal/models/ai-creative-displacement
+  accessed: '2026-05-26'
+  snapshot_sha256: 688d4f3371eaaa501a92f2af71db9bbcae17dd886bf55a1e277a68a07ff1378b

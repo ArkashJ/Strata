@@ -51,7 +51,7 @@ async def test_list_concepts(client: AsyncClient) -> None:
     assert r.status_code == 200
     concepts = r.json()
     assert isinstance(concepts, list)
-    assert len(concepts) == 6
+    assert len(concepts) >= 6
     slugs = {c["slug"] for c in concepts}
     for slug in CONCEPT_SLUGS:
         assert slug in slugs, f"concept {slug!r} missing from /c"
@@ -206,9 +206,7 @@ async def test_build_response_has_state_hash(client: AsyncClient) -> None:
 
 
 async def test_tam_not_found(client: AsyncClient) -> None:
-    r = await client.get(
-        "/tam/0000000000000000000000000000000000000000000000000000000000000000"
-    )
+    r = await client.get("/tam/0000000000000000000000000000000000000000000000000000000000000000")
     assert r.status_code == 404
 
 

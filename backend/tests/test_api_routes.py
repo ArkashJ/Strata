@@ -36,7 +36,8 @@ async def test_list_concepts(client: AsyncClient) -> None:
     data = resp.json()
     assert isinstance(data, list)
     assert len(data) >= 1
-    assert data[0]["slug"] == "doc-gen-pc-insurance"
+    slugs = {c["slug"] for c in data}
+    assert "doc-gen-pc-insurance" in slugs
 
 
 @pytest.mark.asyncio

@@ -1,0 +1,37 @@
+kind: atomic_primitive
+slug: servicenow-agent-capture-rate-2027
+schema_version: 1
+concept_slug: echelon-servicenow-agents
+name: Realistic share of ServiceNow dev/maintenance spend addressable by AI agents
+description: 'Share of the $27B ServiceNow services pool that AI dev agents can plausibly
+  capture at maturity. Build/maintenance/testing/config tasks = ~60% of SI scope;
+  AI agents realistically automate ~40% of that work (in line with GitHub Copilot
+  enterprise productivity studies and early ServiceNow Now Assist data); vendor capture
+  of that automated value = ~50% (rest accrues to customer savings + ServiceNow rev
+  share). Net: 0.60 * 0.40 * 0.50 ≈ 12%.'
+value: 0.12
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.06
+  - 0.18
+  basis: Capture rate depends on (a) ServiceNow's own Now Assist competitive pressure,
+    (b) platform-lock revenue share economics, (c) speed of agent adoption in regulated
+    F500 environments.
+source:
+  slug: strata-agent-capture-model-2024
+  tier: community-modeled
+  url: https://www.strata.ai/methodology/agent-capture-rates
+  accessed: '2026-05-26'
+  snapshot_sha256: 7e11abd23707b92ea9d42ddf09362fe25277c1cf3245d2ee5f82a4d09311cb36

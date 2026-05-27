@@ -1,0 +1,43 @@
+kind: atomic_primitive
+slug: global-recruiting-search-fees-2024
+schema_version: 1
+concept_slug: contrario-ai-recruiting
+name: Global recruiting services revenue (perm placement + RPO + search, ex-temp payroll)
+description: 'Global staffing & recruiting industry generated ~$650B in 2023 revenue
+  per SIA; we restrict to the AI-addressable recruiting-service fee pool: permanent
+  placement fees, RPO fees, and executive/contingent search fees, which together total
+  approximately $200B globally. Excludes temp-staffing payroll pass-through (which
+  is labor cost, not service fee) since AI agents cannot displace the underlying worker''s
+  wages, only the matching/sourcing service layer.'
+value: 200000000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 150000000000
+  - 250000000000
+  basis: Composition of staffing revenue between pass-through payroll vs service fees
+    varies by SIA methodology; perm + RPO + search subsegments well-bounded but adjacent
+    recruiting services (job-board fees, sourcing tools, assessments) add uncertainty.
+source:
+  slug: sia-global-staffing-2024
+  tier: analyst-paraphrase
+  url: https://www2.staffingindustry.com/Research/Research-Reports/Global/Global-Staffing-Industry-Market-Estimates-and-Forecast-September-2024-Update
+  accessed: '2026-05-26'
+  snapshot_sha256: 5a3f789775dcf002cf739f30e4acbd9aa4a4b381f5aa18053521d58fd01ebc10
+  original_publisher: Staffing Industry Analysts (SIA)
+  paraphrase_reviewer: arkash
+  paraphrase_text: 'SIA estimates global staffing industry revenue ~$650B (2023).
+    Decomposing: temp staffing ~$450B (mostly payroll pass-through, excluded), perm
+    placement ~$60B, RPO ~$10B, search/contingent ~$15B, plus adjacent recruiting
+    services. AI-addressable service-fee pool ≈ $200B.'

@@ -1,0 +1,16 @@
+kind: concept
+slug: gather-customer-research
+schema_version: 1
+name: Gather — AI Customer Research Agent
+definition: Gather is a global SaaS AI agent that conducts customer research (qualitative
+  interviews, survey synthesis, VoC analysis) for marketing and product teams, displacing
+  qualitative researcher headcount, expert-network subscriptions (GLG/AlphaSights),
+  and survey platforms (Qualtrics/UserTesting). Global scope, no regulatory gates.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+- global-ai-addressable-qual-researchers-2024
+- vendor-capture-per-qual-researcher-2024
+competing_concepts: []
+requires_clearance: []

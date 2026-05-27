@@ -33,8 +33,22 @@ Live API (BLS, FRED, EDGAR, Census, ...)
 
 | File | Purpose |
 |------|---------|
-| `__init__.py` | Re-exports key types from all connectors |
-| `bls.py` | BLS Public Data API v2 — all 7 signatures, typed models, cache, Strata converters |
+| `__init__.py` | Re-exports key types from all 15 connectors |
+| `bls.py` | BLS Public Data API v2 — employment, wages, CPI, JOLTS |
+| `fred.py` | FRED API — GDP, rates, money supply, consumption |
+| `census.py` | Census Bureau API — industry stats by NAICS (CBP/SUSB) |
+| `edgar.py` | SEC EDGAR XBRL — company financials, frames |
+| `worldbank.py` | World Bank Indicators API v2 — global GDP, population |
+| `kalshi.py` | Kalshi prediction markets — event contracts, probabilities |
+| `oecd.py` | OECD SDMX REST API — 38 countries, GDP/labour/trade/health/R&D |
+| `eurostat.py` | Eurostat JSON-stat — EU sector stats, demographics |
+| `comtrade.py` | UN Comtrade — bilateral trade flows by HS code |
+| `fdic.py` | FDIC BankFind — bank financials, institutions, failures |
+| `cms.py` | CMS Open Data — Medicare/Medicaid enrollment, spending, NHE |
+| `eia.py` | EIA API v2 — electricity, petroleum, gas, coal, renewables |
+| `usda_nass.py` | USDA NASS QuickStats — crop/livestock production, prices |
+| `faa.py` | FAA aviation — airports, passengers, status |
+| `openfda.py` | openFDA — drug events, device 510k/PMA, recalls |
 
 ## Adding a new connector
 
@@ -95,17 +109,25 @@ with BLSClient(api_key="...") as client:
 
 ## Connectors
 
-| Connector | Source tier | Priority | Status |
-|-----------|-----------|----------|--------|
-| BLS (OES, CPI, LAUS, JOLTS) | `regulator` | P0 | Done |
-| FRED (Federal Reserve) | `regulator` | P0 | Done |
-| Census / SUSB | `regulator` | P1 | Done |
-| SEC / EDGAR | `regulator` | P1 | Done |
-| World Bank Open Data | `aggregator` | P2 | Done |
-| **Kalshi (prediction markets)** | `prediction_market` | P1 | **Done** |
-| Dune Analytics (onchain) | `onchain` | P1 | Reference only (plan limits) |
-| Eurostat | `regulator` | P2 | Planned |
-| Polymarket | `prediction_market` | P2 | Planned |
+| Connector | Source tier | Priority | Status | Lines | Methods |
+|-----------|-----------|----------|--------|-------|---------|
+| BLS (OES, CPI, LAUS, JOLTS) | `regulator` | P0 | Done | 747 | 8 |
+| FRED (Federal Reserve) | `regulator` | P0 | Done | 752 | 10 |
+| Census / SUSB | `regulator` | P1 | Done | 789 | 8 |
+| SEC / EDGAR | `regulator` | P1 | Done | 856 | 7 |
+| World Bank Open Data | `aggregator` | P2 | Done | 613 | 6 |
+| Kalshi (prediction markets) | `prediction_market` | P1 | Done | 995 | 12 |
+| **OECD (SDMX)** | `aggregator` | P1 | **Done** | 1187 | 22 |
+| **Eurostat (JSON-stat)** | `regulator` | P1 | **Done** | 957 | 17 |
+| **UN Comtrade (trade flows)** | `aggregator` | P1 | **Done** | 1050 | 16 |
+| **FDIC BankFind** | `regulator` | P2 | **Done** | 1208 | 16 |
+| **CMS Open Data (Medicare)** | `regulator` | P2 | **Done** | 1229 | 16 |
+| **EIA (energy)** | `regulator` | P2 | **Done** | 1187 | 20 |
+| **USDA NASS QuickStats** | `regulator` | P3 | **Done** | 1145 | 16 |
+| **FAA (aviation)** | `regulator` | P3 | **Done** | 994 | 15 |
+| **openFDA (drugs/devices)** | `regulator` | P3 | **Done** | 1218 | 20 |
+| Dune Analytics (onchain) | `onchain` | P1 | Reference only (plan limits) | — | — |
+| Polymarket | `prediction_market` | P2 | Planned | — | — |
 
 ## Conventions
 

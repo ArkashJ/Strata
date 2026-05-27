@@ -1,0 +1,39 @@
+kind: atomic_primitive
+slug: global-ai-addressable-secops-personas-2024
+schema_version: 1
+concept_slug: wraithwatch-cyber-defense
+name: Global AI-addressable SOC analyst + pentester pool
+description: ISC2 2024 Cybersecurity Workforce Study estimates ~5.5M global cyber
+  workforce. ~62% are in SecOps/IR/offensive security functions (vs GRC, architecture,
+  identity, etc.) = ~3.4M. Of those, ~35% of task-hours are AI-automatable per Wraithwatch's
+  agent scope (Tier 1/2 triage, alert enrichment, routine pentest recon/scoping) —
+  yielding ~1.19M AI-addressable personas globally. Addressability multiplier embedded.
+value: 1190000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 850000
+  - 1500000
+  basis: ISC2 workforce count ±10%; SecOps subset share 55-68%; AI-automatable task
+    share 25-45% based on agent capability bench
+source:
+  slug: isc2-workforce-study-2024
+  tier: analyst-paraphrase
+  url: https://www.isc2.org/research/workforce-study
+  accessed: '2026-05-26'
+  snapshot_sha256: 4eb4a631b91eadc1a856f000a52aaf069d1a5641eb91f651b05bce41d9f6d203
+  original_publisher: ISC2
+  paraphrase_reviewer: arkash
+  paraphrase_text: 'ISC2 2024 study: global cyber workforce ~5.5M. SecOps/IR/offensive
+    subset ~62% (~3.4M). Wraithwatch agent scope addresses ~35% of task-hours in those
+    roles (Tier 1/2 SOC + routine pentest) => ~1.19M AI-addressable personas.'
