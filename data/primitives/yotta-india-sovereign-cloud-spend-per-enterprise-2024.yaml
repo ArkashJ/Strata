@@ -1,0 +1,43 @@
+kind: atomic_primitive
+slug: yotta-india-sovereign-cloud-spend-per-enterprise-2024
+schema_version: 1
+concept_slug: yotta-india-cloud
+name: "Sovereign-cloud + colocation spend per Indian regulated enterprise (2024)"
+description: >
+  Average annual spend on sovereign-cloud and colocation services per Indian
+  regulated enterprise (BFSI, government, large healthcare, critical infra).
+  Derived from Gartner / IDC India cloud market sizing: India sovereign cloud
+  + DC services revenue ~$4B / 50K targetable enterprises = ~$80K average
+  spend per enterprise per year. Power-law distribution — top-100 Indian
+  banks and PSUs anchor most of the revenue; long tail spends materially less.
+
+value: 80000
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: "per-enterprise-per-year"
+
+as_of: 2024-12-31
+
+geo:
+  level: country
+  codes: ["IN"]
+geo_perspective: demand
+
+distribution_shape: power_law
+delivery_mode: "direct"
+
+source:
+  slug: gartner-india-cloud-2024
+  tier: analyst-paraphrase
+  url: "https://www.gartner.com/en/documents/india-cloud-services-market-2024"
+  accessed: 2026-05-26
+  snapshot_sha256: "26de6c8bb33470ae91778f0f5662cfe3148e2931a627314af135b899a5c72f8a"
+  original_publisher: "Gartner India + IDC India"
+  paraphrase_reviewer: "arkash"
+  paraphrase_text: >
+    Gartner / IDC India size the 2024 India sovereign-cloud + colocation
+    market at ~$4B, served by Yotta, CtrlS, NxtGen, ESDS, and STT GDC.
+    Divided across ~50K addressable regulated enterprises this implies
+    ~$80K average annual spend per buyer.

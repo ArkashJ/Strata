@@ -1,0 +1,37 @@
+kind: atomic_primitive
+slug: us-ai-addressable-payer-provider-decision-personas-2024
+schema_version: 1
+concept_slug: signallabs-healthcare-decision-ai
+name: US AI-addressable health payer/provider decision personas (HIPAA-bound)
+description: 'Addressable subset of US health payer + provider decision workers whose
+  workflow (prior auth, utilization review, clinical decisioning, care-pathway routing)
+  is AI-eligible under HIPAA. Derived from BLS OES: medical/health services managers
+  (11-9111 ~480K) + clinical-authorization slice of insurance claims/policy clerks
+  (43-9041, ~150K of ~280K). Apply ~35% AI-eligibility filter for HIPAA-bound decisioning
+  workflows -> ~220K addressable personas. Full pool (~700K) is NOT used; addressability
+  is embedded here.'
+value: 220000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 180000
+  - 260000
+  basis: AI-eligibility share (30-40%) for HIPAA-bound decision workflows is community-modeled;
+    BLS occupation boundaries are crisp but the clinical-authorization slice of 43-9041
+    is estimated.
+source:
+  slug: bls-oes-2024
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes119111.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: 61726b7256f92918254bca460f28a8c6af12c8ea55429862635bb2a4ca594d25

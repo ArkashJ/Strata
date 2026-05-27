@@ -1,0 +1,16 @@
+kind: concept
+slug: wraithwatch-cyber-defense
+schema_version: 1
+name: Wraithwatch — Agentic Cyber Defense
+definition: Global market for autonomous AI agents performing security operations
+  work — SOC triage/monitoring, incident response, and automated penetration testing
+  — sold to F500 enterprises and government agencies. Scope is worldwide commercial
+  + public sector cybersecurity labor displacement, not point-tool SaaS replacement.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+- global-ai-addressable-secops-personas-2024
+- global-blended-secops-vendor-capture-per-persona-2024
+competing_concepts: []
+requires_clearance: []

@@ -360,8 +360,8 @@ bun run test
     ├── 07-data-layer-brainstorm  Q1-Q40 schema decisions (LOAD BEARING)
     ├── 08-product-surface        U1-U12 UX decisions (LOAD BEARING)
     ├── 11-api-catalog            50+ APIs for market sizing
-    ├── HANDOFF.md                Current state + MVP sprint plan
-    └── superpowers/specs/        Platform evolution design spec
+    ├── CLIENT_PLATFORM_GUIDE.md  Customer-facing platform walkthrough
+    └── superpowers/specs/        Platform evolution + TAM methodology specs
 ```
 
 ## License

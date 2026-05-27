@@ -37,12 +37,32 @@ output_unit:
 
 applicable_to:
   - payments-throughput-pc-insurance
+  - voice-ai-infra-global
+  - piramidal-eeg-multi-geo
+  - supermemory-ai-memory-infra
+  - sieve-multimodal-infra
 
 variants:
   - scope: payments-throughput-pc-insurance
     default_inputs:
       gmv_or_volume: pc-premium-volume-digital-us-2024
       take_rate: payment-processing-take-rate-2024
+  - scope: voice-ai-infra-global
+    default_inputs:
+      gmv_or_volume: voice-ai-application-stack-revenue-global-2024
+      take_rate: voice-ai-infra-layer-share-global-2024
+  - scope: piramidal-eeg-multi-geo
+    default_inputs:
+      gmv_or_volume: global-eeg-neurodiagnostics-market-multi-geo-2024
+      take_rate: eeg-ai-foundation-model-addressability-2024
+  - scope: supermemory-ai-memory-infra
+    default_inputs:
+      gmv_or_volume: global-ai-application-stack-revenue-2024
+      take_rate: memory-layer-share-of-ai-app-stack-2024
+  - scope: sieve-multimodal-infra
+    default_inputs:
+      gmv_or_volume: global-multimodal-video-audio-app-stack-revenue-2024
+      take_rate: multimodal-ai-infra-share-of-app-stack-2024
 
 expansion_stage_parameter: false
 horizon_class: snapshot

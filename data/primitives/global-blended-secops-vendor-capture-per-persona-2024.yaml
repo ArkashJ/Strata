@@ -1,0 +1,36 @@
+kind: atomic_primitive
+slug: global-blended-secops-vendor-capture-per-persona-2024
+schema_version: 1
+concept_slug: wraithwatch-cyber-defense
+name: Vendor-captured value per AI-addressable SecOps persona (USD)
+description: 'Global blended fully-loaded SecOps comp: US ~$120K, EU ~$85K, APAC ~$55K
+  weighted by workforce distribution => ~$95K/yr. Wraithwatch as agentic vendor captures
+  ~40% of the automatable-task value (rest = enterprise savings + integration/services).
+  $95K × 0.40 = $38K captured per addressable persona. Vendor value-split embedded.'
+value: 38000
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: persona-year
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 25000
+  - 55000
+  basis: Blended comp ±15% (geo mix); vendor value-split 30-50% range typical for
+    displacement-economics agentic SaaS
+source:
+  slug: wraithwatch-vendor-capture-model-2024
+  tier: community-modeled
+  url: https://www.isc2.org/research/workforce-study
+  accessed: '2026-05-26'
+  snapshot_sha256: 1507e0e459a6a519786f68b53893e82e2c02bdc62bf073e36ab199d20d742755

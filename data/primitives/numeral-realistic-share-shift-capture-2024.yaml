@@ -1,0 +1,37 @@
+kind: atomic_primitive
+slug: numeral-realistic-share-shift-capture-2024
+schema_version: 1
+concept_slug: numeral-tax-compliance
+name: Realistic Share-Shift Capture for Modern API-First Tax Compliance Challenger
+description: 'Numeral targets the ecommerce + SaaS slice of the incumbent pool (Shopify/Stripe-native
+  sellers, digital subscriptions) where API-first UX wins. Embedded multipliers: addressable
+  slice of pool that is API-amenable mid-market digital sellers ~50% of $3.8B pool;
+  realistic long-run challenger capture vs Avalara/Vertex/Sovos entrenchment ~35%
+  of that addressable slice. Combined effective consolidation_rate = 0.50 × 0.35 ≈
+  17.5%. Yields ~$0.66B SAM, consistent with a modern challenger in a regulated incumbent
+  market.'
+value: 0.175
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.1
+  - 0.25
+  basis: Challenger capture in regulated compliance markets historically 10-30%; modern
+    API-first vendors (Stripe Tax, Anrok) suggest mid-range achievable.
+source:
+  slug: strata-community-modeled-share-shift-2024
+  tier: community-modeled
+  url: https://www.strata.internal/models/tax-compliance-share-shift
+  accessed: '2026-05-26'
+  snapshot_sha256: 665ddd13da2e204ad97ce4b576215a0af3c8dca430cbb8fba3b4e11686dba457

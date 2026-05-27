@@ -1,0 +1,17 @@
+kind: concept
+slug: kaizen-labs-govtech
+schema_version: 1
+name: Kaizen Labs
+definition: AI-native resident-services and payments software platform sold to US
+  state and local governments (counties, municipalities, special districts). Scope
+  is US-only because procurement is governed by state IT procurement rules and cooperative
+  purchasing vehicles (NASPO, Sourcewell). Competes against incumbent GovTech vendors
+  (Tyler, Granicus, NIC/Tyler-PaymentVision, GovOS).
+analysis_lens:
+  primary: bundle_consolidation
+modifiers: {}
+measurements:
+- us-slg-resident-services-and-payments-software-spend-2024
+- kaizen-realistic-slg-consolidation-capture-rate-2024
+competing_concepts: []
+requires_clearance: []

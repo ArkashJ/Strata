@@ -1,0 +1,17 @@
+kind: concept
+slug: effective-ai-insurance-knowledge
+schema_version: 1
+name: Effective AI - US Insurance Actuarial & Underwriting Knowledge Work
+definition: AI agents that automate actuarial and underwriting knowledge work for
+  US insurance carriers. Scope is US-only because rate filings, reserving, and underwriting
+  guidelines are bound to state Departments of Insurance (DOIs) under the McCarran-Ferguson
+  regime; models and workflows do not transfer cross-border. TAM is sized as the addressable
+  subset of US actuary + underwriter labor cost that AI agents can plausibly automate.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+- us-addressable-actuary-underwriter-personas-2024
+- us-actuary-underwriter-fully-loaded-cost-2024
+competing_concepts: []
+requires_clearance: []

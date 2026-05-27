@@ -1,0 +1,35 @@
+kind: atomic_primitive
+slug: us-commercial-construction-rfi-personas-2024
+schema_version: 1
+concept_slug: zerorfi-construction-rfi
+name: US Commercial Construction RFI/Owner's-Rep Addressable Personas (2024)
+description: Addressable US personas whose primary workflow includes RFI / change-order
+  handling on commercial construction projects (owner's reps, project engineers, assistant
+  PMs). Derived from BLS OES 11-9021 Construction Managers (~750K) restricted to commercial
+  subset (~40%) and further restricted to RFI-touching seats (~60%), yielding ~180K
+  addressable seats. This is NOT the full construction labor pool (~8M); the addressability
+  narrowing is baked in here per Q15.
+value: 180000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 120000
+  - 240000
+  basis: BLS OES base count is firm; commercial-share (40%) and RFI-touching-share
+    (60%) are analyst-modeled narrowings.
+source:
+  slug: bls-oes-11-9021-construction-managers
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes119021.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: 2729f1a994233c7ed54f1c05c1a5691a81177e4e0e381b325f4a32dfd5b4e2f5

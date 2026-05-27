@@ -1,0 +1,42 @@
+kind: atomic_primitive
+slug: global-sales-tax-vat-compliance-software-revenue-2024
+schema_version: 1
+concept_slug: numeral-tax-compliance
+name: Global Sales-Tax / VAT / GST Compliance Software Revenue Pool (Avalara + Vertex
+  + Sovos + Thomson Reuters ONESOURCE + long tail)
+description: Incumbent revenue pool for transactional tax compliance software globally.
+  Anchored on Avalara FY2022 last-public revenue ~$0.85B (pre-Vista take-private at
+  $8.4B) growing ~20%/yr to ~$1.4B 2024 run-rate; Vertex FY2024 revenue ~$667M; Sovos
+  ~$650M; ONESOURCE indirect tax ~$500M; long tail (TaxJar/Stripe Tax, Anrok, regional
+  players) ~$600M. Sum ≈ $3.8B. US ~55%, EU ~30%, APAC ~15%.
+value: 3800000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 3200000000
+  - 4500000000
+  basis: Avalara post-take-private revenue not disclosed; long-tail aggregation imprecise.
+source:
+  slug: vertex-10k-avalara-public-filings-2024
+  tier: analyst-paraphrase
+  url: https://investors.vertexinc.com/financials/sec-filings
+  accessed: '2026-05-26'
+  snapshot_sha256: 5468aad833c5273c2e02fe1db61bd2f0d41958a3a89356280218c84bdc23758d
+  original_publisher: Vertex 10-K FY2024 + Avalara S-1/last 10-Q + IDC Worldwide Tax
+    Automation tracker
+  paraphrase_reviewer: arkash
+  paraphrase_text: Vertex FY24 rev $667M (10-K). Avalara last public FY22 $853M, est
+    ~$1.4B 2024 run-rate post-Vista. Sovos ~$650M, ONESOURCE indirect ~$500M, long
+    tail (Stripe Tax, Anrok, TaxJar, regional) ~$600M. Global pool ≈ $3.8B; US ~55%
+    / EU ~30% / APAC ~15%.

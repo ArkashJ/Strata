@@ -1,0 +1,40 @@
+kind: atomic_primitive
+slug: ai-native-itsm-share-shift-rate-2024
+schema_version: 1
+concept_slug: st-labs-ai-itsm
+name: Realistic AI-native ITSM share-capture rate
+description: 'Share of the incumbent ITSM pool realistically displaceable by AI-native
+  challengers (ST Labs and peers collectively) over a 5-7yr horizon. ServiceNow''s
+  enterprise contracts (3-5yr terms, deep workflow customization) lock ~50% of the
+  pool; Atlassian/Freshworks mid-market is more contestable (~40% displaceable). Blended:
+  ~18% effective share-shift, reflecting (a) AI-native value prop strongest in L1/L2
+  ticket deflection + agent productivity, (b) greenfield + mid-market peel-off first,
+  (c) competitive response from incumbents (ServiceNow Now Assist, Atlassian Rovo)
+  compressing the window.'
+value: 0.18
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.12
+  - 0.25
+  basis: Historical SaaS share-shift precedents (Zendesk vs legacy CRM ~15%, Freshworks
+    vs ServiceNow mid-market ~10%) bracket 12-25%. Incumbent AI counter-products (Now
+    Assist GA 2024) pull toward the low end; greenfield AI-native demand pulls toward
+    high end.
+source:
+  slug: strata-itsm-shareshift-model-2024
+  tier: community-modeled
+  url: https://strata.internal/models/itsm-share-shift-2024
+  accessed: '2026-05-26'
+  snapshot_sha256: ace296af210ef66311f18538887351a1e3302ed1483983c8d96ca76e11a69c89

@@ -42,6 +42,14 @@ output_unit:
 applicable_to:
   - doc-gen-pc-insurance
   - gtm-ops-tooling-na
+  - skyramp-qa-automation
+  - kyber-pc-doc-gen
+  - gather-customer-research
+  - endeavor-mfg-back-office
+  - signallabs-healthcare-decision-ai
+  - zerorfi-construction-rfi
+  - wraithwatch-cyber-defense
+  - effective-ai-insurance-knowledge
 
 variants:
   - scope: doc-gen-pc-insurance
@@ -52,6 +60,38 @@ variants:
     default_inputs:
       persona_pool: bls-sales-reps-headcount-2024
       cost_per_persona: gtm-ops-tool-cost-per-rep-2024
+  - scope: skyramp-qa-automation
+    default_inputs:
+      persona_pool: global-ai-addressable-qa-personas-2024
+      cost_per_persona: qa-tooling-spend-per-dev-2024
+  - scope: kyber-pc-doc-gen
+    default_inputs:
+      persona_pool: us-pc-doc-addressable-personas-2024
+      cost_per_persona: us-pc-doc-persona-loaded-cost-2024
+  - scope: gather-customer-research
+    default_inputs:
+      persona_pool: global-ai-addressable-qual-researchers-2024
+      cost_per_persona: vendor-capture-per-qual-researcher-2024
+  - scope: endeavor-mfg-back-office
+    default_inputs:
+      persona_pool: global-mfg-distribution-ai-addressable-backoffice-personas-2024
+      cost_per_persona: global-mfg-backoffice-vendor-capture-per-persona-2024
+  - scope: signallabs-healthcare-decision-ai
+    default_inputs:
+      persona_pool: us-ai-addressable-payer-provider-decision-personas-2024
+      cost_per_persona: us-decision-ai-capturable-cost-per-persona-2024
+  - scope: zerorfi-construction-rfi
+    default_inputs:
+      persona_pool: us-commercial-construction-rfi-personas-2024
+      cost_per_persona: construction-rfi-ai-acv-per-seat-2024
+  - scope: wraithwatch-cyber-defense
+    default_inputs:
+      persona_pool: global-ai-addressable-secops-personas-2024
+      cost_per_persona: global-blended-secops-vendor-capture-per-persona-2024
+  - scope: effective-ai-insurance-knowledge
+    default_inputs:
+      persona_pool: us-addressable-actuary-underwriter-personas-2024
+      cost_per_persona: us-actuary-underwriter-fully-loaded-cost-2024
 
 expansion_stage_parameter: false
 horizon_class: snapshot

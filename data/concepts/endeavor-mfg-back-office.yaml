@@ -1,0 +1,17 @@
+kind: concept
+slug: endeavor-mfg-back-office
+schema_version: 1
+name: Endeavor — Mfg/Distribution Back-Office AI
+definition: AI workflow agents automating manufacturing and distribution back-office
+  processes (quote-to-cash, order management, ERP data entry, invoice/PO matching).
+  Global industrial scope across discrete + process manufacturing and wholesale distribution.
+  No specific regulatory regime; sold as enterprise SaaS/agents priced against the
+  cost of back-office labor displaced.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+- global-mfg-distribution-ai-addressable-backoffice-personas-2024
+- global-mfg-backoffice-vendor-capture-per-persona-2024
+competing_concepts: []
+requires_clearance: []

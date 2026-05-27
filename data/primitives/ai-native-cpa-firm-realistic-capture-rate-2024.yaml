@@ -1,0 +1,35 @@
+kind: atomic_primitive
+slug: ai-native-cpa-firm-realistic-capture-rate-2024
+schema_version: 1
+concept_slug: minerva-ai-accounting-firm
+name: Realistic share-shift capture rate for AI-native US CPA firm
+description: Single-digit % capture ceiling of incumbent SMB accounting services pool
+  achievable by AI-native CPA firms. Reflects (a) state-by-state CPA firm licensure
+  friction, (b) human CPA sign-off bottleneck, (c) non-AI-addressable advisory/audit
+  work, (d) realistic switching velocity from incumbent CPAs. Set to 7% midpoint of
+  single-digit band per spec.
+value: 0.07
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.04
+  - 0.09
+  basis: Single-digit % band per spec; bounded by CPA licensure friction on low end
+    and aggressive share-shift on high end
+source:
+  slug: strata-modeled-ai-cpa-capture-2024
+  tier: community-modeled
+  url: https://strata.internal/methodology/ai-native-regulated-services-capture
+  accessed: '2026-05-26'
+  snapshot_sha256: 1889d213bf91ff20f3c6a70f7edfb11ec6cbb4823c53c531ec7e5358079b3112

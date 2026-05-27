@@ -1,0 +1,34 @@
+kind: atomic_primitive
+slug: us-smb-accounting-services-revenue-2024
+schema_version: 1
+concept_slug: minerva-ai-accounting-firm
+name: US SMB accounting services revenue pool
+description: Annual revenue of US accounting, tax prep, bookkeeping & payroll services
+  (NAICS 5412) attributable to SMB clients. This is the incumbent spend pool an AI-native
+  CPA firm could displace. ~$43B per spec methodology, aligned with Census SUSB /
+  Economic Census NAICS 5412 SMB-segment revenue.
+value: 43000000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 38000000000
+  - 48000000000
+  basis: Census NAICS 5412 total receipts include large-enterprise audit work; SMB-attributable
+    share estimated
+source:
+  slug: census-susb-naics-5412
+  tier: regulator
+  url: https://www.census.gov/programs-surveys/susb.html
+  accessed: '2026-05-26'
+  snapshot_sha256: 470cab8ec1b6f2b84d9781c445f175ddb73c78c4d8595f7e8ce97c1c8805af22

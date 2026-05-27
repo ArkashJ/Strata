@@ -1,0 +1,16 @@
+kind: concept
+slug: playerzero-code-quality
+schema_version: 1
+name: PlayerZero — AI Code Quality &amp; Debug Assist
+definition: Global market for AI-assisted code quality and debug/observability tooling
+  sold to engineering teams. Scope is the share of the global observability/APM/code-quality
+  software pool (Datadog, New Relic, Dynatrace, Splunk APM, Sentry, Rollbar comp set)
+  addressable by an AI debug-assist layer. Global SaaS, no regulatory regime.
+analysis_lens:
+  primary: bundle_consolidation
+modifiers: {}
+measurements:
+- global-observability-apm-code-quality-spend-2024
+- playerzero-ai-debug-capture-rate-2024
+competing_concepts: []
+requires_clearance: []

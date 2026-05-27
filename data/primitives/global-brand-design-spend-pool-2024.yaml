@@ -1,0 +1,43 @@
+kind: atomic_primitive
+slug: global-brand-design-spend-pool-2024
+schema_version: 1
+concept_slug: moda-ai-design
+name: Global brand/marketing design spend pool (SaaS tools + agency/freelance creative)
+description: 'Annual global spend on brand-design tooling and outsourced creative
+  that Moda''s agents can plausibly displace. Built bottoms-up: ~$15B global design
+  SaaS (Adobe Creative Cloud commercial ~ $11B, Canva ~ $2.5B, Figma ~ $0.9B, others
+  ~ $0.6B) + ~$45B addressable share of global marketing creative agency/freelance
+  spend (total creative agency spend ~ $150B globally; ~30% is brand/digital design
+  production work that AI agents can plausibly automate). Total displaceable pool
+  ~ $60B/yr.'
+value: 60000000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 45000000000
+  - 80000000000
+  basis: Agency spend share that is truly AI-automatable brand-design (vs strategy/campaign)
+    is the main swing; range 20-40% of $150B.
+source:
+  slug: design-spend-pool-composite-2024
+  tier: analyst-paraphrase
+  url: https://www.adobe.com/investor-relations.html
+  accessed: '2026-05-26'
+  snapshot_sha256: 753ab243f6ae3435433c561adf13fa25b73a7b9e3388c127d6587609650001eb
+  original_publisher: IDC / Statista / company 10-Ks (Adobe, Canva private, Figma
+    S-1)
+  paraphrase_reviewer: arkash
+  paraphrase_text: Design SaaS commercial revenue ~$15B (Adobe CC commercial ~$11B,
+    Canva ~$2.5B, Figma ~$0.9B). Global creative agency/freelance spend ~$150B; ~30%
+    ($45B) is digital brand-design production addressable by AI agents. Total ~$60B.

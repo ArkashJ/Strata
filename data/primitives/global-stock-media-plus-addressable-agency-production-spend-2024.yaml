@@ -1,0 +1,41 @@
+kind: atomic_primitive
+slug: global-stock-media-plus-addressable-agency-production-spend-2024
+schema_version: 1
+concept_slug: melius-creative-canvas
+name: Global stock media licensing + AI-addressable creative agency production spend
+description: 'Sum of two incumbent pools Melius displaces: (a) global stock imagery
+  + stock video licensing market ≈ $6B (Getty, Shutterstock, Adobe Stock, Pond5, etc.);
+  (b) AI-addressable production-execution slice of global creative agency revenue
+  — ~15% of ~$80B global creative agency market ≈ $12B (excludes strategy, brand,
+  media planning). Total ≈ $18B annual flow.'
+value: 18000000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 14000000000
+  - 22000000000
+  basis: Stock media market $5-7B range; agency production slice 12-18% depending
+    on definition.
+source:
+  slug: statista-agency-services-worldwide-2024
+  tier: analyst-paraphrase
+  url: https://www.statista.com/outlook/amo/advertising/agency-services/worldwide
+  accessed: '2026-05-26'
+  snapshot_sha256: c99f5ea7b026b8fbf3df89bfb4a40fc67b924f936c80c4b866c72e27b6048a01
+  original_publisher: Statista / IBISWorld composite
+  paraphrase_reviewer: arkash
+  paraphrase_text: Global stock imagery+video licensing sized ~$5-7B (2024); global
+    creative agency services ~$75-85B with production-execution (asset creation, retouching,
+    short-form video edit) representing ~15% — the AI-canvas-addressable slice. Combined
+    pool ≈ $18B.

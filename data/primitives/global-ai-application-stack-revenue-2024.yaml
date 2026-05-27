@@ -1,0 +1,42 @@
+kind: atomic_primitive
+slug: global-ai-application-stack-revenue-2024
+schema_version: 1
+concept_slug: supermemory-ai-memory-infra
+name: Global AI application stack revenue (agents, copilots, chatbots)
+description: 'Annualized revenue of the global AI application layer that Supermemory''s
+  memory infra plugs into: agent platforms, enterprise copilots, and AI chatbot/assistant
+  apps. Built from published 2024 figures: ~$25B enterprise GenAI apps + ~$15B agent/copilot
+  platforms + ~$10B AI chatbot/assistant API spend ≈ $50B addressable AI application
+  stack revenue. This is the throughput pool (not nascent memory-API ARR) on which
+  the memory layer takes a share.'
+value: 50000000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 35000000000
+  - 70000000000
+  basis: Range across IDC, Gartner, and Menlo Ventures 2024 GenAI enterprise spend
+    trackers.
+source:
+  slug: idc-worldwide-ai-software-2024
+  tier: analyst-paraphrase
+  url: https://www.idc.com/getdoc.jsp?containerId=prUS52530724
+  accessed: '2026-05-26'
+  snapshot_sha256: ad361f5ab446575e3940f840f8315e7a75092e98617e78a7788add75d210682a
+  original_publisher: IDC / Gartner Worldwide AI Software Forecast 2024
+  paraphrase_reviewer: arkash
+  paraphrase_text: IDC/Gartner 2024 worldwide AI software tracker sizes generative
+    AI application + agent/copilot software at roughly $40–55B run-rate in 2024, with
+    chatbot/assistant API spend layered on top. Midpoint ~$50B used as the AI application
+    stack throughput.

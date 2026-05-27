@@ -1,0 +1,17 @@
+kind: concept
+slug: miravoice-phone-surveys
+schema_version: 1
+name: Miravoice - AI Phone Surveys replacing CATI
+definition: AI voice agents conducting outbound/inbound telephone surveys, displacing
+  CATI (computer-aided telephone interviewing) labor and traditional survey call centers
+  globally. Scope is the global market research industry's telephone data-collection
+  spend, regulated under data-protection regimes (GDPR, TCPA) per jurisdiction. Lens
+  is consolidation of the CATI labor + call-center spend pool into an AI voice platform.
+analysis_lens:
+  primary: bundle_consolidation
+modifiers: {}
+measurements:
+- global-cati-phone-survey-spend-2024
+- ai-voice-survey-realistic-capture-rate-2024
+competing_concepts: []
+requires_clearance: []

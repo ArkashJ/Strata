@@ -1,0 +1,44 @@
+kind: atomic_primitive
+slug: eeg-ai-foundation-model-addressability-2024
+schema_version: 1
+concept_slug: piramidal-eeg-multi-geo
+name: "Share of clinical EEG market addressable by an AI foundation model (2024-2028, modeled)"
+description: >
+  Estimated share of the global clinical EEG / neurodiagnostics market that
+  an AI foundation model can plausibly address in the 3-5 year window.
+  Decomposes into: (a) reading / interpretation displacement (~60% of EEG
+  read time is pattern-recognition that a foundation model handles well),
+  (b) triage / prioritization (queue management, urgent vs routine), and
+  (c) report generation / structured output for billing. Excludes: hardware,
+  electrode manufacturing, in-person procedural fees. The 60% midpoint
+  reflects what a credible AI-augmentation product (Piramidal-class) can
+  charge against the read-fee economics; pure displacement (replacing
+  neurologist sign-off) is regulatorily out of scope today. Community-
+  modeled — refine once FDA / CE clinical-validation data lands.
+
+value: 0.60
+unit:
+  kind: dimensionless
+  dimension: percent
+
+as_of: 2024-12-31
+expiry: 2027-05-26  # Q20: community-modeled primitives carry an expiry; revisit once FDA / CE clinical-validation data lands.
+
+geo:
+  level: global
+  codes: ["WLD"]
+geo_perspective: supply
+
+distribution_shape: normal
+delivery_mode: "n/a"
+
+uncertainty:
+  range: [0.45, 0.70]
+  basis: "Read-augmentation analogs from radiology AI (Aidoc, Viz.ai) capture ~50-70% of read economics post-FDA."
+
+source:
+  slug: piramidal-eeg-addressability-modeled-2026
+  tier: community-modeled
+  url: "https://github.com/anthropics/strata/blob/main/docs/superpowers/specs/2026-05-26-tam-77-corrected-methodology.md"
+  accessed: 2026-05-26
+  snapshot_sha256: "ca9bb0fc9acda3798785c650a16ccc8500f98d162bd141f394d05157a90d8eba"

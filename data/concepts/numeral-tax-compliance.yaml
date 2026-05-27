@@ -1,0 +1,17 @@
+kind: concept
+slug: numeral-tax-compliance
+schema_version: 1
+name: Numeral — Global Sales-Tax / VAT Compliance Automation
+definition: Automated sales-tax, VAT, and GST compliance software for ecommerce and
+  SaaS sellers across US (post-Wayfair economic nexus), EU (OSS/IOSS VAT), and APAC
+  GST regimes. Competes as a share-shift against incumbents Avalara and Vertex by
+  offering API-first, modern UX for mid-market digital sellers. Global scope, multi-jurisdictional
+  regulatory surface.
+analysis_lens:
+  primary: bundle_consolidation
+modifiers: {}
+measurements:
+- global-sales-tax-vat-compliance-software-revenue-2024
+- numeral-realistic-share-shift-capture-2024
+competing_concepts: []
+requires_clearance: []

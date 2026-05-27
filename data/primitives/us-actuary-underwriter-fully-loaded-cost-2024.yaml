@@ -1,0 +1,35 @@
+kind: atomic_primitive
+slug: us-actuary-underwriter-fully-loaded-cost-2024
+schema_version: 1
+concept_slug: effective-ai-insurance-knowledge
+name: US Actuary/Underwriter Fully-Loaded Annual Cost
+description: 'Blended fully-loaded cost across the actuary + underwriter mix. BLS
+  OES 2023 mean wage: actuaries ~$132K, underwriters ~$87K. Weighted by headcount
+  mix (20% actuary / 80% underwriter) = ~$96K base wage. Apply 1.4x fully-loaded multiplier
+  (benefits, payroll tax, tooling, seat overhead) -> ~$135K per persona-year. This
+  is the labor cost a carrier would substitute against when buying agentic automation.'
+value: 135000
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: persona-year
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 115000
+  - 160000
+  basis: Fully-loaded multiplier (1.4x) is community-modeled; varies 1.3-1.6x by carrier.
+source:
+  slug: bls-oes-underwriter-wage-2023
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes132053.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: c097b7160cf07a6d1ac41233803618669c6e554d3823fd9dd6fe0ee16a3c4208

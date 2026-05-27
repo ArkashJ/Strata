@@ -1,0 +1,16 @@
+kind: concept
+slug: melius-creative-canvas
+schema_version: 1
+name: Melius — AI Creative Canvas for Marketers
+definition: Global SaaS AI canvas for generating marketing imagery and short-form
+  video, targeted at in-house marketers and independent creators. Displaces stock-photo/video
+  licensing spend and the production-execution slice of creative agency budgets. Worldwide
+  scope; no regulated-geo constraint.
+analysis_lens:
+  primary: bundle_consolidation
+modifiers: {}
+measurements:
+- global-stock-media-plus-addressable-agency-production-spend-2024
+- ai-canvas-capture-rate-of-stock-and-agency-production-2027
+competing_concepts: []
+requires_clearance: []

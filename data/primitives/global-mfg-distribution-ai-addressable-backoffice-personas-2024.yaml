@@ -1,0 +1,39 @@
+kind: atomic_primitive
+slug: global-mfg-distribution-ai-addressable-backoffice-personas-2024
+schema_version: 1
+concept_slug: endeavor-mfg-back-office
+name: AI-addressable manufacturing + distribution back-office personas (global)
+description: Starts from ~10M global manufacturing + wholesale distribution back-office
+  workers (order management clerks, billing/AR/AP clerks, production planning clerks,
+  purchasing clerks). BLS OES for the US shows ~2.5M such roles in mfg+wholesale;
+  scaling by global mfg employment share (~4x US for OECD+major EM industrial economies
+  on a quality-adjusted basis) yields ~10M. Apply 25% AI-addressability filter (roles
+  whose tasks are document/workflow-heavy enough for agentic automation today, net
+  of roles requiring shop-floor or physical presence). 10M * 0.25 = 2.5M addressable
+  personas. Capture % is embedded in cost_per_persona (vendor priced at ~30% of fully-loaded
+  labor cost).
+value: 2500000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 1800000
+  - 3200000
+  basis: Range covers (a) US BLS base of 2.3-2.8M back-office roles in mfg+wholesale,
+    (b) global scaling factor 3.5x-4.5x, (c) AI-addressability 20-30%.
+source:
+  slug: bls-oes-mfg-wholesale-backoffice-2024
+  tier: community-modeled
+  url: https://www.bls.gov/oes/current/oes_nat.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: 9082c6d3cd2dabc6a06684c57ecc04024f5baced770d47b36c1e8e95a4227ec8

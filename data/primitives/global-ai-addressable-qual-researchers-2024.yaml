@@ -1,0 +1,35 @@
+kind: atomic_primitive
+slug: global-ai-addressable-qual-researchers-2024
+schema_version: 1
+concept_slug: gather-customer-research
+name: Global AI-addressable qualitative market researcher personas
+description: 'Addressable global pool of qualitative market research / VoC / insights
+  personas that an AI customer-research agent can plausibly replace. Built from BLS
+  SOC 13-1161 (Market Research Analysts) US headcount ~190K, scaled to ~250K globally
+  for realistic SaaS-buying geos, then narrowed: 40% in qualitative/VoC roles (vs
+  quant/pricing) * 60% in AI-adoption-ready orgs = 24% net addressability. 250K *
+  0.24 ≈ 60K personas.'
+value: 60000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 40000
+  - 90000
+  basis: BLS US count is solid; global scale-up (1.3x) and addressability multipliers
+    (0.24 net) are community-modeled.
+source:
+  slug: bls-oes-131161-market-research-analysts
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes131161.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: bc3c35a12a714ab6ae0d162c1a78a20e299f34aad832aa86be8d2e0512d0b02d

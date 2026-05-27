@@ -1,0 +1,30 @@
+kind: concept
+slug: voice-ai-infra-global
+schema_version: 1
+name: "Voice AI infrastructure — global TTS / speech APIs"
+definition: >
+  Global picks-and-shovels layer for the voice-AI application stack:
+  text-to-speech, speech-to-text, voice cloning, conversational voice
+  pipelines. Sold as developer APIs (MetaVoice, ElevenLabs, Cartesia,
+  PlayHT, Deepgram). TAM is sized as a take-rate share of the application
+  markets the infra enables — contact-center automation; AI customer-service
+  agents (Decagon, Sierra AI, Ada serving Grubhub, Notion, etc.); QSR /
+  food-delivery / order-taking voice agents (Giga ML, Bland AI serving
+  Wendy's, McDonald's, Grubhub); outbound-sales and scheduling agents;
+  audiobooks; media localization / dubbing; accessibility (screen
+  readers / voice UI); game and character voice.
+
+# Q39 lens taxonomy. Primary platform_throughput — gmv x take-rate math
+# shape (Stripe analog: infra layer captures a basis-point share of the
+# application stack it enables).
+analysis_lens:
+  primary: platform_throughput
+
+modifiers: {}
+
+measurements:
+  - voice-ai-application-stack-revenue-global-2024
+  - voice-ai-infra-layer-share-global-2024
+
+competing_concepts: []
+requires_clearance: []

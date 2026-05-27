@@ -1,0 +1,44 @@
+kind: atomic_primitive
+slug: global-observability-apm-code-quality-spend-2024
+schema_version: 1
+concept_slug: playerzero-code-quality
+name: Global Observability + APM + Code-Quality Software Spend (Datadog comp set),
+  2024
+description: 'Aggregate 2024 revenue run-rate of the Datadog-comp observability/APM/code-quality
+  vendor set: Datadog (~$2.7B), Dynatrace (~$1.6B), New Relic (~$1.0B), Splunk Observability/APM
+  portion (~$1.5B), Cisco AppDynamics (~$0.6B), Sentry (~$0.2B), Elastic Observability
+  (~$0.5B), plus long-tail (Honeycomb, Grafana, Chronosphere, Rollbar, LogRocket,
+  etc., ~$1B) and the broader unmonetized internal-tooling pool. Grossed up to total
+  enterprise spend on this category globally ≈ $60B including services and self-managed
+  budgets. This is the incumbent spend pool PlayerZero is share-shifting against.'
+value: 60000000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 45000000000
+  - 75000000000
+  basis: Vendor revenue is well-tracked (~$30-35B floor); gross-up to total category
+    spend depends on how internal tooling and services are bucketed.
+source:
+  slug: gartner-idc-observability-2024
+  tier: analyst-paraphrase
+  url: https://www.gartner.com/en/documents/observability-platforms-2024
+  accessed: '2026-05-26'
+  snapshot_sha256: 77e763ce7e9fa4bb1dc521d4f363d44eb247ca0f06b82eb7a3ef4c0741951c21
+  original_publisher: Gartner Magic Quadrant for Observability & IDC Software Tracker
+  paraphrase_reviewer: arkash
+  paraphrase_text: Gartner/IDC 2024 size the global observability + APM market at
+    ~$30-35B vendor revenue, growing 15-18% YoY. Grossing up to total enterprise observability/code-quality
+    spend (incl. internal tooling, services, ancillary debug tools) yields ~$60B addressable
+    pool.

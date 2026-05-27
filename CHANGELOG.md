@@ -8,13 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **77-query TAM estimation suite** — live script (`scripts/tam_77_estimates.py`)
+- **Corrected 24-company TAM pipeline** (`scripts/tam_77_pipeline.py`) — replaces the v1
+  hardcoded-multiplier approach with a Claude-driven classification pipeline that
+  threads through Strata's actual primitive/framework/evaluator DAG. Per company:
+  (1) Claude (claude-opus-4-7) classifies onto one of the 5 existing frameworks
+  via tool-use, returning concept definition + 2 input primitives with
+  geo/unit/source-tier metadata; (2) connector hints are best-effort enriched
+  against live BLS / Census / FRED / openFDA / World Bank APIs with response-body
+  SHA256 pinning; (3) concept YAML, primitive YAMLs (with deterministic SHA256
+  for analyst-paraphrase / community-modeled values), and framework variants are
+  written into `data/`; (4) the registry is reloaded and `size_concept(slug)`
+  produces a real `TAMOutput` with permanent state-hash. Outputs:
+  `backend/tam_77_results_v2.json` + `docs/tam-77-corrected.md`.
+- **3 hand-crafted worked-example concepts** wired into the DAG:
+  - `yotta-india-cloud` — India-only sovereign cloud (top-down-revenue-capture). TAM $4.0B India, $0 intl.
+  - `voice-ai-infra-global` — infra-stack take-rate over $108B voice-AI application stack (throughput-take-rate). TAM $13.5B global.
+  - `piramidal-eeg-multi-geo` — multi-jurisdiction (FDA / CE / CDSCO / ANVISA / APAC) EEG foundation model, sized as throughput-take-rate.
+- **12 methodology corrections** to the original 77-query estimates, documented
+  per company in `docs/tam-77-corrected.md`: geographic over-scaling fixed for
+  Yotta + 7 US-only-regulated companies; TAM ceilings vs SAM corrected for
+  Endeavor / Zero RFI / Minerva by embedding addressability % into primitive
+  values rather than the framework formula (Q15); infra layers (MetaVoice,
+  Supermemory, Sieve) re-sized as application-stack × infra share rather than
+  nascent API ARR.
+- **77-query TAM estimation suite v1 baseline** — historical script (`scripts/tam_77_estimates.py`)
   that pulls real data from 15 connectors and computes TAM estimates for 24
   portfolio companies across 4 geographies (NA, Europe, APAC, RoW). Source
   attribution per estimate (S1/S2/S3 confidence tiers). Geographic scaling
-  via World Bank GDP ratios. Results: median mid-TAM $3.8B, 76 estimates
-  computed, 1 correctly refused (Q29 Yotta GPU forecast per Q20 policy).
-  Full results with source legend in `docs/tam-77-results.md`.
+  via World Bank GDP ratios. Kept on disk as the pre-correction reference;
+  superseded by the v2 pipeline above. Original results in `docs/tam-77-results.md`.
 - **19 TAM coverage tests** (`tests/test_tam_query_coverage.py`) — maps all
   77 queries to connector data sources, verifies disambiguation pairs produce
   distinct TAMs, validates all 14 client classes importable.

@@ -1,0 +1,35 @@
+kind: atomic_primitive
+slug: global-ai-addressable-qa-engineers-2024
+schema_version: 1
+concept_slug: skyramp-qa-automation
+name: Global AI-addressable QA / test-writing software engineers
+description: BLS OEWS 2023 reports ~1.9M US software developers (15-1252) + ~200K
+  QA analysts & testers (15-1253) ≈ 2.1M US persona base. Global multiplier ~4x (per
+  developer census data) → ~8M global engineers in QA-relevant roles. Apply 40% AI-addressability
+  filter (cloud-native, CI/CD-mature orgs with tooling budget in near-term SAM window)
+  → 3.2M addressable personas. Addressability is embedded; this is not the raw labor
+  pool.
+value: 3200000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 2400000
+  - 4200000
+  basis: Global multiplier (3x-5x) and AI-addressability % (30-50%) are the dominant
+    uncertainty drivers.
+source:
+  slug: bls-oews-software-dev-qa-2023
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes151252.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: c83b2934c9749377e7611291cc4d92262bc000bd6b20c6a16e9f6d74a8e163a1

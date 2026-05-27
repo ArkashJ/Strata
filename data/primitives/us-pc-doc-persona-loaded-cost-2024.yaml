@@ -1,0 +1,37 @@
+kind: atomic_primitive
+slug: us-pc-doc-persona-loaded-cost-2024
+schema_version: 1
+concept_slug: kyber-pc-doc-gen
+name: Loaded annual cost per US P&C doc-gen persona
+description: Fully-loaded annual cost per addressable persona. Blended BLS OES mean
+  wage across underwriters (~$87K) and policy processing clerks (~$48K), weighted
+  ~30/70 => ~$60K base wage. Apply 1.35x loading for benefits + overhead (BLS ECEC
+  ratio for finance/insurance) => ~$81K. Kyber captures the document-drafting slice
+  of this role (~30% of time spent on document assembly) => billable value per persona
+  ~$24K/yr that a vendor can realistically price against.
+value: 24000
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: persona-year
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 18000
+  - 32000
+  basis: Time-share on doc drafting (20-40%) and loading factor (1.3-1.4x) drive the
+    range.
+source:
+  slug: bls-oes-wages-2024
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes_nat.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: 711ff504fcef2717f4a6475324d1cf0c7b29b0a4aa6b497d3929d09d2c0c5931

@@ -1,0 +1,37 @@
+kind: atomic_primitive
+slug: ai-recruiting-agent-capture-rate-2024
+schema_version: 1
+concept_slug: contrario-ai-recruiting
+name: Realistic share of recruiting service spend captured by AI agent platforms
+description: Share of incumbent recruiting service fees that AI-agent platforms (Mercor,
+  Paraform, Contrario, etc.) can realistically displace over the planning horizon.
+  Reflects (a) buyer willingness to in-source sourcing/screening with AI vs. retain
+  human recruiters for relationship/closing work, (b) AI agent quality ceiling on
+  senior/exec roles, (c) competitive split across many AI recruiting vendors. Modeled
+  at 8% midpoint — aggressive but defensible given current category traction.
+value: 0.08
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-05-26'
+uncertainty:
+  range:
+  - 0.04
+  - 0.15
+  basis: AI recruiting agents are early-stage; capture rate could be as low as 4%
+    if buyers retain human recruiters for closing, or as high as 15% if agents prove
+    out on volume mid-market roles. Range reflects category uncertainty.
+source:
+  slug: strata-internal-ai-recruiting-2024
+  tier: community-modeled
+  url: https://strata.internal/models/ai-recruiting-capture-rate
+  accessed: '2026-05-26'
+  snapshot_sha256: 9c1ae22e1f96add0be993f6d9553b05b5ac08f57b125ac34658e7934d602222b

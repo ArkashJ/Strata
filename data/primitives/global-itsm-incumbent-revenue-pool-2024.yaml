@@ -1,0 +1,42 @@
+kind: atomic_primitive
+slug: global-itsm-incumbent-revenue-pool-2024
+schema_version: 1
+concept_slug: st-labs-ai-itsm
+name: Global ITSM incumbent software revenue (share-shiftable pool)
+description: 'Sum of FY2024 ITSM-attributable revenue from displaceable incumbents:
+  ServiceNow ITSM module (~$4.2B of ~$10B subscription rev), Atlassian Jira Service
+  Management (~$1.5B), Freshworks Freshservice (~$0.45B of $0.72B), BMC Helix ITSM
+  (~$1.1B), Ivanti Neurons ITSM (~$0.6B), Cherwell/OpenText SMAX (~$0.4B), plus long-tail
+  (~$3.75B). Total share-shiftable pool ≈ $12B. Excludes non-ITSM ServiceNow modules
+  (HRSD, CSM, SecOps) which ST Labs does not directly displace.'
+value: 12000000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 10000000000
+  - 14000000000
+  basis: Vendor disclosures triangulate to $11-13B; uncertainty driven by how much
+    of ServiceNow's subscription revenue is pure ITSM vs HRSD/CSM/SecOps adjacencies.
+source:
+  slug: gartner-itsm-mq-2024
+  tier: analyst-paraphrase
+  url: https://www.gartner.com/en/documents/itsm-platforms-market-share-2024
+  accessed: '2026-05-26'
+  snapshot_sha256: 88ad7b2f34cd387bd1439c0d7331631dde949bbbe9bf12f65c1886d3e0b7deac
+  original_publisher: Gartner
+  paraphrase_reviewer: arkash
+  paraphrase_text: Gartner Magic Quadrant for ITSM Platforms (2024) sizes global ITSM
+    platform revenue at ~$12-13B, with ServiceNow ~35% share, Atlassian ~12%, BMC
+    ~9%, Freshworks ~4%, Ivanti ~5%, balance fragmented. ITSM module only — excludes
+    adjacent ServiceNow workflows.

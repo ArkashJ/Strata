@@ -1,0 +1,16 @@
+kind: concept
+slug: skyramp-qa-automation
+schema_version: 1
+name: Skyramp — AI QA & Test Automation (Global SaaS)
+definition: Global SaaS market for AI-driven test generation and QA automation tooling
+  sold to software engineering organizations worldwide. Scope is the wallet for QA/test
+  tooling (not the full dev-tools stack), addressable to AI-native test-gen vendors
+  at cloud-native and CI/CD-mature engineering orgs across all geographies.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+- global-ai-addressable-qa-engineers-2024
+- qa-tooling-wallet-per-engineer-2024
+competing_concepts: []
+requires_clearance: []

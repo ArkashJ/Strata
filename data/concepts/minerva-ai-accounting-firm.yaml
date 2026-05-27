@@ -1,0 +1,17 @@
+kind: concept
+slug: minerva-ai-accounting-firm
+schema_version: 1
+name: Minerva — AI-native US SMB CPA firm
+definition: AI-native accounting firm serving US SMBs, operating as a licensed CPA
+  firm with state-by-state regulatory compliance and human CPA sign-off. Competes
+  with incumbent SMB-focused CPA firms and bookkeeping services by automating workpapers,
+  reconciliations, and tax prep while retaining licensed-firm structure. US-only due
+  to CPA licensure regime.
+analysis_lens:
+  primary: bundle_consolidation
+modifiers: {}
+measurements:
+- us-smb-accounting-services-revenue-2024
+- ai-native-cpa-firm-realistic-capture-rate-2024
+competing_concepts: []
+requires_clearance: []

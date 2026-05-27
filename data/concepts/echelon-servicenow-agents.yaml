@@ -1,0 +1,13 @@
+kind: concept
+slug: echelon-servicenow-agents
+schema_version: 1
+name: Echelon — ServiceNow Development Agents
+definition: ''
+analysis_lens:
+  primary: bundle_consolidation
+modifiers: {}
+measurements:
+- servicenow-implementation-dev-spend-pool-2024
+- servicenow-agent-capture-rate-2027
+competing_concepts: []
+requires_clearance: []

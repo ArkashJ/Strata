@@ -1,0 +1,42 @@
+kind: atomic_primitive
+slug: global-multimodal-video-audio-app-stack-revenue-2024
+schema_version: 1
+concept_slug: sieve-multimodal-infra
+name: Global application-stack revenue across multimodal video/audio AI markets enabled
+  by Sieve
+description: 'Aggregate annual revenue of the four application markets Sieve''s infra
+  enables: (1) AI video generation tooling ~$8B, (2) video editing software with AI
+  features ~$25B, (3) content moderation services (video/audio share) ~$15B, (4) video
+  search & indexing platforms ~$12B. Sum ≈ $60B. This is the application-layer stack
+  revenue, NOT Sieve''s API ARR — per infra-layer methodology, we size by the apps
+  the infra enables.'
+value: 60000000000
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 45000000000
+  - 80000000000
+  basis: Blended from multiple analyst reports; sub-market sizes vary 20-30%
+source:
+  slug: gvr-mm-video-app-stack-2024
+  tier: analyst-paraphrase
+  url: https://www.grandviewresearch.com/industry-analysis/video-editing-software-market
+  accessed: '2026-05-26'
+  snapshot_sha256: 70e352c90534dfa920b05face0601390bd5d7982c76ede422ed2c072df4075f9
+  original_publisher: Grand View Research / MarketsandMarkets / Gartner blended
+  paraphrase_reviewer: arkash
+  paraphrase_text: Video editing software ~$25B (2024); AI video generation ~$8B and
+    scaling; content moderation services ~$15B with video share rising; video search/indexing
+    ~$12B. Aggregated application-stack revenue across multimodal video/audio AI markets
+    ≈ $60B global.

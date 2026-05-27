@@ -1,0 +1,37 @@
+kind: atomic_primitive
+slug: us-pc-doc-addressable-personas-2024
+schema_version: 1
+concept_slug: kyber-pc-doc-gen
+name: US P&C insurance doc-generation addressable persona pool
+description: AI-addressable subset of US P&C insurance back-office personas whose
+  work product is policy document drafting, declarations, endorsements, and ACORD
+  form assembly. Starts from BLS OES 13-2053 (Insurance Underwriters ~104K) + share
+  of 43-9041 Insurance Claims & Policy Processing Clerks allocable to P&C policy docs
+  (~220K of ~280K total, P&C share ~55% => ~120K) + ~25K policy drafting/compliance
+  specialists. Total raw pool ~250K. Apply 60% AI-addressability for document-drafting
+  tasks (the rest is judgment/underwriting decisions, customer contact, exception
+  handling) => ~150K addressable personas. US-only; intl excluded.
+value: 150000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 110000
+  - 200000
+  basis: Addressability % (50-70%) and P&C share of policy-processing clerks (45-65%)
+    are the main drivers of range.
+source:
+  slug: bls-oes-2024
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes132053.htm
+  accessed: '2026-05-26'
+  snapshot_sha256: 00a66d06099f612b934a339c0049eb801528028a500260d453cc450bf41917e9
