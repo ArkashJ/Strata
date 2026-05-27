@@ -38,11 +38,19 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   streaming chain-of-thought for dynamic queries), data explorer, lineage graph.
   Critic-hardened: correct fallback to ResolveView, JSON.parse safety,
   reader.releaseLock(), NaN/Infinity guards, mobile responsive, accessible.
-- **Data (`data/`):** 6 concepts, **307 atomic primitives** from 5 APIs
-  (BLS, FRED, Census, EDGAR, World Bank) + Kalshi prediction markets,
-  5 frameworks, **87 sources**. All validate clean. Covers all 6 lenses.
-- **Tests:** 167 passing in `backend/tests/` (including 7 /resolve SSE tests,
-  50 connector tests).
+- **Data (`data/`):** **30 concepts** (6 originals + 3 hand-crafted worked
+  examples + 21 portfolio-pipeline-generated), **350+ atomic primitives**
+  from 5 connector APIs + Exa-sourced analyst-paraphrase + community-modeled
+  multipliers, 5 frameworks with 30 variants, 87 sources, **1 portfolio
+  catalog** (`data/portfolios/benmore-tam-77.yaml`). All validate clean.
+- **TAM-77 pipeline:** `backend/scripts/tam_77_pipeline.py` is the
+  portfolio-agnostic Claude-driven classifier that threads each company
+  through the primitive/framework/evaluator DAG and writes YAML artifacts.
+  Pattern documented in `docs/12-portfolio-tam-pipeline-howto.md`; outputs
+  for the Benmore 24 in `docs/tam-77-corrected.md`.
+- **Tests:** 310 passing in `backend/tests/` (including 6 v2 acceptance
+  tests in `test_tam_v2_acceptance.py`, 7 /resolve SSE tests, 168
+  connector tests).
 - **Design spec:** `docs/superpowers/specs/2026-05-25-strata-platform-evolution-design.md`
   covers 5 gaps (interactive wiring, ingest pipeline, auth, contribution schema,
   data connectors) across 6 sprints. Critic-reviewed and corrected.
