@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **77-query TAM estimation suite** — live script (`scripts/tam_77_estimates.py`)
+  that pulls real data from 15 connectors and computes TAM estimates for 24
+  portfolio companies across 4 geographies (NA, Europe, APAC, RoW). Source
+  attribution per estimate (S1/S2/S3 confidence tiers). Geographic scaling
+  via World Bank GDP ratios. Results: median mid-TAM $3.8B, 76 estimates
+  computed, 1 correctly refused (Q29 Yotta GPU forecast per Q20 policy).
+  Full results with source legend in `docs/tam-77-results.md`.
+- **19 TAM coverage tests** (`tests/test_tam_query_coverage.py`) — maps all
+  77 queries to connector data sources, verifies disambiguation pairs produce
+  distinct TAMs, validates all 14 client classes importable.
 - **9 new data connectors** (15 total) — typed API clients with disk caching
   and Strata YAML converters for international, financial, energy, agriculture,
   aviation, healthcare, and regulatory data:

@@ -4,9 +4,78 @@
 Pulls real numbers from BLS, FRED, Census, EDGAR, WorldBank, OECD, Eurostat,
 Comtrade, FDIC, CMS, EIA, USDA NASS, FAA, and openFDA connectors.
 
-Usage:
+Usage::
+
     cd backend/
     uv run python scripts/tam_77_estimates.py
+
+Source Legend
+~~~~~~~~~~~~
+=======  ===========================  ===========  =====================================
+Code     Source                        Tier         What It Provides
+=======  ===========================  ===========  =====================================
+WB       World Bank Indicators API     aggregator   GDP by country, population, FDI
+FRED     Federal Reserve (FRED)        regulator    US GDP ($27.3T), PCE, rates
+BLS      Bureau of Labor Statistics    regulator    Employment by SOC, wages
+CENSUS   Census Bureau CBP/SUSB        regulator    Establishments, employees by NAICS
+EDGAR    SEC EDGAR XBRL                regulator    Company revenue, financial frames
+FDA      openFDA                       regulator    Drug recalls, device 510(k)
+OECD     OECD SDMX API                 aggregator   38-country GDP, labour, R&D
+ESTAT    Eurostat JSON-stat            regulator    EU sector stats, business demography
+CT       UN Comtrade                   aggregator   Bilateral trade flows by HS code
+FDIC     FDIC BankFind                 regulator    Bank assets, deposits, failures
+CMS      CMS Open Data                 regulator    Medicare enrollment, NHE ($4.5T)
+EIA      Energy Info Admin             regulator    Electricity prices, generation
+NASS     USDA NASS QuickStats          regulator    Crop production, livestock, prices
+FAA      FAA Aviation Data             regulator    Airport passengers, facility counts
+GAR      Gartner/IDC estimates         analyst      Tech spend geographic splits
+ANA      Analyst estimate              analyst      Markets with no gov data
+=======  ===========================  ===========  =====================================
+
+Confidence Tiers
+~~~~~~~~~~~~~~~~
+- **S1**: Gov-data sourced (denominator AND numerator from regulator APIs)
+- **S2**: Gov-denominator + analyst multiplier (API headcount x estimated spend)
+- **S3**: Analyst estimate + GDP-scaled (no direct gov data for this market)
+
+Results Summary (2026-05-26 run)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=====  ================  =========  ====  ================================
+Qry    Company           Global     Tier  Key Sources
+=====  ================  =========  ====  ================================
+1-4    Kyber             $833M      S2    CENSUS, BLS, ANA
+5-8    Gather            $15.6B     S2    BLS, CENSUS, OECD, GAR
+9-12   Echelon           $10.1B     S2    EDGAR, BLS, GAR
+13-16  Endeavor          $75.0B*    S3    CENSUS, BLS, CT, OECD
+17-20  Skyramp           $5.5B      S1    BLS, CENSUS
+21-23  Supermemory       $2.5B      S3    EDGAR, ANA
+24-26  Numeral           $18.8B     S2    CENSUS, EDGAR, CT, ESTAT
+27-29  Yotta             $6.0B      S2    WB, OECD, EIA
+30-32  SignalLabs        $1.7B      S2    CMS, BLS, WB
+33-35  Zero RFI          $72.0B*    S3    CENSUS, FRED
+36-38  Contrario AI      $6.2B      S2    BLS, CENSUS, OECD
+39-41  MetaVoice         $2.5B      S3    EDGAR, ANA
+42-44  Miravoice         $7.5B      S2    BLS, CENSUS, OECD
+45-47  PlayerZero        $15.0B     S2    BLS, EDGAR, GAR
+48-50  Kaizen Labs       $6.7B      S3    CENSUS, FRED, FDIC
+51-53  Sieve             $3.8B      S3    EDGAR, ANA
+54-56  Piramidal         $4.4B      S2    CMS, FDA, BLS, WB
+57-59  ST Labs           $4.5B      S2    EDGAR, BLS, GAR
+60-62  Wraithwatch       $12.5B     S2    EDGAR, BLS, GAR
+63-65  Moda              $21.4B     S2    BLS, EDGAR, CENSUS, OECD
+66-68  Minerva           $42.9B*    S2    CENSUS, BLS, WB
+69-71  Effective AI      $3.3B      S2    BLS, EDGAR, CMS
+72-74  Melius            $14.3B     S2    BLS, EDGAR, CENSUS
+75-77  Accrual           $5.2B      S2    CENSUS, EDGAR, BLS
+=====  ================  =========  ====  ================================
+
+(*) = WARNING: These are total market ceilings, not AI-addressable SAM.
+      Endeavor realistic SAM: $5-15B. Zero RFI: $5-10B. Minerva: $5-15B.
+
+Query #29 (Yotta GPU forecast) correctly REFUSED per Q20 no-forecast policy.
+
+Geographic scaling: World Bank GDP ratios (US $27.3T, EU $18.7T, World $106.7T).
+Full results with NA/Europe/APAC/RoW splits in docs/tam-77-results.md.
 """
 
 from __future__ import annotations
