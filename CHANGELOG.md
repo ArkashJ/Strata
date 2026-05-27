@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `docs/sample-queries.md` — 77 realistic TAM test queries anchored to real
+  diligence-pipeline companies (24 companies), tagged by sizing-framework family,
+  with adjacent-market disambiguation cases. Intended as an end-to-end test set
+  for framework selection and source attribution.
+
 ### Planned
 - Primitives schema + JSON store (`data/primitives/`).
 - Framework schema + first 3 reference recipes (bottoms-up GTM, top-down spend, analog/penetration).
