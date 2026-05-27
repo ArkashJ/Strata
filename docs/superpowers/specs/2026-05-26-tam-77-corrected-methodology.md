@@ -48,6 +48,7 @@ The first run of `tam_77_estimates.py` produced 77 TAM estimates across 24 portf
 | Output scope | Full audit + corrected table (all 24 companies re-estimated) |
 | TAM model | Single TAM per company with explicit "addressability %" multiplier shown |
 | Methodology | **Hybrid per-company** — pick the strongest sizing method per company based on data availability |
+| **Classification** | **Claude API classifies each company** (geo profile + sizing method + addressability + capture %) using the existing `/resolve` pattern. The script provides connector primitives; Claude does the reasoning. **This is the whole point of Strata — not hand-coded profiles.** |
 
 ---
 
@@ -63,7 +64,7 @@ Every company gets exactly one geographic profile that determines how TAM is com
 | `india_only` | Yotta | TAM = India only. Physical DCs + RBI/DPDP localization |
 | `global_saas` | Gather, Echelon, Skyramp, Numeral, Contrario AI, PlayerZero, Wraithwatch, Moda, Melius, ST Labs | TAM = global. Geographic split = tech-spend ratios (NA 40 / EU 25 / APAC 30 / RoW 5) applied to the global product TAM |
 | `infra_layer` | Supermemory, MetaVoice, Miravoice, Sieve | TAM = sum of global application markets enabled × infra layer share |
-| `multi_jurisdiction_regulated` | Piramidal | Split by FDA (US) + EMA (EU) + PMDA (Japan) device markets |
+| `multi_jurisdiction_regulated` | Piramidal | Split by regulatory regime: FDA (US, hardest) + CE-EU (EU) + CDSCO (India, faster) + ANVISA (Brazil/LATAM) + selected APAC. Lower-regulation geographies = larger SAM at lower entry cost. **AI must reason about where regulation costs vs. addressable demand make economic sense, not just default to FDA-first.** |
 | `global_industrial` | Endeavor | Global mfg back-office, heavily discounted for AI-addressability AND capture |
 
 ### 2. Sizing Method Per Company
@@ -87,18 +88,22 @@ Six formulas, applied based on data availability and company type:
 
 | Application Market | Size | Source |
 |-------------------|------|--------|
-| Contact center automation | $20B | Genesys/NICE/Five9 revenue (EDGAR) + industry analyst reports |
-| Voice agents (replacing IVR + call deflection) | $8B | Growth analog from CCaaS adoption |
+| Contact center automation | $20B | Genesys/NICE/Five9 revenue (EDGAR) + industry reports |
+| AI customer service agents (Decagon, Sierra, Ada, Decagon serving Grubhub/Notion/etc.) | $15B+ | Rapidly growing — modernization of $80B contact center labor pool |
+| Voice agents for QSR / food delivery / order-taking (Giga ML, Bland AI serving Wendy's, McDonald's, Grubhub) | $5B+ | Restaurant industry phone-order automation; growing fast |
+| Voice agents for outbound sales / scheduling / booking | $8B | Outbound calling automation; healthcare scheduling; salon/services booking |
 | Audiobooks | $5B | Audible parent + industry reports |
 | Media localization / dubbing | $50B | Global media localization industry |
 | Accessibility (screen readers, voice UI) | $2B | Assistive tech market |
 | Game/character voice | $3B | Game audio production market |
-| **Total addressable application stack** | **$88B** | |
-| Voice infra layer share | **12%** | Analog: cloud infra ≈ 12% of total cloud spend (AWS, Azure, GCP infra revenue ÷ total cloud spend) |
-| **Voice Infra TAM (global)** | **$10.6B** | |
-| US share (40% tech split) | **$4.2B** | |
+| **Total addressable application stack** | **$108B+** | |
+| Voice infra layer share | **12-15%** | Analog: cloud infra ≈ 12% of total cloud spend (AWS/Azure/GCP infra revenue ÷ total cloud spend); higher share for newer layers |
+| **Voice Infra TAM (global)** | **$13-16B** | |
+| US share (40% tech split) | **$5-6B** | |
 
-**Why 4x my original:** I treated current voice-API revenue ($1-2B today) as the TAM. The infra-stack model correctly sizes TAM as a fraction of what the infra *enables*, not what it bills today.
+**Why 5-6x my original:** I treated current voice-API revenue ($1-2B today) as the TAM. The infra-stack model correctly sizes TAM as a fraction of what the infra *enables*. The application stack is bigger than I first sized — companies like Decagon (AI customer service for Grubhub, Notion), Giga ML (voice agents for QSR), Sierra, Bland, Ada are building the voice-agent application layer that pays voice infra. As they scale, infra TAM scales with them.
+
+**Application-company-aware sizing**: For any infra layer (voice, code, memory, multimodal), the script should enumerate the *named application companies* that depend on this infra and use their funding/revenue as additional signal for application-market size.
 
 ### 4. Source Attribution Schema
 
@@ -146,6 +151,34 @@ Primary table columns:
 Plus a per-company section showing the full math chain.
 
 ---
+
+## Claude-Driven Classification Architecture
+
+The script must NOT hardcode geographic profiles, addressability %, or sizing methods. Instead, it follows the existing `/resolve` pattern:
+
+```
+For each of 24 companies:
+  1. Pull company description + website + 77-query angles
+  2. Pull connector primitives (BLS occupation counts, Census firms, EDGAR comps, etc.)
+  3. Pull industry context via Exa search (named comparable companies, recent funding, application markets)
+  4. Call Claude (claude-opus-4-7) with structured tool-use to classify:
+     - geographic_profile (one of 6 tags)
+     - sizing_method (one of 6 methods)
+     - addressability_pct + justification
+     - capture_rate_pct + justification (if labor_displacement)
+     - infra_layer_share_pct + analog (if infra_stack)
+     - lower_regulation_geographies (for multi_jurisdiction_regulated only)
+     - named_application_companies (for infra layers — e.g., Decagon, Giga, Sierra for voice)
+  5. Compute TAM = market × addressability_pct (× capture_pct if labor)
+  6. Stream chain-of-thought via SSE (matches /resolve pattern)
+  7. Output: full source attribution + Claude's reasoning trace
+```
+
+This matches Strata's existing architecture (`POST /resolve` → Claude parse → Exa search → evaluate → SSE stream) and gives every estimate a defensible reasoning chain that future-Arkash (or another VC) can audit.
+
+### Why This Matters
+
+The whole product thesis is: VCs don't want analyst guesses, they want defensible primitives + a transparent reasoning chain. If I (Claude in this brainstorm session) hand-code Piramidal as "FDA-only," I've made the same mistake as Statista — assertion without reasoning chain. The corrected script must show its work for every classification decision.
 
 ## Implementation Plan (high-level — full plan via writing-plans)
 
