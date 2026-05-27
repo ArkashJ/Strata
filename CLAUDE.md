@@ -41,8 +41,12 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 - **Data (`data/`):** **30 concepts** (6 originals + 3 hand-crafted worked
   examples + 21 portfolio-pipeline-generated), **350+ atomic primitives**
   from 5 connector APIs + Exa-sourced analyst-paraphrase + community-modeled
-  multipliers, 5 frameworks with 30 variants, 87 sources, **1 portfolio
-  catalog** (`data/portfolios/benmore-tam-77.yaml`). All validate clean.
+  multipliers, 5 frameworks with 30 variants, 87 sources. All validate clean.
+- **Portfolios (`portfolios/`):** sibling directory to `data/` holding
+  portfolio catalogs the TAM pipeline consumes. One file at v0.2
+  (`portfolios/benmore-tam-77.yaml`); add a new YAML here per fund / strategy
+  desk. Kept outside `data/` so the registry loader does not try to parse
+  them as records.
 - **TAM-77 pipeline:** `backend/scripts/tam_77_pipeline.py` is the
   portfolio-agnostic Claude-driven classifier that threads each company
   through the primitive/framework/evaluator DAG and writes YAML artifacts.

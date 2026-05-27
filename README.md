@@ -354,8 +354,10 @@ bun run test
 │   ├── concepts/    30 files    (6 originals + 3 hand-crafted + 21 portfolio)
 │   ├── primitives/ 350+ files   (regulator + analyst-paraphrase + community-modeled)
 │   ├── frameworks/   5 files    (sizing formulas with per-portfolio variants)
-│   ├── sources/     87 files    (citation records, SHA256-pinned)
-│   └── portfolios/  1 file      (Benmore TAM-77 catalog; add yours here)
+│   └── sources/     87 files    (citation records, SHA256-pinned)
+│
+├── portfolios/                   Portfolio catalogs consumed by the TAM pipeline
+│   └── benmore-tam-77.yaml      (24 Benmore companies; add yours alongside)
 │
 └── docs/                         Design docs + decision records
     ├── 07-data-layer-brainstorm  Q1-Q40 schema decisions (LOAD BEARING)
