@@ -1,0 +1,1308 @@
+[
+  {
+    "query_id": 1,
+    "company": "Kyber",
+    "query": "AI doc-gen for P&C insurers",
+    "angle": "bottoms-up \u00d7 ACV",
+    "tam_low_b": 0.188,
+    "tam_mid_b": 0.375,
+    "tam_high_b": 0.75,
+    "sources": [
+      "Census",
+      "BLS"
+    ],
+    "primitives": {
+      "us_pc_carriers": 2500,
+      "acv": 150000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 2,
+    "company": "Kyber",
+    "query": "P&C carriers >$100M premium \u00d7 $150K ACV",
+    "angle": "anchored ACV",
+    "tam_low_b": 0.15,
+    "tam_mid_b": 0.375,
+    "tam_high_b": 0.75,
+    "sources": [
+      "Census"
+    ],
+    "primitives": {
+      "carriers_above_100m": 1000,
+      "acv": 150000
+    },
+    "notes": "~1000 carriers above $100M GWP"
+  },
+  {
+    "query_id": 3,
+    "company": "Kyber",
+    "query": "P&C back-office labor addressable by AI",
+    "angle": "labor displacement",
+    "tam_low_b": 3.75,
+    "tam_mid_b": 9.375,
+    "tam_high_b": 18.75,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "carriers": 2500,
+      "avg_backoffice_headcount": 200,
+      "avg_salary": 75000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 4,
+    "company": "Kyber",
+    "query": "P&C workflow analog to claims-mgmt SaaS",
+    "angle": "analog/penetration",
+    "tam_low_b": 0.3,
+    "tam_mid_b": 0.8,
+    "tam_high_b": 1.5,
+    "sources": [
+      "Census",
+      "FRED"
+    ],
+    "primitives": {
+      "claims_mgmt_market_b": 3.0,
+      "penetration": 0.25
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 5,
+    "company": "Gather",
+    "query": "AI customer-research for marketing",
+    "angle": "bottoms-up",
+    "tam_low_b": 3.75,
+    "tam_mid_b": 6.25,
+    "tam_high_b": 12.5,
+    "sources": [
+      "BLS",
+      "Census"
+    ],
+    "primitives": {
+      "marketing_orgs": 250000,
+      "avg_research_budget": 50000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 6,
+    "company": "Gather",
+    "query": "Qualitative research spend displaceable",
+    "angle": "displacement",
+    "tam_low_b": 2.25,
+    "tam_mid_b": 6.75,
+    "tam_high_b": 13.5,
+    "sources": [
+      "Census",
+      "BLS"
+    ],
+    "primitives": {
+      "global_qualitative_research_b": 45
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 7,
+    "company": "Gather",
+    "query": "VoC tooling per marketing seat",
+    "angle": "bottoms-up by seat",
+    "tam_low_b": 0.03,
+    "tam_mid_b": 0.06,
+    "tam_high_b": 0.12,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "marketing_seats": 3000000,
+      "per_seat": 200
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 8,
+    "company": "Gather",
+    "query": "Expert-network market substitution",
+    "angle": "comparable-market",
+    "tam_low_b": 0.4,
+    "tam_mid_b": 1.2,
+    "tam_high_b": 2.4,
+    "sources": [
+      "Census"
+    ],
+    "primitives": {
+      "expert_network_market_b": 8
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 9,
+    "company": "Echelon",
+    "query": "AI agents for ServiceNow dev",
+    "angle": "bottoms-up",
+    "tam_low_b": 0.81,
+    "tam_mid_b": 4.05,
+    "tam_high_b": 8.1,
+    "sources": [
+      "EDGAR"
+    ],
+    "primitives": {
+      "servicenow_customers": 8100,
+      "impl_spend": 500000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 10,
+    "company": "Echelon",
+    "query": "ServiceNow SI/PS market displacement",
+    "angle": "SI displacement",
+    "tam_low_b": 1.5,
+    "tam_mid_b": 3.75,
+    "tam_high_b": 7.5,
+    "sources": [
+      "EDGAR",
+      "BLS"
+    ],
+    "primitives": {
+      "snow_si_market_b": 15
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 11,
+    "company": "Echelon",
+    "query": "AI agents for enterprise SaaS platforms",
+    "angle": "platform-ecosystem",
+    "tam_low_b": 2.5,
+    "tam_mid_b": 7.5,
+    "tam_high_b": 15.0,
+    "sources": [
+      "EDGAR",
+      "Census"
+    ],
+    "primitives": {
+      "enterprise_saas_config_b": 50
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 12,
+    "company": "Echelon",
+    "query": "ServiceNow dev/admin headcount cost",
+    "angle": "labor displacement",
+    "tam_low_b": 1.8,
+    "tam_mid_b": 5.4,
+    "tam_high_b": 9.0,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "snow_admins": 150000,
+      "avg_salary": 120000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 13,
+    "company": "Endeavor",
+    "query": "AI workflow for mfg/distribution",
+    "angle": "bottoms-up",
+    "tam_low_b": 7.5,
+    "tam_mid_b": 15.0,
+    "tam_high_b": 30.0,
+    "sources": [
+      "Census",
+      "BLS",
+      "Comtrade"
+    ],
+    "primitives": {
+      "mfg_establishments": 300000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 14,
+    "company": "Endeavor",
+    "query": "AI agents for quote-to-cash",
+    "angle": "top-down",
+    "tam_low_b": 4.0,
+    "tam_mid_b": 12.0,
+    "tam_high_b": 24.0,
+    "sources": [
+      "BLS",
+      "OECD"
+    ],
+    "primitives": {
+      "qtc_labor_b": 80
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 15,
+    "company": "Endeavor",
+    "query": "Mfg back-office labor displacement",
+    "angle": "labor displacement",
+    "tam_low_b": 12.0,
+    "tam_mid_b": 30.0,
+    "tam_high_b": 60.0,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "mfg_backoffice_workers": 2000000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 16,
+    "company": "Endeavor",
+    "query": "ERP/MES analog penetration",
+    "angle": "analog",
+    "tam_low_b": 8.0,
+    "tam_mid_b": 15.0,
+    "tam_high_b": 30.0,
+    "sources": [
+      "Census",
+      "FRED"
+    ],
+    "primitives": {
+      "erp_market_b": 60,
+      "penetration": 0.25
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 17,
+    "company": "Skyramp",
+    "query": "AI test gen / QA automation global",
+    "angle": "bottoms-up",
+    "tam_low_b": 1.092,
+    "tam_mid_b": 2.183,
+    "tam_high_b": 4.367,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "sw_devs": 2183300,
+      "qa_count": 199600
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 18,
+    "company": "Skyramp",
+    "query": "Manual QA labor displacement",
+    "angle": "labor displacement",
+    "tam_low_b": 2.844,
+    "tam_mid_b": 5.689,
+    "tam_high_b": 9.481,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "qa_count": 199600,
+      "avg_salary": 95000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 19,
+    "company": "Skyramp",
+    "query": "Automated testing software market",
+    "angle": "comparable-market",
+    "tam_low_b": 4.5,
+    "tam_mid_b": 11.25,
+    "tam_high_b": 22.5,
+    "sources": [
+      "EDGAR"
+    ],
+    "primitives": {
+      "testing_sw_market_b": 45
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 20,
+    "company": "Skyramp",
+    "query": "Testing spend per eng org",
+    "angle": "bottoms-up by company",
+    "tam_low_b": 0.523,
+    "tam_mid_b": 0.872,
+    "tam_high_b": 1.744,
+    "sources": [
+      "Census",
+      "BLS"
+    ],
+    "primitives": {
+      "sw_establishments": 17438
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 21,
+    "company": "Supermemory",
+    "query": "AI memory infra for developers",
+    "angle": "bottoms-up",
+    "tam_low_b": 0.25,
+    "tam_mid_b": 1.0,
+    "tam_high_b": 2.5,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "ai_app_developers": 500000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 22,
+    "company": "Supermemory",
+    "query": "Memory layer share of AI infra",
+    "angle": "share-of-infra",
+    "tam_low_b": 0.6,
+    "tam_mid_b": 1.5,
+    "tam_high_b": 3.0,
+    "sources": [
+      "EDGAR"
+    ],
+    "primitives": {
+      "ai_infra_market_b": 30
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 23,
+    "company": "Supermemory",
+    "query": "Memory API attach rate",
+    "angle": "attach-rate analog",
+    "tam_low_b": 0.3,
+    "tam_mid_b": 1.0,
+    "tam_high_b": 3.0,
+    "sources": [
+      "FRED"
+    ],
+    "primitives": {},
+    "notes": ""
+  },
+  {
+    "query_id": 24,
+    "company": "Numeral",
+    "query": "Sales-tax/VAT compliance for ecom+SaaS",
+    "angle": "bottoms-up",
+    "tam_low_b": 3.75,
+    "tam_mid_b": 7.5,
+    "tam_high_b": 15.0,
+    "sources": [
+      "Census",
+      "Comtrade"
+    ],
+    "primitives": {
+      "ecom_sellers": 2500000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 25,
+    "company": "Numeral",
+    "query": "SMB tail below Avalara tier",
+    "angle": "underserved SMB",
+    "tam_low_b": 1.5,
+    "tam_mid_b": 3.5,
+    "tam_high_b": 7.5,
+    "sources": [
+      "Census"
+    ],
+    "primitives": {
+      "smb_ecom_sellers": 2000000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 26,
+    "company": "Numeral",
+    "query": "Share-shift from Avalara/Vertex",
+    "angle": "comparable-market",
+    "tam_low_b": 0.5,
+    "tam_mid_b": 1.25,
+    "tam_high_b": 2.5,
+    "sources": [
+      "EDGAR"
+    ],
+    "primitives": {
+      "incumbent_market_b": 5
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 27,
+    "company": "Yotta",
+    "query": "India DC colocation/hyperscale",
+    "angle": "capacity-based",
+    "tam_low_b": 1.44,
+    "tam_mid_b": 1.8,
+    "tam_high_b": 5.4,
+    "sources": [
+      "EIA",
+      "OECD",
+      "WorldBank"
+    ],
+    "primitives": {
+      "india_dc_mw": 1200,
+      "revenue_per_mw_m": 1.5,
+      "avg_elec_price_cents": 12.5
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 28,
+    "company": "Yotta",
+    "query": "India sovereign cloud services",
+    "angle": "top-down",
+    "tam_low_b": 1.8,
+    "tam_mid_b": 3.6,
+    "tam_high_b": 6.0,
+    "sources": [
+      "OECD",
+      "WorldBank"
+    ],
+    "primitives": {
+      "india_cloud_b": 12
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 29,
+    "company": "Yotta",
+    "query": "India GPU-as-a-service (forward-looking)",
+    "angle": "REFUSED \u2014 no-forecast policy",
+    "tam_low_b": 0,
+    "tam_mid_b": 0,
+    "tam_high_b": 0,
+    "sources": [
+      "EIA",
+      "OECD"
+    ],
+    "primitives": {},
+    "notes": "Engine should refuse: forward-looking projection violates Q20"
+  },
+  {
+    "query_id": 30,
+    "company": "SignalLabs",
+    "query": "AI decision layer for healthcare",
+    "angle": "bottoms-up",
+    "tam_low_b": 0.3,
+    "tam_mid_b": 0.75,
+    "tam_high_b": 1.5,
+    "sources": [
+      "CMS",
+      "BLS"
+    ],
+    "primitives": {
+      "health_payers": 900,
+      "health_systems": 600,
+      "medicare_enrollment_m": 67
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 31,
+    "company": "SignalLabs",
+    "query": "Cross-industry decision intelligence",
+    "angle": "sum-of-verticals",
+    "tam_low_b": 1.6,
+    "tam_mid_b": 4.0,
+    "tam_high_b": 8.0,
+    "sources": [
+      "CMS",
+      "FDIC",
+      "Census"
+    ],
+    "primitives": {
+      "bi_km_workflow_b": 80
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 32,
+    "company": "SignalLabs",
+    "query": "BI + KM + workflow displacement",
+    "angle": "displacement",
+    "tam_low_b": 4.0,
+    "tam_mid_b": 8.0,
+    "tam_high_b": 16.0,
+    "sources": [
+      "CMS",
+      "FRED"
+    ],
+    "primitives": {
+      "nhe_total_b": 4500
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 33,
+    "company": "Zero RFI",
+    "query": "Owner's rep / CM services market",
+    "angle": "services revenue",
+    "tam_low_b": 5.4,
+    "tam_mid_b": 18.0,
+    "tam_high_b": 27.0,
+    "sources": [
+      "Census"
+    ],
+    "primitives": {
+      "us_commercial_construction_b": 600
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 34,
+    "company": "Zero RFI",
+    "query": "RFI/change-order/rework reduction",
+    "angle": "top-down",
+    "tam_low_b": 3.0,
+    "tam_mid_b": 7.5,
+    "tam_high_b": 15.0,
+    "sources": [
+      "Census",
+      "FRED"
+    ],
+    "primitives": {
+      "rework_pct": 0.05
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 35,
+    "company": "Zero RFI",
+    "query": "ConTech for building owners/developers",
+    "angle": "underserved segment",
+    "tam_low_b": 2.0,
+    "tam_mid_b": 5.0,
+    "tam_high_b": 10.0,
+    "sources": [
+      "Census"
+    ],
+    "primitives": {
+      "constr_establishments": 880000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 36,
+    "company": "Contrario AI",
+    "query": "AI recruiting agents for TA teams",
+    "angle": "bottoms-up",
+    "tam_low_b": 1.0,
+    "tam_mid_b": 2.5,
+    "tam_high_b": 5.0,
+    "sources": [
+      "BLS",
+      "Census",
+      "OECD"
+    ],
+    "primitives": {
+      "ta_teams": 50000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 37,
+    "company": "Contrario AI",
+    "query": "Staffing/recruiting agency displacement",
+    "angle": "displacement",
+    "tam_low_b": 10.0,
+    "tam_mid_b": 30.0,
+    "tam_high_b": 60.0,
+    "sources": [
+      "BLS",
+      "Census"
+    ],
+    "primitives": {
+      "staffing_market_b": 200
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 38,
+    "company": "Contrario AI",
+    "query": "Recruiter marketplace GMV",
+    "angle": "marketplace take-rate",
+    "tam_low_b": 0.188,
+    "tam_mid_b": 0.562,
+    "tam_high_b": 1.125,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "annual_placements": 5000000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 39,
+    "company": "MetaVoice",
+    "query": "TTS/speech APIs for developers",
+    "angle": "bottoms-up",
+    "tam_low_b": 0.4,
+    "tam_mid_b": 1.0,
+    "tam_high_b": 2.0,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "voice_app_devs": 200000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 40,
+    "company": "MetaVoice",
+    "query": "Speech infra share of gen-AI API",
+    "angle": "share-of-infra",
+    "tam_low_b": 0.6,
+    "tam_mid_b": 1.6,
+    "tam_high_b": 3.0,
+    "sources": [
+      "EDGAR"
+    ],
+    "primitives": {
+      "genai_api_market_b": 20
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 41,
+    "company": "MetaVoice",
+    "query": "TTS attach to voice-agent market",
+    "angle": "attach-rate",
+    "tam_low_b": 0.8,
+    "tam_mid_b": 2.0,
+    "tam_high_b": 4.0,
+    "sources": [
+      "FRED"
+    ],
+    "primitives": {
+      "voice_agent_market_b": 8
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 42,
+    "company": "Miravoice",
+    "query": "CATI / phone-survey market",
+    "angle": "displacement",
+    "tam_low_b": 1.2,
+    "tam_mid_b": 3.0,
+    "tam_high_b": 6.0,
+    "sources": [
+      "BLS",
+      "Census",
+      "OECD"
+    ],
+    "primitives": {
+      "cati_market_b": 12
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 43,
+    "company": "Miravoice",
+    "query": "AI voice survey per-complete",
+    "angle": "bottoms-up",
+    "tam_low_b": 0.75,
+    "tam_mid_b": 1.875,
+    "tam_high_b": 3.75,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "annual_interviews": 500000000,
+      "cost_per_interview": 15
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 44,
+    "company": "Miravoice",
+    "query": "Survey call-center labor displacement",
+    "angle": "labor displacement",
+    "tam_low_b": 1.2,
+    "tam_mid_b": 2.4,
+    "tam_high_b": 4.0,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "survey_labor_b": 8
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 45,
+    "company": "PlayerZero",
+    "query": "AI code-quality tools for eng teams",
+    "angle": "bottoms-up",
+    "tam_low_b": 3.0,
+    "tam_mid_b": 6.0,
+    "tam_high_b": 12.0,
+    "sources": [
+      "BLS",
+      "Census"
+    ],
+    "primitives": {
+      "eng_orgs": 200000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 46,
+    "company": "PlayerZero",
+    "query": "Share of observability/APM spend",
+    "angle": "comparable-market",
+    "tam_low_b": 1.25,
+    "tam_mid_b": 3.75,
+    "tam_high_b": 7.5,
+    "sources": [
+      "EDGAR"
+    ],
+    "primitives": {
+      "observability_market_b": 25
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 47,
+    "company": "PlayerZero",
+    "query": "Debug time addressable by AI",
+    "angle": "labor displacement",
+    "tam_low_b": 4.912,
+    "tam_mid_b": 12.281,
+    "tam_high_b": 24.562,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "sw_dev_count": 2183300,
+      "debug_hours_per_dev": 300
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 48,
+    "company": "Kaizen Labs",
+    "query": "GovTech resident-services software",
+    "angle": "top-down",
+    "tam_low_b": 2.4,
+    "tam_mid_b": 6.0,
+    "tam_high_b": 12.0,
+    "sources": [
+      "Census",
+      "FRED",
+      "FDIC"
+    ],
+    "primitives": {
+      "state_local_it_b": 120
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 49,
+    "company": "Kaizen Labs",
+    "query": "Platform per municipality",
+    "angle": "bottoms-up",
+    "tam_low_b": 0.195,
+    "tam_mid_b": 0.585,
+    "tam_high_b": 1.462,
+    "sources": [
+      "Census",
+      "FDIC"
+    ],
+    "primitives": {
+      "us_municipalities": 19500
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 50,
+    "company": "Kaizen Labs",
+    "query": "Resident payments GMV \u00d7 take-rate",
+    "angle": "payments take-rate",
+    "tam_low_b": 1.5,
+    "tam_mid_b": 5.0,
+    "tam_high_b": 10.0,
+    "sources": [
+      "FDIC",
+      "Census"
+    ],
+    "primitives": {
+      "resident_transactions_b": 200,
+      "take_rate": 0.025
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 51,
+    "company": "Sieve",
+    "query": "Video/audio AI APIs for devs",
+    "angle": "bottoms-up",
+    "tam_low_b": 0.6,
+    "tam_mid_b": 1.5,
+    "tam_high_b": 3.0,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "multimodal_devs": 300000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 52,
+    "company": "Sieve",
+    "query": "Multimodal infra share of AI stack",
+    "angle": "share-of-infra",
+    "tam_low_b": 0.9,
+    "tam_mid_b": 2.4,
+    "tam_high_b": 4.5,
+    "sources": [
+      "EDGAR"
+    ],
+    "primitives": {
+      "ai_infra_market_b": 30
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 53,
+    "company": "Sieve",
+    "query": "Dataset curation for multimodal models",
+    "angle": "comparable-market",
+    "tam_low_b": 1.0,
+    "tam_mid_b": 2.5,
+    "tam_high_b": 5.0,
+    "sources": [
+      "Census"
+    ],
+    "primitives": {
+      "data_tooling_b": 10
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 54,
+    "company": "Piramidal",
+    "query": "Clinical EEG/neurodiagnostics market",
+    "angle": "top-down",
+    "tam_low_b": 1.0,
+    "tam_mid_b": 2.0,
+    "tam_high_b": 4.0,
+    "sources": [
+      "CMS",
+      "openFDA"
+    ],
+    "primitives": {
+      "eeg_procedures": 4000000,
+      "avg_reimbursement": 250,
+      "device_510k_annual": 3800
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 55,
+    "company": "Piramidal",
+    "query": "AI EEG interpretation per hospital",
+    "angle": "bottoms-up",
+    "tam_low_b": 0.15,
+    "tam_mid_b": 0.45,
+    "tam_high_b": 0.9,
+    "sources": [
+      "CMS",
+      "BLS"
+    ],
+    "primitives": {
+      "neurology_depts": 3000,
+      "us_hospitals": 6100
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 56,
+    "company": "Piramidal",
+    "query": "Neurologist/EEG-tech labor augmentation",
+    "angle": "labor displacement",
+    "tam_low_b": 0.3,
+    "tam_mid_b": 0.75,
+    "tam_high_b": 1.5,
+    "sources": [
+      "BLS",
+      "CMS"
+    ],
+    "primitives": {
+      "neurologists": 18000,
+      "eeg_techs": 12000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 57,
+    "company": "ST Labs",
+    "query": "ITSM market share-shift",
+    "angle": "comparable-market",
+    "tam_low_b": 0.6,
+    "tam_mid_b": 1.8,
+    "tam_high_b": 3.6,
+    "sources": [
+      "EDGAR"
+    ],
+    "primitives": {
+      "itsm_market_b": 12
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 58,
+    "company": "ST Labs",
+    "query": "AI-native ITSM per IT seat",
+    "angle": "bottoms-up",
+    "tam_low_b": 0.25,
+    "tam_mid_b": 0.6,
+    "tam_high_b": 1.25,
+    "sources": [
+      "BLS",
+      "Census"
+    ],
+    "primitives": {
+      "it_seats": 5000000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 59,
+    "company": "ST Labs",
+    "query": "ITSM+ITOM+IT-ops labor displacement",
+    "angle": "displacement",
+    "tam_low_b": 3.0,
+    "tam_mid_b": 9.0,
+    "tam_high_b": 18.0,
+    "sources": [
+      "BLS",
+      "FRED"
+    ],
+    "primitives": {
+      "itsm_itom_labor_b": 60
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 60,
+    "company": "Wraithwatch",
+    "query": "Agentic cyber defense for F500/gov",
+    "angle": "bottoms-up",
+    "tam_low_b": 2.0,
+    "tam_mid_b": 5.0,
+    "tam_high_b": 10.0,
+    "sources": [
+      "EDGAR",
+      "Census"
+    ],
+    "primitives": {
+      "large_orgs": 10000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 61,
+    "company": "Wraithwatch",
+    "query": "SecOps spend capture",
+    "angle": "share-of-spend",
+    "tam_low_b": 1.5,
+    "tam_mid_b": 4.5,
+    "tam_high_b": 9.0,
+    "sources": [
+      "EDGAR",
+      "BLS"
+    ],
+    "primitives": {
+      "secops_market_b": 30
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 62,
+    "company": "Wraithwatch",
+    "query": "SOC + pentest labor displacement",
+    "angle": "labor displacement",
+    "tam_low_b": 4.5,
+    "tam_mid_b": 11.25,
+    "tam_high_b": 22.5,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "soc_analysts": 400000,
+      "pentesters": 50000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 63,
+    "company": "Moda",
+    "query": "AI brand-design agents",
+    "angle": "bottoms-up",
+    "tam_low_b": 2.5,
+    "tam_mid_b": 7.5,
+    "tam_high_b": 15.0,
+    "sources": [
+      "BLS",
+      "Census",
+      "OECD"
+    ],
+    "primitives": {
+      "brand_marketing_teams": 500000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 64,
+    "company": "Moda",
+    "query": "Design tool + agency displacement",
+    "angle": "displacement",
+    "tam_low_b": 3.0,
+    "tam_mid_b": 9.0,
+    "tam_high_b": 18.0,
+    "sources": [
+      "EDGAR",
+      "Census"
+    ],
+    "primitives": {
+      "design_tool_agency_b": 60
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 65,
+    "company": "Moda",
+    "query": "Per-seat for deck/content creators",
+    "angle": "bottoms-up",
+    "tam_low_b": 2.0,
+    "tam_mid_b": 5.0,
+    "tam_high_b": 10.0,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "knowledge_workers": 20000000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 66,
+    "company": "Minerva",
+    "query": "SMB accounting services market",
+    "angle": "services TAM",
+    "tam_low_b": 9.0,
+    "tam_mid_b": 15.0,
+    "tam_high_b": 30.0,
+    "sources": [
+      "Census",
+      "BLS"
+    ],
+    "primitives": {
+      "smb_count": 6000000,
+      "avg_acct_spend": 5000,
+      "acct_firms": 138000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 67,
+    "company": "Minerva",
+    "query": "Underserved SMBs below CPA tier",
+    "angle": "underserved segment",
+    "tam_low_b": 6.0,
+    "tam_mid_b": 12.0,
+    "tam_high_b": 24.0,
+    "sources": [
+      "Census"
+    ],
+    "primitives": {
+      "underserved_smbs": 3000000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 68,
+    "company": "Minerva",
+    "query": "SMB accounting labor displacement",
+    "angle": "labor displacement",
+    "tam_low_b": 5.1,
+    "tam_mid_b": 15.3,
+    "tam_high_b": 30.6,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "acct_employees": 1200000,
+      "avg_salary": 85000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 69,
+    "company": "Effective AI",
+    "query": "AI agents for insurance knowledge work",
+    "angle": "bottoms-up",
+    "tam_low_b": 0.5,
+    "tam_mid_b": 1.5,
+    "tam_high_b": 3.0,
+    "sources": [
+      "BLS",
+      "EDGAR",
+      "CMS"
+    ],
+    "primitives": {
+      "us_insurers": 5000,
+      "actuaries_underwriters": 150000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 70,
+    "company": "Effective AI",
+    "query": "Actuarial/underwriting labor displacement",
+    "angle": "labor displacement",
+    "tam_low_b": 1.8,
+    "tam_mid_b": 4.5,
+    "tam_high_b": 9.0,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "actuaries_underwriters": 150000,
+      "avg_salary": 120000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 71,
+    "company": "Effective AI",
+    "query": "Analog to policy-admin systems",
+    "angle": "analog/penetration",
+    "tam_low_b": 0.8,
+    "tam_mid_b": 2.4,
+    "tam_high_b": 4.8,
+    "sources": [
+      "Census",
+      "EDGAR"
+    ],
+    "primitives": {
+      "policy_admin_market_b": 8
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 72,
+    "company": "Melius",
+    "query": "AI image/video gen for marketers",
+    "angle": "bottoms-up",
+    "tam_low_b": 2.0,
+    "tam_mid_b": 5.0,
+    "tam_high_b": 10.0,
+    "sources": [
+      "BLS",
+      "Census"
+    ],
+    "primitives": {
+      "creators_marketers": 10000000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 73,
+    "company": "Melius",
+    "query": "Creative production displacement",
+    "angle": "displacement",
+    "tam_low_b": 4.0,
+    "tam_mid_b": 12.0,
+    "tam_high_b": 24.0,
+    "sources": [
+      "EDGAR",
+      "Census",
+      "BLS"
+    ],
+    "primitives": {
+      "creative_stock_agency_b": 80
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 74,
+    "company": "Melius",
+    "query": "Multi-model canvas per seat",
+    "angle": "bottoms-up",
+    "tam_low_b": 1.0,
+    "tam_mid_b": 2.5,
+    "tam_high_b": 5.0,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "content_team_seats": 5000000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 75,
+    "company": "Accrual",
+    "query": "AI tax/accounting software for CPAs",
+    "angle": "bottoms-up",
+    "tam_low_b": 0.69,
+    "tam_mid_b": 2.07,
+    "tam_high_b": 4.14,
+    "sources": [
+      "Census",
+      "BLS"
+    ],
+    "primitives": {
+      "cpa_firms": 138000
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 76,
+    "company": "Accrual",
+    "query": "Share-shift from Intuit/TR/WK",
+    "angle": "comparable-market",
+    "tam_low_b": 1.0,
+    "tam_mid_b": 3.0,
+    "tam_high_b": 6.0,
+    "sources": [
+      "EDGAR"
+    ],
+    "primitives": {
+      "tax_prep_sw_market_b": 20
+    },
+    "notes": ""
+  },
+  {
+    "query_id": 77,
+    "company": "Accrual",
+    "query": "CPA preparer labor displacement",
+    "angle": "labor displacement",
+    "tam_low_b": 5.6,
+    "tam_mid_b": 14.0,
+    "tam_high_b": 28.0,
+    "sources": [
+      "BLS"
+    ],
+    "primitives": {
+      "tax_preparers": 800000
+    },
+    "notes": ""
+  }
+]
