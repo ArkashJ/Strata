@@ -8,8 +8,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **5 data connectors** — typed API clients with disk caching and Strata YAML
-  converters for all major US government data sources:
+- **9 new data connectors** (15 total) — typed API clients with disk caching
+  and Strata YAML converters for international, financial, energy, agriculture,
+  aviation, healthcare, and regulatory data:
+  - **OECD** — SDMX REST API, 22 query methods covering GDP, labour, trade,
+    health spending, R&D, education, productivity across 38 OECD member
+    countries. Source tier: aggregator. 1,187 lines.
+  - **Eurostat** — JSON-stat API, 17 methods for EU sector statistics,
+    national accounts, trade, demographic data for all EU member states.
+    Source tier: regulator. 957 lines.
+  - **UN Comtrade** — 16 methods for bilateral trade flows by HS commodity
+    code, 200+ countries, exports/imports breakdowns. Source tier:
+    aggregator. 1,050 lines.
+  - **FDIC BankFind** — 16 methods for bank financials, institutions,
+    failures, locations, historical summaries. Source tier: regulator.
+    1,208 lines.
+  - **CMS Open Data** — 16 methods for Medicare/Medicaid enrollment,
+    spending, drug costs, providers, national health expenditure. Source
+    tier: regulator. 1,229 lines.
+  - **EIA** — API v2, 20 methods for electricity prices/sales/generation,
+    petroleum, natural gas, coal, renewables, STEO forecasts, international
+    energy. Source tier: regulator. 1,187 lines.
+  - **USDA NASS QuickStats** — 16 methods for crop/livestock production,
+    acreage, yield, prices, farm income/expenses. Source tier: regulator.
+    1,145 lines.
+  - **FAA** — 15 methods for airports, passengers, status, state summaries,
+    proximity search. Source tier: regulator. 994 lines.
+  - **openFDA** — 20 methods for drug adverse events, drug labels, device
+    510(k)/PMA clearances, device/food recalls, enforcement actions. Source
+    tier: regulator. 1,218 lines.
+  All follow the established 6-layer pattern. 10,175 lines of new connector
+  code (15,437 total across 15 connectors, ~170 query methods).
+- **118 new connector tests** (168 total) — parsing, client init, cache
+  roundtrip, YAML converter output shape, edge cases, cross-connector
+  consistency for all 9 new connectors.
+- **4 new API key settings** in config.py — `STRATA_EIA_API_KEY`,
+  `STRATA_USDA_NASS_API_KEY`, `STRATA_OPENFDA_API_KEY`,
+  `STRATA_COMTRADE_API_KEY`.
+- **GitHub issues #35–#43** — tracking issues for all 9 new connectors.
+- **5 data connectors** (original 6) — typed API clients with disk caching and
+  Strata YAML converters for all major US government data sources:
   - **BLS** (Bureau of Labor Statistics) — 7 API v2 signatures, OES employment
     + wage data, CPI, JOLTS, QCEW. 748 lines.
   - **FRED** (Federal Reserve Economic Data) — 7 endpoints, GDP, employment,
