@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxarrest-27jan-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: Who will be arrested before 2027?'
+description: 'Cumulative trading volume on Kalshi market for: Who will be arrested
+  before 2027?.'
+value: 1139021.35
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxarrest-27jan-jcom-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXARREST-27JAN-JCOM
+  accessed: '2026-05-25'
+  snapshot_sha256: f6bbb2d4fb3f5faf21eca29ae88ff1e911ef60a446e6b44f730dd07a8ea0a18d

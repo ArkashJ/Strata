@@ -1,0 +1,57 @@
+kind: framework
+slug: bottoms-up-cost-efficiency
+schema_version: 1
+name: "Bottoms-up cost efficiency"
+
+# Q7 method family — independence scoring downstream warns when triangulation
+# uses two frameworks from the same family.
+method_family: bottoms_up_seats
+
+# Q39 lens tag. Concept's declared lens (primary OR secondary) must equal this
+# value; the cross-record validator enforces the agreement.
+lens: cost_efficiency
+
+# v0.2 simplification: 2-input persona × seat-cost product. The full Q39
+# cost_efficiency math (persona × addressable × replacement × cost) lands when
+# the community-modeled slider primitives for addressable_share and
+# replacement_rate are seeded (slated for v0.3, see
+# plans/data-collection-strategy.md).
+inputs:
+  - name: persona_pool
+    role: base_value
+    unit_signature:
+      kind: stock
+      dimension: people
+    required: true
+  - name: cost_per_persona
+    role: base_value
+    unit_signature:
+      kind: intensive
+      dimension: currency
+      currency: USD
+    required: true
+
+formula: "persona_pool * cost_per_persona"
+
+output_unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+  denominator: "per-year"
+
+applicable_to:
+  - doc-gen-pc-insurance
+  - gtm-ops-tooling-na
+
+variants:
+  - scope: doc-gen-pc-insurance
+    default_inputs:
+      persona_pool: bls-pc-claims-adjusters-headcount
+      cost_per_persona: pc-claims-adjuster-cost-per-seat
+  - scope: gtm-ops-tooling-na
+    default_inputs:
+      persona_pool: bls-sales-reps-headcount-2024
+      cost_per_persona: gtm-ops-tool-cost-per-rep-2024
+
+expansion_stage_parameter: false
+horizon_class: snapshot

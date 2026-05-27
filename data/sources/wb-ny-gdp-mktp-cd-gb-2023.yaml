@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-ny-gdp-mktp-cd-gb-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
+accessed: '2026-05-25'
+snapshot_sha256: 92f4b00cbcd46bdbd48fa28e02e50492ce84f5338d157acea27646ff30f6a022
+description: World Bank NY.GDP.MKTP.CD for United Kingdom, 2023 data.

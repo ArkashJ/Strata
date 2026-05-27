@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxbtcminy-27jan01-prob
+schema_version: 1
+concept_slug: crypto-markets-2026
+name: How low will Bitcoin get in 2026? (Kalshi, top market)
+description: 'Kalshi prediction market: How low will Bitcoin get in 2026?. Event KXBTCMINY-27JAN01,
+  market KXBTCMINY-27JAN01-60000.00. Category: Crypto.'
+value: 0.565
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.56
+  - 0.57
+  basis: Kalshi bid-ask spread (KXBTCMINY-27JAN01-60000.00)
+source:
+  slug: kalshi-kxbtcminy-27jan01-60000-00-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBTCMINY-27JAN01-60000.00
+  accessed: '2026-05-25'
+  snapshot_sha256: d6289d807a9ad183b1c2d92e830d085040299a974b6e5d0a1ba1735c245fecb4

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5222-establishments-2022
+schema_version: 1
+concept_slug: us-nondepository-credit-intermediation
+name: US Nondepository credit intermediation establishments (Census CBP 2022)
+description: Census County Business Patterns establishments for NAICS 5222.
+value: 46884
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5222-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 923b43593fe813d4250c4ed3d125d3135034507cdcb970c47013f7f6eaa009db

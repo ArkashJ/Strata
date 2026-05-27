@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-permit-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/PERMIT
+accessed: '2026-05-25'
+snapshot_sha256: 309e58a4fedb32abb77d5e9bb2ace2ad4b7e71fe4c938f5f07968adebf75d33a
+description: FRED series PERMIT, 2025 data.

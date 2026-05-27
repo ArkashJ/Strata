@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-sp-pop-totl-1w-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/SP.POP.TOTL
+accessed: '2026-05-25'
+snapshot_sha256: 9707ad42cd00ad42dce8b80f80d9646f28cb5bd90ee2f73221b37df2861e5079
+description: World Bank SP.POP.TOTL for World, 2023 data.

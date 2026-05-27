@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxsurvivor-26dec31-vol
+schema_version: 1
+concept_slug: media-entertainment-2026
+name: 'Kalshi volume: Who will win Survivor Season 50?'
+description: 'Cumulative trading volume on Kalshi market for: Who will win Survivor
+  Season 50?.'
+value: 5090040.8
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxsurvivor-26dec31-aub-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXSURVIVOR-26DEC31-AUB
+  accessed: '2026-05-25'
+  snapshot_sha256: 0016f2042e39fd02ca6f3511c0413cb0461e91233005ecf8ad3ef5e3557465ed

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxaliens-27-vol
+schema_version: 1
+concept_slug: tech-adoption-2026
+name: 'Kalshi volume: Will the U.S. confirm that aliens exist?'
+description: 'Cumulative trading volume on Kalshi market for: Will the U.S. confirm
+  that aliens exist?.'
+value: 21519354.44
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxaliens-27-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXALIENS-27
+  accessed: '2026-05-25'
+  snapshot_sha256: 05f069b3bfde67661da0d90dfced806a614900706abd0cc8bc061af50e1c6c74

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxgabbardout-26-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: Tulsi Gabbard out as Director of National Intelligence?'
+description: 'Cumulative trading volume on Kalshi market for: Tulsi Gabbard out as
+  Director of National Intelligence?.'
+value: 1786299.08
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxgabbardout-26-jun01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGABBARDOUT-26-JUN01
+  accessed: '2026-05-25'
+  snapshot_sha256: 50060f47d3fe71754b8076a91dcae4cfcd606b0362ece77518ac72b0c22ab869

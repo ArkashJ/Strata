@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxtrumpchina-26-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: When will Trump visit China? (Kalshi, top market)
+description: 'Kalshi prediction market: When will Trump visit China?. Event KXTRUMPCHINA-26,
+  market KXTRUMPCHINA-26-MAY15. Category: Politics.'
+value: 0.999
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.998
+  - 1.0
+  basis: Kalshi bid-ask spread (KXTRUMPCHINA-26-MAY15)
+source:
+  slug: kalshi-kxtrumpchina-26-may15-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXTRUMPCHINA-26-MAY15
+  accessed: '2026-05-25'
+  snapshot_sha256: bc7df0a2729c047f6f79655db79aba9e6078e96e49ee4682a327245e67726d1b

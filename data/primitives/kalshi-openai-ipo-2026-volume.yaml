@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-openai-ipo-2026-volume
+schema_version: 1
+concept_slug: openai-ipo-timing
+name: 'Kalshi volume: OpenAI IPO'
+description: Volume on OpenAI IPO market.
+value: 101104.77
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxipoopenai-26jun01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXIPOOPENAI-26JUN01
+  accessed: '2026-05-25'
+  snapshot_sha256: 666d5972186a04b63593a7390dbbb25487f514f659d921695d5c1352c4ca98e0

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-openai-leadership-volume
+schema_version: 1
+concept_slug: ai-market-structure-2026
+name: 'Kalshi volume: OpenAI leadership'
+description: Volume on OpenAI leadership market.
+value: 68904.16
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxopenaiceochange-26-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXOPENAICEOCHANGE-26
+  accessed: '2026-05-25'
+  snapshot_sha256: fc351e16d69666a190428d856db90388c01f39b1f32882c79923be1f3979e859

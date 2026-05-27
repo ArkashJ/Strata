@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-ahetpi-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/AHETPI
+accessed: '2026-05-25'
+snapshot_sha256: 8b9fcfc7c2538f8499fea18bcbf915cf2db93ab99ce9305fe9095f8934d98cd8
+description: FRED series AHETPI, 2025 data.

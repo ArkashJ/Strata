@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: fred-unemployment-rate-2025
+schema_version: 1
+concept_slug: us-labor-market
+name: US unemployment rate (FRED UNRATE, 2025)
+description: Civilian unemployment rate, seasonally adjusted.
+value: 4.0
+unit:
+  kind: intensive
+  dimension: percent
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-unrate-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/UNRATE
+  accessed: '2026-05-25'
+  snapshot_sha256: 7df4440c9825626a71e24f3de496a9d1bb6460e809f57883c6cf1aff98a8f1e5

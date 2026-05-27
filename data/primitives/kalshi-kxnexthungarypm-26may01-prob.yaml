@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxnexthungarypm-26may01-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Prime Minister of Hungary after the 2026 election? (Kalshi, top market)
+description: 'Kalshi prediction market: Prime Minister of Hungary after the 2026 election?.
+  Event KXNEXTHUNGARYPM-26MAY01, market KXNEXTHUNGARYPM-26MAY01-VORB. Category: Elections.'
+value: 0.001
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 0.001
+  basis: Kalshi bid-ask spread (KXNEXTHUNGARYPM-26MAY01-VORB)
+source:
+  slug: kalshi-kxnexthungarypm-26may01-vorb-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXNEXTHUNGARYPM-26MAY01-VORB
+  accessed: '2026-05-25'
+  snapshot_sha256: 40e17ba26f640a90d69958985cbd34443bd2a2659fdac39cfa592c5b4ec1981e

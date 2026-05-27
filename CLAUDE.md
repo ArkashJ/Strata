@@ -2,78 +2,374 @@
 
 Notes for AI assistants (and future-me) working in this repo.
 
+---
+
 ## What this project is
 
-Codename **Strata**. Open-source, community-curated market-sizing tool. Three layers:
-
-1. **Primitives Library** — sourced atomic numbers.
-2. **Framework Library** — parameterized recipes that turn primitives into a TAM.
-3. **Expert Layer** — annotations and alternative framings.
-
-The interaction surface is a **clickable pyramid network graph** with three axes:
-Qualitative, Quantitative, Industry. Clicking a node narrows the segment and
-re-suggests frameworks.
+Codename **Strata**. Open-source, community-curated market-sizing engine for
+VCs and operators. Replaces IBISWorld / Statista / Gartner-lite reports by
+exposing the **primitives** (atomic sourced numbers) and the **frameworks**
+(parameterized recipes that combine them into TAM) — plus an **expert layer**
+for community correction. Audience wants defensible numbers fast, not academic
+rigor.
 
 Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
-## Repo state (as of v0.1.0)
+---
 
-- **Docs-only.** No source code, no build system, no tests yet.
+## Repo state (as of 2026-05-25)
+
+- **Version:** `0.2.0a0` (alpha). `VERSION` file pinned; tags follow `vX.Y.Z`.
+- **Phase:** Schemas locked, **backend fully functional**, frontend PoC working,
+  dynamic query resolution proven end-to-end.
+- **Backend (`backend/src/strata/`):** All business logic implemented —
+  models, loader, registry, validators, evaluator, scoring, 10 API routes
+  (including `POST /resolve` for dynamic TAM resolution via Claude + Exa),
+  plus the **connectors** ingest layer (6 connectors: BLS, FRED, Census,
+  EDGAR, World Bank, **Kalshi** — all typed clients, disk cache, Strata YAML
+  converters). 167 tests passing, pyright strict clean, ruff clean.
+  `/resolve` hardened: async event loop (asyncio.to_thread), no internal
+  error leaks, JSON parse safety, client singletons, specific exception
+  handling.
+- **Frontend (`web/`):** Next.js 16 + React 19 with landing page, build view
+  (ReactFlow graph with enriched primitive cards), `ResolveView` (SSE
+  streaming chain-of-thought for dynamic queries), data explorer, lineage graph.
+  Critic-hardened: correct fallback to ResolveView, JSON.parse safety,
+  reader.releaseLock(), NaN/Infinity guards, mobile responsive, accessible.
+- **Data (`data/`):** 6 concepts, **307 atomic primitives** from 5 APIs
+  (BLS, FRED, Census, EDGAR, World Bank) + Kalshi prediction markets,
+  5 frameworks, **87 sources**. All validate clean. Covers all 6 lenses.
+- **Tests:** 167 passing in `backend/tests/` (including 7 /resolve SSE tests,
+  50 connector tests).
+- **Design spec:** `docs/superpowers/specs/2026-05-25-strata-platform-evolution-design.md`
+  covers 5 gaps (interactive wiring, ingest pipeline, auth, contribution schema,
+  data connectors) across 6 sprints. Critic-reviewed and corrected.
 - License: Apache-2.0.
-- Version pinned in `VERSION`; tags follow `vX.Y.Z` (SemVer).
-- `CHANGELOG.md` is in Keep-a-Changelog format. Update **every** notable change
-  under `[Unreleased]`; cut a versioned section + git tag when releasing.
+
+### Architecture flow
+
+```
+User types market query
+        │
+        ▼
+┌─ FRONTEND (Next.js 16) ────────────────────────────┐
+│  Landing (/) → Build (/build?q=)                    │
+│  If concept in registry → static ReactFlow graph    │
+│  If not → ResolveView streams SSE from /resolve     │
+└────────────────────────┬────────────────────────────┘
+                         │ HTTP / SSE
+┌─ BACKEND (FastAPI) ────┴────────────────────────────┐
+│  /c /p /f /build/{slug}  → Registry → Evaluator    │
+│  POST /resolve           → Claude parse → Exa search│
+│                            → evaluate → SSE stream  │
+│  Evaluator: multiply all inputs → scenario tree     │
+└────────────────────────┬────────────────────────────┘
+                         │
+┌─ DATA STORE ────────────────────────────────────────┐
+│  Production: Postgres (primary, GIN+B-tree indexed) │
+│  Local dev:  YAML on disk → `strata db seed` → PG  │
+│  6 concepts · 307 primitives · 5 frameworks         │
+│  Each primitive: value + unit + source + sha256 pin │
+└────────────────────────┬────────────────────────────┘
+                         │ populated by
+┌─ CONNECTORS (ingest) ──┴────────────────────────────┐
+│  BLSClient · FREDClient · CensusClient              │
+│  EDGARClient · WorldBankClient · KalshiClient       │
+│  Each: typed → disk-cached → SHA256-pinned → DB     │
+└─────────────────────────────────────────────────────┘
+```
+
+### Six analysis lenses (Q39)
+
+| Lens | Math shape | Example |
+|------|-----------|---------|
+| L1 `cost_efficiency` | persona × cost | Harvey, Glean |
+| L2 `revenue_generation` | segment × spend | Brex, Rippling |
+| L3 `latent_demand` | population × adoption × WTP | Uber (not built yet) |
+| L4 `platform_throughput` | volume × take_rate | Stripe, Visa |
+| L5 `bundle_consolidation` | total_spend × consolidation | Notion, Linear |
+| L6 `productivity_uplift` | personas × value_split | Copilot, Cursor |
+
+### Phase strategy (Approach C — progressive decentralization)
+
+```
+Phase 1 (now):  Internal tool — CLI + API + ingest (FRED/BLS/EDGAR)
+Phase 2:        Paid product — API keys + metering + subscriptions
+Phase 3:        Community — contributor profiles + attribution + royalties
+Phase 4:        Optional chain anchor — Base/Solana hash anchoring
+```
+
+---
+
+## Stack
+
+### Backend (Python)
+- **Python 3.12** + **uv** package manager.
+- **Pydantic v2** for schemas; **pyright strict** mode (zero errors required).
+- **FastAPI** for HTTP; **Typer** for CLI (`strata` entry point).
+- **ruff** (100-char lines, py312, E/W/F/I/B/UP/SIM/RUF) for lint/format.
+- **pytest** + **httpx** + **pytest-asyncio** for tests.
+- **YAML files on disk** are the source of truth at v0.2 (no DB yet; Postgres
+  mirror lands at v0.3 per `docs/07-data-layer-brainstorm.md` Q27).
+- **Connectors** (`connectors/`) — typed API clients that ingest external data
+  into the data bank. All follow a 6-layer pattern: enums → TypedDicts →
+  frozen dataclasses → unified response → disk cache → client + YAML converters.
+  | Connector | Lines | Source Tier | Key Data |
+  |-----------|-------|-------------|----------|
+  | BLS | 748 | regulator | Employment, wages, CPI, JOLTS |
+  | FRED | 753 | regulator | GDP, rates, money supply, consumption |
+  | Census | 790 | regulator | Industry stats by NAICS (CBP/SUSB) |
+  | EDGAR | 856 | regulator | Company financials, XBRL frames |
+  | World Bank | 614 | aggregator | Global GDP, population, adoption |
+  | Kalshi | — | prediction_market | Event contracts, probabilities |
+  See `backend/src/strata/connectors/CLAUDE.md`.
+
+### Frontend (`web/`)
+- **Next.js 16.2.6** + **React 19.2.4**.
+- **Tailwind CSS 4** with CSS-variable design tokens (`--bg-0`, `--fg-1`,
+  `--accent`, ...) wired in `globals.css` / `layout.tsx`.
+- **ReactFlow** for the pyramid network graph + scenario tree visualization.
+- Geist Sans/Mono + Instrument Serif fonts.
+- **Note:** user's long-term preferred web stack (per memory) is bun + biome +
+  knip + tanstack + zod + zustand — current scaffold predates that direction;
+  confirm before introducing tooling changes.
+
+---
+
+## The five-layer data model
+
+Locked across `docs/07-data-layer-brainstorm.md` (Q1–Q38). Layers:
+
+```
+Concept                  (Q9, Q10)   — curated identity object, narrow-scope
+  ↓ measured-by
+Atomic Primitive         (Q2)        — one source, one number, reproducible
+  ↓ bundled-into
+Composite Primitive      (Q2, Q3)    — same-unit set ops (union/filter/restrict)
+  ↓ consumed-by
+Framework                (Q3, Q15–Q18) — unit-crossing arithmetic, no scalar defaults
+  ↓ emits
+TAM Output               (Q1, Q38)   — scenario tree, permanent URL, hash-pinned
+```
+
+Canonical YAML shapes for each record (atomic/composite primitive, framework,
+concept, marketplace_concept, company_concept, tam_output, annotation) live in
+`docs/07-data-layer-brainstorm.md` §"Final design" and
+`docs/09-expert-layer-brainstorm.md`. Don't redesign these without revisiting
+the brainstorms — every field is load-bearing.
+
+### Load-bearing schema rules (don't drift)
+
+- **TAMs are scenario trees**, never scalars + error bars (Q1).
+- **Units are structured** (`kind`, `dimension`, `denominator`, `currency`,
+  `basis`); frameworks declare unit signatures; validator statically rejects
+  bad wiring (Q4).
+- **Currency stored nominal**, normalized at query time (Q4).
+- **Composites = same-unit set ops only.** Frameworks = all unit-crossing math
+  (Q3). Hard line — don't blur it.
+- **Frameworks have NO scalar defaults** — every input is a primitive slug
+  (Q15). Variants attach pointers, not values (Q17).
+- **Citations are content-hash pinned** (`snapshot_sha256`). Source snapshots
+  mandatory at ingest. Sensitivity-aware change notifications (Q5).
+- **Geo has two parallel fields:** `geo_supply` + `geo_demand`. Sub-national
+  is first-class. ISO 3166 (Q8).
+- **Concepts are first-class** — multiple competing measurements attach to one
+  concept; disagreement gets a page, not a footnote (Q9, Q10).
+- **Source tiers:** `first_party | regulator | aggregator | analyst |
+  community | onchain | prediction_market | community-modeled` (Q26, Q37).
+  Last three were added in the brainstorm — extends the original five.
+- **No LLM-projected primitives**, ever (Q20). Synthetic atomics allowed only
+  with hard guards (range mandatory, 12-mo expiry, banner downstream).
+- **Annotations are pure commentary** — text-only, never auto-applied to math.
+  The user reads and decides (`docs/09-expert-layer-brainstorm.md` E1).
+
+---
+
+## Product surface
+
+Locked across `docs/08-product-surface-brainstorm.md` (U1–U12).
+
+### Three pillars (axes)
+**Qualitative · Quantitative · Industry** — the pyramid's three sides.
+**Geo + Time are filter chips above the graph**, not pillars (Q12 / U1).
+Promoting them to pillars tetrahedralizes the cognitive load.
+
+### Pyramid graph
+Always-on centerpiece (U1). Click node → adds constraint, greys incompatible
+siblings. Shift-click → OR within pillar/tier. Right-click → context menu.
+Hover → 250ms ghost-card preview. Three node types coexist: **taxonomy stub**
+(navigation-only), **concept-bearing leaf** (data attached), **saved-query
+node** (dynamic, pinnable, shareable) — see Q11.
+
+### URL / page model (U5, U6, U11)
+- `/` — search landing (single centered query box, LLM parses to constraints — U3)
+- `/?q=<query>` — multi-interpretation cards before pyramid loads (U4)
+- `/build/<state-hash>` — workhorse view, auto-minted on every meaningful state
+  change (constraint add/remove, framework toggle, assumption tweak). Pan/zoom/
+  hover do **not** mint
+- `/tam/<hash>` — frozen artifact; read-only + Fork button; all edits create a
+  new `/build/<state-hash>`
+- `/c/<slug>` `/p/<slug>` `/f/<slug>` — concept/primitive/framework detail pages
+- `/browse` — public registry of promoted TAMs (`is_promoted` flag separate
+  from auto-mint hash)
+- `/contribute` — contribution splash
+
+State is canonicalized (sorted keys) before sha256 hashing so equivalent
+states collide.
+
+### Right-rail accordion (U2)
+Frameworks + Scenarios expanded · Independence + Lineage chips collapsed ·
+Banners + Export pinned bottom.
+
+### Annotations (U8)
+**Red dots in context only** (next to annotated names / graph nodes / scenario
+rows). Hover → snippet · click → inline expand sorted by contributor weight.
+**Never aggregated in a rail section.**
+
+### Export (U10)
+"Copy URL" / "Download PDF" / "Download Markdown". Banners (synthetic, modeled,
+subsidy, regulated, dark-estimate) become footnotes in exports.
+
+---
+
+## Docs index (read these to orient)
+
+Numbered for reading order. Cross-link liberally with relative paths.
+
+| File | Purpose |
+|---|---|
+| `docs/00-vision.md` | Thesis: why a community market-sizing engine wins |
+| `docs/01-primer.md` | Conceptual on-ramp: three layers + five-layer data model + pyramid graph |
+| `docs/04-user-journey.md` | Sarah's P&C doc-gen TAM golden path |
+| `docs/05-roadmap.md` | v0.2 → v1.0 milestones |
+| `docs/06-glossary.md` | Domain terms — update in same change that introduces a term |
+| `docs/07-data-layer-brainstorm.md` | **Decision record** Q1–Q40: full data-layer schema lock |
+| `docs/08-product-surface-brainstorm.md` | **Decision record** U1–U12: UX surface lock |
+| `docs/09-expert-layer-brainstorm.md` | **Decision record** E1–E5: annotation schema (ops deferred to v0.5) |
+| `docs/10-v0.2-backend-spec.md` | Executable v0.2 backend spec — the implementation blueprint |
+| `docs/design/` | Brand kit tokens + component catalog + mockup screenshots |
+| `docs/plans/` | In-flight implementation plans |
+
+The three brainstorm decision records (07/08/09) plus the backend spec (10)
+are the **load-bearing** docs for current work. `01-primer.md` is the
+conceptual on-ramp — read it first if you've never seen the project.
+
+---
+
+## Build sequence (v0.2 → v1.0)
+
+| Milestone | Scope |
+|---|---|
+| **v0.2** — seed library + schema lock | All record schemas (atomic, composite, framework, concept, output, annotation), unit type system, geo type, extended source tiers, validator L1+L2, seed concept library (~100 concepts), ~50 primitives, 5 frameworks across 2 verticals exercising marketplace + multi-product + subsidy paths |
+| **v0.3** — graph renderer | Pyramid topology with 3 axes + geo/time overlays; three node types; Postgres mirror rebuilt on merge; full-text + faceted search; annotation display per U8 |
+| **v0.4** — calculator + export | Scenario-tree TAM outputs; content-hash pinning; permanent `/tam/<hash>` URLs; PDF/markdown export; method-family / independence scoring surfaced in UI |
+| **v0.5** — contribution flow | PR-based contribution + full validator pipeline; LLM PR review (Claude Code-style); LLM auto-publish for high-tier sources; web form for annotations; **expert-layer ops land here** (credentialing, reputation, moderation, COI rules, adversarial defenses) |
+| **v1.0** — public beta | Semantic embeddings search; 250+ primitives, 25+ frameworks, 5+ verticals; concept promotion flow; intersection-concept auto-promotion |
+
+Verification scenarios for the v0.2 schema (from `docs/07` §Verification plan):
+P&C doc-gen TAM · AI agents marketplace 2027 · Stripe TAM (two-sided + embedded)
+· EV charging 2026 (subsidy) · Hedge-fund tech (power-law) · Polymarket-implied
+private valuation. If any needs a schema exception, the schema isn't done.
+
+---
 
 ## Conventions
 
 ### Versioning
-- SemVer: `MAJOR.MINOR.PATCH`.
-- Pre-1.0: minor bumps for any spec/schema change; patch for docs-only fixes.
-- Tag with `git tag -a vX.Y.Z -m "..."` and update both `VERSION` and `CHANGELOG.md`
-  in the same commit as the tag.
+- SemVer: `MAJOR.MINOR.PATCH`. Pre-1.0: minor bumps for spec/schema change,
+  patch for docs-only.
+- `git tag -a vX.Y.Z -m "..."`; update `VERSION` + `CHANGELOG.md` in the same
+  commit as the tag.
+- `CHANGELOG.md` is Keep-a-Changelog format. Every notable change goes under
+  `[Unreleased]`.
 
 ### Docs
-- All design docs live under `docs/`, numbered (`NN-title.md`) so they sort in
-  reading order.
-- Use plain Markdown. ASCII diagrams over Mermaid where the diagram is small —
-  ASCII renders everywhere without a toolchain.
-- Cross-link liberally between docs with relative paths.
+- Live under `docs/`, numbered `NN-title.md` so they sort in reading order.
+- Plain Markdown. ASCII diagrams over Mermaid for small diagrams (no toolchain).
+- Cross-link with relative paths.
 
 ### Naming
-- Project codename: **Strata** (provisional — the user may rename; do not invent a
-  different name).
-- Domain terms: see [`docs/06-glossary.md`](docs/06-glossary.md). When introducing
-  a new term, add it to the glossary in the same change.
+- Project codename **Strata** — provisional, user-chosen, do NOT rename without
+  an explicit request.
+- New domain terms → add to `docs/06-glossary.md` in the same change.
 
-### Data (when it lands)
-- Primitives will live as JSON / YAML files under `data/primitives/`, one file per
-  primitive, keyed by stable slug.
-- Frameworks under `data/frameworks/`, similarly slugged.
-- Source credibility tiers are an enum: `first_party`, `regulator`, `aggregator`,
-  `analyst`, `community`. See [`docs/03-data-model.md`](docs/03-data-model.md).
+### Data (when YAML lands)
+- One entity per file, slug-keyed kebab-case.
+- `data/primitives/` · `data/composites/` · `data/frameworks/` · `data/concepts/`
+  · `data/sources/` · `data/annotations/` · `data/tam_outputs/`.
+- Records declare `schema_version` (Q30); migrations run atomically on bumps.
+- Content-addressed source snapshots stored sha256-named.
+
+### Running things
+- All `uv run` commands must be invoked from `backend/` (where `pyproject.toml` lives).
+- Tests live at `backend/tests/`; the orphaned root `/tests/` is not picked up by `testpaths`.
+- `data/` lives at the repo root — pass `--data-dir ../data` when running `strata` commands from `backend/`.
+- Verification suite: `uv run pytest && uv run pyright && uv run ruff check . && uv run ruff format --check .`
+
+### Database commands (from `backend/`)
+- `uv run alembic upgrade head` — create/migrate Postgres tables.
+- `uv run strata db seed -d ../data` — upsert all YAML into Postgres (idempotent).
+- `uv run strata db stats` — show Postgres row counts.
+- `uv run strata test-connectors` — live smoke test all 5 APIs.
+- `uv run strata stats -d ../data` — show YAML data bank counts.
+
+### Data storage architecture
+- **Production (Railway):** Postgres is the primary store. YAML files are baked
+  into the Docker image as seed data. Run `strata db seed` once after deploy.
+- **Local dev:** YAML on disk → `strata db seed` → local Postgres. Or just use
+  YAML directly via the in-memory Registry (no DB required for dev).
+- **CI/tests:** Tests use YAML loader directly; no Postgres needed.
+- **Connectors write to disk cache** (`~/.strata/cache/{connector}/`) then to
+  YAML via converter functions. The `strata db seed` command loads YAML → DB.
+  Future: connectors will write directly to DB, skipping YAML entirely.
+
+### Pydantic v2
+- Discriminated unions (e.g. `Source = Annotated[Union, Field(discriminator=...)]`) are typing constructs, not models — validate with `TypeAdapter(Source).validate_python(...)`, not `.model_validate(...)`.
+- Trust `uv run pyright` over the IDE's streaming diagnostics on newly-written files (the latter shows phantom "Import could not be resolved" errors that resolve themselves).
+
+### Known schema drift (deferred to v0.3)
+- **Q8 geo** — at v0.2 primitives carry a single `geo: Geo` + `geo_perspective` enum, not the two-parallel-fields design Q8 mandates. Restoration tracked for v0.3 when a primitive needs to declare both supply and demand geos.
+- **Q20 synthetic primitives** — no `synthetic: bool` marker or required `expiry`/`uncertainty` yet. Lands when the first synthetic primitive is seeded (v0.3 community-modeled sliders).
+
+---
 
 ## What NOT to do
 
-- **Don't invent figures.** Every number in docs that purports to be real must have a
-  source. Illustrative examples should be clearly labelled "illustrative" or use
-  obviously fake values (e.g. `$X` / `N`).
-- **Don't pick a stack yet.** v0.1.0 is intentionally pre-implementation; resist
-  scaffolding a frontend, backend, or schema validator until the data model in
-  `docs/03-data-model.md` is reviewed by the user.
-- **Don't rename the project** without an explicit request — `Strata` is provisional
-  but the user may keep it.
-- **Don't add CI, package manifests, or build tooling** until there's code to build.
+- **Don't invent figures.** Every claimed real number needs a source. Illustrative
+  examples must be labelled "illustrative" or use obviously fake values (`$X`, `N`).
+- **Don't blur the composite/framework line.** Composites are same-unit set ops
+  only; any unit-crossing math belongs in a framework (Q3).
+- **Don't add scalar defaults to frameworks.** Every input is a citable
+  primitive slug (Q15).
+- **Don't add LLM-projected primitives** (Q20). LLM hallucination becoming
+  citable is the worst-case outcome.
+- **Don't make annotations affect math.** Pure commentary only (E1).
+- **Don't rename the project** without an explicit request.
+- **Don't pick new tooling** for `web/` without confirming — there's tension
+  between the current Next.js scaffold and the user's long-term stack
+  preference (bun/biome/tanstack/zustand).
+- **Don't run `cat`, `head`, `tail`, `sed`, `awk`** in Bash — use Read/Edit.
+  Bash is for git/mkdir/rm/mv/navigation only (context-mode policy).
+- **Don't put `typer.Argument(...)` or `typer.Option(...)` in function defaults** (ruff B008) — create them as module-level singletons and reference them. Python evaluates function defaults once at definition time, which is exactly what Typer expects.
+
+---
 
 ## When you start a new session
 
-1. Read `README.md`, this file, and `docs/05-roadmap.md` to orient.
-2. Check `git log --oneline -10` and the `[Unreleased]` section of `CHANGELOG.md`
-   for in-flight work.
-3. Tags are the source of truth for released versions: `git tag --sort=-v:refname`.
+1. Read `README.md`, this file, `docs/01-primer.md`, and `docs/05-roadmap.md` to orient.
+2. Skim the three brainstorm decision records (`07`, `08`, `09`) and the v0.2
+   backend spec (`10`) — they are load-bearing.
+3. Check `git log --oneline -10` and `[Unreleased]` in `CHANGELOG.md` for
+   in-flight work.
+4. Tags are the source of truth for released versions:
+   `git tag --sort=-v:refname`.
+
+---
 
 ## User context
 
 - User is **Arkash Jain** (`arkash@benmore.tech`).
 - Working from `/Users/arkashjain/Desktop/work/VC_stuff`.
-- Audience for this product is **VCs and operators doing TAM work** — write docs
-  with that reader in mind (they want defensible numbers fast, not academic rigor).
+- Audience for this product is **VCs and operators doing TAM work** — write
+  docs and UI copy for that reader (defensible numbers fast, not academic
+  rigor).

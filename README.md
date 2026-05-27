@@ -4,9 +4,28 @@
 > primitives, frameworks, and expert annotations — rendered as an interactive pyramid
 > graph that lets VCs and operators build credible TAMs without buying a $20k report.
 
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://strata-pied-three.vercel.app)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.1.0-informational)
+![Version](https://img.shields.io/badge/version-0.2.0a0-informational)
 ![Status](https://img.shields.io/badge/status-pre--alpha-orange)
+
+![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![Pydantic v2](https://img.shields.io/badge/Pydantic-v2-E92063?logo=pydantic&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00?logo=sqlalchemy&logoColor=white)
+![Postgres](https://img.shields.io/badge/Postgres-16-4169E1?logo=postgresql&logoColor=white)
+![uv](https://img.shields.io/badge/uv-DE5FE9?logo=uv&logoColor=white)
+&nbsp;
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?logo=reactquery&logoColor=white)
+![Zustand](https://img.shields.io/badge/Zustand-443E38)
+![Zod](https://img.shields.io/badge/Zod-3068B7?logo=zod&logoColor=white)
+![Biome](https://img.shields.io/badge/Biome-60A5FA?logo=biome&logoColor=white)
+![bun](https://img.shields.io/badge/bun-FBF0DF?logo=bun&logoColor=black)
+&nbsp;
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
 ---
 
@@ -37,7 +56,7 @@ See [`docs/00-vision.md`](docs/00-vision.md) for the full thesis.
 | 2 | **Framework Library** | Reusable, parameterized recipes for going primitives → TAM. Organized by function (Finance, GTM, Ops...) and approach (top-down, bottoms-up, comparable, analog). |
 | 3 | **Expert Layer** | Comments, annotations, and alternative framings on top of figures and frameworks. Reputation-weighted. |
 
-Full breakdown: [`docs/01-product-layers.md`](docs/01-product-layers.md).
+Full breakdown: [`docs/01-primer.md`](docs/01-primer.md).
 
 ## The pyramid graph
 
@@ -67,32 +86,283 @@ The Qualitative / Quantitative / Industry pyramid in the sketch:
 ```
 
 Each node is a **constraint** — clicking expands children, narrows the segment, and
-re-suggests frameworks. Spec: [`docs/02-network-graph.md`](docs/02-network-graph.md).
-
-## Repository layout
-
-```
-.
-├── LICENSE              Apache 2.0
-├── VERSION              0.1.0
-├── CHANGELOG.md         Keep a Changelog format
-├── CLAUDE.md            Notes for AI assistants working on this repo
-├── README.md            You are here
-└── docs/
-    ├── 00-vision.md
-    ├── 01-product-layers.md
-    ├── 02-network-graph.md
-    ├── 03-data-model.md
-    ├── 04-user-journey.md
-    ├── 05-roadmap.md
-    └── 06-glossary.md
-```
+re-suggests frameworks. Topology in [`docs/01-primer.md`](docs/01-primer.md);
+full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-surface-brainstorm.md).
 
 ## Status
 
-**Pre-alpha — docs only.** No code yet. v0.1.0 is a thesis + spec snapshot to
-anchor design before implementation begins. See [`docs/05-roadmap.md`](docs/05-roadmap.md)
-for phasing.
+**Pre-alpha — v0.2.0a0.** Proof of concept working end-to-end.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     HOW IT WORKS                             │
+│                                                              │
+│  1. You type a market     "AI code review tools TAM"        │
+│                                    │                         │
+│  2. AI parses the query    lens: productivity_uplift         │
+│     into sizing params     need: developer count + tool cost │
+│                                    │                         │
+│  3. Exa searches the web   BLS: 28.7M developers            │
+│     for real data           Cledara: $4,500/dev/yr           │
+│                                    │                         │
+│  4. Framework computes     28.7M × $4,500 = $129.2B TAM     │
+│     the scenario tree      with every source cited           │
+│                                    │                         │
+│  5. Graph renders with     ReactFlow: Target → Frameworks   │
+│     clickable sources               → Primitive cards       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**What works today:**
+- **Static builds** — 6 pre-seeded concepts across 5 of 6 TAM lenses, each with
+  real values, enriched primitive cards, min-max range display
+- **Dynamic queries** — type ANY market → Claude parses → Exa finds real data →
+  evaluates framework → streams chain of thought via SSE
+- **5 data connectors** — BLS, FRED, Census, EDGAR, World Bank — all typed clients
+  with disk caching and YAML converters (3,700+ lines of pyright-strict code)
+- **307 atomic primitives** from live API queries across all six lenses + 87 sources
+- **167 tests**, pyright strict clean, ruff clean, frontend typecheck + build clean
+- **50+ APIs cataloged** for integration ([`docs/11-api-catalog.md`](docs/11-api-catalog.md))
+
+### Data bank coverage by lens
+
+| Lens | Primitives | Key Sources |
+|------|-----------|-------------|
+| L1 cost_efficiency | Employment headcounts, wages, CES industry data | BLS OES, FRED, Census CBP |
+| L2 revenue_generation | Company revenues, GDP, retail sales, industry payroll | EDGAR, FRED, Census, World Bank |
+| L3 latent_demand | Population (337M), internet (93.5%), mobile (109/100) | World Bank, FRED, Census |
+| L4 platform_throughput | Payment co. revenues (V/MA/PYPL), banking establishments | EDGAR, Census, World Bank FDI |
+| L5 bundle_consolidation | Professional services establishments, SaaS revenues | Census, EDGAR (NOW/WDAY) |
+| L6 productivity_uplift | Developer counts, R&D spend ($600B), tech employment | BLS CES, Census, EDGAR frames |
+| Cross-lens | 6 major GDPs, world population, inflation, unemployment | World Bank, FRED |
+
+See [`docs/05-roadmap.md`](docs/05-roadmap.md) for phasing.
+
+### The six TAM lenses
+
+| # | Lens | Formula shape | Companies sized this way |
+|---|------|---------------|-------------------------|
+| L1 | Cost efficiency | persona × cost/persona | Harvey, Glean, Decagon |
+| L2 | Revenue generation | segment × spend/segment | Brex, Rippling, Ramp |
+| L3 | Latent demand | population × adoption × WTP | Uber, Duolingo (not yet built) |
+| L4 | Platform throughput | volume × take rate | Stripe, Shopify, Visa |
+| L5 | Bundle consolidation | total spend × consolidation rate | Notion, Linear, Monday |
+| L6 | Productivity uplift | personas × gain × vendor share | GitHub Copilot, Cursor |
+
+## Deployment
+
+### Frontend — Vercel
+[strata-pied-three.vercel.app](https://strata-pied-three.vercel.app) (auto-deploys from `main`)
+
+Set `NEXT_PUBLIC_API_URL` in Vercel environment variables to point at the Railway API.
+
+### Backend — Railway
+Railway deploys the API + Postgres from docker-compose.yml.
+
+**Service variables to set in Railway:**
+```
+STRATA_ENV=prod
+STRATA_LOG_JSON=true
+STRATA_DATABASE_URL=${{Postgres.DATABASE_URL}}
+STRATA_CORS_ORIGINS=["https://strata-pied-three.vercel.app"]
+STRATA_BLS_API_KEY=<your key>
+STRATA_FRED_API_KEY=<your key>
+STRATA_CENSUS_API_KEY=<your key>
+```
+
+**After first deploy, seed the database:**
+```sh
+# Railway CLI or in the service shell
+alembic upgrade head
+python -m strata.cli db seed -d /app/data
+```
+
+The API auto-discovers data from Postgres. YAML files are baked into the
+Docker image as seed data — `strata db seed` loads them once, then Postgres
+is the source of truth for all reads.
+
+### Architecture at scale (1K concurrent users)
+
+```
+Vercel (frontend CDN)
+       │ HTTPS
+       ▼
+Railway (FastAPI + Postgres)
+  ┌─ FastAPI ──────────────────┐
+  │  Registry loads from DB    │  ← in-memory cache, TTL refresh
+  │  Connectors refresh data   │  ← background jobs (planned)
+  └────────────┬───────────────┘
+               │ asyncpg
+  ┌─ Postgres ─┴───────────────┐
+  │  primitives (307+ rows)    │  GIN index on JSONB (unit, geo, source)
+  │  sources (87+ rows)        │  B-tree on slug, concept_slug, as_of
+  │  concepts (6 rows)         │  
+  │  frameworks (5 rows)       │  
+  └────────────────────────────┘
+```
+
+YAML files remain in the repo for:
+- Version-controlled seed data
+- Local development without Postgres
+- CI test fixtures
+
+## Stack
+
+### 🐍 Backend — `backend/`
+- **Python 3.12** managed by **uv**.
+- **FastAPI** + **Pydantic v2** + **pydantic-settings** for HTTP and config.
+- **SQLAlchemy 2.0** (async) + **asyncpg** + **Alembic** migrations.
+  Postgres ORM models live in `db/models.py` — primitives, sources,
+  concepts, frameworks with JSONB columns and GIN indexes.
+- **structlog** for structured logs (JSON in prod, console in dev).
+- **OpenAPI** docs at `/docs` (Swagger) and `/redoc`, schema at `/openapi.json`.
+- **pyright strict** + **ruff** lint/format; **pytest** + **httpx** for tests.
+- **Typer** CLI exposed as the `strata` entry point.
+
+### ⚛️ Frontend — `web/`
+- **Next.js 16** + **React 19** + **TypeScript 5**, managed by **bun**.
+- **Tailwind CSS 4** with CSS-variable design tokens.
+- **TanStack Query** (server state) + **Zustand** (client UI state) +
+  **Zod** (validation + env).
+- **ReactFlow** for the pyramid network graph.
+- **openapi-typescript** generates a typed API client from the running
+  FastAPI's `/openapi.json` (run `bun run gen:api`).
+- **Biome** owns JS/TS lint + format. **ESLint** runs only `next/core-web-vitals`.
+  **Prettier** formats md/css/yaml only. **Knip** finds dead code.
+- **Vitest** + **Testing Library** for unit/component tests.
+
+## 🚀 Quick start
+
+### 🐳 With Docker (recommended)
+Boots Postgres + API + web with one command from the repo root.
+
+```sh
+cp .env.example .env        # optional — compose injects its own env
+docker compose up --build
+```
+
+Then seed the database and verify:
+
+```sh
+cd backend
+uv run alembic upgrade head       # create tables
+uv run strata db seed -d ../data  # load 307 primitives into Postgres
+uv run strata db stats            # verify row counts
+uv run strata test-connectors     # smoke-test all 5 APIs
+```
+
+Then visit:
+- 🌐 web: <http://localhost:3000>
+- 📖 API docs: <http://localhost:8000/docs>
+- ❤️  health: <http://localhost:8000/healthz>
+
+### 🛠 Local dev (no Docker)
+
+**🐍 Backend** — needs Python 3.12 + [`uv`](https://docs.astral.sh/uv/).
+Run every `uv` command from `backend/`; the venv lives at `backend/.venv/`.
+
+```sh
+cd backend
+uv sync --extra dev
+cp ../.env.example ../.env
+# start Postgres however you like (brew, pg.app, docker); ensure the DSN matches
+uv run uvicorn strata.api.app:app --reload --port 8000
+```
+
+Database setup (still from `backend/`):
+
+```sh
+uv run alembic revision --autogenerate -m "init"  # generate migration
+uv run alembic upgrade head                        # create tables
+uv run strata db seed -d ../data                   # load 307 primitives → Postgres
+uv run strata db stats                             # verify: primitives 307, sources 87
+```
+
+CLI commands:
+
+```sh
+uv run strata stats -d ../data      # data bank counts (YAML)
+uv run strata test-connectors       # live smoke test all 5 APIs
+uv run strata validate ../data      # three-layer validator
+uv run strata size doc-gen-pc-insurance -d ../data  # evaluate a concept
+```
+
+Tests + checks:
+
+```sh
+uv run pytest                # 167 tests (models, API, connectors, evaluator, resolve)
+uv run ruff check .
+uv run pyright
+```
+
+**⚛️ Frontend** — needs [`bun`](https://bun.com/):
+
+```sh
+cd web
+bun install
+bun run dev                 # http://localhost:3000
+bun run gen:api             # regenerate TS types from running API
+bun run check               # typecheck + biome + eslint + knip
+bun run test
+```
+
+## 📁 Repository layout
+
+```
+.
+├── README.md · CHANGELOG.md · CLAUDE.md · LICENSE · VERSION
+├── docker-compose.yml            Postgres + api + web
+├── .env.example                  STRATA_* env documentation
+│
+├── backend/                      Python 3.12 service (run `uv` from here)
+│   ├── pyproject.toml            uv-managed, pyright strict, ruff
+│   ├── src/strata/
+│   │   ├── api/routes/           10 endpoints: healthz, concepts, primitives,
+│   │   │                         frameworks, build, tam, resolve (SSE)
+│   │   ├── connectors/           6 typed API clients (BLS, FRED, Census,
+│   │   │                         EDGAR, World Bank, Kalshi) — 4,650+ lines
+│   │   ├── db/models.py          ORM: PrimitiveRow, SourceRow, ConceptRow,
+│   │   │                         FrameworkRow (JSONB + GIN indexes)
+│   │   ├── db/sync.py            YAML → Postgres upsert (idempotent)
+│   │   ├── models/               6 Pydantic record types + Unit, Geo, Source
+│   │   ├── evaluator/engine.py   size_concept() → TAMOutput (multiplicative)
+│   │   ├── validator/            structural + semantic + cross-record
+│   │   ├── scoring/              independence + disagreement
+│   │   ├── loader.py             YAML → Pydantic via kind discriminator
+│   │   ├── registry.py           in-memory slug-keyed store
+│   │   └── cli.py                strata: version, validate, size, stats,
+│   │                             test-connectors, db seed, db stats
+│   ├── scripts/
+│   │   ├── populate_data_bank.py       initial 29-query seeding
+│   │   └── populate_lens_primitives.py 86-query lens-aligned expansion
+│   └── tests/                    167 tests (models, API, connectors, evaluator)
+│
+├── web/                          Next.js 16 + React 19 + bun
+│   └── src/
+│       ├── app/page.tsx          Landing — search box + suggestion chips
+│       ├── app/build/            Build view — ReactFlow graph + right rail
+│       ├── components/
+│       │   ├── ScenarioGraph.tsx  Target → Framework → Primitive cards
+│       │   ├── ResolveView.tsx   SSE streaming chain-of-thought
+│       │   └── LineageGraph.tsx  Force-directed network
+│       └── lib/
+│           ├── schemas.ts        Zod schemas matching backend
+│           ├── queries.ts        TanStack Query hooks per endpoint
+│           └── format.ts         USD + compact number formatting
+│
+├── data/                         YAML seed data (syncs to Postgres)
+│   ├── concepts/     6 files    (one per vertical)
+│   ├── primitives/ 307 files    (sourced numbers from 5 APIs)
+│   ├── frameworks/   5 files    (sizing formulas)
+│   └── sources/     87 files    (citation records, SHA256-pinned)
+│
+└── docs/                         Design docs + decision records
+    ├── 07-data-layer-brainstorm  Q1-Q40 schema decisions (LOAD BEARING)
+    ├── 08-product-surface        U1-U12 UX decisions (LOAD BEARING)
+    ├── 11-api-catalog            50+ APIs for market sizing
+    ├── HANDOFF.md                Current state + MVP sprint plan
+    └── superpowers/specs/        Platform evolution design spec
+```
 
 ## License
 

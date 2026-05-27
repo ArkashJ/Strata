@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-4541-employees-2022
+schema_version: 1
+concept_slug: us-electronic-shopping
+name: US Electronic shopping and mail-order houses employees (Census CBP 2022)
+description: Census County Business Patterns employees for NAICS 4541.
+value: 780598
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-4541-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 72ab4e375f5ec6902d6b7536b88331031b4868aa5a78b75299ce074e4a931cde

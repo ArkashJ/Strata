@@ -1,0 +1,31 @@
+kind: atomic_primitive
+slug: kalshi-kxprimarymov-ky4r26-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Margin of victory in the KY-04 Republican primary? (Kalshi, top market)
+description: 'Kalshi prediction market: Margin of victory in the KY-04 Republican
+  primary?. Event KXPRIMARYMOV-KY4R26, market KXPRIMARYMOV-KY4R26-TMAS-P2. Category:
+  Elections.'
+value: 0.0015
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.001
+  - 0.002
+  basis: Kalshi bid-ask spread (KXPRIMARYMOV-KY4R26-TMAS-P2)
+source:
+  slug: kalshi-kxprimarymov-ky4r26-tmas-p2-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXPRIMARYMOV-KY4R26-TMAS-P2
+  accessed: '2026-05-25'
+  snapshot_sha256: f81a113db62be9713ead91c9e15bc2c43120312ae61ecf43fe470a89e890bc60

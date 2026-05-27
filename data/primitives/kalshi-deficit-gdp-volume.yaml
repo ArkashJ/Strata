@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-deficit-gdp-volume
+schema_version: 1
+concept_slug: us-fiscal-position-2026
+name: 'Kalshi volume: deficit/GDP'
+description: Volume on deficit/GDP market.
+value: 54166.48
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxdefgdp-26oct20-t5-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXDEFGDP-26OCT20-T5
+  accessed: '2026-05-25'
+  snapshot_sha256: 11f1d6d560f28b6b6a0e5e97e045179a4a4ec088402448f5d3a6db4a57bd46c3

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5239-establishments-2022
+schema_version: 1
+concept_slug: us-other-financial-investment
+name: US Other financial investment activities establishments (Census CBP 2022)
+description: Census County Business Patterns establishments for NAICS 5239.
+value: 83954
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5239-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: ff2be310bd77aa2ab5532a5be8772b134f1ba7740034766a59700b51a7e3fabc

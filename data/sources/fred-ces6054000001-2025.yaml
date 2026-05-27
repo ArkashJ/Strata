@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-ces6054000001-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/CES6054000001
+accessed: '2026-05-25'
+snapshot_sha256: 6643f83cc5f8cfbfe184a7bf3d7c3f4f97aa053e865c5bf7d57f76734e677773
+description: FRED series CES6054000001, 2025 data.

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5415-employees-2022
+schema_version: 1
+concept_slug: us-computer-systems-design
+name: US Computer systems design and related services employees (Census CBP 2022)
+description: Census County Business Patterns employees for NAICS 5415.
+value: 2126573
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5415-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 7d3c682384c9b7cbee1665799e13ae78b63e7bdb5428236e0bc4854e493c57d6

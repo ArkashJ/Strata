@@ -1,0 +1,28 @@
+# Frontend (not needed for backend image)
+web/
+docs/
+.git/
+.github/
+*.md
+!backend/README.md
+LICENSE
+
+# Python artifacts
+backend/.venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+
+# Node
+node_modules/
+.next/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Env files (secrets should be set via Railway variables)
+.env
+.env.*
+!.env.example

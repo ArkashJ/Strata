@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-tesla-optimus-2026-volume
+schema_version: 1
+concept_slug: humanoid-robotics-2026
+name: 'Kalshi volume: Tesla Optimus'
+description: Volume on Tesla Optimus market.
+value: 301264.32
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-teslaoptimus-26dec31-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/TESLAOPTIMUS-26DEC31
+  accessed: '2026-05-25'
+  snapshot_sha256: b6172ea58e0daa3e5cbf5cdb0a5e4b32ecd3010693f5b9ab1bfb33f3b6fc2706

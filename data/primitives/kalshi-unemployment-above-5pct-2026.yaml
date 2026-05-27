@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-unemployment-above-5pct-2026
+schema_version: 1
+concept_slug: us-unemployment-2026
+name: 'Probability: US unemployment above 5pct in 2026 (Kalshi)'
+description: Kalshi probability unemployment exceeds 5 percent in 2026.
+value: 0.266
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.26
+  - 0.272
+  basis: Kalshi bid-ask spread (KXU3MAX-27-5)
+source:
+  slug: kalshi-kxu3max-27-5-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXU3MAX-27-5
+  accessed: '2026-05-25'
+  snapshot_sha256: ac1afec12e4dcadcdee250286be357cc21a88f935a9dcad8082a8b4a56c68586

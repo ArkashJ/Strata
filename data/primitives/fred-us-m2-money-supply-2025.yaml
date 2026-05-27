@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: fred-us-m2-money-supply-2025
+schema_version: 1
+concept_slug: us-money-supply
+name: US M2 money supply (FRED M2SL, 2025)
+description: Seasonally adjusted M2 money stock via FRED. Billions of dollars.
+value: 21548.1
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-m2sl-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/M2SL
+  accessed: '2026-05-25'
+  snapshot_sha256: 45c5d36255440bb20578244a256a7043d9e73537d353ce663d1ec430b9685fe6

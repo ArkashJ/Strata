@@ -1,0 +1,8 @@
+kind: source_registry
+slug: edgar-1018724-revenuefromcontractwithcustomerexcludingassessedtax-cy2023
+tier: regulator
+url: https://data.sec.gov/api/xbrl/companyconcept/CIK0001018724/us-gaap/RevenueFromContractWithCustomerExcludingAssessedTax.json
+accessed: '2026-05-25'
+snapshot_sha256: 802b1dc58370ab1b28bcb3569cc738f240f3ca924263218da33995732f4fdf90
+description: SEC EDGAR RevenueFromContractWithCustomerExcludingAssessedTax for CIK
+  1018724, 2023 data.

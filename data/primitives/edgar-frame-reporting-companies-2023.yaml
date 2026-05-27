@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: edgar-frame-reporting-companies-2023
+schema_version: 1
+concept_slug: us-public-companies
+name: US companies reporting revenue (EDGAR XBRL frames, CY2023)
+description: Aggregated Revenues from SEC EDGAR XBRL frames for CY2023.
+value: 2666.0
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-frame-unknown-count
+  tier: regulator
+  url: https://data.sec.gov/api/xbrl/frames/us-gaap/Revenues/USD/CY2023.json
+  accessed: '2026-05-25'
+  snapshot_sha256: 0acbe7467a7d64af38e6cb354c22cfd49dc3fd83994bc21b1c6c76046fb7fde4

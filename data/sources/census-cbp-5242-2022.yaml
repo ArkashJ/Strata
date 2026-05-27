@@ -1,0 +1,8 @@
+kind: source_registry
+slug: census-cbp-5242-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: a27225f309885121136cd1644d5978ad754967916833cd0f3080f641cfa7d58d
+description: Census CBP NAICS 5242 (Agencies, brokerages, and other insurance related
+  activities), 2022 data.

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5221-establishments-2022
+schema_version: 1
+concept_slug: us-depository-credit-intermediation
+name: US Depository credit intermediation establishments (Census CBP 2022)
+description: Census County Business Patterns establishments for NAICS 5221.
+value: 109816
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5221-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: 34d801628969906e9fb35ad3fd775e4b9f903e9f596e5b838b0e4420c1a03db6

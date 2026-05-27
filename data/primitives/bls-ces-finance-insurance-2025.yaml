@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: bls-ces-finance-insurance-2025
+schema_version: 1
+concept_slug: payments-platform
+name: US Finance/insurance employment (CES), thousands (BLS CES 2025)
+description: BLS Current Employment Statistics, seasonally adjusted.
+value: 6734.2
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-12-28'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: bls-ces5552000001-2025
+  tier: regulator
+  url: https://www.bls.gov/ces/
+  accessed: '2026-05-25'
+  snapshot_sha256: f28d519bc944d7ac1c052e1b16b3be86c1ddc7ffb53f40c347c18bd87f65b748

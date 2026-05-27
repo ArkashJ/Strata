@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxbtcmaxy-26dec31-prob
+schema_version: 1
+concept_slug: crypto-markets-2026
+name: How high will Bitcoin get in 2026? (Kalshi, top market)
+description: 'Kalshi prediction market: How high will Bitcoin get in 2026?. Event
+  KXBTCMAXY-26DEC31, market KXBTCMAXY-26DEC31-99999.99. Category: Crypto.'
+value: 0.385
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.38
+  - 0.39
+  basis: Kalshi bid-ask spread (KXBTCMAXY-26DEC31-99999.99)
+source:
+  slug: kalshi-kxbtcmaxy-26dec31-99999-99-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBTCMAXY-26DEC31-99999.99
+  accessed: '2026-05-25'
+  snapshot_sha256: 245574637a11c6e6e90dd95d9cb14aee4d538d95035b5183d5172f209c20c7a0

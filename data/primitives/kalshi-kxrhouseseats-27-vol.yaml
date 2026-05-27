@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxrhouseseats-27-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: How many House seats will Republicans hold after the Midterms?'
+description: 'Cumulative trading volume on Kalshi market for: How many House seats
+  will Republicans hold after the Midterms?.'
+value: 305217.76
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxrhouseseats-27-193-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXRHOUSESEATS-27-193
+  accessed: '2026-05-25'
+  snapshot_sha256: ba5f619647fe5d6521acdfb7c22d85b16dbd76e979385aa803ea4fb230400331

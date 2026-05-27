@@ -1,0 +1,7 @@
+kind: source_registry
+slug: census-cbp-5221-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: 34d801628969906e9fb35ad3fd775e4b9f903e9f596e5b838b0e4420c1a03db6
+description: Census CBP NAICS 5221 (Depository credit intermediation), 2022 data.

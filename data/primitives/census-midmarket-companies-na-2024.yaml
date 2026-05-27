@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: census-midmarket-companies-na-2024
+schema_version: 1
+concept_slug: midmarket-saas-spend-na
+name: "North American midmarket companies 100-999 employees (Census SUSB, 2024)"
+description: >
+  US Census Bureau Statistics of US Businesses (SUSB) 2024 — employer
+  firm count in the 100–999 employee size class, used as the North American
+  midmarket company universe for SaaS spend sizing. Includes all NAICS
+  industries; excludes sole proprietors and firms with fewer than 100 employees.
+
+value: 200000
+unit:
+  kind: stock
+  dimension: organizations
+
+as_of: 2024-12-31
+
+geo:
+  level: country
+  codes: ["US"]
+geo_perspective: demand
+
+distribution_shape: normal
+delivery_mode: "n/a"
+
+source:
+  slug: census-susb-2024
+  tier: regulator
+  url: "https://www.census.gov/programs-surveys/susb.html"
+  accessed: 2026-05-22
+  snapshot_sha256: "e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8e5f6a7b8"

@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-ny-gdp-mktp-cd-in-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
+accessed: '2026-05-25'
+snapshot_sha256: 0f29853ad0a098b94592d095ed969b5ad8246d707d2bf66775f08b7706c06304
+description: World Bank NY.GDP.MKTP.CD for India, 2023 data.

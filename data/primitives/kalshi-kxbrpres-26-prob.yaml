@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxbrpres-26-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Brazil Presidential election winner? (Kalshi, top market)
+description: 'Kalshi prediction market: Brazil Presidential election winner?. Event
+  KXBRPRES-26, market KXBRPRES-26-FBOL. Category: Elections.'
+value: 0.31
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.3
+  - 0.32
+  basis: Kalshi bid-ask spread (KXBRPRES-26-FBOL)
+source:
+  slug: kalshi-kxbrpres-26-fbol-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBRPRES-26-FBOL
+  accessed: '2026-05-25'
+  snapshot_sha256: fb3721d726939bc94cb81eb96563288998e90f200bb9ae47255cf5781951c6d1

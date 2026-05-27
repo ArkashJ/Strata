@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: wb-us-unemployment-rate-2023
+schema_version: 1
+concept_slug: us-labor-market
+name: US unemployment rate ILO estimate (World Bank, 2023)
+description: World Bank Open Data SL.UEM.TOTL.ZS for US.
+value: 3.638
+unit:
+  kind: intensive
+  dimension: percent
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sl-uem-totl-zs-us-2023
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/SL.UEM.TOTL.ZS
+  accessed: '2026-05-25'
+  snapshot_sha256: a7bd1f3c77d639d2b04413c899e0a8b57fd41955157c5aa9f1ba8e73cfbee321

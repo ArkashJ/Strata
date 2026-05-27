@@ -1,0 +1,7 @@
+kind: source_registry
+slug: edgar-796343-revenues-cy2023
+tier: regulator
+url: https://data.sec.gov/api/xbrl/companyconcept/CIK0000796343/us-gaap/Revenues.json
+accessed: '2026-05-25'
+snapshot_sha256: 5c04f5bde39c525be650802016d3bb96b9b7fd23b14d20aff0d194b9af37ee48
+description: SEC EDGAR Revenues for CIK 796343, 2023 data.

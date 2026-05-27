@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-unemployment-2026-volume
+schema_version: 1
+concept_slug: us-unemployment-2026
+name: 'Kalshi volume: unemployment'
+description: Volume on unemployment market.
+value: 305819.99
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxu3max-27-5-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXU3MAX-27-5
+  accessed: '2026-05-25'
+  snapshot_sha256: ac1afec12e4dcadcdee250286be357cc21a88f935a9dcad8082a8b4a56c68586

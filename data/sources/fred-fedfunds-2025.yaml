@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-fedfunds-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/FEDFUNDS
+accessed: '2026-05-25'
+snapshot_sha256: 56e91ae5d93e374d386ca573843edddb818273d5ffccb8be64647b30d3f14080
+description: FRED series FEDFUNDS, 2025 data.

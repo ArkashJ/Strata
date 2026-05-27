@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxgovtshutlength-26feb07-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: How long will the government shutdown last?'
+description: 'Cumulative trading volume on Kalshi market for: How long will the government
+  shutdown last?.'
+value: 2921147.0
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxgovtshutlength-26feb07-g50-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGOVTSHUTLENGTH-26FEB07-G50
+  accessed: '2026-05-25'
+  snapshot_sha256: af1d1cfc7057e1cb4e735c7920d4a46b6a335a2877b48f9ab45beb8018e67e1c

@@ -1,0 +1,7 @@
+kind: source_registry
+slug: census-cbp-5611-2022
+tier: regulator
+url: https://api.census.gov/data/2022/cbp
+accessed: '2026-05-25'
+snapshot_sha256: 3ac04749d22234d0f25d98ed1ecf873e0ef7a5013bc089779aa511b9b24a106e
+description: Census CBP NAICS 5611 (Office administrative services), 2022 data.

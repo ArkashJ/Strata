@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-ny-gdp-mktp-cd-us-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD
+accessed: '2026-05-25'
+snapshot_sha256: 23e4a5c87c1edeeeb4643efe0c9f1a88eb14869589f8226d407330616ac8fede
+description: World Bank NY.GDP.MKTP.CD for United States, 2023 data.

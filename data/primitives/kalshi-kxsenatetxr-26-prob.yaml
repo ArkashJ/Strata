@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxsenatetxr-26-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Texas Republican Senate nominee? (Kalshi, top market)
+description: 'Kalshi prediction market: Texas Republican Senate nominee?. Event KXSENATETXR-26,
+  market KXSENATETXR-26-KP. Category: Elections.'
+value: 0.9525
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.952
+  - 0.953
+  basis: Kalshi bid-ask spread (KXSENATETXR-26-KP)
+source:
+  slug: kalshi-kxsenatetxr-26-kp-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXSENATETXR-26-KP
+  accessed: '2026-05-25'
+  snapshot_sha256: 982972f7d33b7cab961654ad77ecdfa667e072ff1a1ff7428d3dd601bda72fb7

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxredistricting-26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Which states will redistrict before the midterms?'
+description: 'Cumulative trading volume on Kalshi market for: Which states will redistrict
+  before the midterms?.'
+value: 565644.77
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxredistricting-26-vir-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXREDISTRICTING-26-VIR
+  accessed: '2026-05-25'
+  snapshot_sha256: 14263a5df8ebba58dc4c1f20f55682d3ffcaf3a6a7cb3ff4d067ea5723eb819e

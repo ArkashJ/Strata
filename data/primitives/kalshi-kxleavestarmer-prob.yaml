@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxleavestarmer-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Keir Starmer departure announced? (Kalshi, top market)
+description: 'Kalshi prediction market: Keir Starmer departure announced?. Event KXLEAVESTARMER,
+  market KXLEAVESTARMER-26JUL01. Category: Politics.'
+value: 0.285
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.28
+  - 0.29
+  basis: Kalshi bid-ask spread (KXLEAVESTARMER-26JUL01)
+source:
+  slug: kalshi-kxleavestarmer-26jul01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXLEAVESTARMER-26JUL01
+  accessed: '2026-05-25'
+  snapshot_sha256: 280d74e810ea1ce9b4b0b0d93568eaa05b025c7c9ba859ff782bf1dfea99d8cd

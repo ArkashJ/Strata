@@ -1,0 +1,7 @@
+kind: source_registry
+slug: edgar-1403161-revenues-cy2020
+tier: regulator
+url: https://data.sec.gov/api/xbrl/companyconcept/CIK0001403161/us-gaap/Revenues.json
+accessed: '2026-05-25'
+snapshot_sha256: 51ddd768e0818c1d071fc7294beec04442cf9b98bfa9ca3d17a5aee708850b7f
+description: SEC EDGAR Revenues for CIK 1403161, 2023 data.

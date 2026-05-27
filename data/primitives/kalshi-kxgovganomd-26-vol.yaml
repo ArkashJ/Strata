@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxgovganomd-26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Georgia Democratic Governor nominee?'
+description: 'Cumulative trading volume on Kalshi market for: Georgia Democratic Governor
+  nominee?.'
+value: 910902.35
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxgovganomd-26-mt-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGOVGANOMD-26-MT
+  accessed: '2026-05-25'
+  snapshot_sha256: 5d6772668dc5c6ccbd23bd12d28f09f847540284f6fbf95c288ce1e3526dade3

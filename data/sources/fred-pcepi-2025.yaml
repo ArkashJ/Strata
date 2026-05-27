@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-pcepi-2025
+tier: regulator
+url: https://fred.stlouisfed.org/series/PCEPI
+accessed: '2026-05-25'
+snapshot_sha256: e7e22e33f93a07c6c6e1c812207994292cfabc0753ff83a19932949a96552e8a
+description: FRED series PCEPI, 2025 data.

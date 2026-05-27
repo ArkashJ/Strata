@@ -1,0 +1,10 @@
+kind: source_registry
+slug: mckinsey-digital-2024
+tier: analyst
+url: "https://www.mckinsey.com/capabilities/mckinsey-digital"
+accessed: 2026-05-22
+snapshot_sha256: "d0e1f2a3d0e1f2a3d0e1f2a3d0e1f2a3d0e1f2a3d0e1f2a3d0e1f2a3d0e1f2a3"
+description: >
+  McKinsey Digital 2024 research — enterprise workplace-software
+  consolidation capture rate: share of dispersed point-solution spend
+  that migrates to unified suites within a planning horizon.

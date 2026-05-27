@@ -1,0 +1,31 @@
+kind: atomic_primitive
+slug: kalshi-kxtxsendprimarymov-26mar03-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Texas Senate Democratic primary margin of victory? (Kalshi, top market)
+description: 'Kalshi prediction market: Texas Senate Democratic primary margin of
+  victory?. Event KXTXSENDPRIMARYMOV-26MAR03, market KXTXSENDPRIMARYMOV-26MAR03-JTAL-P4.
+  Category: Elections.'
+value: 0.01
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 0.02
+  basis: Kalshi bid-ask spread (KXTXSENDPRIMARYMOV-26MAR03-JTAL-P4)
+source:
+  slug: kalshi-kxtxsendprimarymov-26mar03-jtal-p4-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXTXSENDPRIMARYMOV-26MAR03-JTAL-P4
+  accessed: '2026-05-25'
+  snapshot_sha256: 868ce7479e69d352e520f50ed721093aeb3494bec2d50a6a4ad8077c53c369a9

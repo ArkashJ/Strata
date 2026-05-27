@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-controlh-2026-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Which party will win the U.S. House?'
+description: 'Cumulative trading volume on Kalshi market for: Which party will win
+  the U.S. House?.'
+value: 7714127.85
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-controlh-2026-r-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/CONTROLH-2026-R
+  accessed: '2026-05-25'
+  snapshot_sha256: cbd0982424d31ad4d37cf11b5c6a3870e312717295237da39dd3f8308c483dd2

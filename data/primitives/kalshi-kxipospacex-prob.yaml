@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxipospacex-prob
+schema_version: 1
+concept_slug: macro-economics-2026
+name: When will SpaceX officially announce an IPO? (Kalshi, top market)
+description: 'Kalshi prediction market: When will SpaceX officially announce an IPO?.
+  Event KXIPOSPACEX, market KXIPOSPACEX-26JUN01. Category: Economics.'
+value: 0.025
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.02
+  - 0.03
+  basis: Kalshi bid-ask spread (KXIPOSPACEX-26JUN01)
+source:
+  slug: kalshi-kxipospacex-26jun01-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXIPOSPACEX-26JUN01
+  accessed: '2026-05-25'
+  snapshot_sha256: 491412b5b9ce12d8f891a92bf2db7c6c92d99fcc5c8dd6ab44cca37aec0135c5

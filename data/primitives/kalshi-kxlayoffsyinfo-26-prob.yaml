@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxlayoffsyinfo-26-prob
+schema_version: 1
+concept_slug: macro-economics-2026
+name: "More tech layoffs in 20\u200B26 than in 2025? (Kalshi, top market)"
+description: "Kalshi prediction market: More tech layoffs in 20\u200B26 than in 2025?.\
+  \ Event KXLAYOFFSYINFO-26, market KXLAYOFFSYINFO-26-494000. Category: Economics."
+value: 0.9055
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.901
+  - 0.91
+  basis: Kalshi bid-ask spread (KXLAYOFFSYINFO-26-494000)
+source:
+  slug: kalshi-kxlayoffsyinfo-26-494000-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXLAYOFFSYINFO-26-494000
+  accessed: '2026-05-25'
+  snapshot_sha256: daecabc598238297ab14dfbc31ec8ccbeb6daab94708e3ca2a420bf3463183fd

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxfedchairconfirm-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: Who will be confirmed as Fed chair?'
+description: 'Cumulative trading volume on Kalshi market for: Who will be confirmed
+  as Fed chair?.'
+value: 6644571.9
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxfedchairconfirm-jshe-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXFEDCHAIRCONFIRM-JSHE
+  accessed: '2026-05-25'
+  snapshot_sha256: a2010ecad6d9b4e79ad964ec87de0f84ad080c2e31591dda87e70850937ab965

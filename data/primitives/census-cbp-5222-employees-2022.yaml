@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: census-cbp-5222-employees-2022
+schema_version: 1
+concept_slug: us-nondepository-credit-intermediation
+name: US Nondepository credit intermediation employees (Census CBP 2022)
+description: Census County Business Patterns employees for NAICS 5222.
+value: 686560
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-cbp-5222-2022
+  tier: regulator
+  url: https://api.census.gov/data/2022/cbp
+  accessed: '2026-05-25'
+  snapshot_sha256: c3595b98edf4f508cfe9465b4830f37ef159f7b8685aff7e4f9efbd14e94ec1d

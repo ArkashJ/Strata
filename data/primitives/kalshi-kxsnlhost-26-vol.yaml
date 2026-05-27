@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxsnlhost-26-vol
+schema_version: 1
+concept_slug: media-entertainment-2026
+name: 'Kalshi volume: Who will host Saturday Night Live Season 51?'
+description: 'Cumulative trading volume on Kalshi market for: Who will host Saturday
+  Night Live Season 51?.'
+value: 279453.45
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxsnlhost-26-ann-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXSNLHOST-26-ANN
+  accessed: '2026-05-25'
+  snapshot_sha256: f91f9ecf1e715f93c5dacfe80aea65c51b06f84ac7fa03a33ad3f41c63fac7f1

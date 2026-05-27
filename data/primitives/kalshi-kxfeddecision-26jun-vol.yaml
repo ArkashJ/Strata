@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxfeddecision-26jun-vol
+schema_version: 1
+concept_slug: macro-economics-2026
+name: 'Kalshi volume: Fed decision in Jun 2026?'
+description: 'Cumulative trading volume on Kalshi market for: Fed decision in Jun
+  2026?.'
+value: 2833353.1
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxfeddecision-26jun-c25-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXFEDDECISION-26JUN-C25
+  accessed: '2026-05-25'
+  snapshot_sha256: d3d4107b0e0853868646a766f81398e214dac5da9a7ffbc0278bb63232ce7f4d

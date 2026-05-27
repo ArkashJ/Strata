@@ -1,0 +1,7 @@
+kind: source_registry
+slug: fred-bogz1fl073164003q-2024
+tier: regulator
+url: https://fred.stlouisfed.org/series/BOGZ1FL073164003Q
+accessed: '2026-05-25'
+snapshot_sha256: df4afd7e9f32d959c07850e60d3261cc499af72eced2bfd44d7abc0354202585
+description: FRED series BOGZ1FL073164003Q, 2024 data.

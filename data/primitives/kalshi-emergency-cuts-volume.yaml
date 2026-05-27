@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: kalshi-emergency-cuts-volume
+schema_version: 1
+concept_slug: us-monetary-policy-2026
+name: 'Kalshi volume: emergency cuts'
+description: Volume on emergency cuts market.
+value: 154577.39
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxemercuts-26-t0-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXEMERCUTS-26-T0
+  accessed: '2026-05-25'
+  snapshot_sha256: c0b6c22abbe510f357784cde0363ed161f62e76c90562015e0d722227b18aa2e

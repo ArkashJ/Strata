@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxgovca-26-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: California Governor winner? (Kalshi, top market)
+description: 'Kalshi prediction market: California Governor winner?. Event KXGOVCA-26,
+  market KXGOVCA-26-MMAH. Category: Elections.'
+value: 0.007
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.004
+  - 0.01
+  basis: Kalshi bid-ask spread (KXGOVCA-26-MMAH)
+source:
+  slug: kalshi-kxgovca-26-mmah-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGOVCA-26-MMAH
+  accessed: '2026-05-25'
+  snapshot_sha256: aff842baf8cc70cefd747059a92ba0dc7b1375e196df7b100e0e5f4f9f7bb891

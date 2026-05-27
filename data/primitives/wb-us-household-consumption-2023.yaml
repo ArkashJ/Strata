@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: wb-us-household-consumption-2023
+schema_version: 1
+concept_slug: us-consumer-spending
+name: US household final consumption (World Bank, 2023)
+description: World Bank Open Data NE.CON.PRVT.CD for US.
+value: 17511745000000.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-ne-con-prvt-cd-us-2022
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/NE.CON.PRVT.CD
+  accessed: '2026-05-25'
+  snapshot_sha256: 820251ea431d9b3f834e1e50061419525fb1ee276ce36aee7bcd8a563f626c25

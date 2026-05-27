@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: fred-total-vehicle-sales-2025
+schema_version: 1
+concept_slug: us-consumer-spending
+name: US total vehicle sales (FRED TOTALSA, 2025)
+description: Total light vehicle sales, millions of units annualized.
+value: 15.95
+unit:
+  kind: flow
+  dimension: transactions
+  denominator: per-year
+as_of: '2025-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-totalsa-2025
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/TOTALSA
+  accessed: '2026-05-25'
+  snapshot_sha256: 2c0be330ce972e41fa0315517bb15be5f26c16b980283527f0fa7d8732373a66

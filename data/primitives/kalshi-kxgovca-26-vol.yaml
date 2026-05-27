@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxgovca-26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: California Governor winner?'
+description: 'Cumulative trading volume on Kalshi market for: California Governor
+  winner?.'
+value: 3324597.59
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxgovca-26-mmah-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGOVCA-26-MMAH
+  accessed: '2026-05-25'
+  snapshot_sha256: aff842baf8cc70cefd747059a92ba0dc7b1375e196df7b100e0e5f4f9f7bb891

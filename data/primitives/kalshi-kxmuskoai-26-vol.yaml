@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxmuskoai-26-vol
+schema_version: 1
+concept_slug: us-policy-2026
+name: 'Kalshi volume: Will Elon win his case against OpenAI?'
+description: 'Cumulative trading volume on Kalshi market for: Will Elon win his case
+  against OpenAI?.'
+value: 1330988.49
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxmuskoai-26-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXMUSKOAI-26
+  accessed: '2026-05-25'
+  snapshot_sha256: 87d2fde74d2e635655e1ccd83f531add0836870310315dafd95cf2a944148eb5

@@ -1,0 +1,10 @@
+kind: source_registry
+slug: gartner-dev-tools-2024
+tier: analyst
+url: "https://www.gartner.com/en/information-technology"
+accessed: 2026-05-22
+snapshot_sha256: "f2a3b4c5f2a3b4c5f2a3b4c5f2a3b4c5f2a3b4c5f2a3b4c5f2a3b4c5f2a3b4c5"
+description: >
+  Gartner IT research 2024 — annual revenue-per-user (ARPU) benchmark for
+  developer tooling, covering AI-assisted coding, automated testing, and
+  workflow-optimization products sold to US software engineers.

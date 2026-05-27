@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxbtc2026200-27jan01-prob
+schema_version: 1
+concept_slug: crypto-markets-2026
+name: Will Bitcoin be above $200k by 2027? (Kalshi, top market)
+description: 'Kalshi prediction market: Will Bitcoin be above $200k by 2027?. Event
+  KXBTC2026200-27JAN01, market KXBTC2026200-27JAN01-200000. Category: Crypto.'
+value: 0.065
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.06
+  - 0.07
+  basis: Kalshi bid-ask spread (KXBTC2026200-27JAN01-200000)
+source:
+  slug: kalshi-kxbtc2026200-27jan01-200000-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXBTC2026200-27JAN01-200000
+  accessed: '2026-05-25'
+  snapshot_sha256: 48ae6be1dd12d7be01d863d8a2a7b142060c96cce803f6684079d703a53d3fcd

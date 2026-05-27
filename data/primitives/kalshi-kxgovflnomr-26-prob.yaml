@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxgovflnomr-26-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Florida Republican Governor nominee? (Kalshi, top market)
+description: 'Kalshi prediction market: Florida Republican Governor nominee?. Event
+  KXGOVFLNOMR-26, market KXGOVFLNOMR-26-JFIS. Category: Elections.'
+value: 0.0835
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.083
+  - 0.084
+  basis: Kalshi bid-ask spread (KXGOVFLNOMR-26-JFIS)
+source:
+  slug: kalshi-kxgovflnomr-26-jfis-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGOVFLNOMR-26-JFIS
+  accessed: '2026-05-25'
+  snapshot_sha256: 47b4366bfaed36c39118712357571eeec74f20dd06cf6b381ac4faf3866cb1c5

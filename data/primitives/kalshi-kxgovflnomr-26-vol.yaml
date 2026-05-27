@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxgovflnomr-26-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Florida Republican Governor nominee?'
+description: 'Cumulative trading volume on Kalshi market for: Florida Republican Governor
+  nominee?.'
+value: 3517037.8
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxgovflnomr-26-jfis-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGOVFLNOMR-26-JFIS
+  accessed: '2026-05-25'
+  snapshot_sha256: 47b4366bfaed36c39118712357571eeec74f20dd06cf6b381ac4faf3866cb1c5

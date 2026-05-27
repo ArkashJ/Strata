@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: kalshi-eth-year-end-price-signal
+schema_version: 1
+concept_slug: ethereum-ecosystem-2026
+name: ETH year-end price signal (top bracket, Kalshi)
+description: Kalshi implied probability for ETH year-end price bracket.
+value: 0.0905
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.082
+  - 0.099
+  basis: Kalshi bid-ask spread (KXETHY-27JAN0100-B2375)
+source:
+  slug: kalshi-kxethy-27jan0100-b2375-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXETHY-27JAN0100-B2375
+  accessed: '2026-05-25'
+  snapshot_sha256: 78447e1bc0ea6a7be7eb1e52f05c4a047589cbbcc6af13b2c397ff89b49b6668

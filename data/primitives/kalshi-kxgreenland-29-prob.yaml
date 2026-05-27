@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxgreenland-29-prob
+schema_version: 1
+concept_slug: us-policy-2026
+name: Will Trump buy at least part of Greenland? (Kalshi, top market)
+description: 'Kalshi prediction market: Will Trump buy at least part of Greenland?.
+  Event KXGREENLAND-29, market KXGREENLAND-29. Category: Politics.'
+value: 0.265
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.25
+  - 0.28
+  basis: Kalshi bid-ask spread (KXGREENLAND-29)
+source:
+  slug: kalshi-kxgreenland-29-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGREENLAND-29
+  accessed: '2026-05-25'
+  snapshot_sha256: 31b314c92cde2342a5c017cae464d7d8befb0d9348ee15f1844235854d4483d7

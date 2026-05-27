@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: kalshi-kxgovohnomr-26-prob
+schema_version: 1
+concept_slug: us-elections-2026
+name: Ohio Republican Governor nominee? (Kalshi, top market)
+description: 'Kalshi prediction market: Ohio Republican Governor nominee?. Event KXGOVOHNOMR-26,
+  market KXGOVOHNOMR-26-CPUT. Category: Elections.'
+value: 0.002
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: uniform
+delivery_mode: n/a
+uncertainty:
+  range:
+  - 0.0
+  - 0.001
+  basis: Kalshi bid-ask spread (KXGOVOHNOMR-26-CPUT)
+source:
+  slug: kalshi-kxgovohnomr-26-cput-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXGOVOHNOMR-26-CPUT
+  accessed: '2026-05-25'
+  snapshot_sha256: c2a092363c780b9e7587926b039a1c0a02493034b7bfe7e0cb8538d2acea1cda

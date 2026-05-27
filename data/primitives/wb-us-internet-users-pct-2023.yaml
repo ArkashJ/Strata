@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: wb-us-internet-users-pct-2023
+schema_version: 1
+concept_slug: us-digital-adoption
+name: US internet users % (World Bank, 2023)
+description: World Bank Open Data IT.NET.USER.ZS for US.
+value: 93.52559662
+unit:
+  kind: intensive
+  dimension: percent
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-it-net-user-zs-us-2023
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/IT.NET.USER.ZS
+  accessed: '2026-05-25'
+  snapshot_sha256: ac82052f8ce3afa499bdef0bf14a464dc80107a9961083d6a4ff3e801c67c05b

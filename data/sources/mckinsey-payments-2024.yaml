@@ -1,0 +1,10 @@
+kind: source_registry
+slug: mckinsey-payments-2024
+tier: analyst
+url: "https://www.mckinsey.com/industries/financial-services/our-insights"
+accessed: 2026-05-22
+snapshot_sha256: "b8c9d0e1b8c9d0e1b8c9d0e1b8c9d0e1b8c9d0e1b8c9d0e1b8c9d0e1b8c9d0e1"
+description: >
+  McKinsey Global Payments 2024 report — insurance payment-processing
+  take-rate benchmark (basis-point revenue yield on gross premium throughput)
+  for digital-first payment rails in US P&C.

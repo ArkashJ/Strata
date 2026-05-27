@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: kalshi-kxnexthungarypm-26may01-vol
+schema_version: 1
+concept_slug: us-elections-2026
+name: 'Kalshi volume: Prime Minister of Hungary after the 2026 election?'
+description: 'Cumulative trading volume on Kalshi market for: Prime Minister of Hungary
+  after the 2026 election?.'
+value: 2108665.92
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2026-05-25'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: power_law
+delivery_mode: n/a
+source:
+  slug: kalshi-vol-kxnexthungarypm-26may01-vorb-2026-05-25
+  tier: prediction_market
+  url: https://kalshi.com/markets/KXNEXTHUNGARYPM-26MAY01-VORB
+  accessed: '2026-05-25'
+  snapshot_sha256: 40e17ba26f640a90d69958985cbd34443bd2a2659fdac39cfa592c5b4ec1981e

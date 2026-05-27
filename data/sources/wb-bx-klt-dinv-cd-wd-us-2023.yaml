@@ -1,0 +1,7 @@
+kind: source_registry
+slug: wb-bx-klt-dinv-cd-wd-us-2023
+tier: aggregator
+url: https://data.worldbank.org/indicator/BX.KLT.DINV.CD.WD
+accessed: '2026-05-25'
+snapshot_sha256: b0854b682fe34516a8821cf0b2ff60d09eb5b25f65667069244b67fb194a667f
+description: World Bank BX.KLT.DINV.CD.WD for United States, 2023 data.
