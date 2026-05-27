@@ -17,7 +17,6 @@ import pytest
 from strata.connectors.bls import (
     BLSClient,
     BLSClientError,
-    BLSResponse,
     BLSStatus,
     DataPoint,
     Series,
@@ -25,6 +24,33 @@ from strata.connectors.bls import (
     _parse_data_point,
     series_to_primitive_yaml,
     series_to_source_yaml,
+)
+from strata.connectors.census import (
+    CensusClient,
+    CensusClientError,
+    CensusDataset,
+    CensusNAICS,
+    FirmRecord,
+    IndustryRecord,
+    _rows_to_dicts,
+    _safe_int,
+    firm_to_primitive_yaml,
+    firm_to_source_yaml,
+    industry_to_primitive_yaml,
+    industry_to_source_yaml,
+)
+from strata.connectors.edgar import (
+    CompanyConcept,
+    EDGARClient,
+    EDGARClientError,
+    Fact,
+    FrameEntry,
+    _parse_company_info,
+    _parse_fact,
+    _parse_frame_entries,
+    concept_to_primitive_yaml,
+    concept_to_source_yaml,
+    frame_to_primitive_yaml,
 )
 from strata.connectors.fred import (
     FREDClient,
@@ -37,36 +63,6 @@ from strata.connectors.fred import (
     observations_to_primitive_yaml,
     observations_to_source_yaml,
 )
-from strata.connectors.census import (
-    CensusClient,
-    CensusClientError,
-    CensusDataset,
-    CensusNAICS,
-    IndustryRecord,
-    FirmRecord,
-    _safe_int,
-    _rows_to_dicts,
-    industry_to_primitive_yaml,
-    industry_to_source_yaml,
-    firm_to_primitive_yaml,
-    firm_to_source_yaml,
-)
-from strata.connectors.edgar import (
-    EDGARClient,
-    EDGARClientError,
-    Fact,
-    CompanyConcept,
-    CompanyInfo,
-    Filing,
-    FrameEntry,
-    _parse_fact,
-    _parse_company_info,
-    _parse_frame_entries,
-    concept_to_primitive_yaml,
-    concept_to_source_yaml,
-    frame_to_primitive_yaml,
-)
-
 
 # ═══════════════════════════════════════════════════════════════════
 # BLS connector tests
@@ -746,7 +742,7 @@ class TestDiskCache:
         cache.put("fred-test", data)
         result = cache.get("fred-test")
         assert result is not None
-        cached_data, age = result
+        cached_data, _age = result
         assert "observations" in cached_data
 
     def test_census_cache_roundtrip(self, tmp_path: Path) -> None:
@@ -757,7 +753,7 @@ class TestDiskCache:
         cache.put("census-test", data)
         result = cache.get("census-test")
         assert result is not None
-        cached_data, age = result
+        cached_data, _age = result
         assert len(cached_data) == 2
 
     def test_edgar_cache_roundtrip(self, tmp_path: Path) -> None:
@@ -768,7 +764,7 @@ class TestDiskCache:
         cache.put("edgar-test", data)
         result = cache.get("edgar-test")
         assert result is not None
-        cached_data, age = result
+        cached_data, _age = result
         assert cached_data["entityName"] == "Apple"
 
 
@@ -998,12 +994,10 @@ class TestYAMLOutputConsistency:
 from strata.connectors.oecd import (
     OECDClient,
     OECDClientError,
-    OECDObservation,
-    OECDResponse,
-    OECDDataflowInfo,
-    OECDFrequency,
     OECDCountry,
     OECDDataflow,
+    OECDFrequency,
+    OECDObservation,
     _parse_data_message,
     _parse_dataflow_list,
     _safe_lookup,
@@ -1238,14 +1232,13 @@ class TestOECDConverters:
 from strata.connectors.eurostat import (
     EurostatClient,
     EurostatClientError,
-    EurostatObservation,
-    EurostatResponse,
     EurostatCountry,
     EurostatDataset,
     EurostatFrequency,
-    _parse_observations,
-    _parse_json_stat_response,
+    EurostatObservation,
     _extract_dimension_values,
+    _parse_json_stat_response,
+    _parse_observations,
     observation_to_primitive_yaml,
     observation_to_source_yaml,
 )
@@ -1416,13 +1409,12 @@ class TestEurostatConverters:
 from strata.connectors.comtrade import (
     ComtradeClient,
     ComtradeClientError,
-    ComtradeResponse,
-    TradeRecord,
     ComtradeFlowCode,
-    ComtradeReporter,
     ComtradeHSChapter,
-    _parse_trade_record,
+    ComtradeReporter,
+    TradeRecord,
     _parse_response,
+    _parse_trade_record,
     trade_to_primitive_yaml,
     trade_to_source_yaml,
 )
@@ -1624,19 +1616,21 @@ class TestComtradeConverters:
 
 from strata.connectors.fdic import (
     FDICClient,
-    FDICClientError,
-    FDICResponse,
-    FinancialRecord as FDICFinancialRecord,
-    InstitutionRecord as FDICInstitutionRecord,
-    FailureRecord,
+    _parse_failure,
     _parse_financial,
     _parse_institution,
-    _parse_failure,
-    _safe_float as fdic_safe_float,
-    _safe_int as fdic_safe_int,
     financial_to_primitive_yaml,
     financial_to_source_yaml,
     institution_count_to_primitive_yaml,
+)
+from strata.connectors.fdic import (
+    FinancialRecord as FDICFinancialRecord,
+)
+from strata.connectors.fdic import (
+    _safe_float as fdic_safe_float,
+)
+from strata.connectors.fdic import (
+    _safe_int as fdic_safe_int,
 )
 
 
@@ -1805,19 +1799,21 @@ class TestFDICConverters:
 
 from strata.connectors.cms import (
     CMSClient,
-    CMSClientError,
-    CMSResponse,
-    EnrollmentRecord,
-    SpendingRecord,
     CMSDataset,
     CMSState,
+    EnrollmentRecord,
+    SpendingRecord,
     _parse_enrollment,
     _parse_spending,
-    _safe_float as cms_safe_float,
-    _safe_int as cms_safe_int,
+    cms_to_source_yaml,
     enrollment_to_primitive_yaml,
     spending_to_primitive_yaml,
-    cms_to_source_yaml,
+)
+from strata.connectors.cms import (
+    _safe_float as cms_safe_float,
+)
+from strata.connectors.cms import (
+    _safe_int as cms_safe_int,
 )
 
 
@@ -1979,18 +1975,22 @@ class TestCMSConverters:
 from strata.connectors.eia import (
     EIAClient,
     EIAClientError,
-    EIAResponse,
     EIADataPoint,
-    EIASeriesMetadata,
-    EIARoute,
     EIAFrequency,
+    EIARoute,
     EIASector,
-    _parse_data_point as eia_parse_data_point,
-    _parse_data_response as eia_parse_data_response,
     _parse_metadata,
-    _safe_float as eia_safe_float,
     datapoint_to_primitive_yaml,
     datapoint_to_source_yaml,
+)
+from strata.connectors.eia import (
+    _parse_data_point as eia_parse_data_point,
+)
+from strata.connectors.eia import (
+    _parse_data_response as eia_parse_data_response,
+)
+from strata.connectors.eia import (
+    _safe_float as eia_safe_float,
 )
 
 
@@ -2167,19 +2167,24 @@ class TestEIAConverters:
 # ═══════════════════════════════════════════════════════════════════
 
 from strata.connectors.usda_nass import (
+    NASSAggLevel,
     NASSClient,
     NASSClientError,
-    NASSResponse,
-    NASSRecord,
     NASSCommodity,
-    NASSStatistic,
+    NASSRecord,
     NASSSource,
-    NASSAggLevel,
-    _parse_record as nass_parse_record,
-    _parse_value as nass_parse_value,
-    _parse_data_response as nass_parse_data_response,
+    NASSStatistic,
     record_to_primitive_yaml,
     record_to_source_yaml,
+)
+from strata.connectors.usda_nass import (
+    _parse_data_response as nass_parse_data_response,
+)
+from strata.connectors.usda_nass import (
+    _parse_record as nass_parse_record,
+)
+from strata.connectors.usda_nass import (
+    _parse_value as nass_parse_value,
 )
 
 
@@ -2361,14 +2366,11 @@ class TestNASSConverters:
 # ═══════════════════════════════════════════════════════════════════
 
 from strata.connectors.faa import (
-    FAAClient,
-    FAAClientError,
-    FAAResponse,
     Airport,
-    AirportStatus,
     AirportSummary,
-    FAAState,
     FAAAirportType,
+    FAAClient,
+    FAAState,
     _parse_airport,
     _parse_airport_status,
     _parse_feature_response,
@@ -2555,22 +2557,18 @@ class TestFAAConverters:
 # ═══════════════════════════════════════════════════════════════════
 
 from strata.connectors.openfda import (
-    OpenFDAClient,
-    FDAResponse,
-    DrugEvent,
-    DrugLabel,
-    Device510k,
-    Enforcement,
     CountResult,
+    Device510k,
     FDAEndpoint,
     FDARecallClass,
+    OpenFDAClient,
+    _parse_count_result,
+    _parse_device_510k,
     _parse_drug_event,
     _parse_drug_label,
-    _parse_device_510k,
     _parse_enforcement,
-    _parse_count_result,
-    event_count_to_primitive_yaml,
     clearance_count_to_primitive_yaml,
+    event_count_to_primitive_yaml,
     fda_to_source_yaml,
 )
 
@@ -2799,7 +2797,7 @@ class TestDiskCacheNewConnectors:
         cache.put("es-test", data)
         result = cache.get("es-test")
         assert result is not None
-        cached_data, age = result
+        cached_data, _age = result
         assert cached_data["id"] == ["geo", "time"]
 
     def test_comtrade_cache_roundtrip(self, tmp_path: Path) -> None:
@@ -2810,7 +2808,7 @@ class TestDiskCacheNewConnectors:
         cache.put("ct-test", data)
         result = cache.get("ct-test")
         assert result is not None
-        cached_data, age = result
+        cached_data, _age = result
         assert cached_data["count"] == 1
 
     def test_fdic_cache_roundtrip(self, tmp_path: Path) -> None:
@@ -2821,7 +2819,7 @@ class TestDiskCacheNewConnectors:
         cache.put("fdic-test", data)
         result = cache.get("fdic-test")
         assert result is not None
-        cached_data, age = result
+        cached_data, _age = result
         assert cached_data["meta"]["total"] == 1
 
     def test_cms_cache_roundtrip(self, tmp_path: Path) -> None:
@@ -2832,7 +2830,7 @@ class TestDiskCacheNewConnectors:
         cache.put("cms-test", data)
         result = cache.get("cms-test")
         assert result is not None
-        cached_data, age = result
+        cached_data, _age = result
         assert len(cached_data) == 1
 
     def test_eia_cache_roundtrip(self, tmp_path: Path) -> None:
@@ -2843,7 +2841,7 @@ class TestDiskCacheNewConnectors:
         cache.put("eia-test", data)
         result = cache.get("eia-test")
         assert result is not None
-        cached_data, age = result
+        cached_data, _age = result
         assert cached_data["response"]["total"] == 1
 
     def test_nass_cache_roundtrip(self, tmp_path: Path) -> None:
@@ -2854,7 +2852,7 @@ class TestDiskCacheNewConnectors:
         cache.put("nass-test", data)
         result = cache.get("nass-test")
         assert result is not None
-        cached_data, age = result
+        cached_data, _age = result
         assert "data" in cached_data
 
     def test_faa_cache_roundtrip(self, tmp_path: Path) -> None:
@@ -2865,7 +2863,7 @@ class TestDiskCacheNewConnectors:
         cache.put("faa-test", data)
         result = cache.get("faa-test")
         assert result is not None
-        cached_data, age = result
+        cached_data, _age = result
         assert cached_data["features"][0]["attributes"]["LOCID"] == "SFO"
 
     def test_openfda_cache_roundtrip(self, tmp_path: Path) -> None:
@@ -2879,7 +2877,7 @@ class TestDiskCacheNewConnectors:
         cache.put("fda-test", data)
         result = cache.get("fda-test")
         assert result is not None
-        cached_data, age = result
+        cached_data, _age = result
         assert cached_data["meta"]["results"]["total"] == 100
 
 
