@@ -44,14 +44,14 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   multipliers, 5 frameworks with 30 variants, 87 sources. All validate clean.
 - **Portfolios (`portfolios/`):** sibling directory to `data/` holding
   portfolio catalogs the TAM pipeline consumes. One file at v0.2
-  (`portfolios/benmore-tam-77.yaml`); add a new YAML here per fund / strategy
+  (`portfolios/tam-77-sample.yaml`); add a new YAML here per fund / strategy
   desk. Kept outside `data/` so the registry loader does not try to parse
   them as records.
 - **TAM-77 pipeline:** `backend/scripts/tam_77_pipeline.py` is the
   portfolio-agnostic Claude-driven classifier that threads each company
   through the primitive/framework/evaluator DAG and writes YAML artifacts.
   Pattern documented in `docs/12-portfolio-tam-pipeline-howto.md`; outputs
-  for the Benmore 24 in `docs/tam-77-corrected.md`.
+  for the TAM-77 sample portfolio in `docs/tam-77-corrected.md`.
 - **Tests:** 310 passing in `backend/tests/` (including 6 v2 acceptance
   tests in `test_tam_v2_acceptance.py`, 7 /resolve SSE tests, 168
   connector tests).

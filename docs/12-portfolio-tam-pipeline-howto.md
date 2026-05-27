@@ -5,7 +5,7 @@ This guide describes the reusable pattern for sizing a portfolio of companies
 companies) using Strata's primitive/framework/evaluator DAG and a Claude-
 driven classifier.
 
-The pattern was developed for the Benmore TAM-77 deliverable (PR #44, 24
+The pattern was developed for the Strata TAM-77 deliverable (PR #44, 24
 portfolio companies) and is implemented at `backend/scripts/tam_77_pipeline.py`.
 It is intentionally portfolio-agnostic: feed it a different YAML catalog and
 get a different set of TAMs.
@@ -188,6 +188,6 @@ any portfolio run:
 - `docs/superpowers/specs/2026-05-26-tam-77-corrected-methodology.md` —
   the design spec that drove this pipeline (12 methodology errors and the
   corrected approach).
-- `docs/tam-77-corrected.md` — generated output for the Benmore 24-company
+- `docs/tam-77-corrected.md` — generated output for the TAM-77 sample
   portfolio.
-- `portfolios/benmore-tam-77.yaml` — the catalog the pipeline consumed.
+- `portfolios/tam-77-sample.yaml` — the catalog the pipeline consumed.

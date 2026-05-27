@@ -357,14 +357,14 @@ bun run test
 │   └── sources/     87 files    (citation records, SHA256-pinned)
 │
 ├── portfolios/                   Portfolio catalogs consumed by the TAM pipeline
-│   └── benmore-tam-77.yaml      (24 Benmore companies; add yours alongside)
+│   └── tam-77-sample.yaml       (24-company sample portfolio; add yours alongside)
 │
 └── docs/                         Design docs + decision records
     ├── 07-data-layer-brainstorm  Q1-Q40 schema decisions (LOAD BEARING)
     ├── 08-product-surface        U1-U12 UX decisions (LOAD BEARING)
     ├── 11-api-catalog            50+ APIs for market sizing
     ├── 12-portfolio-tam-pipeline 5-step guide to sizing any portfolio
-    ├── tam-77-corrected.md       Generated v2 TAMs for the 24 Benmore cos
+    ├── tam-77-corrected.md       Generated v2 TAMs for the 24-company sample
     ├── CLIENT_PLATFORM_GUIDE.md  Customer-facing platform walkthrough
     └── superpowers/specs/        Platform evolution + TAM methodology specs
 ```

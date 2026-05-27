@@ -10,7 +10,7 @@
 # constraints the spec calls out. Claude picks the framework, sources
 # the primitives, and the evaluator does the math.
 
-portfolio_name: "Benmore — TAM-77 (24 portfolio companies)"
+portfolio_name: "Strata TAM-77 sample portfolio (24 companies)"
 default_geo_profile_hint: "global_saas"   # fallback if Claude cannot decide
 
 companies:

@@ -699,13 +699,43 @@ class ClassificationResult:
     errors: list[str] = field(default_factory=list)
 
 
+def _fetch_exa_context(company: Company, exa: Exa | None, log: logging.Logger) -> str:
+    """Search Exa for industry context (market sizes, comps, funding). Returns a
+    text block that gets injected into Claude's classification prompt."""
+    if exa is None:
+        return ""
+    queries = [
+        f"{company.name} {company.sector} market size TAM 2024",
+        f"{company.sector} industry revenue competitors funding",
+    ]
+    snippets: list[str] = []
+    for q in queries:
+        try:
+            results = exa.search(q, type="auto", num_results=3, contents={"highlights": True})
+            for r in results.results[:2]:
+                highlights = "; ".join(r.highlights or [])[:400]
+                if highlights:
+                    snippets.append(f"[{r.title or ''}] {highlights}")
+        except Exception as exc:
+            log.warning("  exa search failed for %s: %s", q[:60], exc)
+    if not snippets:
+        return ""
+    return "EXA INDUSTRY CONTEXT:\n" + "\n".join(snippets[:4])
+
+
 def classify_with_claude(
-    company: Company, client: anthropic.Anthropic, log: logging.Logger
+    company: Company,
+    client: anthropic.Anthropic,
+    log: logging.Logger,
+    *,
+    exa_context: str = "",
 ) -> dict[str, Any]:
+    exa_block = f"\n\n{exa_context}" if exa_context else ""
     user_prompt = f"""COMPANY: {company.name}
 SECTOR: {company.sector}
 DESCRIPTION: {company.short_desc}
 METHODOLOGY NOTES FROM SPEC: {company.spec_notes}
+{exa_block}
 
 Slug for concept: {company.slug}
 
@@ -737,10 +767,12 @@ World Bank. Provide spec_target_band_usd_b so I can verify the evaluator's outpu
 def process_company(
     company: Company,
     anthropic_client: anthropic.Anthropic,
+    exa_client: Exa | None,
     dry_run: bool,
     log: logging.Logger,
 ) -> ClassificationResult:
-    classification = classify_with_claude(company, anthropic_client, log)
+    exa_context = _fetch_exa_context(company, exa_client, log)
+    classification = classify_with_claude(company, anthropic_client, log, exa_context=exa_context)
     primitives = list(classification.get("input_primitives", []))
     if len(primitives) != 2:
         return ClassificationResult(
@@ -926,7 +958,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--portfolio",
         type=str,
         default="",
-        help="Path to a portfolio YAML (see data/portfolios/benmore-tam-77.yaml). When set, the script uses that catalog instead of the in-script COMPANIES list, making the pipeline portfolio-agnostic.",
+        help="Path to a portfolio YAML (see portfolios/tam-77-sample.yaml). When set, the script uses that catalog instead of the in-script COMPANIES list, making the pipeline portfolio-agnostic.",
     )
     return p.parse_args(argv)
 
@@ -1019,12 +1051,18 @@ def main() -> int:
     log.info("Processing %d companies", len(targets))
 
     anthropic_client = anthropic.Anthropic()
-    _ = Exa(api_key=os.environ.get("EXA_API_KEY", "")) if os.environ.get("EXA_API_KEY") else None
+    exa_client: Exa | None = (
+        Exa(api_key=os.environ["EXA_API_KEY"]) if os.environ.get("EXA_API_KEY") else None
+    )
+    if exa_client is None:
+        log.warning("EXA_API_KEY not set — industry context search disabled")
 
     results: list[ClassificationResult] = []
     for company in targets:
         try:
-            results.append(process_company(company, anthropic_client, args.dry_run, log))
+            results.append(
+                process_company(company, anthropic_client, exa_client, args.dry_run, log)
+            )
         except Exception as exc:
             log.error("process_company %s crashed: %s", company.name, exc)
             results.append(
