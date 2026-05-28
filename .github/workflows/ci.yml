@@ -1,0 +1,68 @@
+# Pull-request gate for the Strata backend.
+#
+#   checkout → uv sync → lint/type/test → validate YAML → seed a throwaway
+#   Postgres service container (proves migrations + seed wire up end-to-end)
+#
+# The Postgres "service" is a disposable container spun up just for this run,
+# so seeding into it is effectively a dry run — nothing persists.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: strata
+          POSTGRES_PASSWORD: strata
+          POSTGRES_DB: strata
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U strata -d strata"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      # alembic + seed read this (see backend/alembic/env.py, config.py).
+      STRATA_DATABASE_URL: postgresql+asyncpg://strata:strata@localhost:5432/strata
+      # Keep CI hermetic: no live connector / Claude+Exa calls.
+      STRATA_OFFLINE: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Lint, type-check, format-check, test
+        run: |
+          uv run pytest
+          uv run pyright
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Validate YAML data bank
+        run: uv run strata validate ../data
+
+      - name: Migrate + seed against throwaway Postgres (dry run)
+        run: |
+          uv run alembic upgrade head
+          uv run strata db seed -d ../data
+          uv run strata db stats

@@ -41,6 +41,25 @@ class Settings(BaseSettings):
         description="Async DSN. Must use the asyncpg driver.",
     )
 
+    # SQLAlchemy connection-pool sizing. Defaults are tuned for a small
+    # single-instance deploy (Railway). Bump pool_size/max_overflow if you run
+    # more concurrent workers; lower pool_recycle if the DB drops idle conns.
+    db_pool_size: int = Field(
+        default=5, description="Persistent connections kept open in the pool."
+    )
+    db_max_overflow: int = Field(
+        default=10, description="Extra connections allowed above pool_size under load."
+    )
+    db_pool_timeout: float = Field(
+        default=30.0, description="Seconds to wait for a free connection before erroring."
+    )
+    db_pool_recycle: int = Field(
+        default=1800, description="Recycle connections older than this many seconds."
+    )
+    db_pool_pre_ping: bool = Field(
+        default=True, description="Test a connection with a ping before handing it out."
+    )
+
     cors_origins: list[str] = Field(default_factory=lambda: ["*"])
 
     data_dir: str = "data"
