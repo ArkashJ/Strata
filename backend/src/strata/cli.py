@@ -16,7 +16,7 @@ from strata.validator import validate as run_validate
 
 app = typer.Typer(
     name="strata",
-    help="Open-source community-curated market-sizing tool.",
+    help="Proprietary curated market-sizing tool.",
     no_args_is_help=True,
     add_completion=False,
 )

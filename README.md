@@ -1,11 +1,11 @@
 # Strata
 
-> **Provisional codename.** A community-curated, open-source library of market-sizing
-> primitives, frameworks, and expert annotations — rendered as an interactive pyramid
+> **Provisional codename.** A curated library of market-sizing primitives,
+> frameworks, and expert annotations — rendered as an interactive pyramid
 > graph that lets VCs and operators build credible TAMs without buying a $20k report.
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://strata-pied-three.vercel.app)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![License: Proprietary](https://img.shields.io/badge/license-proprietary-red.svg)](LICENSE)
 ![Version](https://img.shields.io/badge/version-0.3.0-informational)
 ![Status](https://img.shields.io/badge/status-beta-brightgreen)
 
@@ -33,7 +33,7 @@
 
 Market sizing today is gated by expensive low-quality reports, when in reality the
 underlying exercise is just **credible primitives + a transparent framework**. Make
-both free, sourced, and community-curated, and you eat the bottom 80% of the
+both sourced, transparent, and rigorously curated, and you eat the bottom 80% of the
 IBISWorld / Statista / Gartner-lite use case.
 
 ## What this is
@@ -428,9 +428,9 @@ bun run test
 
 ## License
 
-Apache License 2.0 — see [`LICENSE`](LICENSE). Choice of license is deliberate:
-patent-grant + permissive, so research orgs, funds, and vendors can adopt the
-schema and seed the library without fear of relicensing traps.
+Proprietary — all rights reserved. See [`LICENSE`](LICENSE). This is not
+open-source software: the source, schema, and data may not be used, copied,
+modified, or distributed without prior written permission from the owner.
 
 ## Contributing
 

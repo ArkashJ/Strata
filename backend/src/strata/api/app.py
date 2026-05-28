@@ -36,7 +36,7 @@ def create_app() -> FastAPI:
         title="Strata API",
         version=__version__,
         description=(
-            "Open-source community-curated market-sizing engine for VCs and operators.\n\n"
+            "Proprietary curated market-sizing engine for VCs and operators.\n\n"
             "**Data bank:** 307 atomic primitives from BLS, FRED, Census, EDGAR, and World Bank. "
             "All SHA256-pinned to source snapshots.\n\n"
             "**Six TAM lenses:** cost_efficiency, revenue_generation, latent_demand, "
