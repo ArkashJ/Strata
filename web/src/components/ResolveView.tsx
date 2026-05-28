@@ -48,7 +48,7 @@ interface Step {
   primitives_used?: PrimitiveUsed[];
 }
 
-export function ResolveView({ query, onBack }: { query: string; onBack: () => void }) {
+export function ResolveView({ query }: { query: string }) {
   const [steps, setSteps] = useState<Step[]>([]);
   const [result, setResult] = useState<Step | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -144,16 +144,8 @@ export function ResolveView({ query, onBack }: { query: string; onBack: () => vo
 
   return (
     <main className="flex-1 flex flex-col">
-      {/* Header */}
-      <header className="w-full px-8 py-5 flex items-center justify-between border-b border-[var(--border-1)]">
-        <button
-          type="button"
-          aria-label="Back to search"
-          onClick={onBack}
-          className="display text-[20px] text-[var(--fg-1)] hover:text-[var(--accent)] transition-colors"
-        >
-          ← Strata
-        </button>
+      {/* Page-specific status bar — global chrome (back, nav) lives in AppShell. */}
+      <header className="w-full px-8 py-3 flex items-center justify-end border-b border-[var(--border-1)]">
         <div className="text-[12px] text-[var(--fg-3)] font-mono">
           {done ? "resolved" : "resolving…"}
         </div>

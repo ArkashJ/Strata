@@ -28,13 +28,8 @@ export default function DataDashboard() {
 
   return (
     <main className="flex-1 flex flex-col">
-      <header className="w-full px-8 py-5 flex items-center justify-between border-b border-[var(--border-1)]">
-        <Link
-          href="/"
-          className="display text-[20px] text-[var(--fg-1)] hover:text-[var(--accent)] transition-colors"
-        >
-          ← Strata
-        </Link>
+      {/* Page-specific controls — global chrome lives in AppShell. */}
+      <header className="w-full px-8 py-3 flex items-center justify-end border-b border-[var(--border-1)]">
         <div className="flex items-center gap-4">
           <nav className="flex gap-1 p-1 bg-[var(--bg-2)] rounded-[var(--r-2)]">
             <TabButton active={tab === "charts"} onClick={() => setTab("charts")}>

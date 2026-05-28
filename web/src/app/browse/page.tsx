@@ -5,10 +5,7 @@ export default function BrowsePage() {
       <p className="text-[15px] text-[var(--fg-3)] max-w-[480px] text-center">
         A public registry of promoted TAMs will live here. Coming in v0.3.
       </p>
-      <a
-        href="/"
-        className="mt-2 text-[13px] text-[var(--accent)] hover:underline"
-      >
+      <a href="/" className="mt-2 text-[13px] text-[var(--accent)] hover:underline">
         Back to search
       </a>
     </main>
