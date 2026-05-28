@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### v0.3 — `strata goal` CLI + 7 connectors + manifest-LLM router (PR #45)
+
+Adds free-form TAM queries on the CLI and the connector + router scaffolding
+behind them. Closes the "I don't know the slug" gap so any VC or operator can
+type a question and get a sourced TAM back.
+
+```
+strata goal "<query>"
+        │
+        ▼  4-step resolver: cheap path first, LLM last
+   ┌────────────────────────────────────────────────┐
+   │ pre. slug resolver  Claude → ResolvedQuery     │
+   │ 1.   concept hit    registry → ready TAM       │
+   │ 2.   primitive hit  registry → sourced value   │
+   │ 3.   connector live router → API → write to    │
+   │                       ~/.strata/auto-primitives │
+   │ 4.   fallback       Claude+Exa → ephemeral TAM │
+   └────────────────────────────────────────────────┘
+```
+
 ### Added
 - **`strata goal "<query>"` CLI** — free-form TAM queries through a 4-step
   hybrid resolver (concept → primitive → connector → fallback). Output modes:

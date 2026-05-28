@@ -118,11 +118,58 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
   real values, enriched primitive cards, min-max range display
 - **Dynamic queries** — type ANY market → Claude parses → Exa finds real data →
   evaluates framework → streams chain of thought via SSE
-- **5 data connectors** — BLS, FRED, Census, EDGAR, World Bank — all typed clients
-  with disk caching and YAML converters (3,700+ lines of pyright-strict code)
+- **22 data connectors** — BLS, FRED, Census, EDGAR, World Bank, Kalshi, OECD,
+  Eurostat, UN Comtrade, FDIC, CMS, EIA, USDA NASS, FAA, openFDA, plus 7 added
+  in v0.3 (Alpha Vantage, Nasdaq Data Link, yfinance, Reddit, GitHub, Stack
+  Exchange, Twitter/X). All typed clients with disk caching, YAML converters,
+  and a CapabilitySpec manifest so the router knows what each one can answer.
 - **307 atomic primitives** from live API queries across all six lenses + 87 sources
-- **167 tests**, pyright strict clean, ruff clean, frontend typecheck + build clean
+- **`strata goal "<query>"` CLI** — ask free-form TAM questions from the terminal.
+  Maps to known data first, falls back to live connector calls, then to Claude+Exa.
+  See [`docs/13-strata-goal-cli.md`](docs/13-strata-goal-cli.md).
+- **367 backend tests + 10 frontend tests**, pyright strict clean, ruff clean,
+  frontend typecheck + build clean
 - **50+ APIs cataloged** for integration ([`docs/11-api-catalog.md`](docs/11-api-catalog.md))
+
+### v0.3 — ask in plain English, get a sourced TAM
+
+The v0.3 push (PR #45) closes the "I don't know the slug" gap. Type a question,
+the resolver tries the cheapest path first and only escalates when it has to.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  strata goal "US bank deposit market size 2024"                  │
+│                                                                  │
+│  1. Slug resolver  — one Claude call. Matches the query to the   │
+│     (free)           data bank's known concepts and primitives,  │
+│                      or marks it "novel".                        │
+│                                                                  │
+│  2. Concept hit?   — return a ready TAM (no LLM, no network).    │
+│                                                                  │
+│  3. Primitive hit? — return the sourced value with a banner.     │
+│                                                                  │
+│  4. Connector live — router picks the right API (FDIC, EDGAR,    │
+│     ($)              etc.), fetches the number, writes the       │
+│                      result to ~/.strata/auto-primitives/.       │
+│                                                                  │
+│  5. Fallback       — Claude + Exa synthesize a TAM from web      │
+│     ($$)             results. Always banner-flagged "do not      │
+│                      cite without manual verification".          │
+│                                                                  │
+│  6. strata promote — move a curated auto-primitive into the      │
+│                      committed data/primitives/ tree after the   │
+│                      validator passes.                           │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+Why this shape:
+- **Defensibility first** — registry hits never call an LLM. The expensive paths
+  are last, not first.
+- **No silent pollution** — auto-primitives land in your home folder, not the
+  committed data bank. `strata promote` is the one path into the curated tree
+  and it runs the full validator.
+- **Cost-aware** — the slug resolver and router both use Anthropic's 5-minute
+  prompt cache, so back-to-back queries cost ~10% of the first one.
 
 ### Data bank coverage by lens
 
@@ -285,6 +332,8 @@ uv run strata stats -d ../data      # data bank counts (YAML)
 uv run strata test-connectors       # live smoke test all 5 APIs
 uv run strata validate ../data      # three-layer validator
 uv run strata size doc-gen-pc-insurance -d ../data  # evaluate a concept
+uv run strata goal "US bank deposits 2024" -d ../data  # v0.3 free-form TAM
+uv run strata promote fdic-deposits-us-2024 -d ../data # curate auto-primitive
 ```
 
 Tests + checks:
