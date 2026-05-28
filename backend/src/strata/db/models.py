@@ -8,6 +8,7 @@ slug lookups.
 from __future__ import annotations
 
 from datetime import date, datetime
+from typing import Any
 
 from sqlalchemy import (
     Date,
@@ -43,13 +44,13 @@ class PrimitiveRow(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     value: Mapped[float] = mapped_column(Float, nullable=False)
-    unit: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    unit: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     as_of: Mapped[date] = mapped_column(Date, nullable=False)
-    geo: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    geo: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     geo_perspective: Mapped[str] = mapped_column(String(32), nullable=False, default="supply")
     distribution_shape: Mapped[str] = mapped_column(String(32), nullable=False, default="normal")
     delivery_mode: Mapped[str] = mapped_column(String(32), nullable=False, default="n/a")
-    source: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    source: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -92,10 +93,10 @@ class ConceptRow(Base):
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     definition: Mapped[str] = mapped_column(Text, nullable=False)
-    analysis_lens: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    modifiers: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    measurements: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    competing_concepts: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    analysis_lens: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    modifiers: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
+    measurements: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    competing_concepts: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -112,11 +113,11 @@ class FrameworkRow(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     method_family: Mapped[str] = mapped_column(String(64), nullable=False)
     lens: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
-    inputs: Mapped[list] = mapped_column(JSONB, nullable=False)
+    inputs: Mapped[list[Any]] = mapped_column(JSONB, nullable=False)
     formula: Mapped[str] = mapped_column(Text, nullable=False)
-    output_unit: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    applicable_to: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    variants: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    output_unit: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    applicable_to: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    variants: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

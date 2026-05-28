@@ -149,32 +149,36 @@ async def sync_yaml_to_db(data_dir: Path) -> dict[str, int]:
     concept_rows = []
     for c in loaded.concepts:
         d = c.model_dump(mode="json")
-        concept_rows.append({
-            "slug": d["slug"],
-            "schema_version": d.get("schema_version", 1),
-            "name": d["name"],
-            "definition": d["definition"],
-            "analysis_lens": d.get("analysis_lens", {}),
-            "modifiers": d.get("modifiers", {}),
-            "measurements": list(d.get("measurements", [])),
-            "competing_concepts": list(d.get("competing_concepts", [])),
-        })
+        concept_rows.append(
+            {
+                "slug": d["slug"],
+                "schema_version": d.get("schema_version", 1),
+                "name": d["name"],
+                "definition": d["definition"],
+                "analysis_lens": d.get("analysis_lens", {}),
+                "modifiers": d.get("modifiers", {}),
+                "measurements": list(d.get("measurements", [])),
+                "competing_concepts": list(d.get("competing_concepts", [])),
+            }
+        )
 
     fw_rows = []
     for f in loaded.frameworks:
         d = f.model_dump(mode="json")
-        fw_rows.append({
-            "slug": d["slug"],
-            "schema_version": d.get("schema_version", 1),
-            "name": d["name"],
-            "method_family": str(d.get("method_family", "")),
-            "lens": str(d.get("lens", "")),
-            "inputs": d.get("inputs", []),
-            "formula": d.get("formula", ""),
-            "output_unit": d.get("output_unit", {}),
-            "applicable_to": list(d.get("applicable_to", [])),
-            "variants": d.get("variants", []),
-        })
+        fw_rows.append(
+            {
+                "slug": d["slug"],
+                "schema_version": d.get("schema_version", 1),
+                "name": d["name"],
+                "method_family": str(d.get("method_family", "")),
+                "lens": str(d.get("lens", "")),
+                "inputs": d.get("inputs", []),
+                "formula": d.get("formula", ""),
+                "output_unit": d.get("output_unit", {}),
+                "applicable_to": list(d.get("applicable_to", [])),
+                "variants": d.get("variants", []),
+            }
+        )
 
     async with session_scope() as session:
         p_count = await _upsert_primitives(session, prim_rows)

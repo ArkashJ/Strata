@@ -22,8 +22,12 @@ class ConceptSummary(BaseModel):
     measurement_count: int
 
 
-@router.get("", response_model=list[ConceptSummary], summary="List concepts",
-            description="Return all concepts in the registry with their primary analysis lens and measurement count.")
+@router.get(
+    "",
+    response_model=list[ConceptSummary],
+    summary="List concepts",
+    description="Return all concepts in the registry with their primary analysis lens and measurement count.",
+)
 async def list_concepts(
     reg: Registry = _REG,
 ) -> list[ConceptSummary]:
@@ -39,8 +43,12 @@ async def list_concepts(
     ]
 
 
-@router.get("/{slug}", response_model=Concept, summary="Concept detail",
-            description="Return full concept model including analysis lens, modifiers, measurements, and competing concepts.")
+@router.get(
+    "/{slug}",
+    response_model=Concept,
+    summary="Concept detail",
+    description="Return full concept model including analysis lens, modifiers, measurements, and competing concepts.",
+)
 async def get_concept(
     slug: str,
     reg: Registry = _REG,
