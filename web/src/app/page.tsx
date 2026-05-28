@@ -54,30 +54,6 @@ const SITE_STATS = {
 	sources: 87,
 };
 
-function Logo() {
-	return (
-		<svg
-			width="20"
-			height="20"
-			viewBox="0 0 1200 800"
-			xmlns="http://www.w3.org/2000/svg"
-			aria-hidden="true"
-		>
-			<path
-				d="M 0 -160 L 180 140 L -180 140 Z"
-				fill="none"
-				stroke="var(--accent)"
-				strokeWidth="60"
-				strokeLinejoin="round"
-				transform="translate(600 400)"
-			/>
-			<circle cx="600" cy="330" r="80" fill="var(--accent)" />
-			<circle cx="510" cy="480" r="80" fill="var(--fg-1)" />
-			<circle cx="690" cy="480" r="80" fill="var(--fg-1)" />
-		</svg>
-	);
-}
-
 function PyramidIllustration() {
 	return (
 		<svg
@@ -266,34 +242,6 @@ function LandingContent() {
 
 	return (
 		<main className="flex-1 flex flex-col">
-			{/* Top nav */}
-			<header className="relative z-10 w-full px-8 py-6 flex items-center justify-between">
-				<div className="flex items-center gap-2">
-					<Logo />
-					<span className="display text-[20px] text-[var(--fg-1)]">Strata</span>
-				</div>
-				<nav className="flex items-center gap-6 text-[13px] text-[var(--fg-2)]">
-					<a
-						href="/data"
-						className="hover:text-[var(--fg-1)] transition-colors"
-					>
-						Data
-					</a>
-					<a
-						href="/browse"
-						className="hover:text-[var(--fg-1)] transition-colors"
-					>
-						Browse
-					</a>
-					<a
-						href="/contribute"
-						className="hover:text-[var(--fg-1)] transition-colors"
-					>
-						Contribute
-					</a>
-				</nav>
-			</header>
-
 			{/* Hero */}
 			<section className="flex flex-col items-center justify-center px-8 pt-16 pb-10">
 				<h1 className="display text-[48px] md:text-[64px] text-center max-w-[820px] text-[var(--fg-1)]">
