@@ -7,42 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### v0.3 — goal/resolve unification + ingest orchestrator + deploy hardening + pyramid graph
+### Changed
+- **Relicensed from Apache-2.0 to proprietary (all rights reserved).** Strata is
+  not open-source software. `LICENSE` replaced with a proprietary notice;
+  `pyproject` license set to `LicenseRef-Proprietary` with a
+  `Private :: Do Not Upload` classifier; README license badge + thesis wording
+  updated to drop the open-source/"free" framing.
 
-Integration of four parallel tracks onto the connector-dispatch foundation.
-Lands the live data path end-to-end (free-form query → dispatch → sourced TAM),
-the declarative bulk-ingest layer, production deploy/CI hardening, and the first
-read-only pyramid graph renderer in the web app.
+## [0.3.0] - 2026-05-28
+
+### v0.3 release — connector dispatch, live ingest, graph renderer, deploy hardening (PRs #46–#50)
+
+Closes the loop from a free-form question to a sourced number on a deployable,
+self-refreshing service — and ships the read-only pyramid graph.
 
 ```
-strata goal / POST /resolve ──► shared resolver pipeline
-                                      │ step 3: connector dispatch
-                                      ▼
-                          CONNECTOR_DISPATCH (call_and_convert)
-                                      ▲
-   strata ingest ──► declarative manifest ──► orchestrator ──► refresh
+question / portfolio ─► router / manifest ─► call_and_convert ─► data bank
+                                                   │
+  /graph (pyramid UI) ◄─ registry ◄─ upsert_primitive ┘   ─► Postgres (deploy + seed)
 ```
 
 #### Added
-- **Live connector dispatch in `strata goal`** — step 3 of the resolver now
-  routes through `connectors._dispatch.call_and_convert`, calling the real API
-  and writing a sourced auto-primitive. `POST /resolve` shares the same resolver
-  pipeline so CLI and HTTP surfaces resolve identically.
-- **Declarative ingest orchestrator + `strata ingest` CLI** — `run`, `status`,
-  `refresh` subcommands. Reads `data/ingest-manifest.yaml` (per-connector
-  methods + arg-sets), walks connector capabilities, dispatches each target, and
-  upserts via the resolver writer (de-duped by `metadata.auto_args_hash`).
-  `refresh` correlates targets to prior auto-primitives by the same args hash.
-- **Production deploy + CI hardening** — `.github/workflows/ci.yml` and
-  `refresh.yml`, container `entrypoint.sh`, Dockerfile/compose/`railway.toml`
-  updates, Postgres connection-pool config in `config.py`, refreshed
-  `.env.example`.
-- **Read-only 3-axis pyramid graph renderer** at `/graph` (web) — `PyramidGraph`
-  + `PyramidFilters` components over a `pyramid.ts` layout/transform module with
-  unit tests.
+- **Connector dispatch** (`connectors/_dispatch.py`, PR #46) — `CONNECTOR_DISPATCH`
+  maps every router-visible `(connector, method)` to a client factory + YAML
+  converter; `call_and_convert(...)` builds the client (passing
+  `STRATA_*_API_KEY` when the ctor accepts it), calls the method, fills the
+  converter's positionals by matching the response shape, and returns a
+  validated `AtomicPrimitive`. Coverage is pinned to `all_capabilities()`.
+- **Live connector step in the resolver** (`resolver/pipeline.py`, PR #49) —
+  step 3 now runs `router.choose → call_and_convert → writer.upsert_primitive`,
+  emits CONNECTOR_CALL + WROTE_PRIMITIVE, honors `--expansion-budget` (parallel
+  dispatch via asyncio), and falls through to fallback on failure.
+- **Ingest orchestrator + freshness CLI** (`strata/ingest/`, `cli.py`, PR #50) —
+  `strata ingest run|status|refresh`, driven by a declarative
+  `ingest-manifest.yaml` (repo root). De-dups by `auto_args_hash`, skips
+  key-less connectors (logged, non-fatal); `refresh` rewrites only when
+  `snapshot_sha256` changed.
+- **Read-only pyramid graph** (`web/src/app/graph/`, PR #48) — `/graph` renders
+  the 3-axis pyramid (Qualitative · Quantitative · Industry) with geo/time
+  filter chips, click-to-narrow sibling greying, and a compatible-frameworks
+  side panel. Built on the existing ReactFlow + Tailwind 4 + TanStack/Zod
+  stack; no new dependencies.
+- **Deploy + CI + refresh cron** (PR #47) — `backend/entrypoint.sh`
+  (migrate → seed → serve), `.github/workflows/ci.yml` (PR gate),
+  `.github/workflows/refresh.yml` (weekly `strata ingest refresh` → auto-PR),
+  explicit SQLAlchemy pool settings in `config.py`, every `STRATA_*` var
+  documented in `.env.example`, and a Railway `[deploy] startCommand`.
 
 #### Changed
-- `VERSION` bumped to `0.3.0`.
+- **`/resolve` SSE** (`api/routes/resolve.py`, PR #49) — now drives
+  `resolver.pipeline.run()` via `asyncio.to_thread` and emits only the 6 frozen
+  wire events (+ legacy step/done); CLI-only event kinds no longer leak.
+  Removed `FRAMEWORK_TEMPLATES` / `_select_framework`.
+- **CI type/lint gate scoped to `src/`** at zero errors; `db/models.py` JSONB
+  columns parameterized (`Mapped[dict[str, Any]]` / `Mapped[list[Any]]`) so
+  `pyright src` is clean. The pre-existing `tests/` strict-mode debt is tracked
+  as a follow-up rather than gated.
+- **`VERSION` → 0.3.0** — promoted out of alpha.
+
+#### Tests
+- 400 backend tests passing (adds dispatch 12, goal-SSE 5, ingest-CLI 16).
+
+---
 
 ### v0.3 — `strata goal` CLI + 7 connectors + manifest-LLM router (PR #45)
 
@@ -414,5 +440,6 @@ strata goal "<query>"
 - `VERSION` file pinned to `0.1.0`.
 - Empty `data/` directory reserved for primitives, frameworks, annotations.
 
-[Unreleased]: https://github.com/ArkashJ/Strata/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ArkashJ/Strata/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/ArkashJ/Strata/compare/v0.1.0...v0.3.0
 [0.1.0]: https://github.com/ArkashJ/Strata/releases/tag/v0.1.0

@@ -1,26 +1,36 @@
 #!/usr/bin/env bash
-# Container entrypoint: migrate → (optional) seed → serve.
+# Container start sequence for the Strata API.
 #
-#   1. alembic upgrade head        — bring Postgres schema to latest revision.
-#   2. STRATA_SEED_ON_BOOT=1       — upsert baked-in YAML into Postgres
-#                                    (idempotent; off by default so restarts
-#                                    don't re-seed on every boot).
-#   3. exec uvicorn                — replace shell with the server so signals
-#                                    (SIGTERM from the platform) reach uvicorn.
+# Boot flow:
+#
+#   alembic upgrade head        (bring the schema up to date)
+#         │
+#         ▼
+#   strata db seed              (only if STRATA_SEED_ON_BOOT=1 — load YAML → Postgres)
+#         │
+#         ▼
+#   exec uvicorn ...            (hand off PID 1 to the web server)
+#
+# Migrations always run: they are idempotent and cheap.
+# Seeding is opt-in because Postgres is the production source of truth once
+# loaded — you only want a re-seed on a fresh database or after adding data.
 set -euo pipefail
 
-PORT="${PORT:-8000}"
+# Where the baked-in YAML seed files live inside the image (see Dockerfile).
 DATA_DIR="${STRATA_DATA_DIR:-/app/data}"
 
-echo "[entrypoint] alembic upgrade head"
+echo "[entrypoint] running migrations: alembic upgrade head"
 alembic upgrade head
 
 if [ "${STRATA_SEED_ON_BOOT:-0}" = "1" ]; then
-  echo "[entrypoint] STRATA_SEED_ON_BOOT=1 → strata db seed -d ${DATA_DIR}"
+  echo "[entrypoint] STRATA_SEED_ON_BOOT=1 → seeding YAML from ${DATA_DIR}"
   strata db seed -d "${DATA_DIR}"
 else
-  echo "[entrypoint] STRATA_SEED_ON_BOOT unset → skipping seed"
+  echo "[entrypoint] STRATA_SEED_ON_BOOT not set → skipping seed"
 fi
+
+# Railway and most PaaS inject a PORT; default to 8000 for local compose.
+PORT="${PORT:-8000}"
 
 echo "[entrypoint] starting uvicorn on 0.0.0.0:${PORT}"
 exec uvicorn strata.api.app:app --host 0.0.0.0 --port "${PORT}"

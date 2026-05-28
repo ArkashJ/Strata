@@ -81,7 +81,7 @@ class RedditClient:
 
     TOKEN_URL = "https://www.reddit.com/api/v1/access_token"
     API_BASE = "https://oauth.reddit.com"
-    USER_AGENT = "strata/0.3 (open-source market sizing)"
+    USER_AGENT = "strata/0.3 (market sizing)"
 
     def __init__(
         self,

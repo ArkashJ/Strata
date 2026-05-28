@@ -23,8 +23,12 @@ class PrimitiveSummary(BaseModel):
     unit_label: str
 
 
-@router.get("", response_model=list[PrimitiveSummary], summary="List primitives",
-            description="Return all atomic and composite primitives with value, unit, and concept linkage. Currently 307+ primitives from BLS, FRED, Census, EDGAR, and World Bank.")
+@router.get(
+    "",
+    response_model=list[PrimitiveSummary],
+    summary="List primitives",
+    description="Return all atomic and composite primitives with value, unit, and concept linkage. Currently 307+ primitives from BLS, FRED, Census, EDGAR, and World Bank.",
+)
 async def list_primitives(
     reg: Registry = _REG,
 ) -> list[PrimitiveSummary]:
@@ -54,8 +58,11 @@ async def list_primitives(
     return out
 
 
-@router.get("/{slug}", summary="Primitive detail",
-            description="Return full primitive model including value, unit, geo, source with SHA256 pin, and uncertainty.")
+@router.get(
+    "/{slug}",
+    summary="Primitive detail",
+    description="Return full primitive model including value, unit, geo, source with SHA256 pin, and uncertainty.",
+)
 async def get_primitive(
     slug: str,
     reg: Registry = _REG,

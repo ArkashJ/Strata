@@ -3,9 +3,13 @@ dockerfilePath = "backend/Dockerfile"
 watchPatterns = ["backend/**", "data/**"]
 
 [deploy]
-# Explicit start command. The Dockerfile CMD already runs this same script,
-# so this is a redundant-but-documented override: it makes the migrate→seed→
-# serve sequence visible in the Railway dashboard and survives a CMD change.
+# Alternative to the Docker CMD. Railway runs this after build; it does the
+# same migrate → (optional) seed → uvicorn sequence as backend/entrypoint.sh.
+#
+#   alembic upgrade head → uvicorn (Railway injects $PORT)
+#
+# Set STRATA_SEED_ON_BOOT=1 in the service variables for a fresh DB to also
+# load the baked-in YAML seed data. The script reads it; nothing to change here.
 startCommand = "./entrypoint.sh"
 healthcheckPath = "/healthz"
 healthcheckTimeout = 300

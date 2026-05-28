@@ -17,11 +17,21 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ---
 
-## Repo state (as of 2026-05-25)
+## Repo state (as of 2026-05-28)
 
-- **Version:** `0.2.0a0` (alpha). `VERSION` file pinned; tags follow `vX.Y.Z`.
+- **Version:** `0.3.0` (beta — promoted out of alpha). `VERSION` + `pyproject`
+  pinned; tags follow `vX.Y.Z`.
 - **Phase:** Schemas locked, **backend fully functional**, frontend PoC working,
-  dynamic query resolution proven end-to-end.
+  dynamic query resolution proven end-to-end. **v0.3 shipped (PRs #46–#50):**
+  connector dispatch (`connectors/_dispatch.py` — `call_and_convert` turns a
+  router decision into a validated primitive), the resolver's live connector
+  step wired (`resolver/pipeline.py` step 3 → dispatch → `writer.upsert_primitive`),
+  the ingest orchestrator + freshness CLI (`strata/ingest/`, `strata ingest
+  run|status|refresh`, manifest at repo-root `ingest-manifest.yaml`), the
+  read-only pyramid graph (`web/src/app/graph/`), and deploy hardening
+  (entrypoint, CI gate, weekly refresh cron, DB pool config). 400 backend
+  tests; CI type/lint gate scoped to `src/` (zero errors there; `tests/`
+  strict-mode debt tracked as a follow-up).
 - **Backend (`backend/src/strata/`):** All business logic implemented —
   models, loader, registry, validators, evaluator, scoring, 10 API routes
   (including `POST /resolve` for dynamic TAM resolution via Claude + Exa),

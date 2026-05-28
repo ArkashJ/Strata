@@ -1,34 +1,43 @@
-name: Data refresh
+# Scheduled data refresh. Pulls the latest numbers from the connectors and, if
+# any YAML changed, opens a PR for review (data is never auto-merged).
+#
+#   cron (weekly) → strata ingest refresh → git diff?
+#         │                                    │
+#         │                              yes → open PR
+#         └── manual run via workflow_dispatch │
+#                                         no  → no-op
+#
+# `strata ingest refresh` lands with the ingest-orchestrator branch; this
+# workflow is the consumer that runs it on a schedule once that ships.
+name: refresh
 
-# Scheduled connector refresh: re-pull source data, then open a PR if any
-# committed YAML changed. Manual dispatch supported for ad-hoc runs.
 on:
   schedule:
-    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+    # 06:00 UTC every Monday.
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
 
-concurrency:
-  group: data-refresh
-  cancel-in-progress: false
-
 jobs:
   refresh:
-    name: refresh data bank
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: backend
+
     env:
-      # Connector keys come from repo secrets; absent keys make the connector
-      # skip rather than fail. Add more here as connectors gain CI coverage.
+      # Connector keys come from repo secrets; absent keys → connector skips.
       STRATA_BLS_API_KEY: ${{ secrets.STRATA_BLS_API_KEY }}
       STRATA_FRED_API_KEY: ${{ secrets.STRATA_FRED_API_KEY }}
       STRATA_CENSUS_API_KEY: ${{ secrets.STRATA_CENSUS_API_KEY }}
       STRATA_EIA_API_KEY: ${{ secrets.STRATA_EIA_API_KEY }}
+      STRATA_USDA_NASS_API_KEY: ${{ secrets.STRATA_USDA_NASS_API_KEY }}
+      STRATA_OPENFDA_API_KEY: ${{ secrets.STRATA_OPENFDA_API_KEY }}
+      STRATA_COMTRADE_API_KEY: ${{ secrets.STRATA_COMTRADE_API_KEY }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -40,32 +49,21 @@ jobs:
       - name: Sync dependencies
         run: uv sync --frozen
 
-      - name: Run ingest refresh
+      - name: Refresh data bank from connectors
         run: uv run strata ingest refresh
 
-      - name: Detect changed YAML
-        id: diff
-        working-directory: ${{ github.workspace }}
-        run: |
-          if git diff --quiet -- data/; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No YAML changes after refresh."
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Open PR with refreshed YAML
-        if: steps.diff.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v7
+      - name: Open PR with changed YAML
+        uses: peter-evans/create-pull-request@v6
         with:
-          add-paths: data/**
-          branch: data-refresh/${{ github.run_id }}
           commit-message: "data: scheduled connector refresh"
+          branch: data/scheduled-refresh
+          delete-branch: true
           title: "data: scheduled connector refresh"
           body: |
-            Automated `strata ingest refresh` produced new source data.
+            Automated refresh from `strata ingest refresh`.
 
-            Review the diff for plausibility before merging. CI re-runs the
-            validator on this branch.
-          labels: data-refresh
-          delete-branch: true
+            Review the diff before merging — these are sourced numbers and
+            every changed primitive should still trace to a valid snapshot.
+          labels: data, automated
+          add-paths: |
+            data/**

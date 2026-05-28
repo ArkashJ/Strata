@@ -1,16 +1,17 @@
 [project]
 name = "strata"
-version = "0.2.0a0"
-description = "Open-source community-curated market-sizing tool — primitives, frameworks, and a defensible TAM."
+version = "0.3.0"
+description = "Proprietary curated market-sizing engine — primitives, frameworks, and a defensible TAM."
 readme = "README.md"
 requires-python = ">=3.12"
-license = "Apache-2.0"
+license = "LicenseRef-Proprietary"
 authors = [{ name = "Arkash Jain", email = "arkash@benmore.tech" }]
 keywords = ["tam", "market-sizing", "venture-capital", "primitives", "frameworks"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Financial and Insurance Industry",
-    "License :: OSI Approved :: Apache Software License",
+    "License :: Other/Proprietary License",
+    "Private :: Do Not Upload",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.12",
     "Typing :: Typed",
@@ -89,6 +90,15 @@ select = [
 ignore = [
     "E501",  # line too long — ruff format handles
 ]
+
+# `×` (multiplication sign) and `−` (minus sign) are deliberate domain notation
+# in TAM angle/method strings — not typos for ASCII `x` / `-`.
+allowed-confusables = ["×", "−"]
+
+[tool.ruff.lint.per-file-ignores]
+# test_connectors.py groups per-connector imports under section banners
+# mid-file for readability; these are intentional non-top-level imports.
+"tests/test_connectors.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"
