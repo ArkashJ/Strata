@@ -3,6 +3,10 @@ dockerfilePath = "backend/Dockerfile"
 watchPatterns = ["backend/**", "data/**"]
 
 [deploy]
+# Explicit start command. The Dockerfile CMD already runs this same script,
+# so this is a redundant-but-documented override: it makes the migrate→seed→
+# serve sequence visible in the Railway dashboard and survives a CMD change.
+startCommand = "./entrypoint.sh"
 healthcheckPath = "/healthz"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"

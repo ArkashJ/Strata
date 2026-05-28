@@ -1,0 +1,71 @@
+name: Data refresh
+
+# Scheduled connector refresh: re-pull source data, then open a PR if any
+# committed YAML changed. Manual dispatch supported for ad-hoc runs.
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: refresh data bank
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Connector keys come from repo secrets; absent keys make the connector
+      # skip rather than fail. Add more here as connectors gain CI coverage.
+      STRATA_BLS_API_KEY: ${{ secrets.STRATA_BLS_API_KEY }}
+      STRATA_FRED_API_KEY: ${{ secrets.STRATA_FRED_API_KEY }}
+      STRATA_CENSUS_API_KEY: ${{ secrets.STRATA_CENSUS_API_KEY }}
+      STRATA_EIA_API_KEY: ${{ secrets.STRATA_EIA_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Run ingest refresh
+        run: uv run strata ingest refresh
+
+      - name: Detect changed YAML
+        id: diff
+        working-directory: ${{ github.workspace }}
+        run: |
+          if git diff --quiet -- data/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No YAML changes after refresh."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR with refreshed YAML
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          add-paths: data/**
+          branch: data-refresh/${{ github.run_id }}
+          commit-message: "data: scheduled connector refresh"
+          title: "data: scheduled connector refresh"
+          body: |
+            Automated `strata ingest refresh` produced new source data.
+
+            Review the diff for plausibility before merging. CI re-runs the
+            validator on this branch.
+          labels: data-refresh
+          delete-branch: true
