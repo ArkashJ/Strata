@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Relicensed from Apache-2.0 to proprietary (all rights reserved).** Strata is
+  not open-source software. `LICENSE` replaced with a proprietary notice;
+  `pyproject` license set to `LicenseRef-Proprietary` with a
+  `Private :: Do Not Upload` classifier; README license badge + thesis wording
+  updated to drop the open-source/"free" framing.
+
 ## [0.3.0] - 2026-05-28
 
 ### v0.3 release — connector dispatch, live ingest, graph renderer, deploy hardening (PRs #46–#50)

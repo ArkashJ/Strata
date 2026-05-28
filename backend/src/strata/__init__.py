@@ -1,4 +1,4 @@
-"""Strata — open-source community-curated market-sizing tool.
+"""Strata — proprietary curated market-sizing tool.
 
 Source of truth: docs/07-data-layer-brainstorm.md (data layer Q1-Q40),
 docs/08-product-surface-brainstorm.md (product surface U1-U12),

@@ -1091,7 +1091,7 @@ wheels = [
 
 [[package]]
 name = "strata"
-version = "0.2.0a0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
