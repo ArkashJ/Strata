@@ -733,3 +733,47 @@ def series_to_source_yaml(
         "snapshot_sha256": sha,
         "description": description or f"BLS series {series.series_id}, {year} data.",
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="bls",
+            method="get_series",
+            description=(
+                "BLS time series by series ID (employment, wages, CPI). "
+                "Use for US labor/inflation regulator data."
+            ),
+            returns="atomic primitive observations, unit varies, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="series_id",
+                    type="str",
+                    description="BLS series ID (e.g. CES0500000001)",
+                    example="CES0500000001",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="bls",
+            method="get_latest",
+            description="Latest single value for a BLS series.",
+            returns="atomic primitive, unit varies, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="series_id",
+                    type="str",
+                    description="BLS series ID",
+                    example="CUUR0000SA0",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

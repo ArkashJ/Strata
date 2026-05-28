@@ -1185,3 +1185,56 @@ def datapoint_to_source_yaml(
         "description": description
         or (f"EIA {route} for {dp.state_name or dp.state}, {dp.period} data."),
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="eia",
+            method="get_electricity_prices",
+            description="Average retail electricity price by state/sector.",
+            returns="atomic primitive, unit=currency USD per MWh, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="state",
+                    type="str",
+                    description="US state code or 'US'",
+                    example="US",
+                ),
+                CapabilityArg(
+                    name="sector",
+                    type="str",
+                    description="Sector (RES/COM/IND/ALL)",
+                    example="ALL",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_electricity_sales",
+            description="Retail electricity sales in MWh.",
+            returns="atomic primitive, unit=count MWh, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="state",
+                    type="str",
+                    description="US state code or 'US'",
+                    example="US",
+                ),
+                CapabilityArg(
+                    name="sector",
+                    type="str",
+                    description="Sector (RES/COM/IND/ALL)",
+                    example="ALL",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

@@ -1216,3 +1216,37 @@ def fda_to_source_yaml(
         "snapshot_sha256": sha,
         "description": description,
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="openfda",
+            method="get_drug_event_counts",
+            description=(
+                "Count of FDA drug-adverse-event reports by year "
+                "(latent demand for drug-safety services)."
+            ),
+            returns="atomic primitive, unit=count events, tier=regulator",
+            args=[
+                CapabilityArg(name="year", type="int", description="Calendar year", example="2023"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="openfda",
+            method="get_recall_count_by_year",
+            description="FDA recall counts by year.",
+            returns="atomic primitive, unit=count events, tier=regulator",
+            args=[
+                CapabilityArg(name="year", type="int", description="Calendar year", example="2023"),
+            ],
+            source_tier="regulator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

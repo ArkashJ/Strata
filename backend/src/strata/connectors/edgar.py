@@ -854,3 +854,68 @@ def frame_to_primitive_yaml(
             "snapshot_sha256": sha,
         },
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="edgar",
+            method="get_company_concept",
+            description=("XBRL facts for a US-listed company concept (revenue, assets, etc.)."),
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="cik",
+                    type="str",
+                    description="Company CIK (with leading zeros)",
+                    example="0000320193",
+                ),
+                CapabilityArg(
+                    name="taxonomy",
+                    type="str",
+                    description="Taxonomy (us-gaap)",
+                    example="us-gaap",
+                ),
+                CapabilityArg(
+                    name="concept",
+                    type="str",
+                    description="XBRL concept tag",
+                    example="Revenues",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="edgar",
+            method="get_frames",
+            description=(
+                "All filers' values for a single XBRL concept in a period (industry-wide rollup)."
+            ),
+            returns="atomic primitive list, unit=currency USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="taxonomy", type="str", description="Taxonomy", example="us-gaap"
+                ),
+                CapabilityArg(
+                    name="concept",
+                    type="str",
+                    description="Concept tag",
+                    example="Revenues",
+                ),
+                CapabilityArg(name="unit", type="str", description="Unit code", example="USD"),
+                CapabilityArg(
+                    name="period",
+                    type="str",
+                    description="Period code, e.g. CY2023Q4I",
+                    example="CY2023",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

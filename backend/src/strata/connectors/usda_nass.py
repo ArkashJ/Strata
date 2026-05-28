@@ -1143,3 +1143,46 @@ def record_to_source_yaml(
             f"for {record.state_name or 'US'}, {record.year} data."
         ),
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="usda_nass",
+            method="get_production",
+            description="USDA crop or livestock production (volume).",
+            returns="atomic primitive, unit=count or weight, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="commodity",
+                    type="str",
+                    description="Commodity (CORN, WHEAT, SOYBEANS, CATTLE)",
+                    example="CORN",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="usda_nass",
+            method="get_prices",
+            description="USDA commodity prices.",
+            returns="atomic primitive, unit=currency per bushel/cwt, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="commodity",
+                    type="str",
+                    description="Commodity",
+                    example="CORN",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="regulator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

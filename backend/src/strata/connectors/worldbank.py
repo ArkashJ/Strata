@@ -607,3 +607,44 @@ def indicator_to_source_yaml(
         "description": description
         or f"World Bank {point.indicator_id} for {point.country_name}, {point.date} data.",
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="worldbank",
+            method="get_indicator",
+            description=(
+                "World Bank indicator value for a country-year (GDP, population, adoption)."
+            ),
+            returns="atomic primitive, unit varies, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="country",
+                    type="str",
+                    description="ISO-3 country code or 'WLD'",
+                    example="USA",
+                ),
+                CapabilityArg(
+                    name="indicator",
+                    type="str",
+                    description="World Bank indicator code",
+                    example="NY.GDP.MKTP.CD",
+                ),
+                CapabilityArg(
+                    name="year",
+                    type="int",
+                    description="Year (optional)",
+                    example="2023",
+                    required=False,
+                ),
+            ],
+            source_tier="aggregator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402
