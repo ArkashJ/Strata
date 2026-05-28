@@ -11,7 +11,8 @@ import {
   YAxis,
 } from "recharts";
 
-import { type Scenario, formatUSD } from "@/lib/api";
+import { formatCompact, formatUSD } from "@/lib/format";
+import type { InputUsed, Scenario, Unit } from "@/lib/schemas";
 
 const ROLE_COLORS: Record<string, string> = {
   base_value: "#5b5bd6",
@@ -24,8 +25,18 @@ interface Props {
   scenario: Scenario;
 }
 
+function inputLabel(input: InputUsed): string {
+  return input.name ?? input.primitive_slug.replace(/-/g, " ");
+}
+
+function unitSuffix(unit: Unit | null | undefined): string {
+  if (!unit) return "";
+  return unit.denominator ? `/${unit.denominator}` : (unit.kind ?? "");
+}
+
 export function WaterfallChart({ scenario }: Props) {
-  const inputs = scenario.inputs_used;
+  // Evaluator may leave inputs unenriched (value null); chart only the bars it can size.
+  const inputs = scenario.inputs_used.filter((i) => i.value != null);
 
   interface WaterfallEntry {
     name: string;
@@ -37,27 +48,25 @@ export function WaterfallChart({ scenario }: Props) {
   }
 
   const data: WaterfallEntry[] = inputs.map((input) => {
-    const isPercent = input.value < 1 && input.role === "conditional_adjustment";
+    const value = input.value ?? 0;
+    const full = inputLabel(input);
     return {
-      name:
-        input.primitive_name.length > 22
-          ? `${input.primitive_name.slice(0, 20)}…`
-          : input.primitive_name,
-      fullName: input.primitive_name,
-      value: input.value,
-      displayValue: isPercent ? `${(input.value * 100).toFixed(0)}%` : formatCompact(input.value),
+      name: full.length > 22 ? `${full.slice(0, 20)}…` : full,
+      fullName: full,
+      value,
+      displayValue: formatCompact(value, input.unit),
       role: input.role,
-      unit: input.unit_label,
+      unit: unitSuffix(input.unit),
     };
   });
 
   data.push({
     name: "= TAM",
-    fullName: `${scenario.framework_name} TAM`,
+    fullName: `${scenario.definition} TAM`,
     value: scenario.value,
-    displayValue: formatUSD(scenario.value),
+    displayValue: formatCompact(scenario.value, scenario.unit),
     role: "result",
-    unit: scenario.unit_label,
+    unit: unitSuffix(scenario.unit),
   });
 
   return (
@@ -93,7 +102,8 @@ export function WaterfallChart({ scenario }: Props) {
                     {d.displayValue}
                   </div>
                   <div className="text-[11px] text-[var(--fg-3)] mt-0.5">
-                    {d.role.replace(/_/g, " ")} · {d.unit}
+                    {d.role.replace(/_/g, " ")}
+                    {d.unit && ` · ${d.unit}`}
                   </div>
                 </div>
               );
@@ -119,8 +129,7 @@ export function WaterfallChart({ scenario }: Props) {
         {inputs.map((input, i) => (
           <span key={input.primitive_slug}>
             {i > 0 && <span className="mx-1">×</span>}
-            <span className="font-mono">{formatCompact(input.value)}</span>
-            <span className="ml-0.5 text-[var(--fg-4)]">{input.unit_label}</span>
+            <span className="font-mono">{formatCompact(input.value ?? 0, input.unit)}</span>
           </span>
         ))}
         <span className="mx-1">=</span>
@@ -130,12 +139,4 @@ export function WaterfallChart({ scenario }: Props) {
       </div>
     </div>
   );
-}
-
-function formatCompact(value: number): string {
-  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(0)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  if (value < 1) return `${(value * 100).toFixed(0)}%`;
-  return value.toLocaleString();
 }
