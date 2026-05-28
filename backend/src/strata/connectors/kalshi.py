@@ -993,3 +993,29 @@ def market_to_source_yaml(
         "snapshot_sha256": sha,
         "description": description or f"Kalshi market {market.ticker}: {market.title}",
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="kalshi",
+            method="get_market",
+            description=("Kalshi prediction-market mid-price / volume for an event contract."),
+            returns="atomic primitive, unit=probability percent, tier=prediction_market",
+            args=[
+                CapabilityArg(
+                    name="ticker",
+                    type="str",
+                    description="Kalshi market ticker",
+                    example="NASDAQ100-24DEC31",
+                ),
+            ],
+            source_tier="prediction_market",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

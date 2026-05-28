@@ -750,3 +750,46 @@ def observations_to_source_yaml(
         "snapshot_sha256": sha,
         "description": description or f"FRED series {series_info.id}, {year} data.",
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="fred",
+            method="get_observations",
+            description=(
+                "FRED economic series observations (GDP, rates, money supply, consumption)."
+            ),
+            returns="atomic primitive observations, unit varies, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="series_id",
+                    type="str",
+                    description="FRED series ID",
+                    example="GDP",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fred",
+            method="get_series",
+            description="FRED series metadata (units, frequency, title).",
+            returns="metadata only — no primitive emitted",
+            args=[
+                CapabilityArg(
+                    name="series_id",
+                    type="str",
+                    description="FRED series ID",
+                    example="GDPC1",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

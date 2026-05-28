@@ -992,3 +992,39 @@ def passenger_count_to_primitive_yaml(
             "snapshot_sha256": sha,
         },
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="faa",
+            method="get_total_passengers",
+            description="Total enplaned passengers across US commercial airports.",
+            returns="atomic primitive, unit=count people, tier=regulator",
+            args=[
+                CapabilityArg(name="year", type="int", description="Calendar year", example="2023"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="faa",
+            method="get_airport_count",
+            description="Total count of US airports of a given type.",
+            returns="atomic primitive, unit=count, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="airport_type",
+                    type="str",
+                    description="Airport type (commercial/general_aviation/heliport)",
+                    example="commercial",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

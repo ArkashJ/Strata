@@ -1185,3 +1185,62 @@ def oecd_observation_to_source_yaml(
         "description": description
         or (f"OECD {point.dataflow_id} for {point.country}, {point.time_period} data."),
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="oecd",
+            method="get_gdp",
+            description="OECD GDP for a member country.",
+            returns="atomic primitive, unit=currency USD (or local), tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="country",
+                    type="str",
+                    description="ISO-3 country code",
+                    example="USA",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="oecd",
+            method="get_unemployment",
+            description="OECD harmonised unemployment rate.",
+            returns="atomic primitive, unit=dimensionless percent, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="country",
+                    type="str",
+                    description="ISO-3 country code",
+                    example="GBR",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="oecd",
+            method="get_health_spending",
+            description="OECD health expenditure for a country.",
+            returns="atomic primitive, unit=currency USD, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="country",
+                    type="str",
+                    description="ISO-3 country code",
+                    example="USA",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="aggregator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

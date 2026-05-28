@@ -1048,3 +1048,60 @@ def trade_to_source_yaml(
             f" ({record.commodity_desc}), {record.period} data."
         ),
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="comtrade",
+            method="get_bilateral_trade",
+            description=(
+                "Bilateral trade flow value between two countries for an HS commodity code."
+            ),
+            returns="atomic primitive, unit=currency USD, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="reporter",
+                    type="str",
+                    description="Reporter ISO code",
+                    example="USA",
+                ),
+                CapabilityArg(
+                    name="partner",
+                    type="str",
+                    description="Partner ISO code",
+                    example="CHN",
+                ),
+                CapabilityArg(
+                    name="hs_code",
+                    type="str",
+                    description="HS commodity code",
+                    example="85",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="comtrade",
+            method="get_total_trade",
+            description="Total trade value (exports + imports) for a reporter in a year.",
+            returns="atomic primitive, unit=currency USD, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="reporter",
+                    type="str",
+                    description="Reporter ISO code",
+                    example="USA",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="aggregator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

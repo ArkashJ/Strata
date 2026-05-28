@@ -955,3 +955,62 @@ def observation_to_source_yaml(
         "description": description
         or f"Eurostat {obs.dataset} for {obs.geo}, {obs.time_period} data.",
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="eurostat",
+            method="get_gdp",
+            description="Eurostat GDP for an EU country.",
+            returns="atomic primitive, unit=currency EUR, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="country",
+                    type="str",
+                    description="EU ISO-2 country code",
+                    example="DE",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eurostat",
+            method="get_employment",
+            description="Total employed persons for an EU country.",
+            returns="atomic primitive, unit=count people, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="country",
+                    type="str",
+                    description="EU ISO-2 country code",
+                    example="FR",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eurostat",
+            method="get_health_spending",
+            description="Healthcare expenditure for an EU country.",
+            returns="atomic primitive, unit=currency EUR, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="country",
+                    type="str",
+                    description="EU ISO-2 country code",
+                    example="DE",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="regulator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

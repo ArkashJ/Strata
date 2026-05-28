@@ -7,7 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### v0.3 — `strata goal` CLI + 7 connectors + manifest-LLM router (PR #45)
+
+Adds free-form TAM queries on the CLI and the connector + router scaffolding
+behind them. Closes the "I don't know the slug" gap so any VC or operator can
+type a question and get a sourced TAM back.
+
+```
+strata goal "<query>"
+        │
+        ▼  4-step resolver: cheap path first, LLM last
+   ┌────────────────────────────────────────────────┐
+   │ pre. slug resolver  Claude → ResolvedQuery     │
+   │ 1.   concept hit    registry → ready TAM       │
+   │ 2.   primitive hit  registry → sourced value   │
+   │ 3.   connector live router → API → write to    │
+   │                       ~/.strata/auto-primitives │
+   │ 4.   fallback       Claude+Exa → ephemeral TAM │
+   └────────────────────────────────────────────────┘
+```
+
 ### Added
+- **`strata goal "<query>"` CLI** — free-form TAM queries through a 4-step
+  hybrid resolver (concept → primitive → connector → fallback). Output modes:
+  compact (default), `--stream` (chain-of-thought), `--json`. Flags:
+  `--no-live`, `--no-fallback`, `--primitive-only`, `--expansion-budget`.
+  Env: `STRATA_OFFLINE=1` short-circuits steps 3 + 4 (CI-friendly). Full
+  spec at `docs/superpowers/specs/2026-05-27-strata-goal-cli-and-connectors-design.md`,
+  user howto at `docs/13-strata-goal-cli.md`.
+- **`strata promote <slug>` CLI** — moves an auto-primitive from
+  `~/.strata/auto-primitives/{slug}.yaml` into the committed
+  `data/primitives/{slug}.yaml` after running the full validator pipeline.
+  Idempotent.
+- **`strata.resolver` module** — extracted Claude+Exa pipeline from
+  `api/routes/resolve.py` so the new `goal` CLI and existing `/resolve` HTTP
+  surface share one implementation. New submodules: `slug.py` (single Claude
+  call mapping query → ResolvedQuery, cached system block), `parse.py`,
+  `search.py`, `writer.py` (writes auto-primitives, validates against
+  AtomicPrimitive schema, idempotent dedup via `auto_args_hash` metadata),
+  `pipeline.py`, `render.py`, `events.py` (PipelineEventKind frozen wire
+  contract enum).
+- **`strata.router`** — manifest+LLM router with all 22 connector
+  capabilities serialized into a cached system block (5-min Anthropic prompt
+  cache). Returns `RoutingDecision | None`. Demotes `is_fragile` and
+  `requires_paid_tier` capabilities unless explicitly opted in.
+- **CapabilitySpec manifest schema** on all 22 connectors. Each connector
+  exposes a `capabilities()` module function returning a list of
+  `CapabilitySpec` (connector / method / args / source_tier / is_fragile /
+  requires_paid_tier). `strata.connectors.all_capabilities()` walks every
+  module and concatenates them — this is the router's input.
+- **7 new connectors** (`backend/src/strata/connectors/`):
+  alpha_vantage (aggregator, fragile — free tier 25 req/day),
+  nasdaq_data_link (aggregator; premium gated by `requires_paid_tier`),
+  yfinance (analyst, fragile — unofficial Yahoo scraper),
+  reddit (community — subscribers as count primitives),
+  github (community — stars/forks/issues as count primitives),
+  stack_exchange (community — question count per tag),
+  twitter (analyst, fragile — only the 2 free-tier endpoints
+  `user_lookup_by_username` + `user_timeline`; paid-only endpoints
+  intentionally not stubbed per audit fix F).
+- **Frontend resolver bindings** (`web/src/lib/`): Zod schemas mirroring
+  every backend resolver/router Pydantic model (`resolver-schemas.ts`),
+  streaming SSE consumer for `POST /resolve` (`resolver-client.ts`),
+  TanStack mutation hook (`resolver-queries.ts`), plus a `PipelineTrace`
+  component for rendering `--stream` events in the right rail.
+- **`STRATA_OFFLINE` env var** — CI shorthand for `--no-live --no-fallback`.
+- **7 new env-var entries in `.env.example`** for the new connectors,
+  matching fields added to `Settings` in `backend/src/strata/config.py`.
+
+### Changed
+- **`api/routes/resolve.py` refactor** — internal Claude+Exa helpers
+  (`_parse_query_with_claude`, `_search_primitive_with_exa`) replaced by
+  imports from `strata.resolver.{parse,search}`. The §9.1 SSE wire contract
+  is **frozen**: `parsing` / `searching` / `framework_selected` /
+  `evaluating` / `result` / `error`. Legacy `step` + `done` events kept for
+  the existing frontend. A regression test
+  (`tests/test_sse_event_contract.py`) ties the frozen wire set to the
+  `PipelineEventKind` enum so renames break compilation. Downstream code
+  that imported the old `_parse_query_with_claude` directly must move to
+  `strata.resolver.parse.parse_query`.
+
+### Tests
+- 367 backend tests passing (310 → 338 → 354 → 367 across PR-A and PR-B).
+- 10 frontend Vitest tests covering the resolver Zod schemas + SSE parser.
+
 - **Corrected 24-company TAM pipeline** (`scripts/tam_77_pipeline.py`) — replaces the v1
   hardcoded-multiplier approach with a Claude-driven classification pipeline that
   threads through Strata's actual primitive/framework/evaluator DAG. Per company:

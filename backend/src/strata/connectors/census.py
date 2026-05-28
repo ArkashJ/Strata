@@ -787,3 +787,46 @@ def firm_to_source_yaml(
             or f"Census SUSB NAICS {record.naics_code} ({record.naics_label}), {record.year} data."
         ),
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="census",
+            method="get_cbp",
+            description=(
+                "County Business Patterns: establishment count, employees, "
+                "payroll by NAICS for US geography."
+            ),
+            returns="atomic primitive, unit varies, tier=regulator",
+            args=[
+                CapabilityArg(name="naics", type="str", description="NAICS code", example="5415"),
+                CapabilityArg(
+                    name="year",
+                    type="int",
+                    description="Survey year (≈3yr lag)",
+                    example="2022",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="census",
+            method="get_susb",
+            description=(
+                "Statistics of US Businesses: firm/establishment counts by enterprise-size class."
+            ),
+            returns="atomic primitive, unit=count or currency, tier=regulator",
+            args=[
+                CapabilityArg(name="naics", type="str", description="NAICS code", example="5415"),
+                CapabilityArg(name="year", type="int", description="Survey year", example="2021"),
+            ],
+            source_tier="regulator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

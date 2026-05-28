@@ -49,6 +49,35 @@ Live API (BLS, FRED, EDGAR, Census, ...)
 | `usda_nass.py` | USDA NASS QuickStats — crop/livestock production, prices |
 | `faa.py` | FAA aviation — airports, passengers, status |
 | `openfda.py` | openFDA — drug events, device 510k/PMA, recalls |
+| `alpha_vantage.py` | Alpha Vantage — equities fundamentals + FX/crypto; aggregator/fragile (25 req/day free) |
+| `nasdaq_data_link.py` | Nasdaq Data Link — economic / commodity time series; aggregator, premium gated |
+| `yfinance.py` | yfinance — unofficial Yahoo Finance scraper; analyst/fragile |
+| `reddit.py` | Reddit OAuth — subscribers, active users; community |
+| `github.py` | GitHub REST v3 — stars, forks, issues; community |
+| `stack_exchange.py` | Stack Exchange API 2.3 — tag question counts; community |
+| `twitter.py` | X v2 — only the 2 free-tier endpoints (`user_lookup_by_username` + `user_timeline`); analyst/fragile |
+| `_capability.py` | `CapabilitySpec` schema + `all_capabilities()` walker (router input) |
+
+## Capability manifest (v0.3, PR-A)
+
+Every connector exposes a module-level `capabilities()` returning a
+`list[CapabilitySpec]`. The router (`backend/src/strata/router.py`) serializes
+the union of all 22 manifests as a cached Anthropic system block and asks
+Claude to choose one connector method for a given free-form query.
+
+Adding a new method that should be router-visible:
+
+1. Implement the method on `<Connector>Client`.
+2. Append a `CapabilitySpec(...)` entry to the connector's `capabilities()`.
+3. `tests/test_capability_manifest.py` asserts the method actually exists on
+   the client class. If you forget step 1 or mistype `method=...`, that test
+   fails.
+
+Demotion flags on the spec:
+  - `is_fragile=True` — router demotes unless the query explicitly asks
+    (e.g. yfinance scraper, Alpha Vantage rate-limited methods).
+  - `requires_paid_tier=True` — router refuses to pick on a free-tier setup
+    (e.g. Nasdaq premium datasets, X paid endpoints).
 
 ## Adding a new connector
 

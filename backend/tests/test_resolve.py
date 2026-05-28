@@ -1,4 +1,10 @@
-"""Tests for the /resolve dynamic TAM resolution endpoint."""
+"""Tests for the /resolve dynamic TAM resolution endpoint.
+
+Patches target the names *as bound in* ``strata.api.routes.resolve`` (the
+module imports ``parse_query`` / ``search_primitive`` from ``strata.resolver.*``,
+so ``from X import Y`` binds Y locally — patches must hit the local binding).
+"""
+
 from __future__ import annotations
 
 import json
@@ -9,6 +15,8 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from strata.api.app import create_app
+from strata.resolver.parse import ParsedQuery
+from strata.resolver.search import PrimitiveHit
 
 
 @pytest.fixture
@@ -27,43 +35,45 @@ async def client(app: FastAPI):
 # Shared mock payloads
 # ---------------------------------------------------------------------------
 
-MOCK_PARSED: dict[str, object] = {
-    "lens": "productivity_uplift",
-    "concept_name": "Test market",
-    "definition": "A test market definition.",
-    "primitives_needed": [
-        {
-            "role": "persona_count",
-            "description": "number of people",
-            "search_query": "test query 1",
-            "expected_unit": {"kind": "stock", "dimension": "people"},
-        },
-        {
-            "role": "value_per_persona",
-            "description": "cost per person",
-            "search_query": "test query 2",
-            "expected_unit": {"kind": "intensive", "dimension": "currency"},
-        },
-    ],
-}
+MOCK_PARSED: ParsedQuery = ParsedQuery.model_validate(
+    {
+        "lens": "productivity_uplift",
+        "concept_name": "Test market",
+        "definition": "A test market definition.",
+        "primitives_needed": [
+            {
+                "role": "persona_count",
+                "description": "number of people",
+                "search_query": "test query 1",
+                "expected_unit": {"kind": "stock", "dimension": "people"},
+            },
+            {
+                "role": "value_per_persona",
+                "description": "cost per person",
+                "search_query": "test query 2",
+                "expected_unit": {"kind": "intensive", "dimension": "currency"},
+            },
+        ],
+    }
+)
 
-MOCK_PRIMITIVE_1: dict[str, object] = {
-    "role": "persona_count",
-    "name": "Test headcount",
-    "value": 1_000_000.0,
-    "unit": {"kind": "stock", "dimension": "people"},
-    "source_url": "https://example.com/1",
-    "source_tier": "regulator",
-}
+MOCK_PRIMITIVE_1: PrimitiveHit = PrimitiveHit(
+    role="persona_count",
+    name="Test headcount",
+    value=1_000_000.0,
+    unit={"kind": "stock", "dimension": "people"},
+    source_url="https://example.com/1",
+    source_tier="regulator",
+)
 
-MOCK_PRIMITIVE_2: dict[str, object] = {
-    "role": "value_per_persona",
-    "name": "Test cost",
-    "value": 500.0,
-    "unit": {"kind": "intensive", "dimension": "currency"},
-    "source_url": "https://example.com/2",
-    "source_tier": "analyst",
-}
+MOCK_PRIMITIVE_2: PrimitiveHit = PrimitiveHit(
+    role="value_per_persona",
+    name="Test cost",
+    value=500.0,
+    unit={"kind": "intensive", "dimension": "currency"},
+    source_url="https://example.com/2",
+    source_tier="analyst",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -97,8 +107,8 @@ def _event_types(body: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-@patch("strata.api.routes.resolve._search_primitive_with_exa")
-@patch("strata.api.routes.resolve._parse_query_with_claude")
+@patch("strata.api.routes.resolve.search_primitive")
+@patch("strata.api.routes.resolve.parse_query")
 async def test_resolve_happy_path(mock_parse, mock_search, client: AsyncClient) -> None:
     mock_parse.return_value = MOCK_PARSED
     mock_search.side_effect = [MOCK_PRIMITIVE_1, MOCK_PRIMITIVE_2]
@@ -125,8 +135,8 @@ async def test_resolve_happy_path(mock_parse, mock_search, client: AsyncClient) 
     assert "$500M" in result_data["formatted_tam"]
 
 
-@patch("strata.api.routes.resolve._search_primitive_with_exa")
-@patch("strata.api.routes.resolve._parse_query_with_claude")
+@patch("strata.api.routes.resolve.search_primitive")
+@patch("strata.api.routes.resolve.parse_query")
 async def test_resolve_not_enough_primitives(mock_parse, mock_search, client: AsyncClient) -> None:
     mock_parse.return_value = MOCK_PARSED
     # Second primitive search returns None (not found)
@@ -147,7 +157,7 @@ async def test_resolve_not_enough_primitives(mock_parse, mock_search, client: As
     assert "Could not find enough" in error_data["message"]
 
 
-@patch("strata.api.routes.resolve._parse_query_with_claude")
+@patch("strata.api.routes.resolve.parse_query")
 async def test_resolve_claude_parse_failure(mock_parse, client: AsyncClient) -> None:
     mock_parse.side_effect = Exception("Claude API down")
 
@@ -167,7 +177,7 @@ async def test_resolve_claude_parse_failure(mock_parse, client: AsyncClient) -> 
     assert "internal error" in error_msg or "try again" in error_msg
 
 
-@patch("strata.api.routes.resolve._parse_query_with_claude")
+@patch("strata.api.routes.resolve.parse_query")
 async def test_resolve_claude_invalid_json(mock_parse, client: AsyncClient) -> None:
     mock_parse.side_effect = json.JSONDecodeError("test", "doc", 0)
 
@@ -186,8 +196,8 @@ async def test_resolve_missing_query(client: AsyncClient) -> None:
     assert response.status_code == 422
 
 
-@patch("strata.api.routes.resolve._search_primitive_with_exa")
-@patch("strata.api.routes.resolve._parse_query_with_claude")
+@patch("strata.api.routes.resolve.search_primitive")
+@patch("strata.api.routes.resolve.parse_query")
 async def test_resolve_step_events_ordering(mock_parse, mock_search, client: AsyncClient) -> None:
     """SSE events must appear in the expected logical order."""
     mock_parse.return_value = MOCK_PARSED
@@ -197,8 +207,10 @@ async def test_resolve_step_events_ordering(mock_parse, mock_search, client: Asy
     body = response.text
     types = _event_types(body)
 
-    # Must begin with a step and end with done
-    assert types[0] == "step"
+    # Per spec §9.1 the wire opens with `parsing`; the legacy `step` event
+    # follows for backward compatibility with the existing frontend.
+    assert types[0] == "parsing"
+    assert "step" in types
     assert types[-1] == "done"
     # result must appear before done
     result_idx = next(i for i, t in enumerate(types) if t == "result")
@@ -206,9 +218,11 @@ async def test_resolve_step_events_ordering(mock_parse, mock_search, client: Asy
     assert result_idx < done_idx
 
 
-@patch("strata.api.routes.resolve._search_primitive_with_exa")
-@patch("strata.api.routes.resolve._parse_query_with_claude")
-async def test_resolve_both_primitives_missing(mock_parse, mock_search, client: AsyncClient) -> None:
+@patch("strata.api.routes.resolve.search_primitive")
+@patch("strata.api.routes.resolve.parse_query")
+async def test_resolve_both_primitives_missing(
+    mock_parse, mock_search, client: AsyncClient
+) -> None:
     """When all primitive searches fail, should return an error event."""
     mock_parse.return_value = MOCK_PARSED
     mock_search.side_effect = [None, None]

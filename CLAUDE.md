@@ -339,6 +339,15 @@ private valuation. If any needs a schema exception, the schema isn't done.
 - `uv run strata test-connectors` — live smoke test all 5 APIs.
 - `uv run strata stats -d ../data` — show YAML data bank counts.
 
+### Free-form TAM queries (`strata goal`, v0.3)
+- `uv run strata goal "<query>"` — runs the 4-step resolver (concept → primitive
+  → connector → fallback). `--stream` / `--json` / `--no-live` / `--no-fallback`
+  / `--primitive-only` / `--expansion-budget N`. `STRATA_OFFLINE=1` for CI.
+- `uv run strata promote <slug>` — moves `~/.strata/auto-primitives/{slug}.yaml`
+  into the committed `data/primitives/` tree (validator-gated, idempotent).
+- Full howto: `docs/13-strata-goal-cli.md`. Spec:
+  `docs/superpowers/specs/2026-05-27-strata-goal-cli-and-connectors-design.md`.
+
 ### Data storage architecture
 - **Production (Railway):** Postgres is the primary store. YAML files are baked
   into the Docker image as seed data. Run `strata db seed` once after deploy.

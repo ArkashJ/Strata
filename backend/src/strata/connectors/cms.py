@@ -1227,3 +1227,44 @@ def cms_to_source_yaml(
         "description": description
         or f"CMS {dataset} data{f' for {state}' if state else ''}{f', {year}' if year else ''}.",
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="cms",
+            method="get_enrollment",
+            description="Medicare enrollment counts (national or by state).",
+            returns="atomic primitive, unit=count people, tier=regulator",
+            args=[
+                CapabilityArg(name="year", type="int", description="Calendar year", example="2023"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_spending",
+            description="Medicare / Medicaid spending by category.",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[
+                CapabilityArg(name="year", type="int", description="Calendar year", example="2023"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_national_health_expenditure",
+            description="National Health Expenditures (NHE) — total US health spending.",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[
+                CapabilityArg(name="year", type="int", description="Calendar year", example="2022"),
+            ],
+            source_tier="regulator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

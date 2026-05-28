@@ -1206,3 +1206,59 @@ def institution_count_to_primitive_yaml(
             "snapshot_sha256": sha,
         },
     }
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5)."""
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    return [
+        CapabilitySpec(
+            connector="fdic",
+            method="get_total_assets",
+            description="Total US banking system assets for a report period.",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="report_date",
+                    type="str",
+                    description="Quarter end YYYYMMDD",
+                    example="20241231",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
+            method="get_total_deposits",
+            description="Total US banking system deposits for a report period.",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="report_date",
+                    type="str",
+                    description="Quarter end YYYYMMDD",
+                    example="20241231",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
+            method="get_industry_summary",
+            description=("Bank count, total assets, total deposits, total income for a quarter."),
+            returns="atomic primitive bundle, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="report_date",
+                    type="str",
+                    description="Quarter end YYYYMMDD",
+                    example="20241231",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+    ]
+
+
+from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

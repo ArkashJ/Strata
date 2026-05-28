@@ -56,6 +56,20 @@ class Settings(BaseSettings):
     openfda_api_key: str | None = None
     comtrade_api_key: str | None = None
 
+    # v0.3 connectors (PR-A).
+    alpha_vantage_api_key: str | None = None
+    nasdaq_data_link_api_key: str | None = None
+    reddit_client_id: str | None = None
+    reddit_client_secret: str | None = None
+    github_token: str | None = None
+    stack_exchange_key: str | None = None
+    twitter_bearer_token: str | None = None
+
+    # v0.3 CLI behaviour.
+    # ``strata goal`` reads this directly from os.environ for clarity; it is
+    # listed here so pydantic-settings does not warn about unknown env vars.
+    offline: bool = False
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
