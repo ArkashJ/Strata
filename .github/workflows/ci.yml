@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend verification
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Tests use the YAML loader directly and never touch Postgres, but the
+      # dry-run seed step below does. Point everything at the service container.
+      STRATA_DATABASE_URL: postgresql+asyncpg://strata:strata@localhost:5432/strata
+      STRATA_OFFLINE: "1"
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: strata
+          POSTGRES_PASSWORD: strata
+          POSTGRES_DB: strata
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U strata -d strata"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies (with dev extras)
+        run: uv sync --frozen --extra dev
+
+      - name: pytest
+        run: uv run pytest
+
+      - name: pyright (strict)
+        run: uv run pyright
+
+      - name: ruff check
+        run: uv run ruff check .
+
+      - name: ruff format --check
+        run: uv run ruff format --check .
+
+      - name: validate data bank
+        run: uv run strata validate ../data
+
+      - name: alembic upgrade head (against postgres:16 service)
+        run: uv run alembic upgrade head
+
+      - name: dry-run db seed (against postgres:16 service)
+        run: uv run strata db seed -d ../data

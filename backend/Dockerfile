@@ -19,6 +19,8 @@ RUN uv sync --frozen --no-install-project --no-dev
 COPY backend/src ./src
 COPY backend/alembic.ini ./alembic.ini
 COPY backend/alembic ./alembic
+COPY backend/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 RUN uv sync --frozen --no-dev
 
 # ---- data layer (YAML seed files) ----
@@ -30,4 +32,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz', timeout=2).status==200 else 1)"
 
-CMD ["uvicorn", "strata.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["./entrypoint.sh"]

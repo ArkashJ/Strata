@@ -31,6 +31,11 @@ services:
       STRATA_DATABASE_URL: postgresql+asyncpg://strata:strata@db:5432/strata
       STRATA_CORS_ORIGINS: '["http://localhost:3000","http://localhost:3001"]'
       STRATA_DATA_DIR: /app/data
+      # entrypoint: migrate, then seed YAML → Postgres on boot (idempotent).
+      STRATA_SEED_ON_BOOT: "1"
+      # Optional — only needed for /resolve; safe to leave unset locally.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      EXA_API_KEY: ${EXA_API_KEY:-}
     ports: ["8000:8000"]
 
   web:
