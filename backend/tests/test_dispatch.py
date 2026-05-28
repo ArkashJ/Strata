@@ -74,7 +74,7 @@ def test_factory_passes_api_key_from_env(monkeypatch: pytest.MonkeyPatch) -> Non
             captured["api_key"] = api_key
 
     monkeypatch.setenv("STRATA_BLS_API_KEY", "secret-key")
-    _dispatch._build_factory("bls", Recorder)()
+    _dispatch.build_factory("bls", Recorder)()
     assert captured["api_key"] == "secret-key"
 
 
@@ -85,7 +85,7 @@ def test_factory_constructs_bare_when_ctor_takes_no_credential() -> None:
         def __init__(self) -> None:
             constructed["ok"] = True
 
-    _dispatch._build_factory("cms", NoCred)()
+    _dispatch.build_factory("cms", NoCred)()
     assert constructed["ok"] is True
 
 
@@ -97,7 +97,7 @@ def test_factory_honors_non_api_key_credential_name(monkeypatch: pytest.MonkeyPa
             captured["subscription_key"] = subscription_key
 
     monkeypatch.setenv("STRATA_COMTRADE_API_KEY", "sub-key")
-    _dispatch._build_factory("comtrade", Recorder)()
+    _dispatch.build_factory("comtrade", Recorder)()
     assert captured["subscription_key"] == "sub-key"
 
 

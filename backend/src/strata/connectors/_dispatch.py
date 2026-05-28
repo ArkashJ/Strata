@@ -197,6 +197,11 @@ def _build_factory(connector: str, client_cls: type) -> ClientFactory:
     return factory
 
 
+# Public alias: lets callers/tests build a single client factory in isolation
+# without reaching into a private name across module boundaries.
+build_factory = _build_factory
+
+
 def _converter_for(connector: str, method: str) -> Converter:
     override = _CONVERTER_OVERRIDES.get((connector, method))
     return override if override is not None else _DEFAULT_CONVERTERS[connector]
