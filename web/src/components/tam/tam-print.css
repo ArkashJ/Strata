@@ -1,0 +1,26 @@
+/*
+ * Print stylesheet scoped to the TAM artifact (Export → Download PDF uses
+ * window.print()). Drops interactive chrome — action bar, export buttons, the
+ * pannable ReactFlow controls — so the printed page reads as a clean memo
+ * artifact. Scoped under .tam-artifact so it never leaks to other routes.
+ */
+@media print {
+	.tam-artifact .react-flow__controls,
+	.tam-artifact [role="menu"],
+	.tam-artifact button {
+		display: none !important;
+	}
+
+	/* The scenario graph is a fixed-height scroll viewport on screen; let it
+     expand to its content height on paper so no leaf is clipped. */
+	.tam-artifact .react-flow,
+	.tam-artifact [class*="h-[520px]"] {
+		height: auto !important;
+		min-height: 420px;
+	}
+
+	.tam-artifact {
+		max-width: none;
+		padding: 0;
+	}
+}
