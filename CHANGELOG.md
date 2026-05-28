@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### v0.3 — goal/resolve unification + ingest orchestrator + deploy hardening + pyramid graph
+
+Integration of four parallel tracks onto the connector-dispatch foundation.
+Lands the live data path end-to-end (free-form query → dispatch → sourced TAM),
+the declarative bulk-ingest layer, production deploy/CI hardening, and the first
+read-only pyramid graph renderer in the web app.
+
+```
+strata goal / POST /resolve ──► shared resolver pipeline
+                                      │ step 3: connector dispatch
+                                      ▼
+                          CONNECTOR_DISPATCH (call_and_convert)
+                                      ▲
+   strata ingest ──► declarative manifest ──► orchestrator ──► refresh
+```
+
+#### Added
+- **Live connector dispatch in `strata goal`** — step 3 of the resolver now
+  routes through `connectors._dispatch.call_and_convert`, calling the real API
+  and writing a sourced auto-primitive. `POST /resolve` shares the same resolver
+  pipeline so CLI and HTTP surfaces resolve identically.
+- **Declarative ingest orchestrator + `strata ingest` CLI** — `run`, `status`,
+  `refresh` subcommands. Reads `data/ingest-manifest.yaml` (per-connector
+  methods + arg-sets), walks connector capabilities, dispatches each target, and
+  upserts via the resolver writer (de-duped by `metadata.auto_args_hash`).
+  `refresh` correlates targets to prior auto-primitives by the same args hash.
+- **Production deploy + CI hardening** — `.github/workflows/ci.yml` and
+  `refresh.yml`, container `entrypoint.sh`, Dockerfile/compose/`railway.toml`
+  updates, Postgres connection-pool config in `config.py`, refreshed
+  `.env.example`.
+- **Read-only 3-axis pyramid graph renderer** at `/graph` (web) — `PyramidGraph`
+  + `PyramidFilters` components over a `pyramid.ts` layout/transform module with
+  unit tests.
+
+#### Changed
+- `VERSION` bumped to `0.3.0`.
+
 ### v0.3 — `strata goal` CLI + 7 connectors + manifest-LLM router (PR #45)
 
 Adds free-form TAM queries on the CLI and the connector + router scaffolding

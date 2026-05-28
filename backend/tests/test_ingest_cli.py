@@ -501,8 +501,12 @@ def test_target_is_hashable_dataclass() -> None:
 def test_orchestrator_args_hash_matches_writer() -> None:
     # refresh correlates targets to prior auto-primitives by this hash, so it
     # MUST stay identical to the hash resolver.writer stamps into metadata.
-    from strata.ingest.orchestrator import _args_hash as ingest_hash
-    from strata.resolver.writer import _args_hash as writer_hash
+    from strata.ingest.orchestrator import (
+        _args_hash as ingest_hash,  # pyright: ignore[reportPrivateUsage]
+    )
+    from strata.resolver.writer import (
+        _args_hash as writer_hash,  # pyright: ignore[reportPrivateUsage]
+    )
 
     args = {"series_id": "A", "primitive_slug": "p", "n": 3}
     assert ingest_hash("bls", "get_series", args) == writer_hash("bls", "get_series", args)
