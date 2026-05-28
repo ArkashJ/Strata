@@ -7,8 +7,11 @@ import {
   type FrameworkSummary,
   type PrimitiveSummary,
   type TAMOutput,
+  conceptDetailSchema,
   conceptSummarySchema,
+  frameworkDetailSchema,
   frameworkSummarySchema,
+  primitiveDetailSchema,
   primitiveSummarySchema,
   tamOutputSchema,
 } from "./schemas";
@@ -28,7 +31,7 @@ export const conceptsQuery = queryOptions({
 export const conceptQuery = (slug: string) =>
   queryOptions({
     queryKey: ["concept", slug],
-    queryFn: async () => api(`/c/${slug}`),
+    queryFn: async () => validated(conceptDetailSchema, await api(`/c/${slug}`)),
     enabled: !!slug,
   });
 
@@ -43,7 +46,7 @@ export const primitivesQuery = queryOptions({
 export const primitiveQuery = (slug: string) =>
   queryOptions({
     queryKey: ["primitive", slug],
-    queryFn: async () => api(`/p/${slug}`),
+    queryFn: async () => validated(primitiveDetailSchema, await api(`/p/${slug}`)),
     enabled: !!slug,
   });
 
@@ -58,7 +61,7 @@ export const frameworksQuery = queryOptions({
 export const frameworkQuery = (slug: string) =>
   queryOptions({
     queryKey: ["framework", slug],
-    queryFn: async () => api(`/f/${slug}`),
+    queryFn: async () => validated(frameworkDetailSchema, await api(`/f/${slug}`)),
     enabled: !!slug,
   });
 
