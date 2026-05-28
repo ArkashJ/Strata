@@ -1,10 +1,16 @@
-"""Dynamic TAM query resolution via LLM + Exa search.
+"""Dynamic TAM query resolution via the shared resolver pipeline.
 
-``POST /resolve`` streams SSE events as it parses, searches, and evaluates.
+``POST /resolve`` streams SSE events as the resolver parses, searches, and
+evaluates a free-form market query. The heavy lifting lives in
+``strata.resolver.pipeline`` so this HTTP surface and the ``strata goal`` CLI
+share one engine.
 
-The heavy lifting lives in ``strata.resolver`` so both this HTTP surface
-and the new ``strata goal`` CLI share the same pipeline. The wire format
-is frozen per spec §9.1 — see ``test_sse_event_contract.py``.
+Wire format is frozen per spec §9.1 — see ``test_sse_event_contract.py``. The
+six wire-level events are ``parsing``, ``searching``, ``framework_selected``,
+``evaluating``, ``result``, ``error`` (plus legacy ``step`` / ``done`` for the
+current frontend). The pipeline's CLI-only event kinds (slug_resolved,
+concept_hit, primitive_hit, router_decision, connector_call, wrote_primitive,
+budget_exceeded) are NEVER emitted to network clients.
 """
 
 from __future__ import annotations
@@ -12,47 +18,29 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from typing import cast
+from collections.abc import AsyncIterator
 
 from dotenv import load_dotenv
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from strata.resolver.parse import ParsedPrimitive, parse_query
-from strata.resolver.search import search_primitive
+from strata.api.deps import get_registry
+from strata.registry import Registry
+from strata.resolver import RunOptions, parse_query, run, search_primitive
+from strata.resolver.events import PipelineStatus, ResolverResult
+from strata.resolver.slug import ResolvedQuery, ResolverIntent
 
 router = APIRouter(tags=["resolve"])
+
+_get_registry = Depends(get_registry)
 
 # Load .env — walks up directory tree automatically.
 load_dotenv()
 
-FRAMEWORK_TEMPLATES: dict[str, dict[str, str]] = {
-    "cost_efficiency": {
-        "name": "Bottoms-up cost efficiency",
-        "formula": "persona_pool x cost_per_persona",
-    },
-    "revenue_generation": {
-        "name": "Top-down revenue capture",
-        "formula": "target_segment x spend_per_target",
-    },
-    "latent_demand": {
-        "name": "Adoption curve latent demand",
-        "formula": "addressable_population x adoption_value",
-    },
-    "platform_throughput": {
-        "name": "Throughput take-rate",
-        "formula": "volume x take_rate",
-    },
-    "bundle_consolidation": {
-        "name": "Consolidation sum-then-discount",
-        "formula": "total_spend x consolidation_rate",
-    },
-    "productivity_uplift": {
-        "name": "Productivity uplift value-split",
-        "formula": "persona_count x value_per_persona",
-    },
-}
+_log = logging.getLogger(__name__)
+
+_MODEL = "claude-sonnet-4-20250514"
 
 
 class ResolveRequest(BaseModel):
@@ -74,154 +62,121 @@ def _format_usd(value: float) -> str:
     return f"${value:,.0f}"
 
 
-def _select_framework(lens: str) -> dict[str, str]:
-    return FRAMEWORK_TEMPLATES.get(lens, FRAMEWORK_TEMPLATES["cost_efficiency"])
+def _http_slug(_query: str) -> ResolvedQuery:
+    """HTTP slug seam: the network endpoint is the dynamic-synthesis surface,
+    so it always takes the fallback path. Returning NOVEL skips the registry +
+    router steps (no extra Claude round-trips on the request hot path)."""
+    return ResolvedQuery(intent=ResolverIntent.NOVEL, confidence=0.0)
 
 
 @router.post("/resolve")
-async def resolve_query(body: ResolveRequest) -> StreamingResponse:
-    async def generate():  # type: ignore[return]
+async def resolve_query(
+    body: ResolveRequest, registry: Registry = _get_registry
+) -> StreamingResponse:
+    async def generate() -> AsyncIterator[str]:
+        # ── parsing event (frozen §9.1) ────────────────────────────────
+        yield _sse("parsing", {"query": body.query, "model": _MODEL})
+        yield _sse("step", {"type": "parsing", "message": f'Parsing: "{body.query}"...'})
+
         try:
-            # ── parsing event (frozen §9.1) ────────────────────────────
-            yield _sse(
-                "parsing",
-                {"query": body.query, "model": "claude-sonnet-4-20250514"},
+            result: ResolverResult = await asyncio.to_thread(
+                run,
+                body.query,
+                registry=registry,
+                options=RunOptions(allow_live=False, allow_fallback=True, model=_MODEL),
+                slug_fn=_http_slug,
+                parse_fn=parse_query,
+                search_fn=search_primitive,
             )
-            # Backwards-compat ``step`` event for the existing frontend.
-            yield _sse(
-                "step",
-                {"type": "parsing", "message": f'Parsing: "{body.query}"...'},
-            )
-
-            try:
-                parsed = await asyncio.to_thread(parse_query, body.query)
-            except Exception:
-                logging.getLogger(__name__).exception("/resolve parse failed")
-                yield _sse(
-                    "error",
-                    {"message": "Failed to parse AI response. Please try again.", "step": "parse"},
-                )
-                yield _sse("done", {})
-                return
-
-            yield _sse(
-                "step",
-                {
-                    "type": "parsed",
-                    "lens": parsed.lens,
-                    "concept_name": parsed.concept_name,
-                    "definition": parsed.definition,
-                    "primitives_needed": [p.model_dump() for p in parsed.primitives_needed],
-                },
-            )
-
-            # ── per-primitive search (frozen §9.1) ─────────────────────
-            found_primitives: list[dict[str, object]] = []
-            for prim in parsed.primitives_needed:
-                prim = cast(ParsedPrimitive, prim)
-                yield _sse(
-                    "searching",
-                    {"primitive_name": prim.role, "role": prim.role},
-                )
-                yield _sse(
-                    "step",
-                    {
-                        "type": "searching",
-                        "role": prim.role,
-                        "message": f"Searching for {prim.description}...",
-                    },
-                )
-                hit = await asyncio.to_thread(search_primitive, prim)
-                if hit is not None:
-                    payload: dict[str, object] = hit.model_dump()
-                    found_primitives.append(payload)
-                    yield _sse(
-                        "step",
-                        {
-                            "type": "primitive_found",
-                            "role": payload["role"],
-                            "name": payload["name"],
-                            "value": payload["value"],
-                            "unit": payload["unit"],
-                            "source_url": payload["source_url"],
-                            "source_tier": payload.get("source_tier", "community"),
-                        },
-                    )
-
-            if len(found_primitives) < 2:
-                yield _sse(
-                    "error",
-                    {
-                        "message": "Could not find enough market data for this query.",
-                        "step": "search",
-                    },
-                )
-                yield _sse("done", {})
-                return
-
-            # ── framework_selected (frozen §9.1) ───────────────────────
-            framework_info = _select_framework(parsed.lens)
-            yield _sse(
-                "framework_selected",
-                {"framework": parsed.lens, "lens": parsed.lens},
-            )
-            yield _sse(
-                "step",
-                {
-                    "type": "framework_selected",
-                    "name": framework_info["name"],
-                    "lens": parsed.lens,
-                    "formula": framework_info["formula"],
-                },
-            )
-
-            # ── evaluating (frozen §9.1) ───────────────────────────────
-            yield _sse(
-                "evaluating",
-                {
-                    "inputs": [
-                        {"slug": p.get("role"), "value": p["value"], "unit": p["unit"]}
-                        for p in found_primitives
-                    ]
-                },
-            )
-            yield _sse(
-                "step",
-                {"type": "evaluating", "message": "Computing TAM scenarios..."},
-            )
-
-            tam_value = 1.0
-            for p in found_primitives:
-                tam_value *= float(p["value"])  # type: ignore[arg-type]
-
-            # ── result (frozen §9.1) ───────────────────────────────────
-            yield _sse(
-                "result",
-                {
-                    "tam_usd": tam_value,
-                    "scenarios": [{"label": "point", "value": tam_value}],
-                    "sources": [
-                        {"url": p.get("source_url"), "tier": p.get("source_tier")}
-                        for p in found_primitives
-                    ],
-                    # Extended payload for the existing frontend (additive).
-                    "concept_name": parsed.concept_name,
-                    "definition": parsed.definition,
-                    "tam_value": tam_value,
-                    "formatted_tam": _format_usd(tam_value),
-                    "lens": parsed.lens,
-                    "framework_name": framework_info["name"],
-                    "independence_score": 0.0,
-                    "primitives_used": found_primitives,
-                },
-            )
-
-            yield _sse("done", {})
-
         except Exception:
-            logging.getLogger(__name__).exception("resolve failed")
+            _log.exception("resolve pipeline failed")
             yield _sse("error", {"message": "An internal error occurred.", "step": "unknown"})
             yield _sse("done", {})
+            return
+
+        if result.status is PipelineStatus.FAILED or not result.primitives_used:
+            # Distinguish the two known terminal failure shapes for the UI copy.
+            message = (
+                "Failed to parse AI response. Please try again."
+                if (result.error or "").startswith("fallback parse")
+                else "Could not find enough market data for this query."
+            )
+            yield _sse("error", {"message": message, "step": "search"})
+            yield _sse("done", {})
+            return
+
+        primitives = result.primitives_used
+
+        # ── per-primitive search (frozen §9.1) ─────────────────────────
+        for p in primitives:
+            role = p.get("role")
+            name = p.get("name")
+            yield _sse("searching", {"primitive_name": role, "role": role})
+            yield _sse(
+                "step",
+                {
+                    "type": "primitive_found",
+                    "role": role,
+                    "name": name,
+                    "value": p.get("value"),
+                    "unit": p.get("unit"),
+                    "source_url": p.get("source_url"),
+                    "source_tier": p.get("source_tier", "community"),
+                },
+            )
+
+        # ── framework_selected (frozen §9.1) ───────────────────────────
+        lens = result.lens or "cost_efficiency"
+        yield _sse("framework_selected", {"framework": lens, "lens": lens})
+        yield _sse(
+            "step",
+            {
+                "type": "framework_selected",
+                "name": result.framework_name or lens.replace("_", " ").title(),
+                "lens": lens,
+            },
+        )
+
+        # ── evaluating (frozen §9.1) ───────────────────────────────────
+        yield _sse(
+            "evaluating",
+            {
+                "inputs": [
+                    {
+                        "slug": p.get("role") or p.get("slug"),
+                        "value": p.get("value"),
+                        "unit": p.get("unit"),
+                    }
+                    for p in primitives
+                ]
+            },
+        )
+        yield _sse("step", {"type": "evaluating", "message": "Computing TAM scenarios..."})
+
+        tam_value = result.tam_value if result.tam_value is not None else 0.0
+
+        # ── result (frozen §9.1) ───────────────────────────────────────
+        yield _sse(
+            "result",
+            {
+                "tam_usd": tam_value,
+                "scenarios": [{"label": "point", "value": tam_value}],
+                "sources": [
+                    {"url": p.get("source_url"), "tier": p.get("source_tier")} for p in primitives
+                ],
+                # Extended payload for the existing frontend (additive).
+                "concept_name": result.concept_name,
+                "definition": result.definition,
+                "tam_value": tam_value,
+                "formatted_tam": result.formatted_tam or _format_usd(tam_value),
+                "lens": result.lens,
+                "framework_name": result.framework_name,
+                "independence_score": result.independence_score,
+                "primitives_used": primitives,
+                "banner": result.banner,
+            },
+        )
+        yield _sse("done", {})
 
     return StreamingResponse(
         generate(),
