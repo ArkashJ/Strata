@@ -1,17 +1,10 @@
-# TAM — Frontier-quality data labeling, 2025
+# TAM - Frontier-quality data labeling, 2025
 
-**Segment.** Expert human labelers used by frontier AI labs for RLHF, code /
-reasoning evals, and red-teaming. The "like Turing / Scale AI / Surge AI"
-market. This is **distinct** from commodity image annotation: per-task
-pricing is 10–50× higher and the buyer is OpenAI / Anthropic / Google /
-Meta, not autonomous-vehicle teams or e-commerce.
+**Segment.** Expert human labelers used by frontier AI labs for RLHF, code/reasoning evals, and red-teaming. The "like Turing / Scale AI / Surge AI" market. This is **distinct** from commodity image annotation: per-task pricing is 10-50x higher and the buyer is OpenAI / Anthropic / Google / Meta, not autonomous-vehicle teams or e-commerce.
 
-**Asked by.** VC sizing question on 2026-05-27. Computed by the Strata
-methodology (lens × framework × sourced primitives) and walked manually
-because the live `strata goal` CLI couldn't reach Anthropic on this
-workstation (malformed `ANTHROPIC_API_KEY` in `.env`). Numbers here would
-normally land in `~/.strata/auto-primitives/` and be promotable into
-`data/primitives/` once they pass the validator.
+**Asked by.** VC sizing question on 2026-05-27.
+
+**Methodology.** Computed with the Strata lens x framework x sourced-primitives stack and walked manually because the live `strata goal` CLI could not reach Anthropic on this workstation (malformed `ANTHROPIC_API_KEY` in `.env`). Numbers here would normally land in `~/.strata/auto-primitives/` and be promotable into `data/primitives/` once they pass the validator.
 
 ---
 
@@ -19,152 +12,124 @@ normally land in `~/.strata/auto-primitives/` and be promotable into
 
 Three of Strata's six lenses are relevant:
 
-```
-L1 cost_efficiency      ← primary lens (bottom-up labor)
-    TAM = (expert labelers) × ($/hr) × (annual utilized hours)
+| Lens | Role | Formula |
+|------|------|---------|
+| **L1** `cost_efficiency` | Primary (bottom-up labor) | TAM = (expert labelers) x ($/hr) x (annual utilized hours) |
+| **L4** `platform_throughput` | Cross-check (marketplace view) | TAM = (labeling tasks/yr) x (avg $/task) |
+| **L3** `latent_demand` | 2027 growth scenario | `TAM_2027` = (frontier-lab training spend) x (labeling share %) |
 
-L4 platform_throughput  ← cross-check (the marketplace view)
-    TAM = (labeling tasks/yr) × (avg $/task)
-
-L3 latent_demand        ← 2027 growth scenario
-    TAM_2027 = (frontier-lab training spend) × (labeling share %)
-```
-
-L1 + revealed revenue triangulation is the defensible answer; L3 is the
-upside scenario you'd quote separately so the LP can pressure-test the
-2027 assumption directly.
+L1 plus revealed-revenue triangulation is the defensible answer. L3 is the upside scenario to quote separately so an LP can pressure-test the 2027 assumption directly.
 
 ---
 
 ## Inputs (with confidence labels)
 
 | Input | Value | Source | Tier |
-|---|---|---|---|
-| Active expert labelers worldwide | ~50,000 | Scale claims 250K pool; ~20 % high-skill active | ⚠ analyst |
-| Blended hourly rate (PhD / code / reasoning) | $60 / hr | Surge AI public rate $50, Turing $40-60, premium tiers $100+ | ⚠ analyst |
-| Productive hours per labeler per year | 1,800 | 1500-2000 typical for contract labor | ⚠ analyst |
-| Scale AI 2024 revenue | ~$1.0 B | Forbes / SEC filings | ✓ analyst |
-| Surge AI 2024 revenue | ~$1.0 B | Bloomberg Sept 2024 | ✓ analyst |
-| Turing 2024 revenue | ~$0.3 B | Company disclosures | ⚠ analyst |
-| Invisible Tech / Snorkel / Labelbox / Appen frontier line | ~$0.7 B combined | various | ⚠ analyst |
-| Frontier-lab training + post-training spend, 2027 | $80-120 B | scaling-law extrapolations, public capex | ⚠ analyst |
-| Labeling share of total training spend | 15-25 % | historical OpenAI / Anthropic disclosures | ⚠ analyst |
+|-------|-------|--------|------|
+| Active expert labelers worldwide | ~50,000 | Scale claims 250K pool; ~20% high-skill active | analyst (est.) |
+| Blended hourly rate (PhD / code / reasoning) | $60/hr | Surge AI public rate $50; Turing $40-60; premium tiers $100+ | analyst (est.) |
+| Productive hours per labeler per year | 1,800 | 1,500-2,000 typical for contract labor | analyst (est.) |
+| Scale AI 2024 revenue | ~$1.0B | Forbes / SEC filings | analyst (verified) |
+| Surge AI 2024 revenue | ~$1.0B | Bloomberg Sept 2024 | analyst (verified) |
+| Turing 2024 revenue | ~$0.3B | Company disclosures | analyst (est.) |
+| Invisible Tech / Snorkel / Labelbox / Appen frontier line | ~$0.7B combined | various | analyst (est.) |
+| Frontier-lab training + post-training spend, 2027 | $80-120B | scaling-law extrapolations, public capex | analyst (est.) |
+| Labeling share of total training spend | 15-25% | historical OpenAI / Anthropic disclosures | analyst (est.) |
 
 ---
 
 ## The math
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  BOTTOM-UP (L1 cost_efficiency)                              │
-│                                                              │
-│    50,000 expert labelers                                    │
-│  ×   $60 / hr                                                │
-│  × 1,800 productive hours / yr                               │
-│  ─────────────────────────────                               │
-│  = $5.4 B capacity-side TAM, 2025                            │
-│                                                              │
-├──────────────────────────────────────────────────────────────┤
-│  REVEALED-REVENUE FLOOR (named players 2024)                 │
-│                                                              │
-│    Scale AI   $1.0 B                                         │
-│  + Surge AI   $1.0 B                                         │
-│  + Turing     $0.3 B                                         │
-│  + Others     $0.7 B                                         │
-│  ─────────────────────                                       │
-│  = $3.0 B floor (2024) → ~$5.0 B (2025, 60-70 % YoY growth)  │
-│                                                              │
-├──────────────────────────────────────────────────────────────┤
-│  TOP-DOWN (L3 latent_demand, 2027 view)                      │
-│                                                              │
-│    Frontier-lab training + post-training spend 2027          │
-│    ≈ $80-120 B (OpenAI / Anth / Google / Meta / xAI scaling) │
-│  × labeling share (15-25 %, holding steady)                  │
-│  ─────────────────────────────                               │
-│  = $12-30 B addressable spend by 2027                        │
-└──────────────────────────────────────────────────────────────┘
-```
+### Bottom-up (L1 `cost_efficiency`)
+
+| Step | Calculation |
+|------|-------------|
+| Expert labelers | 50,000 |
+| Blended rate | x $60/hr |
+| Productive hours | x 1,800 hr/yr |
+| **Capacity-side TAM, 2025** | **= $5.4B** |
+
+### Revealed-revenue floor (named players, 2024)
+
+| Player | Revenue |
+|--------|---------|
+| Scale AI | $1.0B |
+| Surge AI | $1.0B |
+| Turing | $0.3B |
+| Others | $0.7B |
+| **Floor (2024)** | **= $3.0B** |
+| **Implied 2025** (60-70% YoY growth) | **~$5.0B** |
+
+### Top-down (L3 `latent_demand`, 2027 view)
+
+| Step | Calculation |
+|------|-------------|
+| Frontier-lab training + post-training spend, 2027 | ~$80-120B (OpenAI / Anthropic / Google / Meta / xAI scaling) |
+| Labeling share (15-25%, holding steady) | x 15-25% |
+| **Addressable spend by 2027** | **= $12-30B** |
 
 ### Triangulation
 
-```
-                                  $5.4 B (bottom-up capacity)
-                                       │
-                                       ▼
-            $5.0 B (revealed revenue trend) ──── point ──── $5-6 B (2025)
-                                       ▲
-                                       │
-                            tight bounds: $4-7 B
-```
+| Method | 2025 estimate |
+|--------|---------------|
+| Bottom-up capacity (L1) | $5.4B |
+| Revealed revenue trend (2024 floor to 2025) | ~$5.0B |
+| **Point estimate** | **$5-6B** |
+| **Defensible range** | **$4-7B** |
 
-Bottom-up capacity and revealed revenue land within 10 % of each other.
-That's the strongest signal a TAM is real — triangulation, not extrapolation.
+Bottom-up capacity and revealed revenue land within ~10% of each other. That is the strongest signal a TAM is real: triangulation, not extrapolation.
 
 ---
 
 ## Point estimate
 
-```
-2024:   $3.0 B  (revealed)
-2025:   $5-6 B  ← number to quote today
-2027:  $12-20 B ← if synthetic data doesn't eat > 40 % of human RLHF
-2030:  $20-30 B ← MarketsAndMarkets-style consensus
-```
+| Year | Estimate | Notes |
+|------|----------|-------|
+| 2024 | $3.0B | Revealed revenue floor |
+| 2025 | $5-6B | Number to quote today |
+| 2027 | $12-20B | If synthetic data does not displace >40% of human RLHF |
+| 2030 | $20-30B | MarketsAndMarkets-style consensus |
 
-**Quote for an LP:** $5-6 B for 2025, defensible range $4-7 B.
+**Quote for an LP:** $5-6B for 2025, defensible range $4-7B.
 
 ---
 
 ## Risk banners
 
-- **community-modeled** — `$ / hr` and active-labeler counts are analyst
-  estimates, not regulator data. No BLS NAICS code carves out "AI
-  labelers" yet. Treat the bottom-up TAM as a triangulation check, not a
-  cited number.
-- **synthetic-data risk** — the 2027 estimate assumes labeling share
-  holds at 15-25 %. If RL-from-AI-feedback (RLAIF) takes labeling-share
-  to < 10 % of post-training spend, 2027 TAM drops to **$5-8 B**, not
-  $12-20 B. Worth modeling as a separate scenario.
-- **commoditization risk** — Turing's thesis is that *coding* labelers
-  don't commoditize. If true, $ / hr stays elevated and the cost-side TAM
-  compounds. If false, the segment halves by 2028 as low-cost geos eat
-  the per-token price.
-- **moat asymmetry** — Scale + Surge + Turing are not interchangeable.
-  Surge has the highest unit prices (frontier labs only), Scale has the
-  largest pool (commodity + frontier mixed), Turing has the highest
-  developer-skill ceiling. A flat TAM number hides those.
+- **community-modeled** - `$/hr` and active-labeler counts are analyst estimates, not regulator data. No BLS NAICS code carves out "AI labelers" yet. Treat the bottom-up TAM as a triangulation check, not a cited number.
+- **synthetic-data risk** - the 2027 estimate assumes labeling share holds at 15-25%. If RL-from-AI-feedback (RLAIF) takes labeling share to <10% of post-training spend, 2027 TAM drops to **$5-8B**, not $12-20B. Worth modeling as a separate scenario.
+- **commoditization risk** - Turing's thesis is that *coding* labelers do not commoditize. If true, $/hr stays elevated and the cost-side TAM compounds. If false, the segment halves by 2028 as low-cost geos compress per-token price.
+- **moat asymmetry** - Scale, Surge, and Turing are not interchangeable. Surge has the highest unit prices (frontier labs only). Scale has the largest pool (commodity + frontier mixed). Turing has the highest developer-skill ceiling. A flat TAM number hides those differences.
 
 ---
 
 ## What the tool would have added
 
-If `strata goal "data labeling market like Turing 2025" --stream` had run
-live, it would have additionally pulled and pinned:
+If `strata goal "data labeling market like Turing 2025" --stream` had run live, it would have additionally pulled and pinned:
 
 - **BLS NAICS 541512** wages for the FTE cost cross-check
 - **Census CBP** employment counts for the labor-pool sizing
 - **EDGAR** for any public filings from Scale AI / private comps
-- Auto-written each as YAML in `~/.strata/auto-primitives/`, ready for
-  `strata promote` into the committed data bank
+- Auto-written YAML in `~/.strata/auto-primitives/`, ready for `strata promote` into the committed data bank
 
 The pipeline output would look something like:
 
-```
-→ Slug resolver: intent=novel, framework_hint=cost_efficiency
-→ Step 3: framework cost_efficiency needs {persona_pool, cost_per_persona}
-          [1/2] router → bls.get_series(series_id=OEUS000000054151200) tier=regulator
-                conf=0.91 → wrote ~/.strata/auto-primitives/bls-software-
+```text
+-> Slug resolver: intent=novel, framework_hint=cost_efficiency
+-> Step 3: framework cost_efficiency needs {persona_pool, cost_per_persona}
+          [1/2] router -> bls.get_series(series_id=OEUS000000054151200) tier=regulator
+                conf=0.91 -> wrote ~/.strata/auto-primitives/bls-software-
                 developers-us-2024.yaml
-          [2/2] router → fred.get_observations(series_id=COMPNFB) tier=regulator
+          [2/2] router -> fred.get_observations(series_id=COMPNFB) tier=regulator
                 conf=0.88
-→ evaluator: 2 inputs · 1 scenario path · banners=[community-modeled,
+-> evaluator: 2 inputs * 1 scenario path * banners=[community-modeled,
             synthetic-data-risk]
 
   TAM   point: $5.4B
   Inputs:
-    • bls-software-developers-us-2024     50,000  BLS OES 2024-05 (subset)
-    • surge-blended-rate-2024             $60/hr  analyst-paraphrase
+    - bls-software-developers-us-2024     50,000  BLS OES 2024-05 (subset)
+    - surge-blended-rate-2024             $60/hr  analyst-paraphrase
 
-  ⚑ community-modeled: persona pool sizing is analyst estimate; promote
+  [!] community-modeled: persona pool sizing is analyst estimate; promote
     only after manual review.
 ```
