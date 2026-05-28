@@ -235,7 +235,7 @@ def test_writer_upsert_is_idempotent(tmp_path: Path) -> None:
 def test_writer_rejects_invalid_primitive(tmp_path: Path) -> None:
     bad = _good_primitive_yaml()
     bad["value"] = float("nan")  # NaN explicitly rejected by AtomicPrimitive
-    with pytest.raises(ValueError):  # noqa: PT011 — Pydantic raises a subclass
+    with pytest.raises(ValueError):
         upsert_primitive(
             primitive_yaml=bad,
             connector="fdic",
