@@ -1,6 +1,6 @@
-"""Exa search + Claude extract — lifted from api/routes/resolve.py.
+"""Exa search + LLM extract — lifted from api/routes/resolve.py.
 
-Given a ParsedPrimitive, fetches Exa results, asks Claude to extract the
+Given a ParsedPrimitive, fetches Exa results, asks the LLM to extract the
 single most relevant number, and returns a PrimitiveHit (or None).
 
 Errors are swallowed and converted to None per the spec's existing
@@ -15,11 +15,11 @@ import os
 import re
 from typing import Any
 
-from anthropic.types import TextBlock
 from exa_py import Exa
 from pydantic import BaseModel, ConfigDict
 
-from .parse import ParsedPrimitive, get_anthropic_client
+from . import llm as _llm
+from .parse import ParsedPrimitive
 
 _exa_client: Exa | None = None
 _log = logging.getLogger(__name__)
@@ -49,9 +49,9 @@ def _strip_code_fence(text: str) -> str:
 
 
 def search_primitive(
-    prim: ParsedPrimitive, *, model: str = "claude-sonnet-4-20250514"
+    prim: ParsedPrimitive, *, model: str = "claude-sonnet-4-6"
 ) -> PrimitiveHit | None:
-    """Exa search → Claude extract → PrimitiveHit | None."""
+    """Exa search → LLM extract → PrimitiveHit | None."""
     exa = _get_exa()
     try:
         results = exa.search(
@@ -72,28 +72,17 @@ def search_primitive(
         if not highlights_text:
             return None
 
-        client = get_anthropic_client()
-        extract = client.messages.create(
-            model=model,
-            max_tokens=256,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"""From these search results, extract the single most relevant numeric value for: {prim.description}
+        prompt = f"""From these search results, extract the single most relevant numeric value for: {prim.description}
 
 Search results:
 {highlights_text}
 
 Return ONLY JSON: {{"value": <number>, "name": "<source description>", "source_url": "<best URL>", "source_tier": "<regulator|analyst|aggregator|community>"}}
 
-The value should be a raw number (e.g. 2183300 not "2.18M"). If money, give annual USD. If percentage, give decimal.""",
-                }
-            ],
-        )
-        block = extract.content[0]
-        if not isinstance(block, TextBlock):
-            raise ValueError("Expected text response from Claude")
-        raw: dict[str, Any] = json.loads(_strip_code_fence(block.text))
+The value should be a raw number (e.g. 2183300 not "2.18M"). If money, give annual USD. If percentage, give decimal."""
+
+        raw_text = _llm.complete(prompt, model=model, max_tokens=256)
+        raw: dict[str, Any] = json.loads(_strip_code_fence(raw_text))
 
         return PrimitiveHit(
             role=prim.role,

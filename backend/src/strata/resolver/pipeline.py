@@ -74,7 +74,7 @@ class RunOptions:
     allow_fallback: bool = True
     expansion_budget: int = 6
     primitive_only: bool = False
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-sonnet-4-6"
 
 
 @dataclass(slots=True)

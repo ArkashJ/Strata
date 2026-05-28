@@ -86,7 +86,7 @@ def resolve_slug(
     *,
     known_concepts: list[ConceptSummary],
     known_primitives: list[PrimitiveSummary],
-    model: str = "claude-sonnet-4-20250514",
+    model: str = "claude-sonnet-4-6",
 ) -> ResolvedQuery:
     """Single Claude one-shot mapping a free-form query to ResolvedQuery."""
 

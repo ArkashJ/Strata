@@ -99,9 +99,9 @@ def test_resolve_slug_novel(mock_client: MagicMock) -> None:
 # ---------------------------------------------------------------------------
 
 
-@patch("strata.resolver.parse.get_anthropic_client")
-def test_parse_query_returns_pydantic(mock_client: MagicMock) -> None:
-    mock_client.return_value.messages.create.return_value = _make_text_response(
+@patch("strata.resolver.llm.complete")
+def test_parse_query_returns_pydantic(mock_complete: MagicMock) -> None:
+    mock_complete.return_value = (
         '{"lens": "cost_efficiency", "concept_name": "x", "definition": "y", '
         '"primitives_needed": [{"role": "a", "description": "b", "search_query": "c", '
         '"expected_unit": {"kind": "stock", "dimension": "people"}, "expected_currency": null}]}'
@@ -112,9 +112,10 @@ def test_parse_query_returns_pydantic(mock_client: MagicMock) -> None:
     assert len(out.primitives_needed) == 1
 
 
-@patch("strata.resolver.parse.get_anthropic_client")
-def test_parse_query_strips_markdown_fences(mock_client: MagicMock) -> None:
-    mock_client.return_value.messages.create.return_value = _make_text_response(
+@patch("strata.resolver.llm.complete")
+def test_parse_query_strips_markdown_fences(mock_complete: MagicMock) -> None:
+    # complete() returns the raw text; parse_query strips the fence itself.
+    mock_complete.return_value = (
         '```json\n{"lens": "latent_demand", "concept_name": "x", "definition": "y", '
         '"primitives_needed": []}\n```'
     )
@@ -127,15 +128,15 @@ def test_parse_query_strips_markdown_fences(mock_client: MagicMock) -> None:
 # ---------------------------------------------------------------------------
 
 
-@patch("strata.resolver.search.get_anthropic_client")
+@patch("strata.resolver.llm.complete")
 @patch("strata.resolver.search._get_exa")
-def test_search_primitive_happy_path(mock_exa: MagicMock, mock_anthropic: MagicMock) -> None:
-    """Exa returns a highlight → Claude extracts a number → PrimitiveHit."""
+def test_search_primitive_happy_path(mock_exa: MagicMock, mock_complete: MagicMock) -> None:
+    """Exa returns a highlight → LLM extracts a number → PrimitiveHit."""
     result_item = MagicMock(
         url="https://example.com/x", title="Source", highlights=["The figure is 1234567."]
     )
     mock_exa.return_value.search.return_value = MagicMock(results=[result_item])
-    mock_anthropic.return_value.messages.create.return_value = _make_text_response(
+    mock_complete.return_value = (
         '{"value": 1234567, "name": "Test source", "source_url": "https://example.com/x", '
         '"source_tier": "regulator"}'
     )
