@@ -90,6 +90,7 @@
 
   /* Layout primitives */
   --sidebar-w: 240px;
+  --sidebar-w-collapsed: 56px;
   --topbar-h: 48px;
   --right-rail-w: 320px;
   --content-max: 1280px;

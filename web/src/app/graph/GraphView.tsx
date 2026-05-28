@@ -41,18 +41,6 @@ export function GraphView() {
 
   return (
     <main className="flex-1 flex flex-col">
-      <header className="w-full px-8 py-5 flex items-center justify-between border-b border-[var(--border-1)]">
-        <Link
-          href="/"
-          className="display text-[20px] text-[var(--fg-1)] hover:text-[var(--accent)] transition-colors"
-        >
-          ← Strata
-        </Link>
-        <div className="text-[11px] uppercase tracking-[0.08em] text-[var(--fg-3)]">
-          Pyramid graph · read-only
-        </div>
-      </header>
-
       <div className="flex-1 px-8 py-6 max-w-[1400px] mx-auto w-full flex flex-col gap-5">
         <div className="flex flex-col gap-3">
           <h1 className="display text-[28px] text-[var(--fg-1)]">Explore the pyramid</h1>

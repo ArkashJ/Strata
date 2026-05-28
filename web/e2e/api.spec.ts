@@ -45,9 +45,7 @@ test.describe("Backend API", () => {
     }
   });
 
-  test("GET /build/doc-gen-pc-insurance returns TAM data", async ({
-    request,
-  }) => {
+  test("GET /build/doc-gen-pc-insurance returns TAM data", async ({ request }) => {
     const res = await request.get(`${API_URL}/build/doc-gen-pc-insurance`);
     expect(res.status()).toBe(200);
     const body = await res.json();
