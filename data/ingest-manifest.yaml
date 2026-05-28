@@ -1,0 +1,74 @@
+# Declarative ingest manifest — the static counterpart to the LLM router.
+#
+# `strata ingest run` walks this file: for each connector method, every
+# arg_set becomes one connector call. An arg_set carries BOTH the connector
+# method arguments (series_id, indicator, cik, ...) AND the converter metadata
+# (primitive_slug, concept_slug, name, description, source_url, unit_*).
+# `connectors._dispatch.call_and_convert` splits the two by signature.
+#
+# Connectors whose STRATA_<X>_API_KEY is unset are skipped (logged, batch
+# continues). Keyless connectors (edgar, worldbank, ...) always run.
+#
+# Slugs MUST be kebab-case (^[a-z0-9][a-z0-9-]*$). Keep one arg_set per
+# distinct primitive you want in the bank.
+
+connectors:
+  fred:
+    - method: get_observations
+      arg_sets:
+        - series_id: GDP
+          primitive_slug: fred-us-gdp-nominal
+          concept_slug: us-gdp
+          name: US nominal GDP (FRED GDP)
+          description: US nominal gross domestic product, latest annual observation.
+          source_url: https://fred.stlouisfed.org/series/GDP
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: USD
+
+  bls:
+    - method: get_series
+      arg_sets:
+        - series_id: CES0000000001
+          primitive_slug: bls-us-total-nonfarm-employment
+          concept_slug: us-employment
+          name: US total nonfarm employment (BLS CES0000000001)
+          description: Total nonfarm payroll employment, seasonally adjusted, latest point.
+          source_url: https://www.bls.gov/ces/
+          unit_kind: stock
+          unit_dimension: people
+
+  # NOTE on edgar: get_company_concept is intentionally NOT used here. Its
+  # converter's first positional param is literally named `concept`, which
+  # collides with the method's own `concept` arg under
+  # connectors._dispatch.call_and_convert (converter-param names are stripped
+  # from method args). get_frames has no such collision (positional `entries`),
+  # so it is the dispatch-safe EDGAR entry.
+  edgar:
+    - method: get_frames
+      arg_sets:
+        - taxonomy: us-gaap
+          concept: Assets
+          unit: USD
+          period: CY2023Q4I
+          primitive_slug: edgar-us-gaap-assets-2023
+          concept_slug: us-public-company-assets
+          name: US public-company total assets, CY2023Q4 (SEC EDGAR frames)
+          description: Sum of reported total assets across all us-gaap filers for the period.
+          source_url: https://www.sec.gov/cgi-bin/browse-edgar
+          unit_kind: stock
+          unit_dimension: currency
+          unit_currency: USD
+
+  worldbank:
+    - method: get_indicator
+      arg_sets:
+        - country: USA
+          indicator: SP.POP.TOTL
+          primitive_slug: worldbank-us-population
+          concept_slug: us-population
+          name: US total population (World Bank SP.POP.TOTL)
+          description: Total US population, latest World Bank annual estimate.
+          source_url: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=US
+          unit_kind: stock
+          unit_dimension: people

@@ -73,9 +73,17 @@ class LoadedRecords:
     raw_by_path: dict[Path, dict[str, Any]] = field(default_factory=dict[Path, dict[str, Any]])
 
 
+# YAML files that live under ``data/`` but are configuration, not records, and
+# must not be parsed by the registry loader (cf. portfolios, kept in a sibling
+# dir for the same reason). The ingest manifest is declarative ingest config.
+_NON_RECORD_FILENAMES: frozenset[str] = frozenset({"ingest-manifest.yaml"})
+
+
 def _iter_yaml_files(root: Path) -> Iterable[Path]:
     for ext in ("*.yaml", "*.yml"):
-        yield from root.rglob(ext)
+        for path in root.rglob(ext):
+            if path.name not in _NON_RECORD_FILENAMES:
+                yield path
 
 
 def load_data_dir(root: Path) -> LoadedRecords:

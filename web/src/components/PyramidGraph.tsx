@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useMemo } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -14,48 +15,37 @@ import {
   ReactFlowProvider,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { useMemo } from "react";
 
-import { lensLabel } from "@/lib/format";
-import type { ConceptSummary, FrameworkSummary } from "@/lib/schemas";
+import {
+  PILLAR_LABEL,
+  type Pillar,
+  type Pyramid,
+  type PyramidNode,
+  type Selection,
+  isGreyed,
+} from "@/lib/pyramid";
 
-/**
- * Read-only pyramid: three axes (Qualitative · Quantitative · Industry).
- *
- *   Qualitative  = analysis lens   (cost_efficiency, latent_demand, ...)
- *   Quantitative = method family   (top_down_spend, bottoms_up_seats, ...)
- *   Industry     = concept         (each curated market identity)
- *
- * The three axes hang off an apex. Clicking a leaf adds a constraint on that
- * axis and greys incompatible siblings (a framework/concept that does not
- * match every active axis constraint dims out). Selection is owned by the
- * page; this component is a pure renderer.
- */
+// Triangle apex per pillar — the three locked U1 axes laid out as a pyramid:
+// Qualitative top-left, Quantitative top-right, Industry bottom-centre.
+const PILLAR_ANCHOR: Record<Pillar, { x: number; y: number; dx: number; dy: number }> = {
+  qualitative: { x: -360, y: 40, dx: 0, dy: 96 },
+  quantitative: { x: 360, y: 40, dx: 0, dy: 96 },
+  industry: { x: 0, y: 460, dx: 250, dy: 0 },
+};
 
-export type Axis = "qualitative" | "quantitative" | "industry";
-
-export interface Selection {
-  qualitative: string | null; // lens value
-  quantitative: string | null; // method_family value
-  industry: string | null; // concept slug
+interface PyramidNodeData extends Record<string, unknown> {
+  node: PyramidNode;
+  selected: boolean;
+  greyed: boolean;
 }
-
-const AXIS_LABEL: Record<Axis, string> = {
-  qualitative: "Qualitative",
-  quantitative: "Quantitative",
-  industry: "Industry",
-};
-
-const AXIS_TOKEN: Record<Axis, string> = {
-  qualitative: "var(--axis-qualitative)",
-  quantitative: "var(--axis-quantitative)",
-  industry: "var(--axis-industry)",
-};
+interface PillarNodeData extends Record<string, unknown> {
+  pillar: Pillar;
+}
+type FlowNode = Node<PyramidNodeData, "pyramid"> | Node<PillarNodeData, "pillar">;
 
 const NODE_TYPES: NodeTypes = {
-  apex: ApexCard,
-  axis: AxisCard,
-  leaf: LeafCard,
+  pyramid: PyramidLeaf,
+  pillar: PillarHead,
 };
 
 const DEFAULT_EDGE_OPTIONS = {
@@ -63,66 +53,30 @@ const DEFAULT_EDGE_OPTIONS = {
   style: { stroke: "var(--canvas-line)", strokeWidth: 1.5 },
   animated: false,
 };
-
-const FIT_VIEW_OPTIONS = { padding: 0.16 };
+const FIT_VIEW_OPTIONS = { padding: 0.2 };
 const PRO_OPTIONS = { hideAttribution: true };
 
-interface ApexData extends Record<string, unknown> {
-  kind: "apex";
-}
-interface AxisData extends Record<string, unknown> {
-  kind: "axis";
-  axis: Axis;
-  count: number;
-}
-interface LeafData extends Record<string, unknown> {
-  kind: "leaf";
-  axis: Axis;
-  value: string;
-  label: string;
-  sublabel: string;
-  selected: boolean;
-  dimmed: boolean;
-  onSelect: (axis: Axis, value: string) => void;
-}
-type PyramidNode = Node<ApexData, "apex"> | Node<AxisData, "axis"> | Node<LeafData, "leaf">;
-
-interface AxisColumn {
-  axis: Axis;
-  leaves: { value: string; label: string; sublabel: string }[];
-}
-
-export interface PyramidGraphProps {
-  concepts: ConceptSummary[];
-  frameworks: FrameworkSummary[];
-  selection: Selection;
-  /** Slugs of concepts allowed by the active geo/time chips. null = no geo/time filter. */
-  industryAllow: Set<string> | null;
-  onSelect: (axis: Axis, value: string) => void;
-}
-
 export function PyramidGraph({
-  concepts,
-  frameworks,
+  pyramid,
   selection,
-  industryAllow,
   onSelect,
-}: PyramidGraphProps) {
-  const { nodes, edges } = useMemo(
-    () =>
-      buildPyramid({
-        concepts,
-        frameworks,
-        selection,
-        industryAllow,
-        onSelect,
-      }),
-    [concepts, frameworks, selection, industryAllow, onSelect],
+}: {
+  pyramid: Pyramid;
+  selection: Selection;
+  onSelect: (node: PyramidNode) => void;
+}) {
+  const { nodes, edges } = useMemo(() => layout(pyramid, selection), [pyramid, selection]);
+
+  const handleNodeClick = useCallback(
+    (_evt: React.MouseEvent, n: Node) => {
+      if (n.type === "pyramid") onSelect((n.data as PyramidNodeData).node);
+    },
+    [onSelect],
   );
 
   return (
     <div
-      className="rounded-[var(--r-4)] h-full min-h-[520px] overflow-hidden border border-[var(--card-border)]"
+      className="rounded-[var(--r-4)] h-[600px] overflow-hidden border border-[var(--card-border)]"
       style={{ background: "var(--canvas-bg)" }}
     >
       <ReactFlowProvider>
@@ -134,6 +88,7 @@ export function PyramidGraph({
           fitView
           fitViewOptions={FIT_VIEW_OPTIONS}
           proOptions={PRO_OPTIONS}
+          onNodeClick={handleNodeClick}
           nodesDraggable={false}
           nodesConnectable={false}
           elementsSelectable={false}
@@ -157,235 +112,90 @@ export function PyramidGraph({
   );
 }
 
-function uniqueLeaves(
-  values: { value: string; label: string; sublabel: string }[],
-): { value: string; label: string; sublabel: string }[] {
-  const seen = new Map<string, { value: string; label: string; sublabel: string }>();
-  for (const v of values) {
-    if (!seen.has(v.value)) seen.set(v.value, v);
-  }
-  return [...seen.values()];
-}
-
-/**
- * A framework is compatible with the current selection if it matches every
- * active axis constraint. Concept selection (industry) does not constrain
- * frameworks directly (frameworks are not concept-scoped at v0.2), but lens
- * and method_family do.
- */
-function frameworkMatches(f: FrameworkSummary, selection: Selection): boolean {
-  if (selection.qualitative && f.lens !== selection.qualitative) return false;
-  if (selection.quantitative && f.method_family !== selection.quantitative) return false;
-  return true;
-}
-
-function leafDimmed(
-  axis: Axis,
-  value: string,
-  selection: Selection,
-  frameworks: FrameworkSummary[],
-  industryAllow: Set<string> | null,
-): boolean {
-  if (axis === "industry") {
-    // Greyed if a geo/time chip excludes it, or the active lens has no concept
-    // on this slug. Industry leaves are concepts; lens narrows them.
-    if (industryAllow && !industryAllow.has(value)) return true;
-    return false;
-  }
-
-  // qualitative (lens) or quantitative (method_family): grey if, given the
-  // OTHER active axis constraint, no framework would survive picking this leaf.
-  const trial: Selection = { ...selection, [axis]: value };
-  return !frameworks.some((f) => frameworkMatches(f, trial));
-}
-
-function buildPyramid({
-  concepts,
-  frameworks,
-  selection,
-  industryAllow,
-  onSelect,
-}: {
-  concepts: ConceptSummary[];
-  frameworks: FrameworkSummary[];
-  selection: Selection;
-  industryAllow: Set<string> | null;
-  onSelect: (axis: Axis, value: string) => void;
-}): { nodes: PyramidNode[]; edges: Edge[] } {
-  const qualitative = uniqueLeaves(
-    frameworks.map((f) => ({
-      value: f.lens,
-      label: lensLabel(f.lens),
-      sublabel: "lens",
-    })),
-  );
-  const quantitative = uniqueLeaves(
-    frameworks.map((f) => ({
-      value: f.method_family,
-      label: lensLabel(f.method_family),
-      sublabel: "method",
-    })),
-  );
-  const industry = uniqueLeaves(
-    concepts.map((c) => ({
-      value: c.slug,
-      label: c.name,
-      sublabel: lensLabel(c.primary_lens),
-    })),
-  );
-
-  const columns: AxisColumn[] = [
-    { axis: "qualitative", leaves: qualitative },
-    { axis: "quantitative", leaves: quantitative },
-    { axis: "industry", leaves: industry },
-  ];
-
-  const nodes: PyramidNode[] = [];
+function layout(pyramid: Pyramid, selection: Selection): { nodes: FlowNode[]; edges: Edge[] } {
+  const nodes: FlowNode[] = [];
   const edges: Edge[] = [];
 
-  // Apex centered above the three axis columns.
-  const colSpacing = 380;
-  const colStartX = -colSpacing;
-  const apexX = 0;
-
-  nodes.push({
-    id: "apex",
-    type: "apex",
-    position: { x: apexX - 90, y: 0 },
-    data: { kind: "apex" },
-    draggable: false,
-  });
-
-  columns.forEach((col, cIdx) => {
-    const colX = colStartX + cIdx * colSpacing;
-    const axisId = `axis-${col.axis}`;
-    const axisY = 200;
+  for (const pillar of Object.keys(PILLAR_ANCHOR) as Pillar[]) {
+    const anchor = PILLAR_ANCHOR[pillar];
+    const headId = `head:${pillar}`;
     nodes.push({
-      id: axisId,
-      type: "axis",
-      position: { x: colX - 110, y: axisY },
-      data: { kind: "axis", axis: col.axis, count: col.leaves.length },
+      id: headId,
+      type: "pillar",
+      position: { x: anchor.x, y: pillar === "industry" ? anchor.y - 110 : anchor.y - 70 },
+      data: { pillar },
       draggable: false,
     });
-    edges.push({
-      id: `e-apex-${axisId}`,
-      source: "apex",
-      target: axisId,
-      style: { stroke: AXIS_TOKEN[col.axis], strokeWidth: 1.75 },
-    });
 
-    const leafSpacing = 84;
-    col.leaves.forEach((leaf, lIdx) => {
-      const leafId = `leaf-${col.axis}-${leaf.value}`;
-      const leafY = axisY + 150 + lIdx * leafSpacing;
-      const selected = selection[col.axis] === leaf.value;
-      const dimmed =
-        !selected && leafDimmed(col.axis, leaf.value, selection, frameworks, industryAllow);
+    const leaves = pyramid.nodes.filter((n) => n.pillar === pillar);
+    const startX = anchor.dx ? anchor.x - ((leaves.length - 1) * anchor.dx) / 2 : anchor.x;
+
+    leaves.forEach((leaf, i) => {
       nodes.push({
-        id: leafId,
-        type: "leaf",
-        position: { x: colX - 130, y: leafY },
+        id: leaf.id,
+        type: "pyramid",
+        position: {
+          x: startX + i * anchor.dx,
+          y: anchor.y + i * anchor.dy,
+        },
         data: {
-          kind: "leaf",
-          axis: col.axis,
-          value: leaf.value,
-          label: leaf.label,
-          sublabel: leaf.sublabel,
-          selected,
-          dimmed,
-          onSelect,
+          node: leaf,
+          selected: selection[leaf.pillar] === leaf.key,
+          greyed: isGreyed(pyramid, selection, leaf),
         },
         draggable: false,
       });
       edges.push({
-        id: `e-${axisId}-${leafId}`,
-        source: axisId,
-        target: leafId,
-        style: {
-          stroke: dimmed ? "var(--canvas-line)" : AXIS_TOKEN[col.axis],
-          strokeWidth: selected ? 2 : 1.25,
-          opacity: dimmed ? 0.4 : 1,
-        },
+        id: `e:${headId}:${leaf.id}`,
+        source: headId,
+        target: leaf.id,
       });
     });
-  });
+  }
 
   return { nodes, edges };
 }
 
-function ApexCard() {
+function PillarHead({ data }: NodeProps<PillarNodeData>) {
   return (
-    <div
-      className="canvas-card w-[180px] px-4 py-3 text-center"
-      style={{ borderRadius: "var(--r-3)" }}
-    >
+    <div className="text-center" style={{ width: 200 }}>
       <Handle
         type="source"
         position={Position.Bottom}
         style={{ background: "transparent", border: 0 }}
       />
-      <span className="role-chip role-chip--accent">Market</span>
-      <div className="display text-[18px] text-[var(--fg-1)] mt-1.5 leading-[1.1]">Pyramid</div>
-      <div className="text-[11px] text-[var(--fg-3)] mt-1">three axes narrow the space</div>
-    </div>
-  );
-}
-
-function AxisCard({ data }: NodeProps<AxisData>) {
-  const color = AXIS_TOKEN[data.axis];
-  return (
-    <div
-      className="canvas-card w-[220px] px-4 py-3 text-left"
-      style={{ borderRadius: "var(--r-3)", borderTop: `3px solid ${color}` }}
-    >
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ background: "transparent", border: 0 }}
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={{ background: "transparent", border: 0 }}
-      />
-      <div className="text-[13px] font-medium text-[var(--fg-1)]" style={{ color }}>
-        {AXIS_LABEL[data.axis]}
+      <div className="display text-[18px] text-[var(--fg-1)] leading-none">
+        {PILLAR_LABEL[data.pillar]}
       </div>
-      <div className="text-[11px] text-[var(--fg-3)] mt-0.5">{data.count} options</div>
+      <div className="text-[10px] uppercase tracking-[0.08em] text-[var(--fg-3)] mt-1">Pillar</div>
     </div>
   );
 }
 
-function LeafCard({ data }: NodeProps<LeafData>) {
-  const color = AXIS_TOKEN[data.axis];
+function PyramidLeaf({ data }: NodeProps<PyramidNodeData>) {
+  const { node, selected, greyed } = data;
+  const ring = selected
+    ? "border-[var(--accent)] shadow-[0_0_0_2px_var(--accent-ring)]"
+    : "border-[var(--card-border)]";
   return (
     <button
       type="button"
-      onClick={() => data.onSelect(data.axis, data.value)}
-      aria-pressed={data.selected}
-      className="canvas-card w-[260px] px-3 py-2.5 text-left transition-opacity"
-      style={{
-        borderRadius: "var(--r-3)",
-        opacity: data.dimmed ? 0.32 : 1,
-        boxShadow: data.selected ? `0 0 0 2px ${color}` : undefined,
-      }}
+      aria-pressed={selected}
+      data-greyed={greyed}
+      title={greyed ? `${node.label} — incompatible with current selection` : node.label}
+      className={`canvas-card w-[170px] px-3 py-2.5 text-left border ${ring} transition-opacity`}
+      style={{ borderRadius: "var(--r-3)", opacity: greyed ? 0.32 : 1, cursor: "pointer" }}
     >
       <Handle
         type="target"
         position={Position.Top}
         style={{ background: "transparent", border: 0 }}
       />
-      <div className="text-[12px] text-[var(--fg-1)] leading-[1.3] line-clamp-2">{data.label}</div>
-      <div className="flex items-center gap-1.5 mt-1">
-        <span
-          className="inline-block h-1.5 w-1.5 rounded-full"
-          style={{ background: color }}
-          aria-hidden="true"
-        />
-        <span className="text-[10px] text-[var(--fg-3)] uppercase tracking-[0.04em]">
-          {data.sublabel}
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[12px] font-medium text-[var(--fg-1)] leading-[1.25] line-clamp-2">
+          {node.label}
         </span>
-        {data.selected && <span className="role-chip role-chip--accent ml-auto">selected</span>}
+        <span className="role-chip shrink-0 tabular-nums">{node.weight}</span>
       </div>
     </button>
   );

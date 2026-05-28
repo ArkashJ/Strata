@@ -1,20 +1,18 @@
-"""Tests for the ingest orchestrator + ``strata ingest`` CLI (Session 3).
+"""Tests for the declarative ingest orchestrator + `strata ingest` CLI.
 
-The orchestrator is exercised with a fake ``call_and_convert`` so no network
-or API keys are touched. Coverage:
+The orchestrator walks ``connectors._capability.all_capabilities()``, reads the
+declarative ``data/ingest-manifest.yaml`` (per-connector methods + arg-sets),
+calls ``connectors._dispatch.call_and_convert`` for each, and persists via
+``resolver.writer.upsert_primitive`` (de-dup by ``metadata.auto_args_hash``).
 
-  - manifest parsing into typed records
-  - the run plan crosses all_capabilities() x manifest and honors filters
-  - a connector with an unset required key is skipped (logged, non-fatal)
-  - a failing arg-set is logged and does not abort the batch
-  - dedup: same method args → same auto_args_hash → single file
-  - status lists on-disk provenance
-  - refresh rewrites only when snapshot_sha256 changed
+All tests are offline: ``call_and_convert`` is injected so no network/keys are
+touched. The single shared YAML fixture below conforms to the AtomicPrimitive
+schema so ``upsert_primitive``'s validation chokepoint passes.
 """
 
 from __future__ import annotations
 
-import hashlib
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -23,77 +21,30 @@ import yaml
 from typer.testing import CliRunner
 
 from strata.cli import app
-from strata.ingest import orchestrator
-from strata.ingest.manifest import load_manifest
+from strata.connectors._capability import CapabilityArg, CapabilitySpec
+from strata.ingest import (
+    IngestTarget,
+    ingest_status,
+    load_manifest,
+    refresh,
+    run_ingest,
+)
 
 runner = CliRunner()
 
-# A self-contained manifest exercising one keyless connector and one key-gated
-# connector, so the skip path is deterministic regardless of the dev env.
-_MANIFEST = {
-    "connectors": {
-        "edgar": {
-            "methods": {
-                "get_company_concept": [
-                    {
-                        "cik": "0000320193",
-                        "taxonomy": "us-gaap",
-                        "concept": "Revenues",
-                        "concept_slug": "us-public-company-revenue",
-                        "primitive_slug": "edgar-aapl-revenue",
-                        "name": "Apple revenue",
-                        "description": "Apple total revenue.",
-                        "source_url": "https://sec.gov/",
-                        "unit_kind": "flow",
-                        "unit_dimension": "currency",
-                        "unit_currency": "USD",
-                    }
-                ]
-            },
-        },
-        "fred": {
-            "requires_key": "STRATA_FRED_API_KEY",
-            "methods": {
-                "get_observations": [
-                    {
-                        "series_id": "GDP",
-                        "concept_slug": "us-gdp",
-                        "primitive_slug": "fred-us-gdp",
-                        "name": "US GDP",
-                        "description": "US nominal GDP.",
-                        "source_url": "https://fred.stlouisfed.org/",
-                        "unit_kind": "flow",
-                        "unit_dimension": "currency",
-                        "unit_currency": "USD",
-                    }
-                ]
-            },
-        },
-    }
-}
 
-
-@pytest.fixture
-def manifest_file(tmp_path: Path) -> Path:
-    path = tmp_path / "ingest-manifest.yaml"
-    path.write_text(yaml.safe_dump(_MANIFEST))
-    return path
-
-
-def _fake_primitive(slug: str, snapshot: str, value: float = 1.0) -> dict[str, Any]:
-    """A complete, schema-valid AtomicPrimitive dict — the writer validates it,
-    so every required field must be present. ``snapshot`` drives the refresh
-    freshness comparison; ``value`` lets a test confirm a rewrite landed."""
+def _primitive_yaml(slug: str, *, value: float = 100.0, sha: str | None = None) -> dict[str, Any]:
+    """A minimal AtomicPrimitive YAML dict the writer will accept."""
     return {
         "kind": "atomic_primitive",
         "slug": slug,
         "schema_version": 1,
-        "concept_slug": "x",
-        "name": "x",
-        "description": "x",
+        "concept_slug": "test-concept",
+        "name": f"Test {slug}",
+        "description": "fixture primitive",
         "value": value,
-        "unit": {"kind": "flow", "dimension": "currency", "currency": "USD"},
-        "as_of": "2024-01-01",
+        "unit": {"kind": "stock", "dimension": "people"},
+        "as_of": date.today().isoformat(),
         "geo": {"level": "country", "codes": ["US"]},
         "geo_perspective": "supply",
         "distribution_shape": "normal",
@@ -101,232 +52,461 @@ def _fake_primitive(slug: str, snapshot: str, value: float = 1.0) -> dict[str, A
         "source": {
             "slug": f"{slug}-src",
             "tier": "regulator",
-            "url": "https://example.gov/",
-            "accessed": "2026-05-28",
-            "snapshot_sha256": hashlib.sha256(snapshot.encode()).hexdigest(),
+            "url": "https://example.gov/data",
+            "accessed": date.today().isoformat(),
+            "snapshot_sha256": (sha or "a" * 64),
         },
     }
 
 
-# ── manifest parsing ────────────────────────────────────────────────────
+def _write_manifest(tmp_path: Path, body: dict[str, Any]) -> Path:
+    path = tmp_path / "ingest-manifest.yaml"
+    path.write_text(yaml.safe_dump(body, sort_keys=False))
+    return path
 
 
-def test_load_manifest_parses_typed_records(manifest_file: Path) -> None:
-    m = load_manifest(manifest_file)
-    edgar = m.get("edgar")
-    assert edgar is not None
-    assert edgar.requires_key is None
-    assert edgar.methods[0].method == "get_company_concept"
-    assert edgar.methods[0].arg_sets[0]["cik"] == "0000320193"
-    fred = m.get("fred")
-    assert fred is not None and fred.requires_key == "STRATA_FRED_API_KEY"
+_CAPS = [
+    CapabilitySpec(
+        connector="bls",
+        method="get_series",
+        description="BLS time series.",
+        returns="a series",
+        args=[CapabilityArg(name="series_id", type="str", description="id")],
+        source_tier="regulator",
+    ),
+    CapabilitySpec(
+        connector="worldbank",
+        method="get_indicator",
+        description="World Bank indicator.",
+        returns="indicator values",
+        args=[CapabilityArg(name="indicator", type="str", description="code")],
+        source_tier="aggregator",
+    ),
+]
 
 
-def test_load_manifest_rejects_missing_connectors_key(tmp_path: Path) -> None:
-    bad = tmp_path / "bad.yaml"
-    bad.write_text(yaml.safe_dump({"nope": {}}))
-    with pytest.raises(ValueError):
-        load_manifest(bad)
+# ── manifest loading ──────────────────────────────────────────────────
 
 
-def test_repo_manifest_loads() -> None:
-    # The committed manifest must parse — guards against YAML drift. It lives
-    # beside data/ (not inside it) so the registry loader does not walk it.
-    repo_manifest = Path(__file__).resolve().parents[2] / "ingest-manifest.yaml"
-    m = load_manifest(repo_manifest)
-    assert m.get("edgar") is not None
+def test_load_manifest_flattens_arg_sets(tmp_path: Path) -> None:
+    path = _write_manifest(
+        tmp_path,
+        {
+            "connectors": {
+                "bls": [
+                    {
+                        "method": "get_series",
+                        "arg_sets": [
+                            {"series_id": "A", "primitive_slug": "bls-a"},
+                            {"series_id": "B", "primitive_slug": "bls-b"},
+                        ],
+                    }
+                ]
+            }
+        },
+    )
+    targets = load_manifest(path)
+    assert [t.connector for t in targets] == ["bls", "bls"]
+    assert [t.method for t in targets] == ["get_series", "get_series"]
+    assert targets[0].args["series_id"] == "A"
+    assert targets[1].args["primitive_slug"] == "bls-b"
 
 
-# ── run: writes, skips, dedup ─────────────────────────────────────────────
+def test_load_manifest_missing_file_raises(tmp_path: Path) -> None:
+    with pytest.raises((FileNotFoundError, ValueError)):
+        load_manifest(tmp_path / "nope.yaml")
 
 
-def test_run_writes_keyless_skips_keyed(
-    manifest_file: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+# ── run_ingest core ───────────────────────────────────────────────────
+
+
+def test_run_ingest_writes_one_primitive_per_arg_set(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.delenv("STRATA_FRED_API_KEY", raising=False)
-
-    def fake_cc(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
-        return _fake_primitive(args["primitive_slug"], "snap-a")
-
-    monkeypatch.setattr(orchestrator, "call_and_convert", fake_cc)
+    monkeypatch.setenv("STRATA_BLS_API_KEY", "k")
     out = tmp_path / "auto"
-    report = orchestrator.run_ingest(manifest_path=manifest_file, out_dir=out)
-
-    assert report.written == 1  # only edgar
-    assert ("fred", "missing API key STRATA_FRED_API_KEY") in report.skipped_connectors
-    assert (out / "edgar-aapl-revenue.yaml").exists()
-
-
-def test_run_keyed_connector_runs_when_key_present(
-    manifest_file: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv("STRATA_FRED_API_KEY", "present")
-    monkeypatch.setattr(
-        orchestrator,
-        "call_and_convert",
-        lambda c, m, a: _fake_primitive(a["primitive_slug"], "snap-a"),
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "connectors": {
+                "bls": [
+                    {
+                        "method": "get_series",
+                        "arg_sets": [
+                            {"series_id": "A", "primitive_slug": "bls-a"},
+                            {"series_id": "B", "primitive_slug": "bls-b"},
+                        ],
+                    }
+                ]
+            }
+        },
     )
-    report = orchestrator.run_ingest(manifest_path=manifest_file, out_dir=tmp_path / "auto")
+
+    seen: list[dict[str, Any]] = []
+
+    def fake_dispatch(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
+        seen.append({"connector": connector, "method": method, "args": dict(args)})
+        return _primitive_yaml(args["primitive_slug"])
+
+    report = run_ingest(
+        manifest_path=manifest,
+        dir_override=out,
+        capabilities=_CAPS,
+        dispatch=fake_dispatch,
+    )
+
+    assert len(seen) == 2
     assert report.written == 2
-    assert report.skipped_connectors == ()
+    assert report.skipped_connectors == []
+    assert (out / "bls-a.yaml").exists()
+    assert (out / "bls-b.yaml").exists()
 
 
-def test_run_tier_filter_only_regulator(
-    manifest_file: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_run_ingest_skips_connector_without_api_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("STRATA_FRED_API_KEY", "present")
-    monkeypatch.setattr(
-        orchestrator,
-        "call_and_convert",
-        lambda c, m, a: _fake_primitive(a["primitive_slug"], "snap-a"),
+    monkeypatch.delenv("STRATA_BLS_API_KEY", raising=False)
+    out = tmp_path / "auto"
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "connectors": {
+                "bls": [
+                    {
+                        "method": "get_series",
+                        "arg_sets": [{"series_id": "A", "primitive_slug": "x"}],
+                    }
+                ]
+            }
+        },
     )
-    # Both edgar and fred are regulator tier, so a bogus tier yields nothing.
-    report = orchestrator.run_ingest(
-        manifest_path=manifest_file, tier_filter="aggregator", out_dir=tmp_path / "auto"
+
+    def fake_dispatch(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
+        raise AssertionError("dispatch must not run when the API key is absent")
+
+    report = run_ingest(
+        manifest_path=manifest,
+        dir_override=out,
+        capabilities=_CAPS,
+        dispatch=fake_dispatch,
     )
+
     assert report.written == 0
+    assert "bls" in report.skipped_connectors
+    assert not out.exists() or not list(out.glob("*.yaml"))
 
 
-def test_run_connector_filter(
-    manifest_file: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_run_ingest_keyless_connector_not_skipped(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("STRATA_FRED_API_KEY", "present")
-    monkeypatch.setattr(
-        orchestrator,
-        "call_and_convert",
-        lambda c, m, a: _fake_primitive(a["primitive_slug"], "snap-a"),
+    # worldbank takes no key; absence of STRATA_WORLDBANK_API_KEY must not skip it.
+    monkeypatch.delenv("STRATA_WORLDBANK_API_KEY", raising=False)
+    out = tmp_path / "auto"
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "connectors": {
+                "worldbank": [
+                    {
+                        "method": "get_indicator",
+                        "arg_sets": [{"indicator": "SP.POP.TOTL", "primitive_slug": "wb-pop"}],
+                    }
+                ]
+            }
+        },
     )
-    report = orchestrator.run_ingest(
-        manifest_path=manifest_file, connector_filter="edgar", out_dir=tmp_path / "auto"
+
+    def fake_dispatch(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
+        return _primitive_yaml(args["primitive_slug"])
+
+    report = run_ingest(
+        manifest_path=manifest,
+        dir_override=out,
+        capabilities=_CAPS,
+        dispatch=fake_dispatch,
+        keyless_connectors={"worldbank"},
     )
+
     assert report.written == 1
-    assert all(r.connector == "edgar" for r in report.results)
+    assert report.skipped_connectors == []
 
 
-def test_run_item_failure_is_non_fatal(
-    manifest_file: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_run_ingest_tier_filter(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("STRATA_BLS_API_KEY", "k")
+    out = tmp_path / "auto"
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "connectors": {
+                "bls": [
+                    {
+                        "method": "get_series",
+                        "arg_sets": [{"series_id": "A", "primitive_slug": "b"}],
+                    }
+                ],
+                "worldbank": [
+                    {
+                        "method": "get_indicator",
+                        "arg_sets": [{"indicator": "X", "primitive_slug": "w"}],
+                    }
+                ],
+            }
+        },
+    )
+
+    def fake_dispatch(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
+        return _primitive_yaml(args["primitive_slug"])
+
+    report = run_ingest(
+        manifest_path=manifest,
+        dir_override=out,
+        capabilities=_CAPS,
+        dispatch=fake_dispatch,
+        tier="aggregator",
+        keyless_connectors={"worldbank"},
+    )
+
+    # Only the aggregator-tier worldbank target ran.
+    assert report.written == 1
+    assert (out / "w.yaml").exists()
+    assert not (out / "b.yaml").exists()
+
+
+def test_run_ingest_connector_filter(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("STRATA_BLS_API_KEY", "k")
+    out = tmp_path / "auto"
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "connectors": {
+                "bls": [
+                    {
+                        "method": "get_series",
+                        "arg_sets": [{"series_id": "A", "primitive_slug": "b"}],
+                    }
+                ],
+                "worldbank": [
+                    {
+                        "method": "get_indicator",
+                        "arg_sets": [{"indicator": "X", "primitive_slug": "w"}],
+                    }
+                ],
+            }
+        },
+    )
+
+    def fake_dispatch(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
+        return _primitive_yaml(args["primitive_slug"])
+
+    report = run_ingest(
+        manifest_path=manifest,
+        dir_override=out,
+        capabilities=_CAPS,
+        dispatch=fake_dispatch,
+        connector="bls",
+        keyless_connectors={"worldbank"},
+    )
+
+    assert report.written == 1
+    assert (out / "b.yaml").exists()
+
+
+def test_run_ingest_dispatch_failure_does_not_abort_batch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("STRATA_FRED_API_KEY", "present")
+    monkeypatch.setenv("STRATA_BLS_API_KEY", "k")
+    out = tmp_path / "auto"
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "connectors": {
+                "bls": [
+                    {
+                        "method": "get_series",
+                        "arg_sets": [
+                            {"series_id": "BAD", "primitive_slug": "bad"},
+                            {"series_id": "GOOD", "primitive_slug": "good"},
+                        ],
+                    }
+                ]
+            }
+        },
+    )
 
-    def boom(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
-        if connector == "fred":
-            raise RuntimeError("network down")
-        return _fake_primitive(args["primitive_slug"], "snap-a")
+    def fake_dispatch(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
+        if args["series_id"] == "BAD":
+            raise ValueError("boom")
+        return _primitive_yaml(args["primitive_slug"])
 
-    monkeypatch.setattr(orchestrator, "call_and_convert", boom)
-    report = orchestrator.run_ingest(manifest_path=manifest_file, out_dir=tmp_path / "auto")
+    report = run_ingest(
+        manifest_path=manifest,
+        dir_override=out,
+        capabilities=_CAPS,
+        dispatch=fake_dispatch,
+    )
+
     assert report.written == 1
     assert report.failed == 1
+    assert (out / "good.yaml").exists()
 
 
-def test_dedup_hash_stable_across_metadata_edits(manifest_file: Path) -> None:
-    # The dedup hash is computed from method args only, so renaming the
-    # primitive must not change it.
-    a = orchestrator.method_only_args(
-        "fred", "get_observations", {"series_id": "GDP", "primitive_slug": "x", "name": "n1"}
-    )
-    b = orchestrator.method_only_args(
-        "fred", "get_observations", {"series_id": "GDP", "primitive_slug": "y", "name": "n2"}
-    )
-    assert a == b == {"series_id": "GDP"}
-    assert orchestrator.dedup_hash("fred", "get_observations", a) == orchestrator.dedup_hash(
-        "fred", "get_observations", b
-    )
-
-
-# ── status ────────────────────────────────────────────────────────────────
-
-
-def test_status_lists_written_primitives(
-    manifest_file: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_run_ingest_dedup_metadata_hash_stable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setenv("STRATA_BLS_API_KEY", "k")
     out = tmp_path / "auto"
-    monkeypatch.setattr(
-        orchestrator,
-        "call_and_convert",
-        lambda c, m, a: _fake_primitive(a["primitive_slug"], "snap-a"),
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "connectors": {
+                "bls": [
+                    {
+                        "method": "get_series",
+                        "arg_sets": [{"series_id": "A", "primitive_slug": "p"}],
+                    }
+                ]
+            }
+        },
     )
-    monkeypatch.setenv("STRATA_FRED_API_KEY", "present")
-    orchestrator.run_ingest(manifest_path=manifest_file, out_dir=out)
-    rows = orchestrator.ingest_status(out_dir=out)
-    slugs = {r.slug for r in rows}
-    assert "edgar-aapl-revenue" in slugs
-    edgar_row = next(r for r in rows if r.slug == "edgar-aapl-revenue")
-    assert edgar_row.connector == "edgar"
-    assert edgar_row.method == "get_company_concept"
+
+    def fake_dispatch(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
+        return _primitive_yaml(args["primitive_slug"])
+
+    run_ingest(manifest_path=manifest, dir_override=out, capabilities=_CAPS, dispatch=fake_dispatch)
+    run_ingest(manifest_path=manifest, dir_override=out, capabilities=_CAPS, dispatch=fake_dispatch)
+
+    files = list(out.glob("*.yaml"))
+    assert len(files) == 1  # idempotent — re-run produced no second file
+    written = yaml.safe_load(files[0].read_text())
+    assert written["metadata"]["auto_args_hash"]
+    assert written["metadata"]["auto_connector"] == "bls"
 
 
-def test_status_empty_when_no_dir(tmp_path: Path) -> None:
-    assert orchestrator.ingest_status(out_dir=tmp_path / "nope") == []
+# ── status ────────────────────────────────────────────────────────────
 
 
-# ── refresh: rewrite only on snapshot change ───────────────────────────────
-
-
-def test_refresh_unchanged_when_snapshot_matches(
-    manifest_file: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_ingest_status_reads_written_metadata(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setenv("STRATA_BLS_API_KEY", "k")
     out = tmp_path / "auto"
-    monkeypatch.setenv("STRATA_FRED_API_KEY", "present")
-    monkeypatch.setattr(
-        orchestrator,
-        "call_and_convert",
-        lambda c, m, a: _fake_primitive(a["primitive_slug"], "snap-a"),
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "connectors": {
+                "bls": [
+                    {
+                        "method": "get_series",
+                        "arg_sets": [{"series_id": "A", "primitive_slug": "p"}],
+                    }
+                ]
+            }
+        },
     )
-    orchestrator.run_ingest(manifest_path=manifest_file, out_dir=out)
-    report = orchestrator.refresh_ingest(manifest_path=manifest_file, out_dir=out)
-    assert report.refreshed == 0
-    assert report.unchanged == 2
+
+    def fake_dispatch(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
+        return _primitive_yaml(args["primitive_slug"])
+
+    run_ingest(manifest_path=manifest, dir_override=out, capabilities=_CAPS, dispatch=fake_dispatch)
+
+    rows = ingest_status(dir_override=out)
+    assert len(rows) == 1
+    assert rows[0].slug == "p"
+    assert rows[0].connector == "bls"
+    assert rows[0].snapshot_sha256 == "a" * 64
 
 
-def test_refresh_rewrites_when_snapshot_changes(
-    manifest_file: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_ingest_status_empty_when_no_dir(tmp_path: Path) -> None:
+    assert ingest_status(dir_override=tmp_path / "missing") == []
+
+
+# ── refresh ───────────────────────────────────────────────────────────
+
+
+def test_refresh_rewrites_only_when_snapshot_changed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.setenv("STRATA_BLS_API_KEY", "k")
     out = tmp_path / "auto"
-    monkeypatch.setenv("STRATA_FRED_API_KEY", "present")
-    monkeypatch.setattr(
-        orchestrator,
-        "call_and_convert",
-        lambda c, m, a: _fake_primitive(a["primitive_slug"], "snap-a", value=1.0),
+    manifest = _write_manifest(
+        tmp_path,
+        {
+            "connectors": {
+                "bls": [
+                    {
+                        "method": "get_series",
+                        "arg_sets": [{"series_id": "A", "primitive_slug": "p"}],
+                    }
+                ]
+            }
+        },
     )
-    orchestrator.run_ingest(manifest_path=manifest_file, out_dir=out)
 
-    # Source moved: new snapshot hash → refresh must rewrite.
-    monkeypatch.setattr(
-        orchestrator,
-        "call_and_convert",
-        lambda c, m, a: _fake_primitive(a["primitive_slug"], "snap-b", value=2.0),
+    sha_state = {"value": "a" * 64}
+
+    def fake_dispatch(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
+        return _primitive_yaml(args["primitive_slug"], sha=sha_state["value"])
+
+    run_ingest(manifest_path=manifest, dir_override=out, capabilities=_CAPS, dispatch=fake_dispatch)
+
+    # Same sha → refresh is a no-op (unchanged).
+    report1 = refresh(
+        manifest_path=manifest, dir_override=out, capabilities=_CAPS, dispatch=fake_dispatch
     )
-    report = orchestrator.refresh_ingest(manifest_path=manifest_file, out_dir=out)
-    assert report.refreshed == 2
+    assert report1.refreshed == 0
+    assert report1.unchanged == 1
 
-    written = yaml.safe_load((out / "fred-us-gdp.yaml").read_text())
-    assert written["value"] == 2.0
-    assert written["source"]["snapshot_sha256"] == hashlib.sha256(b"snap-b").hexdigest()
-
-
-# ── CLI wiring ──────────────────────────────────────────────────────────────
-
-
-def test_cli_ingest_run_regulator_offline(
-    manifest_file: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    # No keys, real call_and_convert: keyless connectors hit the network and
-    # fail non-fatally; the command must still exit 0.
-    monkeypatch.delenv("STRATA_FRED_API_KEY", raising=False)
-    result = runner.invoke(
-        app, ["ingest", "run", "--manifest", str(manifest_file), "--tier", "regulator"]
+    # New sha → refresh rewrites.
+    sha_state["value"] = "b" * 64
+    report2 = refresh(
+        manifest_path=manifest, dir_override=out, capabilities=_CAPS, dispatch=fake_dispatch
     )
+    assert report2.refreshed == 1
+    assert report2.unchanged == 0
+    written = yaml.safe_load((out / "p.yaml").read_text())
+    assert written["source"]["snapshot_sha256"] == "b" * 64
+
+
+# ── CLI surface ───────────────────────────────────────────────────────
+
+
+def test_cli_ingest_run_offline_no_keys(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    # No connector keys set → every keyed connector is skipped; exit 0, no crash.
+    for var in list(__import__("os").environ):
+        if var.startswith("STRATA_") and var.endswith("_API_KEY"):
+            monkeypatch.delenv(var, raising=False)
+    result = runner.invoke(app, ["ingest", "run", "--tier", "regulator"])
     assert result.exit_code == 0, result.output
 
 
-def test_cli_ingest_status_runs() -> None:
+def test_cli_ingest_status_runs(monkeypatch: pytest.MonkeyPatch) -> None:
     result = runner.invoke(app, ["ingest", "status"])
+    assert result.exit_code == 0, result.output
+
+
+def test_cli_ingest_help_lists_subcommands() -> None:
+    result = runner.invoke(app, ["ingest", "--help"])
     assert result.exit_code == 0
+    assert "run" in result.output
+    assert "status" in result.output
+    assert "refresh" in result.output
 
 
-def test_cli_ingest_run_bad_manifest_exits_2(tmp_path: Path) -> None:
-    bad = tmp_path / "bad.yaml"
-    bad.write_text("not: a manifest")
-    result = runner.invoke(app, ["ingest", "run", "--manifest", str(bad)])
-    assert result.exit_code == 2
+def test_target_is_hashable_dataclass() -> None:
+    t = IngestTarget(connector="bls", method="get_series", args={"series_id": "A"})
+    assert t.connector == "bls"
+    assert t.args["series_id"] == "A"
+
+
+def test_orchestrator_args_hash_matches_writer() -> None:
+    # refresh correlates targets to prior auto-primitives by this hash, so it
+    # MUST stay identical to the hash resolver.writer stamps into metadata.
+    from strata.ingest.orchestrator import (
+        _args_hash as ingest_hash,  # pyright: ignore[reportPrivateUsage]
+    )
+    from strata.resolver.writer import (
+        _args_hash as writer_hash,  # pyright: ignore[reportPrivateUsage]
+    )
+
+    args = {"series_id": "A", "primitive_slug": "p", "n": 3}
+    assert ingest_hash("bls", "get_series", args) == writer_hash("bls", "get_series", args)

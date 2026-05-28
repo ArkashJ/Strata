@@ -1,24 +1,28 @@
-"""Connector-agnostic ingest orchestrator (Session 3 — ingest + freshness).
+"""Declarative ingest orchestrator.
 
-WHY: ingestion is driven by two declarative sources of truth — the capability
-manifest (``connectors._capability.all_capabilities``, which says what each
-connector *can* return and at what source tier) and the ingest manifest
-(``ingest-manifest.yaml`` beside ``data/``, which says what we *want* ingested
-and with which arguments). The orchestrator is the only thing that crosses
-them; it holds no per-connector knowledge.
+Threads a static manifest through the existing connector machinery:
 
-Flow::
+    data/ingest-manifest.yaml          (per-connector methods + arg-sets)
+            │  load_manifest
+            ▼
+    [IngestTarget(connector, method, args), ...]
+            │  run_ingest — filter by tier/connector, skip keyless misses
+            ▼
+    connectors._dispatch.call_and_convert(connector, method, args)
+            │  → validated AtomicPrimitive YAML dict
+            ▼
+    resolver.writer.upsert_primitive(..., args=args)   (de-dup by auto_args_hash)
+            ▼
+    ~/.strata/auto-primitives/{slug}.yaml
 
-    all_capabilities()  ─┐
-                         ├─► for each (connector, method) the manifest declares:
-    ingest-manifest.yaml ┘     - filter by --connector / --tier
-                               - skip whole connector if its API key is unset
-                               - per arg-set: call_and_convert → upsert_primitive
-                               - de-dup by auto_args_hash; non-fatal per item
+The orchestrator never touches the committed ``data/`` tree — writes land in
+the auto-primitives staging dir, exactly like ``strata goal`` step 3. A
+connector whose ``STRATA_<X>_API_KEY`` is absent is logged and skipped; the
+batch keeps going. A single dispatch failure is recorded and skipped, never
+aborting the run.
 
-A missing API key skips the connector (logged, batch continues). Any other
-failure (network, validation) is logged per arg-set and also non-fatal, so an
-offline ``ingest run --tier regulator`` completes on the keyless connectors.
+``call_and_convert`` and ``all_capabilities`` are injected (defaulted) so the
+whole module is unit-testable offline without network or credentials.
 """
 
 from __future__ import annotations
@@ -28,6 +32,8 @@ import hashlib
 import json
 import logging
 import os
+from collections.abc import Callable, Iterable
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -36,298 +42,271 @@ import yaml
 from ..connectors._capability import CapabilitySpec, all_capabilities
 from ..connectors._dispatch import call_and_convert
 from ..resolver.writer import AUTO_PRIMITIVES_DIR, upsert_primitive
-from .manifest import IngestManifest, load_manifest
+from .manifest import IngestTarget, load_manifest
 
-logger = logging.getLogger("strata.ingest")
+_log = logging.getLogger(__name__)
 
+Dispatch = Callable[[str, str, dict[str, Any]], dict[str, Any]]
 
-def dedup_hash(connector: str, method: str, method_args: dict[str, Any]) -> str:
-    """Stable dedup key for one ingest (connector + method + method args).
-
-    WHY a local copy and not ``writer._args_hash``: the algorithm must stay
-    byte-identical to the writer (sorted-key JSON → sha256[:16]) so two ingests
-    of the same source collide, but reaching into the writer's private name
-    couples the modules. The contract is the format, not the symbol.
-    """
-    payload = json.dumps(
-        {"connector": connector, "method": method, "args": method_args}, sort_keys=True
-    )
-    return hashlib.sha256(payload.encode()).hexdigest()[:16]
-
-
-@dataclasses.dataclass(frozen=True)
-class IngestItemResult:
-    connector: str
-    method: str
-    primitive_slug: str
-    status: str  # "written" | "skipped" | "failed"
-    detail: str = ""
-    path: Path | None = None
+# Connectors whose clients take no credential — absence of an env var must not
+# skip them. Mirrors connectors._dispatch._CREDENTIALS coverage (the inverse).
+KEYLESS_CONNECTORS: frozenset[str] = frozenset(
+    {"edgar", "worldbank", "kalshi", "oecd", "eurostat", "faa", "yfinance", "stack_exchange"}
+)
 
 
 @dataclasses.dataclass(frozen=True)
 class IngestReport:
-    results: tuple[IngestItemResult, ...]
-    skipped_connectors: tuple[tuple[str, str], ...]  # (connector, reason)
+    """Outcome counts for one ``run_ingest`` / ``refresh`` invocation."""
 
-    @property
-    def written(self) -> int:
-        return sum(1 for r in self.results if r.status == "written")
-
-    @property
-    def failed(self) -> int:
-        return sum(1 for r in self.results if r.status == "failed")
-
-    @property
-    def skipped(self) -> int:
-        return sum(1 for r in self.results if r.status == "skipped")
+    written: int = 0
+    failed: int = 0
+    refreshed: int = 0
+    unchanged: int = 0
+    skipped_connectors: list[str] = dataclasses.field(default_factory=list[str])
+    paths: list[Path] = dataclasses.field(default_factory=list[Path])
 
 
-def _capabilities_by_pair() -> dict[tuple[str, str], CapabilitySpec]:
-    return {(s.connector, s.method): s for s in all_capabilities()}
+@dataclasses.dataclass(frozen=True)
+class StatusRow:
+    """One previously-ingested auto-primitive, read back from disk."""
+
+    slug: str
+    connector: str
+    method: str
+    auto_args_hash: str
+    snapshot_sha256: str
+    as_of: str
+    path: Path
 
 
-def _key_present(requires_key: str | None) -> bool:
-    """A connector is ingestable when it declares no key, or its key is set."""
-    if not requires_key:
+def _args_hash(connector: str, method: str, args: dict[str, Any]) -> str:
+    """Dedup hash matching ``resolver.writer`` exactly so refresh can correlate
+    a manifest target with the auto-primitive the writer previously emitted.
+    """
+    payload = json.dumps({"connector": connector, "method": method, "args": args}, sort_keys=True)
+    return hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+
+def _env_var(connector: str) -> str:
+    return f"STRATA_{connector.upper()}_API_KEY"
+
+
+def _tiers_by_connector(capabilities: Iterable[CapabilitySpec]) -> dict[str, str]:
+    """connector → source_tier. A connector reports one tier across methods."""
+    out: dict[str, str] = {}
+    for spec in capabilities:
+        out.setdefault(spec.connector, spec.source_tier)
+    return out
+
+
+def _has_credentials(connector: str, keyless: frozenset[str]) -> bool:
+    if connector in keyless:
         return True
-    return bool(os.environ.get(requires_key))
+    return os.getenv(_env_var(connector)) is not None
 
 
-def _planned_items(
-    manifest: IngestManifest,
-    caps: dict[tuple[str, str], CapabilitySpec],
-    connector_filter: str | None,
-    tier_filter: str | None,
-) -> tuple[list[tuple[str, str, dict[str, Any], CapabilitySpec]], list[tuple[str, str]]]:
-    """Cross the two manifests into a flat work list, honoring the filters.
+def _eligible_targets(
+    targets: list[IngestTarget],
+    *,
+    tier: str | None,
+    connector: str | None,
+    keyless: frozenset[str],
+    tiers: dict[str, str],
+) -> tuple[list[IngestTarget], list[str]]:
+    """Apply tier/connector filters + the keyless/credential skip rule.
 
-    Returns (items, skipped_connectors) where each item is
-    ``(connector, method, arg_set, spec)`` and skipped_connectors is
-    ``(connector, reason)`` for connectors dropped for a missing key.
+    Returns ``(runnable_targets, skipped_connector_names)``.
     """
-    items: list[tuple[str, str, dict[str, Any], CapabilitySpec]] = []
-    skipped: list[tuple[str, str]] = []
+    skipped: list[str] = []
+    runnable: list[IngestTarget] = []
+    seen_skip: set[str] = set()
 
-    for mc in manifest.connectors:
-        if connector_filter and mc.connector != connector_filter:
+    for t in targets:
+        if connector is not None and t.connector != connector:
             continue
-        if not _key_present(mc.requires_key):
-            reason = f"missing API key {mc.requires_key}"
-            logger.info("skipping connector %s — %s", mc.connector, reason)
-            skipped.append((mc.connector, reason))
+        if tier is not None and tiers.get(t.connector) != tier:
             continue
-        for mm in mc.methods:
-            spec = caps.get((mc.connector, mm.method))
-            if spec is None:
-                # WHY: a manifest entry with no capability spec is a typo or a
-                # removed method; surface it but do not abort the batch.
-                logger.warning(
-                    "manifest %s.%s has no capability spec — skipping",
-                    mc.connector,
-                    mm.method,
+        if not _has_credentials(t.connector, keyless):
+            if t.connector not in seen_skip:
+                seen_skip.add(t.connector)
+                skipped.append(t.connector)
+                _log.warning(
+                    "skipping connector %r: %s is not set", t.connector, _env_var(t.connector)
                 )
-                continue
-            if tier_filter and spec.source_tier != tier_filter:
-                continue
-            for arg_set in mm.arg_sets:
-                items.append((mc.connector, mm.method, dict(arg_set), spec))
+            continue
+        runnable.append(t)
 
-    return items, skipped
-
-
-def method_only_args(connector: str, method: str, arg_set: dict[str, Any]) -> dict[str, Any]:
-    """The subset of an arg-set that is a connector-method argument.
-
-    Used for the dedup hash so the hash stays stable regardless of converter
-    metadata edits (a renamed primitive must not look like a new ingest).
-    """
-    caps = _capabilities_by_pair()
-    spec = caps.get((connector, method))
-    if spec is None:
-        return dict(arg_set)
-    names = {a.name for a in spec.args}
-    return {k: v for k, v in arg_set.items() if k in names}
+    return runnable, skipped
 
 
 def run_ingest(
     *,
-    manifest_path: Path | None = None,
-    connector_filter: str | None = None,
-    tier_filter: str | None = None,
-    out_dir: Path | None = None,
+    manifest_path: Path,
+    dir_override: Path | None = None,
+    tier: str | None = None,
+    connector: str | None = None,
+    capabilities: list[CapabilitySpec] | None = None,
+    dispatch: Dispatch = call_and_convert,
+    keyless_connectors: frozenset[str] | set[str] | None = None,
 ) -> IngestReport:
-    """Execute the ingest plan and write auto-primitives to disk."""
-    manifest = load_manifest(manifest_path)
-    caps = _capabilities_by_pair()
-    items, skipped = _planned_items(manifest, caps, connector_filter, tier_filter)
+    """Run every manifest target (subject to filters) and persist the results.
 
-    results: list[IngestItemResult] = []
-    for connector, method, arg_set, _spec in items:
-        slug = str(arg_set.get("primitive_slug", "?"))
-        method_args = method_only_args(connector, method, arg_set)
+    De-dup is handled inside ``upsert_primitive`` via ``metadata.auto_args_hash``
+    keyed on ``(connector, method, args)`` — re-running the same target rewrites
+    its one file rather than spawning duplicates.
+    """
+    caps = capabilities if capabilities is not None else all_capabilities()
+    keyless = (
+        frozenset(keyless_connectors) if keyless_connectors is not None else KEYLESS_CONNECTORS
+    )
+    tiers = _tiers_by_connector(caps)
+    targets = load_manifest(manifest_path)
+
+    runnable, skipped = _eligible_targets(
+        targets, tier=tier, connector=connector, keyless=keyless, tiers=tiers
+    )
+
+    written = 0
+    failed = 0
+    paths: list[Path] = []
+    for t in runnable:
         try:
-            primitive_yaml = call_and_convert(connector, method, arg_set)
+            yaml_dict = dispatch(t.connector, t.method, t.args)
             path = upsert_primitive(
-                primitive_yaml=primitive_yaml,
-                connector=connector,
-                method=method,
-                args=method_args,
-                dir_override=out_dir,
+                primitive_yaml=yaml_dict,
+                connector=t.connector,
+                method=t.method,
+                args=t.args,
+                dir_override=dir_override,
             )
-            logger.info("ingested %s.%s → %s", connector, method, slug)
-            results.append(IngestItemResult(connector, method, slug, "written", path=path))
-        # WHY broad: one bad source (network, validation) must not abort the batch.
-        except Exception as exc:
-            logger.warning("ingest %s.%s (%s) failed: %s", connector, method, slug, exc)
-            results.append(IngestItemResult(connector, method, slug, "failed", detail=str(exc)))
+        except Exception:
+            failed += 1
+            _log.warning(
+                "ingest failed for connector=%r method=%r", t.connector, t.method, exc_info=True
+            )
+            continue
+        written += 1
+        paths.append(path)
 
-    return IngestReport(results=tuple(results), skipped_connectors=tuple(skipped))
-
-
-@dataclasses.dataclass(frozen=True)
-class IngestStatusRow:
-    slug: str
-    connector: str
-    method: str
-    args_hash: str
-    as_of: str
+    return IngestReport(written=written, failed=failed, skipped_connectors=skipped, paths=paths)
 
 
-def ingest_status(out_dir: Path | None = None) -> list[IngestStatusRow]:
-    """List every auto-primitive on disk with its ingest provenance."""
-    target = out_dir if out_dir is not None else AUTO_PRIMITIVES_DIR
-    rows: list[IngestStatusRow] = []
-    if not target.exists():
-        return rows
-    for path in sorted(target.glob("*.yaml")):
+def _read_auto_primitives(dir_override: Path | None) -> list[tuple[Path, dict[str, Any]]]:
+    out_dir = dir_override if dir_override is not None else AUTO_PRIMITIVES_DIR
+    if not out_dir.exists():
+        return []
+    records: list[tuple[Path, dict[str, Any]]] = []
+    for path in sorted(out_dir.glob("*.yaml")):
         try:
             raw = yaml.safe_load(path.read_text())
         except yaml.YAMLError:
+            _log.warning("could not parse auto-primitive %s", path, exc_info=True)
             continue
-        if not isinstance(raw, dict):
-            continue
+        if isinstance(raw, dict):
+            records.append((path, raw))
+    return records
+
+
+def ingest_status(*, dir_override: Path | None = None) -> list[StatusRow]:
+    """Read back every auto-primitive on disk with its ingest metadata."""
+    rows: list[StatusRow] = []
+    for path, raw in _read_auto_primitives(dir_override):
         meta = raw.get("metadata", {}) or {}
+        source = raw.get("source", {}) or {}
         rows.append(
-            IngestStatusRow(
+            StatusRow(
                 slug=str(raw.get("slug", path.stem)),
-                connector=str(meta.get("auto_connector", "?")),
-                method=str(meta.get("auto_method", "?")),
-                args_hash=str(meta.get("auto_args_hash", "")),
+                connector=str(meta.get("auto_connector", "")),
+                method=str(meta.get("auto_method", "")),
+                auto_args_hash=str(meta.get("auto_args_hash", "")),
+                snapshot_sha256=str(source.get("snapshot_sha256", "")),
                 as_of=str(raw.get("as_of", "")),
+                path=path,
             )
         )
     return rows
 
 
-def _snapshot_of(primitive_yaml: dict[str, Any]) -> str:
-    source = primitive_yaml.get("source", {}) or {}
-    return str(source.get("snapshot_sha256", ""))
+def _parse_iso_date(value: str) -> date | None:
+    try:
+        return date.fromisoformat(value)
+    except (ValueError, TypeError):
+        return None
 
 
-@dataclasses.dataclass(frozen=True)
-class RefreshItemResult:
-    connector: str
-    method: str
-    primitive_slug: str
-    status: str  # "refreshed" | "unchanged" | "skipped" | "failed"
-    detail: str = ""
-
-
-@dataclasses.dataclass(frozen=True)
-class RefreshReport:
-    results: tuple[RefreshItemResult, ...]
-
-    @property
-    def refreshed(self) -> int:
-        return sum(1 for r in self.results if r.status == "refreshed")
-
-    @property
-    def unchanged(self) -> int:
-        return sum(1 for r in self.results if r.status == "unchanged")
-
-
-def refresh_ingest(
+def refresh(
     *,
-    manifest_path: Path | None = None,
-    tier_filter: str | None = None,
-    older_than_days: int | None = None,
-    out_dir: Path | None = None,
-) -> RefreshReport:
-    """Re-fetch manifest primitives and rewrite ONLY when the snapshot changed.
+    manifest_path: Path,
+    dir_override: Path | None = None,
+    tier: str | None = None,
+    connector: str | None = None,
+    older_than: int | None = None,
+    capabilities: list[CapabilitySpec] | None = None,
+    dispatch: Dispatch = call_and_convert,
+    keyless_connectors: frozenset[str] | set[str] | None = None,
+) -> IngestReport:
+    """Re-fetch manifest targets and rewrite a primitive only when its
+    ``snapshot_sha256`` changed.
 
-    ``older_than_days`` limits the refresh to primitives whose on-disk
-    ``as_of`` is older than the cutoff, so a daily refresh does not re-hit
-    every source. A primitive whose freshly-computed ``snapshot_sha256``
-    equals the stored one is left untouched (status ``unchanged``).
+    A target is considered for refresh only if it already exists on disk under
+    the matching ``auto_args_hash``. ``older_than`` (days) skips primitives
+    whose ``as_of`` is more recent than the cutoff, so a refresh sweep can
+    target stale rows. Unknown/new targets are ignored (use ``run_ingest`` to
+    seed them).
     """
-    from datetime import date, timedelta
+    caps = capabilities if capabilities is not None else all_capabilities()
+    keyless = (
+        frozenset(keyless_connectors) if keyless_connectors is not None else KEYLESS_CONNECTORS
+    )
+    tiers = _tiers_by_connector(caps)
+    targets = load_manifest(manifest_path)
 
-    manifest = load_manifest(manifest_path)
-    caps = _capabilities_by_pair()
-    items, _ = _planned_items(manifest, caps, None, tier_filter)
-    target = out_dir if out_dir is not None else AUTO_PRIMITIVES_DIR
+    runnable, skipped = _eligible_targets(
+        targets, tier=tier, connector=connector, keyless=keyless, tiers=tiers
+    )
 
-    cutoff: date | None = None
-    if older_than_days is not None:
-        cutoff = date.today() - timedelta(days=older_than_days)
+    existing = {row.auto_args_hash: row for row in ingest_status(dir_override=dir_override)}
+    cutoff_date = (date.today() - timedelta(days=older_than)) if older_than is not None else None
 
-    results: list[RefreshItemResult] = []
-    for connector, method, arg_set, _spec in items:
-        slug = str(arg_set.get("primitive_slug", "?"))
-        existing_path = target / f"{slug}.yaml"
-
-        existing_snapshot = ""
-        if existing_path.exists():
-            try:
-                existing_raw = yaml.safe_load(existing_path.read_text())
-            except yaml.YAMLError:
-                existing_raw = None
-            if isinstance(existing_raw, dict):
-                existing_snapshot = _snapshot_of(existing_raw)
-                if cutoff is not None:
-                    as_of = _parse_date(str(existing_raw.get("as_of", "")))
-                    if as_of is not None and as_of >= cutoff:
-                        results.append(
-                            RefreshItemResult(
-                                connector, method, slug, "skipped", "newer than cutoff"
-                            )
-                        )
-                        continue
-
-        method_args = method_only_args(connector, method, arg_set)
+    refreshed = 0
+    unchanged = 0
+    paths: list[Path] = []
+    for t in runnable:
+        prior = existing.get(_args_hash(t.connector, t.method, t.args))
+        if prior is None:
+            continue  # not yet seeded; refresh does not create new rows
+        if cutoff_date is not None:
+            as_of = _parse_iso_date(prior.as_of)
+            if as_of is not None and as_of > cutoff_date:
+                unchanged += 1
+                continue
         try:
-            primitive_yaml = call_and_convert(connector, method, arg_set)
-        # WHY broad: non-fatal, mirrors run_ingest — a dead source is skipped.
-        except Exception as exc:
-            logger.warning("refresh %s.%s (%s) failed: %s", connector, method, slug, exc)
-            results.append(RefreshItemResult(connector, method, slug, "failed", str(exc)))
+            yaml_dict = dispatch(t.connector, t.method, t.args)
+        except Exception:
+            _log.warning(
+                "refresh fetch failed for connector=%r method=%r",
+                t.connector,
+                t.method,
+                exc_info=True,
+            )
             continue
 
-        new_snapshot = _snapshot_of(primitive_yaml)
-        if existing_path.exists() and new_snapshot == existing_snapshot:
-            results.append(RefreshItemResult(connector, method, slug, "unchanged"))
+        new_sha = str((yaml_dict.get("source", {}) or {}).get("snapshot_sha256", ""))
+        if new_sha == prior.snapshot_sha256:
+            unchanged += 1
             continue
 
-        upsert_primitive(
-            primitive_yaml=primitive_yaml,
-            connector=connector,
-            method=method,
-            args=method_args,
-            dir_override=out_dir,
+        path = upsert_primitive(
+            primitive_yaml=yaml_dict,
+            connector=t.connector,
+            method=t.method,
+            args=t.args,
+            dir_override=dir_override,
         )
-        results.append(RefreshItemResult(connector, method, slug, "refreshed"))
+        refreshed += 1
+        paths.append(path)
 
-    return RefreshReport(results=tuple(results))
-
-
-def _parse_date(value: str) -> Any:
-    from datetime import date
-
-    parts = value.split("-")
-    if len(parts) == 3:
-        try:
-            return date(int(parts[0]), int(parts[1]), int(parts[2]))
-        except ValueError:
-            return None
-    return None
+    return IngestReport(
+        refreshed=refreshed, unchanged=unchanged, skipped_connectors=skipped, paths=paths
+    )

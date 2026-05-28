@@ -1,12 +1,26 @@
-"""Parse the declarative ingest manifest (``data/ingest-manifest.yaml``).
+"""Declarative ingest manifest (``data/ingest-manifest.yaml``).
 
-WHY: the orchestrator stays connector-agnostic. The manifest is the only
-place that names concrete ``(connector, method, arg-set)`` triples; the
-orchestrator iterates :func:`connectors._capability.all_capabilities` and
-only acts on pairs the manifest declares. An arg-set carries both the method
-call arguments and the converter metadata — :func:`connectors._dispatch
-.call_and_convert` splits them by signature, so the manifest does not need to
-know the boundary.
+The manifest is the static counterpart to the LLM router: instead of asking
+Claude which connector method to call, it lists them by hand. Each connector
+maps to a list of methods; each method to a list of *arg-sets*. One arg-set is
+a flat dict carrying **both** the connector method arguments (e.g. ``series_id``)
+**and** the converter metadata (``primitive_slug``, ``concept_slug``, ``name``,
+...). ``connectors._dispatch.call_and_convert`` splits the two by signature, so
+the orchestrator stays oblivious to which keys go where.
+
+Shape::
+
+    connectors:
+      bls:
+        - method: get_series
+          arg_sets:
+            - series_id: CUUR0000SA0
+              primitive_slug: bls-cpi-us-2024
+              concept_slug: us-inflation
+              name: ...
+              ...
+
+The flattened unit of work is one :class:`IngestTarget` per arg-set.
 """
 
 from __future__ import annotations
@@ -19,75 +33,47 @@ import yaml
 
 
 @dataclasses.dataclass(frozen=True)
-class ManifestMethod:
-    """One method on a connector plus every arg-set to ingest through it."""
-
-    method: str
-    arg_sets: tuple[dict[str, Any], ...]
-
-
-@dataclasses.dataclass(frozen=True)
-class ManifestConnector:
-    """A connector's ingest plan: optional credential gate + its methods."""
+class IngestTarget:
+    """One connector call: a method plus the merged method-args + metadata."""
 
     connector: str
-    requires_key: str | None
-    methods: tuple[ManifestMethod, ...]
+    method: str
+    args: dict[str, Any]
 
 
-@dataclasses.dataclass(frozen=True)
-class IngestManifest:
-    connectors: tuple[ManifestConnector, ...]
+def load_manifest(path: Path) -> list[IngestTarget]:
+    """Parse the manifest YAML into a flat list of :class:`IngestTarget`.
 
-    def get(self, connector: str) -> ManifestConnector | None:
-        for c in self.connectors:
-            if c.connector == connector:
-                return c
-        return None
-
-
-# WHY a sibling of data/ and not inside it: the registry loader rglobs every
-# YAML under data/ and rejects any file lacking a record `kind` (see commit
-# 4e12777, which moved the portfolio YAML out for the same reason). Keeping the
-# manifest beside data/ lets `strata validate ../data` stay green.
-DEFAULT_MANIFEST_PATH: Path = Path("../ingest-manifest.yaml")
-
-
-def load_manifest(path: Path | None = None) -> IngestManifest:
-    """Read and validate the manifest YAML into typed records.
-
-    Raises ``ValueError`` on a malformed manifest so the failure surfaces at
-    the CLI boundary rather than deep inside a connector call.
+    Raises ``FileNotFoundError`` if the file is missing and ``ValueError`` if
+    the structure is malformed — the orchestrator should fail loudly on a bad
+    manifest rather than silently ingesting nothing.
     """
-    target = path if path is not None else DEFAULT_MANIFEST_PATH
-    raw = yaml.safe_load(target.read_text())
-    if not isinstance(raw, dict) or "connectors" not in raw:
-        raise ValueError(f"manifest {target} missing top-level 'connectors' key")
+    if not path.exists():
+        raise FileNotFoundError(f"ingest manifest not found: {path}")
 
-    connectors_raw = raw["connectors"]
-    if not isinstance(connectors_raw, dict):
-        raise ValueError("manifest 'connectors' must be a mapping")
+    raw = yaml.safe_load(path.read_text())
+    if not isinstance(raw, dict):
+        raise ValueError(f"manifest root must be a mapping, got {type(raw).__name__}")
 
-    connectors: list[ManifestConnector] = []
-    for name, body in connectors_raw.items():
-        if not isinstance(body, dict):
-            raise ValueError(f"connector {name!r} entry must be a mapping")
-        methods_raw = body.get("methods", {})
-        if not isinstance(methods_raw, dict):
-            raise ValueError(f"connector {name!r} 'methods' must be a mapping")
-        methods: list[ManifestMethod] = []
-        for method, arg_sets in methods_raw.items():
+    connectors = raw.get("connectors")
+    if not isinstance(connectors, dict):
+        raise ValueError("manifest must have a 'connectors' mapping")
+
+    targets: list[IngestTarget] = []
+    for connector, entries in connectors.items():
+        if not isinstance(entries, list):
+            raise ValueError(f"connector {connector!r} must map to a list of method entries")
+        for entry in entries:
+            if not isinstance(entry, dict):
+                raise ValueError(f"connector {connector!r} entry must be a mapping")
+            method = entry.get("method")
+            if not isinstance(method, str) or not method:
+                raise ValueError(f"connector {connector!r} entry missing a 'method' string")
+            arg_sets = entry.get("arg_sets", [])
             if not isinstance(arg_sets, list):
-                raise ValueError(f"{name}.{method} arg-sets must be a list")
+                raise ValueError(f"{connector}.{method} 'arg_sets' must be a list")
             for arg_set in arg_sets:
                 if not isinstance(arg_set, dict):
-                    raise ValueError(f"{name}.{method} each arg-set must be a mapping")
-            methods.append(ManifestMethod(method=method, arg_sets=tuple(arg_sets)))
-        connectors.append(
-            ManifestConnector(
-                connector=name,
-                requires_key=body.get("requires_key"),
-                methods=tuple(methods),
-            )
-        )
-    return IngestManifest(connectors=tuple(connectors))
+                    raise ValueError(f"{connector}.{method} arg_set must be a mapping")
+                targets.append(IngestTarget(connector=connector, method=method, args=dict(arg_set)))
+    return targets

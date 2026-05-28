@@ -1,38 +1,29 @@
-"""Connector-agnostic ingest + freshness orchestration (Session 3).
+"""Declarative ingest orchestrator package.
 
-Public surface used by the ``strata ingest`` CLI sub-app and tests.
+Drives the data bank from a static manifest (``data/ingest-manifest.yaml``)
+through the existing connector → dispatch → writer machinery, the batch
+counterpart to the per-query ``strata goal`` resolver.
 """
 
 from __future__ import annotations
 
-from .manifest import (
-    IngestManifest,
-    ManifestConnector,
-    ManifestMethod,
-    load_manifest,
-)
+from .manifest import IngestTarget, load_manifest
 from .orchestrator import (
-    IngestItemResult,
+    KEYLESS_CONNECTORS,
     IngestReport,
-    IngestStatusRow,
-    RefreshItemResult,
-    RefreshReport,
+    StatusRow,
     ingest_status,
-    refresh_ingest,
+    refresh,
     run_ingest,
 )
 
 __all__ = [
-    "IngestItemResult",
-    "IngestManifest",
+    "KEYLESS_CONNECTORS",
     "IngestReport",
-    "IngestStatusRow",
-    "ManifestConnector",
-    "ManifestMethod",
-    "RefreshItemResult",
-    "RefreshReport",
+    "IngestTarget",
+    "StatusRow",
     "ingest_status",
     "load_manifest",
-    "refresh_ingest",
+    "refresh",
     "run_ingest",
 ]

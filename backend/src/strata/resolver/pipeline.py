@@ -22,10 +22,12 @@ import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Literal, cast
 
+from ..evaluator import size_concept
 from ..models import AtomicPrimitive
 from ..registry import Registry
+from . import writer
 from .events import PipelineEvent, PipelineEventKind, PipelineStatus, ResolverResult
 from .parse import ParsedQuery, parse_query
 from .search import PrimitiveHit, search_primitive
@@ -37,13 +39,31 @@ from .slug import (
     resolve_slug,
 )
 
+# Injection seams so the HTTP route can force a deterministic fallback path
+# (its own patchable parse/search functions) without touching the network for
+# slug resolution or routing. Defaults are the real module functions, which is
+# what the CLI uses for the full 4-step pipeline.
+SlugFn = Callable[[str], ResolvedQuery]
+ParseFn = Callable[..., ParsedQuery]
+SearchFn = Callable[..., PrimitiveHit | None]
+
 _log = logging.getLogger(__name__)
 
-# The fallback step's Claude+Exa calls are injectable so a caller (notably the
-# HTTP /resolve surface and its frozen tests) can substitute its own bindings
-# without monkeypatching this module's globals.
-ParseFn = Callable[..., ParsedQuery]
-SearchFn = Callable[..., "PrimitiveHit | None"]
+
+def call_and_convert(connector: str, method: str, args: dict[str, Any]) -> dict[str, Any]:
+    """Thin, patchable indirection to ``connectors._dispatch.call_and_convert``.
+
+    Imported lazily (via ``import_module`` so static analysis does not require
+    the dispatch module to exist yet) to keep the resolver import path free of
+    network-heavy connector clients. If the dispatch layer is absent, the
+    ``ModuleNotFoundError`` propagates and step 3 treats it as a dispatch
+    failure — the caller falls through to step 4.
+    """
+    import importlib
+
+    dispatch = importlib.import_module("strata.connectors._dispatch")
+    result: dict[str, Any] = dispatch.call_and_convert(connector, method, args)
+    return result
 
 
 @dataclass(slots=True)
@@ -163,21 +183,33 @@ def _step2_primitives(
             events=state.events,
         )
 
-    # Multi-primitive: framework hint composition is deferred to PR-B.3 where the
-    # CLI evaluator wiring lives. We return primitives_used so the renderer can
-    # at least show them; banner explains the deferred composition.
+    primitives_used = [
+        {
+            "slug": p.slug,
+            "name": p.name,
+            "value": p.value,
+            "unit": p.unit.model_dump(),
+        }
+        for p in hits
+    ]
+
+    # Step 2b (best-effort): if the framework_hint names a *registered concept*,
+    # the evaluator can build a real scenario tree from the bound variants. This
+    # turns the multi-primitive miss into a fully-composed TAM instead of the
+    # PARTIAL fallthrough below.
+    hint = resolved.framework_hint
+    if hint and hint in registry.concepts:
+        composed = _size_registered_concept(state, registry, hint, via="primitive")
+        if composed is not None:
+            composed.primitives_used = primitives_used or composed.primitives_used
+            return composed
+
+    # Multi-primitive with no usable framework: return primitives_used so the
+    # renderer can show them; banner explains why no composed TAM was emitted.
     return ResolverResult(
         status=PipelineStatus.PARTIAL,
         via="primitive",
-        primitives_used=[
-            {
-                "slug": p.slug,
-                "name": p.name,
-                "value": p.value,
-                "unit": p.unit.model_dump(),
-            }
-            for p in hits
-        ],
+        primitives_used=primitives_used,
         framework_name=resolved.framework_hint,
         banner=(
             "matched multiple primitives; framework composition not yet wired "
@@ -186,6 +218,208 @@ def _step2_primitives(
         ),
         events=state.events,
     )
+
+
+def _size_registered_concept(
+    state: _RunState,
+    registry: Registry,
+    concept_slug: str,
+    *,
+    via: Literal["concept", "primitive", "connector", "fallback", "none"],
+) -> ResolverResult | None:
+    """Run the evaluator for a registered concept and map the scenario tree
+    into a ``ResolverResult``. Returns ``None`` if the evaluator can't size it
+    (e.g. the concept has no applicable framework variants) so the caller can
+    fall back to its PARTIAL path.
+    """
+    try:
+        tam = size_concept(registry, concept_slug)
+    except Exception:  # EvaluatorError / RegistryError — best-effort, fall back
+        _log.warning("step 2b evaluator failed for %s", concept_slug, exc_info=True)
+        return None
+
+    scenarios = tam.scenarios
+    if not scenarios:
+        return None
+    primary = scenarios[0]
+    inputs_used = [
+        {
+            "slug": iu.primitive_slug,
+            "name": iu.name,
+            "value": iu.value,
+            "unit": iu.unit.model_dump() if iu.unit is not None else None,
+        }
+        for iu in primary.inputs_used
+    ]
+    return ResolverResult(
+        status=PipelineStatus.OK,
+        via=via,
+        tam_value=primary.value,
+        formatted_tam=_format_usd(primary.value),
+        concept_name=tam.target.concept_name,
+        lens=primary.lens.value,
+        framework_name=primary.framework,
+        independence_score=tam.independence_score,
+        primitives_used=inputs_used,
+        events=state.events,
+    )
+
+
+def _step3_connector(state: _RunState, query: str, options: RunOptions) -> ResolverResult | None:
+    """Router → connector dispatch → writer.upsert.
+
+    The router (``strata.router.choose``) picks one or more connector methods.
+    Each is dispatched via ``connectors._dispatch.call_and_convert`` and the
+    resulting AtomicPrimitive YAML is persisted with ``writer.upsert_primitive``
+    (auto-primitives only — never the committed tree). Independent calls run
+    concurrently, capped at ``options.expansion_budget``.
+
+    Returns ``None`` on *any* failure (router miss, dispatch error, writer
+    error) so the caller falls through to the step-4 fallback unchanged.
+    """
+    decisions = _route(state, query, options)
+    if not decisions:
+        return None
+
+    budget = max(1, options.expansion_budget)
+    if len(decisions) > budget:
+        _emit(
+            state,
+            PipelineEvent(
+                kind=PipelineEventKind.BUDGET_EXCEEDED,
+                step="3",
+                payload={"budget": budget, "requested": len(decisions)},
+            ),
+        )
+        decisions = decisions[:budget]
+
+    try:
+        primitives = asyncio.run(_dispatch_all(state, decisions))
+    except Exception:
+        _log.warning("step 3 connector dispatch failed", exc_info=True)
+        return None
+
+    if not primitives:
+        return None
+
+    primitives_used: list[dict[str, Any]] = []
+    for prim_yaml in primitives:
+        slug = str(prim_yaml.get("slug", ""))
+        if slug:
+            state.wrote_primitives.append(slug)
+        primitives_used.append(
+            {
+                "slug": slug,
+                "name": prim_yaml.get("name"),
+                "value": prim_yaml.get("value"),
+                "unit": prim_yaml.get("unit"),
+            }
+        )
+
+    return ResolverResult(
+        status=PipelineStatus.OK if len(primitives_used) > 1 else PipelineStatus.PARTIAL,
+        via="connector",
+        primitives_used=primitives_used,
+        wrote_primitives=list(state.wrote_primitives),
+        banner=(
+            "pulled live from connector(s); written to ~/.strata/auto-primitives/ "
+            "— promote with `strata promote <slug>` to cite."
+        ),
+        events=state.events,
+    )
+
+
+def _route(state: _RunState, query: str, options: RunOptions) -> list[Any]:
+    """Call the router and normalise its return to a list of decisions.
+
+    ``router.choose`` historically returns a single ``RoutingDecision | None``;
+    a list is also accepted so the router can grow multi-pick. Emits a
+    ROUTER_DECISION event per decision.
+    """
+    try:
+        import importlib
+
+        router_mod = importlib.import_module("strata.router")
+        raw = router_mod.choose(query, model=options.model)
+    except Exception as exc:
+        _log.warning("router.choose failed", exc_info=True)
+        _emit(
+            state,
+            PipelineEvent(
+                kind=PipelineEventKind.ERROR,
+                step="3",
+                payload={"step": "router", "error": exc.__class__.__name__},
+                message=str(exc),
+            ),
+        )
+        return []
+
+    if raw is None:
+        return []
+    is_seq = isinstance(raw, list | tuple)
+    decisions: list[Any] = cast("list[Any]", raw) if is_seq else [raw]
+    for decision in decisions:
+        _emit(
+            state,
+            PipelineEvent(
+                kind=PipelineEventKind.ROUTER_DECISION,
+                step="3",
+                payload=decision.model_dump(),
+            ),
+        )
+    return decisions
+
+
+async def _dispatch_all(state: _RunState, decisions: list[Any]) -> list[dict[str, Any]]:
+    """Dispatch every decision concurrently; return the primitive YAMLs that
+    succeeded. Individual failures are swallowed so a partial batch still
+    yields results.
+    """
+    results = await asyncio.gather(
+        *(_dispatch_one(state, d) for d in decisions),
+        return_exceptions=True,
+    )
+    out: list[dict[str, Any]] = []
+    for r in results:
+        if isinstance(r, dict):
+            out.append(r)
+        else:
+            _log.warning("connector dispatch failed for one decision", exc_info=r)
+    return out
+
+
+async def _dispatch_one(state: _RunState, decision: Any) -> dict[str, Any]:
+    """Call one connector method off the event loop, persist, emit events."""
+    connector = decision.connector
+    method = decision.method
+    args = dict(decision.args)
+
+    _emit(
+        state,
+        PipelineEvent(
+            kind=PipelineEventKind.CONNECTOR_CALL,
+            step="3",
+            payload={"connector": connector, "method": method, "args": args},
+        ),
+    )
+
+    prim_yaml = await asyncio.to_thread(call_and_convert, connector, method, args)
+    path = await asyncio.to_thread(
+        writer.upsert_primitive,
+        primitive_yaml=prim_yaml,
+        connector=connector,
+        method=method,
+        args=args,
+    )
+    _emit(
+        state,
+        PipelineEvent(
+            kind=PipelineEventKind.WROTE_PRIMITIVE,
+            step="3",
+            payload={"slug": prim_yaml.get("slug"), "path": str(path)},
+        ),
+    )
+    return prim_yaml
 
 
 def _step4_fallback(
@@ -272,152 +506,20 @@ def _format_usd(value: float) -> str:
     return f"${value:,.0f}"
 
 
-def _dispatch_one(decision: Any) -> tuple[str, str]:
-    """Run one router decision: connector call → writer upsert.
-
-    Imported lazily so the offline import path never pulls connectors.
-    Returns ``(slug, path)`` for the written auto-primitive. Raises on any
-    connector/converter/writer failure — the caller decides whether that is
-    fatal or merely demotes the decision.
-    """
-    from ..connectors import _dispatch
-    from . import writer
-
-    primitive_yaml = _dispatch.call_and_convert(decision.connector, decision.method, decision.args)
-    path = writer.upsert_primitive(
-        primitive_yaml=primitive_yaml,
-        connector=decision.connector,
-        method=decision.method,
-        args=dict(decision.args),
-    )
-    return str(primitive_yaml.get("slug", "")), str(path)
-
-
-async def _dispatch_all(decisions: list[Any]) -> list[tuple[Any, BaseException | tuple[str, str]]]:
-    """Fan the capped decision set out across threads (spec: parallelize via asyncio).
-
-    Each connector call is blocking I/O, so we hand each to a worker thread and
-    await them together. Failures are captured per-decision rather than
-    cancelling the batch.
-    """
-    results = await asyncio.gather(
-        *(asyncio.to_thread(_dispatch_one, d) for d in decisions),
-        return_exceptions=True,
-    )
-    return list(zip(decisions, results, strict=True))
-
-
-def _step3_connector(state: _RunState, query: str, options: RunOptions) -> None:
-    """Step 3 (connector live): route → dispatch → write auto-primitive(s).
-
-    Appends written slugs to ``state.wrote_primitives`` and emits CONNECTOR_CALL
-    + WROTE_PRIMITIVE per success. Any failure (router, connector, converter,
-    writer) is non-fatal: it is logged/emitted and the pipeline falls through to
-    step 4. The router currently returns at most one decision; this handles a
-    list defensively and honours ``expansion_budget`` either way.
-    """
-    if not options.allow_live:
-        return
-
-    try:
-        import importlib
-
-        router_mod = importlib.import_module("strata.router")
-        chosen = router_mod.choose(query)
-    except Exception as exc:
-        _log.warning("router.choose failed", exc_info=True)
-        _emit(
-            state,
-            PipelineEvent(
-                kind=PipelineEventKind.ERROR,
-                step="3",
-                payload={"step": "router", "error": exc.__class__.__name__},
-                message=str(exc),
-            ),
-        )
-        return
-
-    if chosen is None:
-        return
-
-    decisions = list(chosen) if isinstance(chosen, list) else [chosen]
-    if len(decisions) > options.expansion_budget:
-        _emit(
-            state,
-            PipelineEvent(
-                kind=PipelineEventKind.BUDGET_EXCEEDED,
-                step="3",
-                payload={"budget": options.expansion_budget, "requested": len(decisions)},
-            ),
-        )
-        decisions = decisions[: options.expansion_budget]
-
-    for decision in decisions:
-        _emit(
-            state,
-            PipelineEvent(
-                kind=PipelineEventKind.ROUTER_DECISION,
-                step="3",
-                payload=decision.model_dump(),
-            ),
-        )
-        _emit(
-            state,
-            PipelineEvent(
-                kind=PipelineEventKind.CONNECTOR_CALL,
-                step="3",
-                payload={"connector": decision.connector, "method": decision.method},
-            ),
-        )
-
-    for decision, outcome in asyncio.run(_dispatch_all(decisions)):
-        if isinstance(outcome, BaseException):
-            _log.warning(
-                "connector dispatch failed for %s.%s",
-                decision.connector,
-                decision.method,
-                exc_info=outcome,
-            )
-            _emit(
-                state,
-                PipelineEvent(
-                    kind=PipelineEventKind.ERROR,
-                    step="3",
-                    payload={
-                        "step": "connector",
-                        "connector": decision.connector,
-                        "method": decision.method,
-                        "error": outcome.__class__.__name__,
-                    },
-                    message=str(outcome),
-                ),
-            )
-            continue
-        slug, path = outcome
-        state.wrote_primitives.append(slug)
-        _emit(
-            state,
-            PipelineEvent(
-                kind=PipelineEventKind.WROTE_PRIMITIVE,
-                step="3",
-                payload={"slug": slug, "path": path},
-            ),
-        )
-
-
 def run(
     query: str,
     *,
     registry: Registry,
     options: RunOptions | None = None,
+    slug_fn: SlugFn | None = None,
     parse_fn: ParseFn | None = None,
     search_fn: SearchFn | None = None,
 ) -> ResolverResult:
     """Run the 4-step pipeline. Returns the terminal result with events.
 
-    ``parse_fn`` / ``search_fn`` override the fallback's Claude+Exa callables;
-    they default to this module's bindings. The HTTP surface injects its own so
-    that patches on the route module reach the fallback step.
+    ``slug_fn`` / ``parse_fn`` / ``search_fn`` are injection seams for the HTTP
+    route (which patches its own parse/search functions and skips network slug
+    resolution); the CLI leaves them ``None`` to use the full pipeline.
     """
 
     options = options or RunOptions()
@@ -434,33 +536,29 @@ def run(
         ),
     )
 
-    # An empty registry has nothing to resolve a slug against — skip the Claude
-    # round-trip (and the spurious ERROR event it would emit on failure) and go
-    # straight to the live/fallback path. The HTTP /resolve surface relies on
-    # this: it always passes an empty registry and drives results via fallback.
-    if registry.concepts or registry.atomic:
-        try:
+    try:
+        if slug_fn is not None:
+            resolved = slug_fn(query)
+        else:
             resolved = resolve_slug(
                 query,
                 known_concepts=_summarize_concepts(registry),
                 known_primitives=_summarize_primitives(registry),
                 model=options.model,
             )
-        except Exception as exc:
-            _log.warning("slug resolution failed", exc_info=True)
-            # If slug resolution fails we go straight to fallback (if allowed).
-            resolved = ResolvedQuery(intent=ResolverIntent.NOVEL, confidence=0.0)
-            _emit(
-                state,
-                PipelineEvent(
-                    kind=PipelineEventKind.ERROR,
-                    step="pre",
-                    payload={"step": "slug", "error": exc.__class__.__name__},
-                    message=str(exc),
-                ),
-            )
-    else:
+    except Exception as exc:
+        _log.warning("slug resolution failed", exc_info=True)
+        # If slug resolution fails we go straight to fallback (if allowed).
         resolved = ResolvedQuery(intent=ResolverIntent.NOVEL, confidence=0.0)
+        _emit(
+            state,
+            PipelineEvent(
+                kind=PipelineEventKind.ERROR,
+                step="pre",
+                payload={"step": "slug", "error": exc.__class__.__name__},
+                message=str(exc),
+            ),
+        )
 
     state.resolved = resolved
     _emit(
@@ -480,19 +578,14 @@ def run(
         if result is not None:
             return result
 
-    _step3_connector(state, query, options)
+    # Step 3 (connector live): router.choose → connector dispatch → writer.
+    if options.allow_live:
+        result = _step3_connector(state, query, options)
+        if result is not None:
+            return result
 
     if options.allow_fallback:
         return _step4_fallback(state, query, options, parse_fn=parse_fn, search_fn=search_fn)
-
-    if state.wrote_primitives:
-        return ResolverResult(
-            status=PipelineStatus.OK,
-            via="connector",
-            wrote_primitives=state.wrote_primitives,
-            events=state.events,
-            banner="wrote auto-primitive(s) from a live connector — verify before citing",
-        )
 
     return ResolverResult(
         status=PipelineStatus.FAILED,

@@ -119,7 +119,11 @@ def test_goal_failure_exits_with_3_when_pipeline_returned_error(
     mock_load.return_value = LoadedRecords()
     mock_run.return_value = _failure()
     (tmp_path / "primitives").mkdir()
-    result = runner.invoke(app, ["goal", "test", "--data-dir", str(tmp_path)])
+    # Exit 3 is the live/fallback-allowed path; clear STRATA_OFFLINE so CI's
+    # global offline flag doesn't force the --no-live/--no-fallback exit-1 path.
+    result = runner.invoke(
+        app, ["goal", "test", "--data-dir", str(tmp_path)], env={"STRATA_OFFLINE": None}
+    )
     assert result.exit_code == 3
 
 
