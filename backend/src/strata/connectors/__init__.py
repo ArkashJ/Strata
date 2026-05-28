@@ -6,6 +6,26 @@ that emit Strata-compatible YAML dicts for AtomicPrimitive / Source records.
 
 from __future__ import annotations
 
+from ._capability import (
+    CapabilityArg,
+    CapabilitySpec,
+    all_capabilities,
+)
+from .alpha_vantage import (
+    AlphaVantageClient,
+    AlphaVantageClientError,
+    AlphaVantageFunction,
+    AlphaVantageInterval,
+    AlphaVantageResponse,
+    market_cap_to_primitive_yaml,
+    overview_to_source_yaml,
+)
+from .alpha_vantage import (
+    CompanyOverview as AlphaVantageCompanyOverview,
+)
+from .alpha_vantage import (
+    TimeSeriesPoint as AlphaVantageTimeSeriesPoint,
+)
 from .bls import (
     BLSClient,
     BLSClientError,
@@ -201,6 +221,14 @@ from .fred import (
     observations_to_primitive_yaml,
     observations_to_source_yaml,
 )
+from .github import (
+    GitHubClient,
+    GitHubClientError,
+    GitHubRepo,
+    GitHubResponse,
+    repo_to_primitive_yaml,
+    repo_to_source_yaml,
+)
 from .kalshi import (
     Event as KalshiEvent,
 )
@@ -223,6 +251,20 @@ from .kalshi import (
 )
 from .kalshi import (
     Trade as KalshiTrade,
+)
+from .nasdaq_data_link import (
+    NasdaqDataLinkClient,
+    NasdaqDataLinkClientError,
+    NasdaqDatasetMeta,
+    NasdaqObservation,
+    NasdaqResponse,
+    NasdaqTier,
+)
+from .nasdaq_data_link import (
+    observation_to_primitive_yaml as nasdaq_observation_to_primitive_yaml,
+)
+from .nasdaq_data_link import (
+    observation_to_source_yaml as nasdaq_observation_to_source_yaml,
 )
 from .oecd import (
     OECDClient,
@@ -270,6 +312,31 @@ from .openfda import (
     event_count_to_primitive_yaml,
     fda_to_source_yaml,
 )
+from .reddit import (
+    RedditClient,
+    RedditClientError,
+    RedditResponse,
+    SubredditStats,
+    subreddit_to_primitive_yaml,
+    subreddit_to_source_yaml,
+)
+from .stack_exchange import (
+    StackExchangeClient,
+    StackExchangeClientError,
+    StackExchangeResponse,
+    TagInfo,
+    tag_to_primitive_yaml,
+    tag_to_source_yaml,
+)
+from .twitter import (
+    TwitterClient,
+    TwitterClientError,
+    TwitterResponse,
+    TwitterTweet,
+    TwitterUser,
+    user_to_primitive_yaml,
+    user_to_source_yaml,
+)
 from .usda_nass import (
     NASSAggLevel,
     NASSClient,
@@ -312,8 +379,24 @@ from .worldbank import (
     indicator_to_primitive_yaml,
     indicator_to_source_yaml,
 )
+from .yfinance import (
+    YahooQuote,
+    YahooResponse,
+    YFinanceClient,
+    YFinanceClientError,
+    quote_to_primitive_yaml,
+    quote_to_source_yaml,
+)
 
 __all__ = [
+    # Alpha Vantage
+    "AlphaVantageClient",
+    "AlphaVantageClientError",
+    "AlphaVantageCompanyOverview",
+    "AlphaVantageFunction",
+    "AlphaVantageInterval",
+    "AlphaVantageResponse",
+    "AlphaVantageTimeSeriesPoint",
     # BLS
     "BLSClient",
     "BLSClientError",
@@ -334,6 +417,9 @@ __all__ = [
     "CMSResponse",
     "CMSSpendingRecord",
     "CMSState",
+    # Capability manifest
+    "CapabilityArg",
+    "CapabilitySpec",
     "Catalog",
     # Census
     "CensusClient",
@@ -434,6 +520,11 @@ __all__ = [
     "FREDUnits",
     "FirmRecord",
     "Footnote",
+    # GitHub
+    "GitHubClient",
+    "GitHubClientError",
+    "GitHubRepo",
+    "GitHubResponse",
     "IndustryRecord",
     # Kalshi
     "KalshiClient",
@@ -458,6 +549,13 @@ __all__ = [
     "NASSSector",
     "NASSSource",
     "NASSStatistic",
+    # Nasdaq Data Link
+    "NasdaqDataLinkClient",
+    "NasdaqDataLinkClientError",
+    "NasdaqDatasetMeta",
+    "NasdaqObservation",
+    "NasdaqResponse",
+    "NasdaqTier",
     # OECD
     "OECDClient",
     "OECDClientError",
@@ -471,10 +569,26 @@ __all__ = [
     "Observation",
     "OpenFDAClient",
     "OpenFDAClientError",
+    # Reddit
+    "RedditClient",
+    "RedditClientError",
+    "RedditResponse",
     "Release",
     "Series",
     "SeriesInfo",
+    # Stack Exchange
+    "StackExchangeClient",
+    "StackExchangeClientError",
+    "StackExchangeResponse",
+    "SubredditStats",
     "SurveyInfo",
+    "TagInfo",
+    # Twitter / X
+    "TwitterClient",
+    "TwitterClientError",
+    "TwitterResponse",
+    "TwitterTweet",
+    "TwitterUser",
     # World Bank
     "WBCountry",
     "WBIncomeLevel",
@@ -485,8 +599,14 @@ __all__ = [
     "WBResponse",
     "WorldBankClient",
     "WorldBankClientError",
+    # yfinance
+    "YFinanceClient",
+    "YFinanceClientError",
+    "YahooQuote",
+    "YahooResponse",
     "airport_to_primitive_yaml",
     "airport_to_source_yaml",
+    "all_capabilities",
     "clearance_count_to_primitive_yaml",
     "cms_to_source_yaml",
     "concept_to_primitive_yaml",
@@ -506,9 +626,12 @@ __all__ = [
     "industry_to_primitive_yaml",
     "industry_to_source_yaml",
     "institution_count_to_primitive_yaml",
+    "market_cap_to_primitive_yaml",
     "market_to_primitive_yaml",
     "market_to_source_yaml",
     "market_volume_to_primitive_yaml",
+    "nasdaq_observation_to_primitive_yaml",
+    "nasdaq_observation_to_source_yaml",
     "nass_record_to_primitive_yaml",
     "nass_record_to_source_yaml",
     "observation_to_primitive_yaml",
@@ -517,10 +640,21 @@ __all__ = [
     "observations_to_source_yaml",
     "oecd_observation_to_primitive_yaml",
     "oecd_observation_to_source_yaml",
+    "overview_to_source_yaml",
     "passenger_count_to_primitive_yaml",
+    "quote_to_primitive_yaml",
+    "quote_to_source_yaml",
+    "repo_to_primitive_yaml",
+    "repo_to_source_yaml",
     "series_to_primitive_yaml",
     "series_to_source_yaml",
     "spending_to_primitive_yaml",
+    "subreddit_to_primitive_yaml",
+    "subreddit_to_source_yaml",
+    "tag_to_primitive_yaml",
+    "tag_to_source_yaml",
     "trade_to_primitive_yaml",
     "trade_to_source_yaml",
+    "user_to_primitive_yaml",
+    "user_to_source_yaml",
 ]
