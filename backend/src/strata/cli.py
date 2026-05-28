@@ -174,6 +174,106 @@ def db_stats() -> None:
     typer.echo(f"  {'TOTAL':20} {total:>6} rows")
 
 
+# ── Ingest orchestrator sub-commands ────────────────────────────────
+
+ingest_app = typer.Typer(
+    name="ingest",
+    help="Declarative data-bank ingest from data/ingest-manifest.yaml.",
+    no_args_is_help=True,
+)
+app.add_typer(ingest_app)
+
+_INGEST_MANIFEST_OPT = typer.Option(
+    Path("../data/ingest-manifest.yaml"),
+    "--manifest",
+    "-m",
+    help="Path to the ingest manifest YAML.",
+)
+_INGEST_CONNECTOR_OPT = typer.Option(
+    None, "--connector", help="Only ingest this connector (e.g. fred)."
+)
+_INGEST_TIER_OPT = typer.Option(
+    None, "--tier", help="Only ingest connectors of this source tier (e.g. regulator)."
+)
+_REFRESH_TIER_OPT = typer.Option(
+    None, "--tier", help="Only refresh connectors of this source tier."
+)
+_REFRESH_OLDER_THAN_OPT = typer.Option(
+    None,
+    "--older-than",
+    help="Only refresh primitives whose as_of is older than this many days.",
+)
+
+
+@ingest_app.command("run")
+def ingest_run(
+    manifest: Path = _INGEST_MANIFEST_OPT,
+    connector: str | None = _INGEST_CONNECTOR_OPT,
+    tier: str | None = _INGEST_TIER_OPT,
+) -> None:
+    """Walk the manifest and ingest each connector method into the data bank.
+
+    Connectors whose ``STRATA_<X>_API_KEY`` is unset are logged and skipped —
+    a missing key never aborts the batch. Writes land in the auto-primitives
+    staging dir (``~/.strata/auto-primitives/``); promote with `strata promote`.
+    """
+    from strata.ingest import run_ingest
+
+    try:
+        report = run_ingest(manifest_path=manifest, tier=tier, connector=connector)
+    except FileNotFoundError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    except ValueError as exc:
+        typer.echo(f"ERROR malformed manifest: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    typer.echo(f"Ingest complete: {report.written} written, {report.failed} failed.")
+    if report.skipped_connectors:
+        typer.echo(f"  skipped (no API key): {', '.join(sorted(report.skipped_connectors))}")
+
+
+@ingest_app.command("status")
+def ingest_status_cmd() -> None:
+    """List every previously-ingested auto-primitive with its source pin."""
+    from strata.ingest import ingest_status
+
+    rows = ingest_status()
+    if not rows:
+        typer.echo("No ingested auto-primitives yet. Run `strata ingest run`.")
+        return
+    typer.echo(f"Ingested auto-primitives ({len(rows)}):")
+    for row in rows:
+        typer.echo(
+            f"  {row.slug:40} {row.connector}.{row.method:24} "
+            f"as_of={row.as_of}  snapshot={row.snapshot_sha256[:12]}…"
+        )
+
+
+@ingest_app.command("refresh")
+def ingest_refresh(
+    manifest: Path = _INGEST_MANIFEST_OPT,
+    tier: str | None = _REFRESH_TIER_OPT,
+    older_than: int | None = _REFRESH_OLDER_THAN_OPT,
+) -> None:
+    """Re-fetch manifest targets, rewriting a primitive only when its
+    ``snapshot_sha256`` changed (unchanged rows are left untouched)."""
+    from strata.ingest import refresh
+
+    try:
+        report = refresh(manifest_path=manifest, tier=tier, older_than=older_than)
+    except FileNotFoundError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    except ValueError as exc:
+        typer.echo(f"ERROR malformed manifest: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    typer.echo(f"Refresh complete: {report.refreshed} rewritten, {report.unchanged} unchanged.")
+    if report.skipped_connectors:
+        typer.echo(f"  skipped (no API key): {', '.join(sorted(report.skipped_connectors))}")
+
+
 # ── Data bank stats (YAML) ──────────────────────────────────────────
 
 
