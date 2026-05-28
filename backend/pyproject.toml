@@ -1,6 +1,6 @@
 [project]
 name = "strata"
-version = "0.2.0a0"
+version = "0.3.0"
 description = "Open-source community-curated market-sizing tool — primitives, frameworks, and a defensible TAM."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -89,6 +89,15 @@ select = [
 ignore = [
     "E501",  # line too long — ruff format handles
 ]
+
+# `×` (multiplication sign) and `−` (minus sign) are deliberate domain notation
+# in TAM angle/method strings — not typos for ASCII `x` / `-`.
+allowed-confusables = ["×", "−"]
+
+[tool.ruff.lint.per-file-ignores]
+# test_connectors.py groups per-connector imports under section banners
+# mid-file for readability; these are intentional non-top-level imports.
+"tests/test_connectors.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"

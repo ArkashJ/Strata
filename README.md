@@ -6,8 +6,8 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://strata-pied-three.vercel.app)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.2.0a0-informational)
-![Status](https://img.shields.io/badge/status-pre--alpha-orange)
+![Version](https://img.shields.io/badge/version-0.3.0-informational)
+![Status](https://img.shields.io/badge/status-beta-brightgreen)
 
 ![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
@@ -91,7 +91,7 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
 
 ## Status
 
-**Pre-alpha — v0.2.0a0.** Proof of concept working end-to-end.
+**Beta — v0.3.0.** Question → sourced number → deployable, self-refreshing service, end to end.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -125,10 +125,18 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
   and a CapabilitySpec manifest so the router knows what each one can answer.
 - **307 atomic primitives** from live API queries across all six lenses + 87 sources
 - **`strata goal "<query>"` CLI** — ask free-form TAM questions from the terminal.
-  Maps to known data first, falls back to live connector calls, then to Claude+Exa.
-  See [`docs/13-strata-goal-cli.md`](docs/13-strata-goal-cli.md).
-- **367 backend tests + 10 frontend tests**, pyright strict clean, ruff clean,
-  frontend typecheck + build clean
+  Maps to known data first, then **live connector calls** (the router picks a
+  connector method, `call_and_convert` fetches + writes a sourced primitive),
+  then Claude+Exa fallback. See [`docs/13-strata-goal-cli.md`](docs/13-strata-goal-cli.md).
+- **`strata ingest run|status|refresh`** — populate and refresh the data bank in
+  bulk from a declarative `ingest-manifest.yaml`; key-less connectors are skipped,
+  and `refresh` rewrites only numbers whose source snapshot changed.
+- **Pyramid graph (`/graph`)** — read-only 3-axis explorer (Qualitative ·
+  Quantitative · Industry) with geo/time filter chips and click-to-narrow.
+- **Deploy-ready** — one-command boot (migrate → seed → serve), a PR CI gate,
+  and a weekly cron that opens a PR with refreshed data.
+- **400 backend tests** passing; type/lint clean on shipping code (`src/`) and
+  enforced in CI; frontend build clean on bun.
 - **50+ APIs cataloged** for integration ([`docs/11-api-catalog.md`](docs/11-api-catalog.md))
 
 ### v0.3 — ask in plain English, get a sourced TAM
