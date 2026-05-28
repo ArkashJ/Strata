@@ -18,15 +18,17 @@ fast for paths that don't need it.
 
 from __future__ import annotations
 
+import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
 from ..models import AtomicPrimitive
 from ..registry import Registry
 from .events import PipelineEvent, PipelineEventKind, PipelineStatus, ResolverResult
-from .parse import parse_query
-from .search import search_primitive
+from .parse import ParsedQuery, parse_query
+from .search import PrimitiveHit, search_primitive
 from .slug import (
     ConceptSummary,
     PrimitiveSummary,
@@ -36,6 +38,12 @@ from .slug import (
 )
 
 _log = logging.getLogger(__name__)
+
+# The fallback step's Claude+Exa calls are injectable so a caller (notably the
+# HTTP /resolve surface and its frozen tests) can substitute its own bindings
+# without monkeypatching this module's globals.
+ParseFn = Callable[..., ParsedQuery]
+SearchFn = Callable[..., "PrimitiveHit | None"]
 
 
 @dataclass(slots=True)
@@ -180,10 +188,17 @@ def _step2_primitives(
     )
 
 
-def _step4_fallback(state: _RunState, query: str, options: RunOptions) -> ResolverResult:
+def _step4_fallback(
+    state: _RunState,
+    query: str,
+    options: RunOptions,
+    *,
+    parse_fn: ParseFn,
+    search_fn: SearchFn,
+) -> ResolverResult:
     """Synthesize via Claude+Exa. Ephemeral — never written to disk."""
     try:
-        parsed = parse_query(query, model=options.model)
+        parsed = parse_fn(query, model=options.model)
     except Exception as exc:
         _log.warning("fallback parse_query failed", exc_info=True)
         return ResolverResult(
@@ -212,7 +227,7 @@ def _step4_fallback(state: _RunState, query: str, options: RunOptions) -> Resolv
                 payload={"primitive_name": prim_spec.role, "role": prim_spec.role},
             ),
         )
-        hit = search_primitive(prim_spec, model=options.model)
+        hit = search_fn(prim_spec, model=options.model)
         if hit is None:
             continue
         hits.append(hit.model_dump())
@@ -257,15 +272,157 @@ def _format_usd(value: float) -> str:
     return f"${value:,.0f}"
 
 
+def _dispatch_one(decision: Any) -> tuple[str, str]:
+    """Run one router decision: connector call → writer upsert.
+
+    Imported lazily so the offline import path never pulls connectors.
+    Returns ``(slug, path)`` for the written auto-primitive. Raises on any
+    connector/converter/writer failure — the caller decides whether that is
+    fatal or merely demotes the decision.
+    """
+    from ..connectors import _dispatch
+    from . import writer
+
+    primitive_yaml = _dispatch.call_and_convert(decision.connector, decision.method, decision.args)
+    path = writer.upsert_primitive(
+        primitive_yaml=primitive_yaml,
+        connector=decision.connector,
+        method=decision.method,
+        args=dict(decision.args),
+    )
+    return str(primitive_yaml.get("slug", "")), str(path)
+
+
+async def _dispatch_all(decisions: list[Any]) -> list[tuple[Any, BaseException | tuple[str, str]]]:
+    """Fan the capped decision set out across threads (spec: parallelize via asyncio).
+
+    Each connector call is blocking I/O, so we hand each to a worker thread and
+    await them together. Failures are captured per-decision rather than
+    cancelling the batch.
+    """
+    results = await asyncio.gather(
+        *(asyncio.to_thread(_dispatch_one, d) for d in decisions),
+        return_exceptions=True,
+    )
+    return list(zip(decisions, results, strict=True))
+
+
+def _step3_connector(state: _RunState, query: str, options: RunOptions) -> None:
+    """Step 3 (connector live): route → dispatch → write auto-primitive(s).
+
+    Appends written slugs to ``state.wrote_primitives`` and emits CONNECTOR_CALL
+    + WROTE_PRIMITIVE per success. Any failure (router, connector, converter,
+    writer) is non-fatal: it is logged/emitted and the pipeline falls through to
+    step 4. The router currently returns at most one decision; this handles a
+    list defensively and honours ``expansion_budget`` either way.
+    """
+    if not options.allow_live:
+        return
+
+    try:
+        import importlib
+
+        router_mod = importlib.import_module("strata.router")
+        chosen = router_mod.choose(query)
+    except Exception as exc:
+        _log.warning("router.choose failed", exc_info=True)
+        _emit(
+            state,
+            PipelineEvent(
+                kind=PipelineEventKind.ERROR,
+                step="3",
+                payload={"step": "router", "error": exc.__class__.__name__},
+                message=str(exc),
+            ),
+        )
+        return
+
+    if chosen is None:
+        return
+
+    decisions = list(chosen) if isinstance(chosen, list) else [chosen]
+    if len(decisions) > options.expansion_budget:
+        _emit(
+            state,
+            PipelineEvent(
+                kind=PipelineEventKind.BUDGET_EXCEEDED,
+                step="3",
+                payload={"budget": options.expansion_budget, "requested": len(decisions)},
+            ),
+        )
+        decisions = decisions[: options.expansion_budget]
+
+    for decision in decisions:
+        _emit(
+            state,
+            PipelineEvent(
+                kind=PipelineEventKind.ROUTER_DECISION,
+                step="3",
+                payload=decision.model_dump(),
+            ),
+        )
+        _emit(
+            state,
+            PipelineEvent(
+                kind=PipelineEventKind.CONNECTOR_CALL,
+                step="3",
+                payload={"connector": decision.connector, "method": decision.method},
+            ),
+        )
+
+    for decision, outcome in asyncio.run(_dispatch_all(decisions)):
+        if isinstance(outcome, BaseException):
+            _log.warning(
+                "connector dispatch failed for %s.%s",
+                decision.connector,
+                decision.method,
+                exc_info=outcome,
+            )
+            _emit(
+                state,
+                PipelineEvent(
+                    kind=PipelineEventKind.ERROR,
+                    step="3",
+                    payload={
+                        "step": "connector",
+                        "connector": decision.connector,
+                        "method": decision.method,
+                        "error": outcome.__class__.__name__,
+                    },
+                    message=str(outcome),
+                ),
+            )
+            continue
+        slug, path = outcome
+        state.wrote_primitives.append(slug)
+        _emit(
+            state,
+            PipelineEvent(
+                kind=PipelineEventKind.WROTE_PRIMITIVE,
+                step="3",
+                payload={"slug": slug, "path": path},
+            ),
+        )
+
+
 def run(
     query: str,
     *,
     registry: Registry,
     options: RunOptions | None = None,
+    parse_fn: ParseFn | None = None,
+    search_fn: SearchFn | None = None,
 ) -> ResolverResult:
-    """Run the 4-step pipeline. Returns the terminal result with events."""
+    """Run the 4-step pipeline. Returns the terminal result with events.
+
+    ``parse_fn`` / ``search_fn`` override the fallback's Claude+Exa callables;
+    they default to this module's bindings. The HTTP surface injects its own so
+    that patches on the route module reach the fallback step.
+    """
 
     options = options or RunOptions()
+    parse_fn = parse_fn or parse_query
+    search_fn = search_fn or search_primitive
     state = _RunState()
 
     _emit(
@@ -277,26 +434,33 @@ def run(
         ),
     )
 
-    try:
-        resolved = resolve_slug(
-            query,
-            known_concepts=_summarize_concepts(registry),
-            known_primitives=_summarize_primitives(registry),
-            model=options.model,
-        )
-    except Exception as exc:
-        _log.warning("slug resolution failed", exc_info=True)
-        # If slug resolution fails we go straight to fallback (if allowed).
+    # An empty registry has nothing to resolve a slug against — skip the Claude
+    # round-trip (and the spurious ERROR event it would emit on failure) and go
+    # straight to the live/fallback path. The HTTP /resolve surface relies on
+    # this: it always passes an empty registry and drives results via fallback.
+    if registry.concepts or registry.atomic:
+        try:
+            resolved = resolve_slug(
+                query,
+                known_concepts=_summarize_concepts(registry),
+                known_primitives=_summarize_primitives(registry),
+                model=options.model,
+            )
+        except Exception as exc:
+            _log.warning("slug resolution failed", exc_info=True)
+            # If slug resolution fails we go straight to fallback (if allowed).
+            resolved = ResolvedQuery(intent=ResolverIntent.NOVEL, confidence=0.0)
+            _emit(
+                state,
+                PipelineEvent(
+                    kind=PipelineEventKind.ERROR,
+                    step="pre",
+                    payload={"step": "slug", "error": exc.__class__.__name__},
+                    message=str(exc),
+                ),
+            )
+    else:
         resolved = ResolvedQuery(intent=ResolverIntent.NOVEL, confidence=0.0)
-        _emit(
-            state,
-            PipelineEvent(
-                kind=PipelineEventKind.ERROR,
-                step="pre",
-                payload={"step": "slug", "error": exc.__class__.__name__},
-                message=str(exc),
-            ),
-        )
 
     state.resolved = resolved
     _emit(
@@ -316,42 +480,19 @@ def run(
         if result is not None:
             return result
 
-    # Step 3 (connector live): defers to PR-B.2 router. The router lives in
-    # strata.router but is imported lazily to avoid pulling Anthropic on the
-    # import path for offline tools.
-    if options.allow_live:
-        try:
-            import importlib
-
-            router_mod = importlib.import_module("strata.router")
-            decision = router_mod.choose(query)
-        except Exception as exc:
-            _log.warning("router.choose failed", exc_info=True)
-            decision = None
-            _emit(
-                state,
-                PipelineEvent(
-                    kind=PipelineEventKind.ERROR,
-                    step="3",
-                    payload={"step": "router", "error": exc.__class__.__name__},
-                    message=str(exc),
-                ),
-            )
-        if decision is not None:
-            _emit(
-                state,
-                PipelineEvent(
-                    kind=PipelineEventKind.ROUTER_DECISION,
-                    step="3",
-                    payload=decision.model_dump(),
-                ),
-            )
-            # Actual connector dispatch + writer.upsert is wired in PR-B.3 once
-            # the CLI plumbing exists. For now we surface the decision so the
-            # caller sees what would have run.
+    _step3_connector(state, query, options)
 
     if options.allow_fallback:
-        return _step4_fallback(state, query, options)
+        return _step4_fallback(state, query, options, parse_fn=parse_fn, search_fn=search_fn)
+
+    if state.wrote_primitives:
+        return ResolverResult(
+            status=PipelineStatus.OK,
+            via="connector",
+            wrote_primitives=state.wrote_primitives,
+            events=state.events,
+            banner="wrote auto-primitive(s) from a live connector — verify before citing",
+        )
 
     return ResolverResult(
         status=PipelineStatus.FAILED,
