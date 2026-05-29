@@ -118,5 +118,43 @@ in Build".
 - Perf: a React Flow `nodeTypes`/`edgeTypes` object is created in render
   (warning in console) — memoize it.
 
-_Batch 3 (TAM trajectory chart · related-entities network modal · animations)
-to follow once PR12/PR13/PR14 land._
+---
+
+## Batch 3 — TAM trajectory · Network modal · Motion (PR12 · PR13 · PR14 · PR11)
+
+### TAM over time — current-vs-previous trajectory (PR12 + PR13) ✅ (data-gated)
+![TAM trajectory](walkthrough/batch3/01-tam-trajectory.png)
+
+A "TAM over time" section on `/build` and `/tam` charts the TAM re-evaluated at
+each date its sourced numbers were published (the `GET /build/{concept}/trajectory`
+endpoint — PR12). Here the build is fully consistent after the midpoint fix:
+scenario tree $155M + $470M, **Current TAM $312M** (the mean), range $155M–$470M.
+
+**Honest data note:** every concept's seed primitives currently share a single
+`as_of` date, and a framework needs *all* its inputs at a date — so the endpoint
+returns one point for every concept today, and the chart shows the **single-snapshot
+state** ("no trajectory yet — sources share one as-of date") rather than a curve.
+The feature is built and correct; the current-vs-previous **curve renders once a
+concept carries primitives from more than one date** (a data-seeding task — no
+figures were invented to fake it, per the project's sourcing rule).
+
+### Related-entity network modal (PR14) ✅
+![Network modal](walkthrough/batch3/02-network-modal.png)
+
+Opened from any concept or TAM page ("Related entities"), a force-directed bubble
+graph of the neighbourhood: the root concept at center, with related concepts
+(shared lens / source / measurement), the frameworks that size them, and the
+measurement primitives — colour-coded by type, with an inspector panel, hover-
+highlight, click-to-pin, multi-hop expand/collapse, and shared-signal clustering.
+
+### Motion (PR11)
+The home concept grid now staggers in on load; reusable `FadeIn` / `Stagger` /
+`HoverLift` primitives (brand-kit timings, `prefers-reduced-motion`-aware) are in
+place for the broader animation pass.
+
+### Verified this pass
+- **Production build** (`bun run build`, main tree): all 15 routes compile (12
+  static + the `[hash]`/`[slug]` dynamic routes). The earlier Turbopack symlink
+  failure was worktree-only.
+- **Gates:** `bun run check` (typecheck + biome + eslint + knip) green ×2; 117
+  vitest; 433 backend pytest + pyright + ruff.
