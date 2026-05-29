@@ -15,7 +15,23 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from ..evaluator.engine import EvaluatorError, size_concept
+from ..models import Unit
 from ..registry import Registry, RegistryError
+
+
+def _resolved_input_unit(registry: Registry, slug: str) -> Unit | None:
+    """Return the unit a framework-input binding resolves to, or None if unknown.
+
+    A binding may point at an atomic primitive or a composite (same-unit set
+    op, Q3); the composite carries its own ``unit``. Returning None lets the
+    caller emit a single 'unknown primitive' issue for either kind.
+    """
+    if slug in registry.atomic:
+        return registry.atomic[slug].unit
+    if slug in registry.composite:
+        return registry.composite[slug].unit
+    return None
+
 
 # Two scenarios within this fraction of each other → the secondary lens isn't
 # doing strategic work. Surfaced as a warning, not an error.
@@ -136,9 +152,8 @@ def _framework_variant_checks(registry: Registry) -> list[CrossRecordIssue]:
                         )
                     )
                     continue
-                try:
-                    atomic = registry.get_atomic(primitive_slug)
-                except RegistryError:
+                bound_unit = _resolved_input_unit(registry, primitive_slug)
+                if bound_unit is None:
                     out.append(
                         CrossRecordIssue(
                             code="cross.variant_unknown_primitive",
@@ -146,12 +161,13 @@ def _framework_variant_checks(registry: Registry) -> list[CrossRecordIssue]:
                             slug=fw.slug,
                             message=(
                                 f"variant scope={variant.scope!r} input {input_name!r} "
-                                f"points at unknown atomic primitive {primitive_slug!r}"
+                                f"points at unknown primitive {primitive_slug!r} "
+                                f"(neither atomic nor composite)"
                             ),
                         )
                     )
                     continue
-                if not atomic.unit.is_compatible_with(input_def.unit_signature):
+                if not bound_unit.is_compatible_with(input_def.unit_signature):
                     out.append(
                         CrossRecordIssue(
                             code="cross.unit_signature_mismatch",
@@ -160,8 +176,8 @@ def _framework_variant_checks(registry: Registry) -> list[CrossRecordIssue]:
                             message=(
                                 f"variant scope={variant.scope!r} input {input_name!r}: "
                                 f"primitive {primitive_slug!r} unit "
-                                f"(kind={atomic.unit.kind.value}, "
-                                f"dimension={atomic.unit.dimension.value}) "
+                                f"(kind={bound_unit.kind.value}, "
+                                f"dimension={bound_unit.dimension.value}) "
                                 f"incompatible with signature "
                                 f"(kind={input_def.unit_signature.kind.value}, "
                                 f"dimension={input_def.unit_signature.dimension.value})"

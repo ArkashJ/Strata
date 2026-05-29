@@ -50,8 +50,21 @@ applicable_to:
   - zerorfi-construction-rfi
   - wraithwatch-cyber-defense
   - effective-ai-insurance-knowledge
+  - ai-coding-assistants-us
+  - ai-legal-assistants-us
 
 variants:
+  # SP-1: persona_pool bound to a COMPOSITE (5112 ∪ 5415 employees) — the first
+  # composite-backed variant; the evaluator computes the union before the
+  # framework's persona × seat-cost multiply (Q3 line held).
+  - scope: ai-coding-assistants-us
+    default_inputs:
+      persona_pool: us-software-engineering-workforce
+      cost_per_persona: ai-coding-assistant-acv-per-engineer-2024
+  - scope: ai-legal-assistants-us
+    default_inputs:
+      persona_pool: census-cbp-5411-employees-2022
+      cost_per_persona: ai-legal-assistant-acv-per-seat-2024
   - scope: doc-gen-pc-insurance
     default_inputs:
       persona_pool: bls-pc-claims-adjusters-headcount

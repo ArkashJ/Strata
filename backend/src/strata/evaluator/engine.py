@@ -10,6 +10,7 @@ Per Q1, the TAM is a scenario tree, never a scalar.
 
 from __future__ import annotations
 
+import hashlib
 import math
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -27,6 +28,8 @@ from ..models import (
     InputUsed,
     Scenario,
     ScenarioBanner,
+    SetOperation,
+    SourceTier,
     TAMOutput,
     TAMTarget,
     TAMTrajectory,
@@ -117,6 +120,65 @@ def _iter_scenario_builds(registry: Registry, concept: Concept) -> Iterator[_Sce
         yield _build_scenario(registry, fw, variant, fw.lens)
 
 
+@dataclass(slots=True)
+class _ResolvedInput:
+    value: float
+    snapshot_sha256: str
+    name: str
+    unit: Unit
+    banners: list[ScenarioBanner]
+
+
+def _resolve_input(registry: Registry, slug: str) -> _ResolvedInput:
+    """Resolve a framework-input slug to a value the evaluator can multiply.
+
+    An atomic primitive contributes its sourced value directly. A *composite*
+    is computed from its member atomics via the declared same-unit set
+    operation (Q3): ``union`` sums the members. The composite's snapshot hash
+    is content-addressed over its members' hashes so the resulting TAM stays
+    reproducible. Composites never do unit-crossing math — that stays in the
+    framework (the composite/framework line is load-bearing, Q3).
+
+    Set ops other than ``union`` are not yet consumed by the v0.2 evaluator;
+    they raise rather than silently mis-computing.
+    """
+    if slug in registry.atomic:
+        a = registry.atomic[slug]
+        return _ResolvedInput(a.value, a.source.snapshot_sha256, a.name, a.unit, _banners_for(a))
+
+    if slug not in registry.composite:
+        raise EvaluatorError(
+            f"input slug {slug!r} is neither a known atomic nor composite primitive"
+        )
+
+    comp = registry.composite[slug]
+    missing = [m for m in comp.inputs if m not in registry.atomic]
+    if missing:
+        raise EvaluatorError(f"composite {slug!r} references unknown atomic primitives {missing}")
+    members = [registry.atomic[m] for m in comp.inputs]
+    for m in members:
+        if m.unit != comp.unit:
+            raise EvaluatorError(
+                f"composite {slug!r} member {m.slug!r} unit {m.unit!r} != composite "
+                f"unit {comp.unit!r}; composites are same-unit only (Q3)"
+            )
+    if comp.set_operation is not SetOperation.UNION:
+        raise EvaluatorError(
+            f"composite {slug!r} set_operation {comp.set_operation.value!r} is not yet "
+            f"supported by the evaluator (only 'union')"
+        )
+    value = math.fsum(m.value for m in members)
+    # Content-address over slug:hash pairs (not bare hashes) so two members that
+    # happen to share a snapshot hash can't collapse the composite identity.
+    snapshot = hashlib.sha256(
+        "|".join(sorted(f"{m.slug}:{m.source.snapshot_sha256}" for m in members)).encode()
+    ).hexdigest()
+    banners: list[ScenarioBanner] = []
+    for m in members:
+        banners.extend(_banners_for(m))
+    return _ResolvedInput(value, snapshot, comp.name, comp.unit, banners)
+
+
 def _build_scenario(
     registry: Registry,
     fw: Framework,
@@ -134,26 +196,26 @@ def _build_scenario(
                 f"framework {fw.slug!r} variant scope={variant.scope!r} missing "
                 f"binding for input {input_def.name!r}"
             )
-        atomic = registry.get_atomic(primitive_slug)
-        value *= atomic.value
+        resolved = _resolve_input(registry, primitive_slug)
+        value *= resolved.value
         if not math.isfinite(value):
             raise EvaluatorError(
                 f"framework {fw.slug!r} variant scope={variant.scope!r} produced "
                 f"non-finite value after multiplying primitive {primitive_slug!r} "
-                f"(value={atomic.value!r})"
+                f"(value={resolved.value!r})"
             )
         inputs_used.append(
             InputUsed(
                 role_name=input_def.name,
                 role=input_def.role,
                 primitive_slug=primitive_slug,
-                snapshot_sha256=atomic.source.snapshot_sha256,
-                value=atomic.value,
-                name=atomic.name,
-                unit=atomic.unit,
+                snapshot_sha256=resolved.snapshot_sha256,
+                value=resolved.value,
+                name=resolved.name,
+                unit=resolved.unit,
             )
         )
-        banners.extend(_banners_for(atomic))
+        banners.extend(resolved.banners)
 
     return _ScenarioBuild(
         framework=fw,
@@ -174,6 +236,22 @@ def _banners_for(p: AtomicPrimitive) -> list[ScenarioBanner]:
                     f"Paraphrased from {p.source.original_publisher}; verify against "
                     f"full text at {p.source.url} (accessed {p.source.accessed.isoformat()})."
                 ),
+            )
+        ]
+    # A community-modeled input is an estimate, not a sourced measurement — it
+    # MUST surface as a footnote in the UI and exports (Q20/Q37 honesty rule).
+    # (p.source is narrowed to StandardSource here — the paraphrase branch
+    # returned above.)
+    if p.source.tier is SourceTier.COMMUNITY_MODELED:
+        rng = (
+            f" (modeled range {p.uncertainty.range[0]:g}-{p.uncertainty.range[1]:g})"
+            if p.uncertainty is not None
+            else ""
+        )
+        return [
+            ScenarioBanner(
+                kind=BannerKind.MODELED,
+                message=f"{p.name} is community-modeled, not a sourced measurement{rng}.",
             )
         ]
     return []
@@ -237,13 +315,23 @@ def _build_scenario_as_of(
         primitive_slug = variant.default_inputs.get(input_def.name)
         if primitive_slug is None:
             return None
-        # Skip primitives whose data postdates the snapshot.
-        if primitive_slug not in registry.atomic:
+        # Skip inputs whose data postdates the snapshot. A composite is
+        # available only once every member atomic is (its effective as_of is
+        # the latest member).
+        if primitive_slug in registry.atomic:
+            if registry.atomic[primitive_slug].as_of > cutoff:
+                return None
+        elif primitive_slug in registry.composite:
+            members = registry.composite[primitive_slug].inputs
+            if any(m not in registry.atomic for m in members):
+                return None
+            if any(registry.atomic[m].as_of > cutoff for m in members):
+                return None
+        else:
             return None
-        atomic = registry.atomic[primitive_slug]
-        if atomic.as_of > cutoff:
-            return None
-        value *= atomic.value
+
+        resolved = _resolve_input(registry, primitive_slug)
+        value *= resolved.value
         if not math.isfinite(value):
             return None
         inputs_used.append(
@@ -251,13 +339,13 @@ def _build_scenario_as_of(
                 role_name=input_def.name,
                 role=input_def.role,
                 primitive_slug=primitive_slug,
-                snapshot_sha256=atomic.source.snapshot_sha256,
-                value=atomic.value,
-                name=atomic.name,
-                unit=atomic.unit,
+                snapshot_sha256=resolved.snapshot_sha256,
+                value=resolved.value,
+                name=resolved.name,
+                unit=resolved.unit,
             )
         )
-        banners.extend(_banners_for(atomic))
+        banners.extend(resolved.banners)
 
     return _ScenarioBuild(
         framework=fw,
@@ -303,6 +391,10 @@ def trajectory(registry: Registry, concept_slug: str) -> TAMTrajectory:
         applicable_fws.append((fw, variant))
         for primitive_slug in variant.default_inputs.values():
             candidate_slugs.add(primitive_slug)
+            # A composite contributes its members' dates (the composite slug
+            # itself isn't in registry.atomic, so its as_of comes from members).
+            if primitive_slug in registry.composite:
+                candidate_slugs.update(registry.composite[primitive_slug].inputs)
 
     if not applicable_fws:
         return TAMTrajectory(
