@@ -1,15 +1,7 @@
 "use client";
 
-// The frozen TAM artifact page (U6, U11 · design capture 19-tam-detail). The
-// most opinionated surface in the product: a TAM is a scenario tree (Q1), so the
-// headline is a mid scenario with a low–high band, never a scalar. Provenance is
-// non-dismissable (a product principle). All edits fork to a fresh /build state —
-// this page is read-only.
-import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
-import { useState } from "react";
-import { NetworkGraphModal } from "@/components/network/NetworkGraphModal";
 import { ScenarioGraph } from "@/components/ScenarioGraph";
+import { NetworkGraphModal } from "@/components/network/NetworkGraphModal";
 import { Button } from "@/components/ui/Button";
 import { IndependenceDonut } from "@/components/ui/IndependenceDonut";
 import { NotFoundState } from "@/components/ui/NotFoundState";
@@ -19,6 +11,14 @@ import { formatCompact, tierLabel } from "@/lib/format";
 import { tamQuery } from "@/lib/queries";
 import type { TAMOutput } from "@/lib/schemas";
 import { isDegenerate, midScenario, tamRange, tamToMarkdown } from "@/lib/tam";
+// The frozen TAM artifact page (U6, U11 · design capture 19-tam-detail). The
+// most opinionated surface in the product: a TAM is a scenario tree (Q1), so the
+// headline is a mid scenario with a low–high band, never a scalar. Provenance is
+// non-dismissable (a product principle). All edits fork to a fresh /build state —
+// this page is read-only.
+import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { useState } from "react";
 import { ErrorState } from "../ui/ErrorState";
 import "./tam-print.css";
 
