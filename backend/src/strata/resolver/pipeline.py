@@ -3,12 +3,28 @@
 This is the engine both the HTTP route and the CLI subcommand call into.
 It emits a stream of ``PipelineEvent``s and a terminal ``ResolverResult``.
 
-    pre.  resolve_slug   → ResolvedQuery
-    1.    concept hit    → registry.concept → evaluator.size_concept
-    2.    primitive(s)   → registry.primitive[] (single or compose)
-    3.    connector live → router.choose → connector.method → writer.upsert
-    4.    fallback       → parse + search (Claude+Exa) → ephemeral result
+Pipeline flow
+-------------
 
+  query (free-form text)
+          │
+          ▼  pre: resolve_slug (Claude — maps query to concept/primitive slug or NOVEL)
+          │
+          ├──► Step 1: concept hit
+          │    registry.concepts[slug] → evaluator.size_concept → ResolverResult(via="concept")
+          │
+          ├──► Step 2: primitive hit
+          │    registry.atomic[slug(s)] → compose or single → ResolverResult(via="primitive")
+          │
+          ├──► Step 3: connector live  (skip when allow_live=False / STRATA_OFFLINE=1)
+          │    router.choose → connectors._dispatch.call_and_convert
+          │    → writer.upsert_primitive → ResolverResult(via="connector")
+          │
+          └──► Step 4: fallback        (skip when allow_fallback=False / STRATA_OFFLINE=1)
+               parse_query (Claude) → search_primitive (Exa) × N
+               → multiply hits → ResolverResult(via="fallback")  [ephemeral, never on disk]
+
+Steps are tried in order; the first to return a non-None result wins.
 Steps 3 and 4 are opt-out via RunOptions. The CLI maps STRATA_OFFLINE=1
 to ``allow_live=False, allow_fallback=False``.
 
@@ -144,6 +160,9 @@ def _step2_primitives(
     resolved: ResolvedQuery,
     options: RunOptions,
 ) -> ResolverResult | None:
+    # Step 2 only fires when the slug resolver already named specific primitives.
+    # Falling through here (returning None) sends the query to connector live /
+    # fallback, which is appropriate for novel queries the registry hasn't seen.
     if resolved.intent != ResolverIntent.PRIMITIVE or not resolved.primitive_slugs:
         return None
 
@@ -196,7 +215,8 @@ def _step2_primitives(
     # Step 2b (best-effort): if the framework_hint names a *registered concept*,
     # the evaluator can build a real scenario tree from the bound variants. This
     # turns the multi-primitive miss into a fully-composed TAM instead of the
-    # PARTIAL fallthrough below.
+    # PARTIAL fallthrough below. Slug resolution already did the expensive work;
+    # we just need to confirm the concept exists before paying the evaluator cost.
     hint = resolved.framework_hint
     if hint and hint in registry.concepts:
         composed = _size_registered_concept(state, registry, hint, via="primitive")
@@ -430,7 +450,13 @@ def _step4_fallback(
     parse_fn: ParseFn,
     search_fn: SearchFn,
 ) -> ResolverResult:
-    """Synthesize via Claude+Exa. Ephemeral — never written to disk."""
+    """Synthesize via Claude+Exa. Ephemeral — never written to disk.
+
+    This step exists so the product gives a best-effort answer for markets
+    that haven't been curated yet, while the banner makes clear the result
+    hasn't been reviewed.  Results stay out of the data bank until a human
+    runs ``strata promote <slug>``.
+    """
     try:
         parsed = parse_fn(query, model=options.model)
     except Exception as exc:
