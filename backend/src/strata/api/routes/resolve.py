@@ -96,8 +96,15 @@ async def resolve_query(
 
         if result.status is PipelineStatus.FAILED or not result.primitives_used:
             # Distinguish the two known terminal failure shapes for the UI copy.
+            # A "fallback parse" failure means the LLM backend itself errored
+            # (commonly no API key / exhausted credits), not a transient glitch —
+            # say so honestly and point the user at the curated library, which
+            # needs no LLM.
             message = (
-                "Failed to parse AI response. Please try again."
+                "Dynamic resolution is unavailable — the AI backend returned an "
+                "error (commonly a missing/expired API key or exhausted credits). "
+                "Pick the nearest curated concept below, or retry once a backend "
+                "is configured."
                 if (result.error or "").startswith("fallback parse")
                 else "Could not find enough market data for this query."
             )

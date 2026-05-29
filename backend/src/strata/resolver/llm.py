@@ -92,8 +92,19 @@ def _complete_cli(
     )
 
     if proc.returncode != 0:
-        stderr_snip = proc.stderr[:400] if proc.stderr else "<no stderr>"
-        raise RuntimeError(f"claude CLI exited with code {proc.returncode}: {stderr_snip}")
+        # The CLI usually reports the real cause (e.g. "Credit balance is too
+        # low") in its JSON stdout even on a non-zero exit. Prefer that over an
+        # empty stderr so the failure is diagnosable instead of opaque.
+        detail = proc.stderr.strip() if proc.stderr else ""
+        if not detail and proc.stdout:
+            try:
+                env = json.loads(proc.stdout)
+                detail = str(env.get("result") or env.get("error") or "")
+            except json.JSONDecodeError:
+                detail = proc.stdout[:400]
+        raise RuntimeError(
+            f"claude CLI exited with code {proc.returncode}: {detail or '<no output>'}"
+        )
 
     try:
         envelope = json.loads(proc.stdout)

@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: edgar-us-gaap-assets-2023
+schema_version: 1
+concept_slug: us-public-company-assets
+name: US public-company total assets, CY2023Q4 (SEC EDGAR frames)
+description: Sum of reported total assets across all us-gaap filers for the period.
+value: 76659131805662.0
+unit:
+  kind: stock
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2026-05-28'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-frame-unknown-sum
+  tier: regulator
+  url: https://www.sec.gov/cgi-bin/browse-edgar
+  accessed: '2026-05-28'
+  snapshot_sha256: da8e54513cbaab007e39b566d655b60dbde3a363139d4910b306906740aadd20

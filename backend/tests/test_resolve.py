@@ -174,7 +174,9 @@ async def test_resolve_claude_parse_failure(mock_parse, client: AsyncClient) -> 
 
     error_events = [e for e in _parse_sse(body) if e["event"] == "error"]
     error_msg = json.loads(error_events[0]["data"])["message"].lower()
-    assert "internal error" in error_msg or "try again" in error_msg
+    # A parse failure now reports the AI backend as unavailable (honest about the
+    # likely cause) rather than the old "failed to parse / try again" copy.
+    assert "unavailable" in error_msg or "internal error" in error_msg
 
 
 @patch("strata.api.routes.resolve.parse_query")

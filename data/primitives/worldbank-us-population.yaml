@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: worldbank-us-population
+schema_version: 1
+concept_slug: us-population
+name: US total population (World Bank SP.POP.TOTL)
+description: Total US population, latest World Bank annual estimate.
+value: 340110988.0
+unit:
+  kind: stock
+  dimension: people
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sp-pop-totl-us-2024
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=US
+  accessed: '2026-05-28'
+  snapshot_sha256: 614373ce71500bf5a9c5f9040710d0de3df3c40211878191b17665196cd68af6

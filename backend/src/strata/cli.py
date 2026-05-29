@@ -548,10 +548,16 @@ def promote(
         typer.echo(f"{slug} is already promoted — no-op.")
         return
 
-    # Stage by copying, then run the validator on data_dir. Roll back on reject.
-    import shutil
+    # Stage, then run the validator on data_dir. Roll back on reject. Auto-
+    # primitives carry an ingest-only `metadata` block (is_auto, connector, args
+    # hash) that the committed AtomicPrimitive schema forbids — strip it on the
+    # way in; provenance is already pinned in source.snapshot_sha256.
+    import yaml
 
-    shutil.copy(src, dst)
+    record = yaml.safe_load(src.read_text())
+    if isinstance(record, dict):
+        record.pop("metadata", None)
+    dst.write_text(yaml.safe_dump(record, sort_keys=False, allow_unicode=True))
     try:
         report = run_validate(data_dir)
     except LoaderError as exc:

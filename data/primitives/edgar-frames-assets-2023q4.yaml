@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: edgar-frames-assets-2023q4
+schema_version: 1
+concept_slug: us-corporate-assets
+name: US-GAAP reported total assets (CY2023 Q4 instant)
+description: Sum of Assets across SEC filers from XBRL frames.
+value: 76659131805662.0
+unit:
+  kind: stock
+  dimension: currency
+  denominator: per-year
+  currency: USD
+as_of: '2026-05-28'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: edgar-frame-unknown-sum
+  tier: regulator
+  url: https://www.sec.gov/cgi-bin/srqsb
+  accessed: '2026-05-28'
+  snapshot_sha256: da8e54513cbaab007e39b566d655b60dbde3a363139d4910b306906740aadd20
