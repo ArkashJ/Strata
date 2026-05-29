@@ -13,7 +13,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterator
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from ..hashing import mint_state_hash
 from ..models import (
@@ -29,6 +29,12 @@ from ..models import (
     ScenarioBanner,
     TAMOutput,
     TAMTarget,
+    TAMTrajectory,
+    TrajectoryPoint,
+    Unit,
+    UnitBasis,
+    UnitDimension,
+    UnitKind,
 )
 from ..registry import Registry, RegistryError
 
@@ -209,3 +215,153 @@ def _independence(builds: list[_ScenarioBuild]) -> float:
         return 0.0
     families = {b.framework.method_family for b in builds}
     return (len(families) - 1) / max(1, len(builds) - 1)
+
+
+def _build_scenario_as_of(
+    registry: Registry,
+    fw: Framework,
+    variant: FrameworkVariant,
+    lens: AnalysisLens,
+    cutoff: date,
+) -> _ScenarioBuild | None:
+    """Attempt to build a scenario using only primitives available at `cutoff`.
+
+    Returns None if any required input is missing at that date so the caller
+    can skip this framework for this point rather than raising.
+    """
+    value = 1.0
+    inputs_used: list[InputUsed] = []
+    banners: list[ScenarioBanner] = []
+
+    for input_def in fw.inputs:
+        primitive_slug = variant.default_inputs.get(input_def.name)
+        if primitive_slug is None:
+            return None
+        # Skip primitives whose data postdates the snapshot.
+        if primitive_slug not in registry.atomic:
+            return None
+        atomic = registry.atomic[primitive_slug]
+        if atomic.as_of > cutoff:
+            return None
+        value *= atomic.value
+        if not math.isfinite(value):
+            return None
+        inputs_used.append(
+            InputUsed(
+                role_name=input_def.name,
+                role=input_def.role,
+                primitive_slug=primitive_slug,
+                snapshot_sha256=atomic.source.snapshot_sha256,
+                value=atomic.value,
+                name=atomic.name,
+                unit=atomic.unit,
+            )
+        )
+        banners.extend(_banners_for(atomic))
+
+    return _ScenarioBuild(
+        framework=fw,
+        variant=variant,
+        lens=lens,
+        value=value,
+        inputs_used=inputs_used,
+        banners=_dedupe_banners(banners),
+    )
+
+
+def trajectory(registry: Registry, concept_slug: str) -> TAMTrajectory:
+    """Compute a TAM-over-time series for a concept.
+
+    For each distinct ``as_of`` date across the concept's measurement
+    primitives, we re-evaluate the concept using only primitives whose
+    ``as_of <= date``.  Frameworks whose required inputs aren't yet available
+    at a given date are skipped — if none are satisfiable the point is omitted
+    entirely.  ``points`` is empty when no date yields a satisfiable evaluation.
+    """
+    try:
+        concept = registry.get_concept(concept_slug)
+    except RegistryError as exc:
+        raise EvaluatorError(f"concept {concept_slug!r} not found") from exc
+
+    lens_allowed = {concept.analysis_lens.primary}
+    if concept.analysis_lens.secondary is not None:
+        lens_allowed.add(concept.analysis_lens.secondary)
+
+    # Collect the universe of primitives that any applicable framework could
+    # consume for this concept, then extract their distinct as_of dates.
+    candidate_slugs: set[str] = set()
+    applicable_fws: list[tuple[Framework, FrameworkVariant]] = []
+
+    for fw in registry.iter_frameworks():
+        if fw.applicable_to and concept.slug not in fw.applicable_to:
+            continue
+        if fw.lens not in lens_allowed:
+            continue
+        variant = fw.variant_for(concept.slug)
+        if variant is None:
+            continue
+        applicable_fws.append((fw, variant))
+        for primitive_slug in variant.default_inputs.values():
+            candidate_slugs.add(primitive_slug)
+
+    if not applicable_fws:
+        return TAMTrajectory(
+            concept_slug=concept.slug,
+            concept_name=concept.name,
+            unit=_pick_output_unit(applicable_fws),
+            points=[],
+        )
+
+    # Distinct dates from primitives that actually exist in the registry.
+    dates: list[date] = sorted(
+        {registry.atomic[slug].as_of for slug in candidate_slugs if slug in registry.atomic}
+    )
+
+    output_unit = _pick_output_unit(applicable_fws)
+    points: list[TrajectoryPoint] = []
+
+    for cutoff in dates:
+        builds: list[_ScenarioBuild] = []
+        for fw, variant in applicable_fws:
+            build = _build_scenario_as_of(registry, fw, variant, fw.lens, cutoff)
+            if build is not None:
+                builds.append(build)
+
+        if not builds:
+            continue
+
+        values = [b.value for b in builds]
+        method_families = sorted({b.framework.method_family.value for b in builds})
+        points.append(
+            TrajectoryPoint(
+                as_of=cutoff,
+                # Midpoint triangulation mirrors the /build TAMOutput midpoint.
+                value=sum(values) / len(values),
+                low=min(values),
+                high=max(values),
+                method_families=method_families,
+                scenarios_n=len(builds),
+            )
+        )
+
+    return TAMTrajectory(
+        concept_slug=concept.slug,
+        concept_name=concept.name,
+        unit=output_unit,
+        points=points,
+    )
+
+
+def _pick_output_unit(fw_pairs: list[tuple[Framework, FrameworkVariant]]) -> Unit:
+    """Return the output unit of the first applicable framework, or a generic
+    currency unit when the list is empty (trajectory with no satisfiable points).
+    """
+    if fw_pairs:
+        return fw_pairs[0][0].output_unit
+    return Unit(
+        kind=UnitKind.FLOW,
+        dimension=UnitDimension.CURRENCY,
+        denominator="year",
+        currency="USD",
+        basis=UnitBasis.NOMINAL,
+    )

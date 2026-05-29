@@ -5,8 +5,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 
 from strata.api.deps import get_registry
-from strata.evaluator.engine import EvaluatorError, size_concept
-from strata.models import TAMOutput
+from strata.evaluator.engine import EvaluatorError, size_concept, trajectory
+from strata.models import TAMOutput, TAMTrajectory
 from strata.registry import Registry
 
 router = APIRouter(tags=["build"])
@@ -25,6 +25,21 @@ async def build_tam(
 ) -> TAMOutput:
     try:
         return size_concept(reg, concept_slug)
+    except EvaluatorError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.get(
+    "/build/{concept_slug}/trajectory",
+    response_model=TAMTrajectory,
+    summary="TAM-over-time series derived from primitive as_of dates",
+)
+async def build_trajectory(
+    concept_slug: str,
+    reg: Registry = _REG,
+) -> TAMTrajectory:
+    try:
+        return trajectory(reg, concept_slug)
     except EvaluatorError as exc:
         raise HTTPException(422, str(exc)) from exc
 

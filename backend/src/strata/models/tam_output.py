@@ -7,7 +7,7 @@ reproducible from `/tam/<hash>`.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 from typing import Literal
 
@@ -110,3 +110,37 @@ class TAMOutput(BaseModel):
     independence_score: float = Field(default=0.0, ge=0.0, le=1.0)
     uses_synthetic_primitives: bool = False
     uses_modeled_composites: bool = False
+
+
+class TrajectoryPoint(BaseModel):
+    """One data point in a TAM-over-time trajectory.
+
+    `value` is the triangulated midpoint of all satisfiable scenarios at this
+    snapshot date; `low`/`high` are the min/max of those scenario values.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    as_of: date
+    value: float
+    low: float
+    high: float
+    method_families: list[str]
+    scenarios_n: int
+
+
+class TAMTrajectory(BaseModel):
+    """TAM-over-time series derived from primitive ``as_of`` dates.
+
+    Each point represents the evaluator output at a distinct ``as_of``
+    date — using only the primitives available at or before that date. Points
+    where no framework is fully satisfiable are omitted; ``points: []`` means
+    the concept has no resolvable history at all.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    concept_slug: Slug
+    concept_name: str
+    unit: Unit
+    points: list[TrajectoryPoint]
