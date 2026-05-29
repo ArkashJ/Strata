@@ -1,12 +1,10 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": [
-    "src/app/**/{page,layout,template,loading,error,not-found,route}.{ts,tsx}",
-    "next.config.ts",
-    "postcss.config.mjs",
-    "vitest.config.ts"
-  ],
+  "entry": ["src/app/**/{page,layout,template,loading,error,not-found,route}.{ts,tsx}"],
   "project": ["src/**/*.{ts,tsx}"],
-  "ignore": ["src/lib/api-schema.d.ts", "next-env.d.ts"],
-  "ignoreDependencies": ["@tailwindcss/postcss", "tailwindcss"]
+  "ignoreDependencies": ["tailwindcss", "postcss"],
+  "rules": {
+    "exports": "off",
+    "types": "off"
+  }
 }

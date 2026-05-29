@@ -83,10 +83,9 @@ export function CommandPalette() {
     }
   }, [open]);
 
-  // Keep the active index in range as the result set shrinks.
-  useEffect(() => {
-    setActive((a) => Math.min(a, Math.max(rows.length - 1, 0)));
-  }, [rows.length]);
+  // Clamp at render so a shrinking result set never points past the end —
+  // deriving this avoids a setState-in-effect render cascade.
+  const activeIndex = rows.length ? Math.min(active, rows.length - 1) : 0;
 
   const go = (row: Row | undefined) => {
     if (!row) return;
@@ -106,7 +105,7 @@ export function CommandPalette() {
       setActive((a) => (rows.length ? (a - 1 + rows.length) % rows.length : 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      go(rows[active]);
+      go(rows[activeIndex]);
     }
   };
 
@@ -164,7 +163,7 @@ export function CommandPalette() {
                 key={`${row.kind}:${row.slug ?? row.href}`}
                 row={row}
                 heading={heading}
-                active={i === active}
+                active={i === activeIndex}
                 onHover={() => setActive(i)}
                 onSelect={() => go(row)}
               />
