@@ -19,8 +19,9 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-28)
 
-- **Version:** `0.3.0` (beta — promoted out of alpha). `VERSION` + `pyproject`
-  pinned; tags follow `vX.Y.Z`.
+- **Version:** `0.4.0` (beta). `VERSION` + `pyproject` pinned; tags follow
+  `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
+  honest resolver fallback (PR #54).
 - **Phase:** Schemas locked, **backend fully functional**, frontend PoC working,
   dynamic query resolution proven end-to-end. **v0.3 shipped (PRs #46–#50):**
   connector dispatch (`connectors/_dispatch.py` — `call_and_convert` turns a
@@ -46,11 +47,16 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 - **Frontend (`web/`):** Next.js 16 + React 19, rebuilt to **v0.42 parity**
   (PR #54) and wired 100% to the live backend — mock data removed. A persistent
   app shell (left sidebar + ⌘K command palette + live library counts) wraps
-  every route: home + interpretation cards, `/c` `/p` `/f` list + detail (the
-  concept "disagreement view"), `/build` workhorse, `/tam/<hash>` artifact
-  (export URL/Markdown/PDF), `/graph` pyramid, `/browse`, `/contribute`.
-  `ResolveView` streams the resolver's chain-of-thought, now backed by **Claude
-  Code** (no Anthropic API key needed).
+  every route: home (Featured TAMs sized live from `/build`, no invented
+  figures), `/c` `/p` `/f` list + detail (the concept "disagreement view"),
+  `/build` workhorse, `/tam/<hash>` artifact (export URL/Markdown/PDF),
+  `/graph` pyramid, `/browse`. **Contribute surfaces removed** (route + top-bar
+  button + COMMUNITY sidebar group) — they land with the v0.5 expert layer.
+  **Working light/dark theme** via `ThemeToggle` (`useSyncExternalStore` theme
+  store + `html.dark` tokens + no-flash script; light default, persisted under
+  `strata-theme`). `ResolveView` streams the resolver's chain-of-thought; when
+  the LLM backend is unavailable it fails honestly and offers curated concepts.
+  Backed by **Claude Code** (SDK only on `STRATA_LLM_BACKEND=anthropic`).
 - **Data (`data/`):** **30 concepts** (6 originals + 3 hand-crafted worked
   examples + 21 portfolio-pipeline-generated), **350+ atomic primitives**
   from 5 connector APIs + Exa-sourced analyst-paraphrase + community-modeled
