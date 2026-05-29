@@ -25,13 +25,16 @@ export interface TamRange {
   mid: number;
 }
 
-// Low/high are the value extremes; mid is the median scenario's value.
+// Low/high are the value extremes; mid is the MEAN of all method estimates —
+// the central "triangulated" midpoint shown in the scenario tree and /data.
+// (midScenario picks the lower of an even pair, which read inconsistently as
+// the headline value, e.g. $155M instead of $312M for a 155/470 two-method TAM.)
 export function tamRange(tam: TAMOutput): TamRange {
   const values = tam.scenarios.map((s) => s.value);
   return {
     low: Math.min(...values),
     high: Math.max(...values),
-    mid: midScenario(tam).value,
+    mid: values.reduce((sum, v) => sum + v, 0) / values.length,
   };
 }
 

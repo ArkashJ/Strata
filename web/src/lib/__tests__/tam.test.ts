@@ -76,6 +76,13 @@ describe("tamRange", () => {
     expect(r.mid).toBe(200);
   });
 
+  it("uses the mean for an even pair, not the lower scenario", () => {
+    const r = tamRange(tam([470, 155]));
+    expect(r.low).toBe(155);
+    expect(r.high).toBe(470);
+    expect(r.mid).toBe(312.5);
+  });
+
   it("collapses to a point for a single scenario", () => {
     const r = tamRange(tam([42]));
     expect(r).toEqual({ low: 42, high: 42, mid: 42 });
