@@ -7,10 +7,15 @@ import {
   type FrameworkSummary,
   type PrimitiveSummary,
   type TAMOutput,
+  type TamTrajectory,
+  conceptDetailSchema,
   conceptSummarySchema,
+  frameworkDetailSchema,
   frameworkSummarySchema,
+  primitiveDetailSchema,
   primitiveSummarySchema,
   tamOutputSchema,
+  tamTrajectorySchema,
 } from "./schemas";
 
 function validated<T>(schema: z.ZodType<T>, data: unknown): T {
@@ -28,7 +33,7 @@ export const conceptsQuery = queryOptions({
 export const conceptQuery = (slug: string) =>
   queryOptions({
     queryKey: ["concept", slug],
-    queryFn: async () => api(`/c/${slug}`),
+    queryFn: async () => validated(conceptDetailSchema, await api(`/c/${slug}`)),
     enabled: !!slug,
   });
 
@@ -43,7 +48,7 @@ export const primitivesQuery = queryOptions({
 export const primitiveQuery = (slug: string) =>
   queryOptions({
     queryKey: ["primitive", slug],
-    queryFn: async () => api(`/p/${slug}`),
+    queryFn: async () => validated(primitiveDetailSchema, await api(`/p/${slug}`)),
     enabled: !!slug,
   });
 
@@ -58,7 +63,7 @@ export const frameworksQuery = queryOptions({
 export const frameworkQuery = (slug: string) =>
   queryOptions({
     queryKey: ["framework", slug],
-    queryFn: async () => api(`/f/${slug}`),
+    queryFn: async () => validated(frameworkDetailSchema, await api(`/f/${slug}`)),
     enabled: !!slug,
   });
 
@@ -68,6 +73,17 @@ export const buildQuery = (conceptSlug: string) =>
     queryFn: async (): Promise<TAMOutput> => {
       const data = await api(`/build/${conceptSlug}`);
       return validated(tamOutputSchema, data);
+    },
+    enabled: !!conceptSlug,
+    staleTime: 5 * 60_000,
+  });
+
+export const trajectoryQuery = (conceptSlug: string) =>
+  queryOptions({
+    queryKey: ["trajectory", conceptSlug],
+    queryFn: async (): Promise<TamTrajectory> => {
+      const data = await api(`/build/${conceptSlug}/trajectory`);
+      return validated(tamTrajectorySchema, data);
     },
     enabled: !!conceptSlug,
     staleTime: 5 * 60_000,

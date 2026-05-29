@@ -4,7 +4,7 @@ Extracts ``lens``, ``concept_name``, ``definition``, and a list of
 ``primitives_needed`` (each with a role / description / Exa-optimised
 search query / expected unit).
 
-Pure unit; no I/O beyond the Anthropic client. The HTTP layer wraps
+Pure unit; no I/O beyond the LLM layer. The HTTP layer wraps
 it in ``asyncio.to_thread`` (it does blocking I/O).
 """
 
@@ -15,10 +15,13 @@ import re
 from typing import Any
 
 import anthropic
-from anthropic.types import TextBlock
 from pydantic import BaseModel, ConfigDict, Field
 
-# Cache the client between invocations — module-level lazy singleton.
+from . import llm as _llm
+
+# Compatibility export — slug.py and router.py still use the Anthropic SDK
+# directly because their prompts use structured cache_control blocks that
+# the Claude CLI path does not support.
 _anthropic_client: anthropic.Anthropic | None = None
 
 
@@ -53,22 +56,13 @@ def _strip_code_fence(text: str) -> str:
     return re.sub(r"\s*```$", "", text.strip())
 
 
-def parse_query(query: str, *, model: str = "claude-sonnet-4-20250514") -> ParsedQuery:
-    """Single Claude call to parse a free-form market query into ParsedQuery.
+def parse_query(query: str, *, model: str = "claude-sonnet-4-6") -> ParsedQuery:
+    """Single LLM call to parse a free-form market query into ParsedQuery.
 
-    The Anthropic exception types bubble up; the caller decides how to
-    surface them (HTTP path emits an SSE error event, CLI returns exit
-    code 3).
+    Errors from the LLM layer bubble up; the caller decides how to surface
+    them (HTTP path emits an SSE error event, CLI returns exit code 3).
     """
-
-    client = get_anthropic_client()
-    response = client.messages.create(
-        model=model,
-        max_tokens=1024,
-        messages=[
-            {
-                "role": "user",
-                "content": f"""Parse this market-sizing query into structured parameters.
+    prompt = f"""Parse this market-sizing query into structured parameters.
 
 Query: "{query}"
 
@@ -83,14 +77,9 @@ Return JSON with:
   - expected_unit: object with kind (stock/flow/intensive/dimensionless) and dimension (people/currency/organizations/percent)
   - expected_currency: "USD" if dimension is currency, null otherwise
 
-Return ONLY valid JSON, no markdown.""",
-            }
-        ],
-    )
+Return ONLY valid JSON, no markdown."""
 
-    block = response.content[0]
-    if not isinstance(block, TextBlock):
-        raise ValueError("Expected text response from Claude")
-    text = _strip_code_fence(block.text)
+    text = _llm.complete(prompt, model=model, max_tokens=1024)
+    text = _strip_code_fence(text)
     raw: dict[str, Any] = json.loads(text)
     return ParsedQuery.model_validate(raw)

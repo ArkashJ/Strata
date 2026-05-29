@@ -6,7 +6,7 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://strata-pied-three.vercel.app)
 [![License: Proprietary](https://img.shields.io/badge/license-proprietary-red.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.3.0-informational)
+![Version](https://img.shields.io/badge/version-0.4.0-informational)
 ![Status](https://img.shields.io/badge/status-beta-brightgreen)
 
 ![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
@@ -279,7 +279,11 @@ YAML files remain in the repo for:
 - **Tailwind CSS 4** with CSS-variable design tokens.
 - **TanStack Query** (server state) + **Zustand** (client UI state) +
   **Zod** (validation + env).
-- **ReactFlow** for the pyramid network graph.
+- **ReactFlow** for the pyramid + scenario trees, **vis-network** for the
+  related-entities modal, **Recharts** for TAM charts.
+- **App shell** — a persistent left sidebar + ⌘K command palette wrap every
+  route (`/`, `/c`, `/p`, `/f`, `/build`, `/tam`, `/graph`, `/browse`,
+  `/contribute`), all reading live backend data (no mock).
 - **openapi-typescript** generates a typed API client from the running
   FastAPI's `/openapi.json` (run `bun run gen:api`).
 - **Biome** owns JS/TS lint + format. **ESLint** runs only `next/core-web-vitals`.

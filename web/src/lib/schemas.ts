@@ -129,3 +129,164 @@ export const frameworkSummarySchema = z.object({
   input_count: z.number(),
 });
 export type FrameworkSummary = z.infer<typeof frameworkSummarySchema>;
+
+// ── Detail-page record schemas (GET /c/{slug}, /p/{slug}, /f/{slug}) ──────────
+// These mirror the backend Pydantic models exactly; verified against the live
+// /openapi.json component shapes. Keep field-for-field — the detail pages render
+// every sourced number and the validator statically rejects bad wiring upstream.
+
+export const geoSchema = z.object({
+  level: z.string(),
+  codes: z.array(z.string()),
+  aggregate: z.string().nullable().optional(),
+  aggregation_rule: z.string().nullable().optional(),
+  allocator_primitive: z.string().nullable().optional(),
+});
+export type Geo = z.infer<typeof geoSchema>;
+
+export const geoPerspectiveSchema = z.enum(["supply", "demand", "mixed", "unknown"]);
+export type GeoPerspective = z.infer<typeof geoPerspectiveSchema>;
+
+export const uncertaintySchema = z.object({
+  range: z.tuple([z.number(), z.number()]),
+  basis: z.string(),
+});
+export type Uncertainty = z.infer<typeof uncertaintySchema>;
+
+export const setOperationSchema = z.enum(["union", "intersection", "filter", "restrict_by_tag"]);
+export type SetOperation = z.infer<typeof setOperationSchema>;
+
+// Source is a discriminated union on `tier` in the backend, but every variant
+// shares the same base shape and `analyst-paraphrase` adds three optional fields.
+// A permissive superset keeps the detail card resilient to either variant.
+export const sourceSchema = z.object({
+  slug: z.string(),
+  url: z.string(),
+  accessed: z.string(),
+  snapshot_sha256: z.string(),
+  tier: sourceTierSchema,
+  original_publisher: z.string().nullable().optional(),
+  paraphrase_reviewer: z.string().nullable().optional(),
+  paraphrase_text: z.string().nullable().optional(),
+});
+export type Source = z.infer<typeof sourceSchema>;
+
+export const conceptDetailSchema = z.object({
+  kind: z.literal("concept"),
+  slug: z.string(),
+  schema_version: z.number(),
+  name: z.string(),
+  definition: z.string(),
+  analysis_lens: z.object({
+    primary: analysisLensSchema,
+    secondary: analysisLensSchema.nullable().optional(),
+  }),
+  modifiers: z.record(z.unknown()).nullable().optional(),
+  measurements: z.array(z.string()),
+  competing_concepts: z.array(z.string()),
+  requires_clearance: z.array(z.string()),
+});
+export type ConceptDetail = z.infer<typeof conceptDetailSchema>;
+
+export const atomicPrimitiveSchema = z.object({
+  kind: z.literal("atomic_primitive"),
+  slug: z.string(),
+  schema_version: z.number(),
+  concept_slug: z.string(),
+  name: z.string(),
+  description: z.string(),
+  value: z.number(),
+  unit: unitSchema,
+  as_of: z.string(),
+  expiry: z.string().nullable().optional(),
+  geo: geoSchema,
+  geo_perspective: geoPerspectiveSchema,
+  distribution_shape: z.string(),
+  delivery_mode: z.string(),
+  uncertainty: uncertaintySchema.nullable().optional(),
+  source: sourceSchema,
+  derives_from: z.array(z.string()),
+});
+export type AtomicPrimitive = z.infer<typeof atomicPrimitiveSchema>;
+
+export const compositePrimitiveSchema = z.object({
+  kind: z.literal("composite_primitive"),
+  slug: z.string(),
+  schema_version: z.number(),
+  concept_slug: z.string(),
+  name: z.string(),
+  description: z.string(),
+  inputs: z.array(z.string()),
+  set_operation: setOperationSchema,
+  tag_filter: z.string().nullable().optional(),
+  as_of: z.string(),
+  unit: unitSchema,
+  geo: geoSchema,
+  geo_perspective: geoPerspectiveSchema,
+});
+export type CompositePrimitive = z.infer<typeof compositePrimitiveSchema>;
+
+export const primitiveDetailSchema = z.discriminatedUnion("kind", [
+  atomicPrimitiveSchema,
+  compositePrimitiveSchema,
+]);
+export type PrimitiveDetail = z.infer<typeof primitiveDetailSchema>;
+
+export const frameworkInputSchema = z.object({
+  name: z.string(),
+  role: inputRoleSchema,
+  unit_signature: unitSchema,
+  required: z.boolean(),
+});
+export type FrameworkInput = z.infer<typeof frameworkInputSchema>;
+
+export const frameworkVariantSchema = z.object({
+  scope: z.string(),
+  default_inputs: z.record(z.string()),
+});
+export type FrameworkVariant = z.infer<typeof frameworkVariantSchema>;
+
+export const horizonClassSchema = z.enum(["snapshot", "short_extrapolation", "long_extrapolation"]);
+export type HorizonClass = z.infer<typeof horizonClassSchema>;
+
+export const frameworkDetailSchema = z.object({
+  kind: z.literal("framework"),
+  slug: z.string(),
+  schema_version: z.number(),
+  name: z.string(),
+  method_family: methodFamilySchema,
+  lens: analysisLensSchema,
+  inputs: z.array(frameworkInputSchema),
+  formula: z.string(),
+  output_unit: unitSchema,
+  applicable_to: z.array(z.string()),
+  not_applicable_to: z.array(z.string()),
+  requires_clearance: z.array(z.string()),
+  variants: z.array(frameworkVariantSchema),
+  expansion_stage_parameter: z.boolean(),
+  horizon_class: horizonClassSchema,
+});
+export type FrameworkDetail = z.infer<typeof frameworkDetailSchema>;
+
+// ── TAM-over-time (GET /build/{slug}/trajectory · PR12) ───────────────────────
+// The TAM re-evaluated at each distinct primitive `as_of` date — the headline
+// "current vs previous" view. Most concepts share one as_of today, so a single
+// point is the common case; the chart must degrade to an honest snapshot, never
+// fabricate a curve. Field-for-field against the backend trajectory model.
+export const trajectoryPointSchema = z.object({
+  as_of: z.string(),
+  value: z.number(),
+  low: z.number(),
+  high: z.number(),
+  method_families: z.array(z.string()),
+  scenarios_n: z.number(),
+});
+export type TrajectoryPoint = z.infer<typeof trajectoryPointSchema>;
+
+export const tamTrajectorySchema = z.object({
+  concept_slug: z.string(),
+  concept_name: z.string(),
+  unit: unitSchema,
+  points: z.array(trajectoryPointSchema),
+});
+export type TamTrajectory = z.infer<typeof tamTrajectorySchema>;

@@ -7,12 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-05-28
+
 ### Changed
+- **Removed all "Contribute" surfaces from the web app.** The `/contribute` route,
+  the top-bar Contribute button, and the sidebar COMMUNITY group (Pull requests /
+  Annotations / Activity / Starred) are gone — the contribution flow lands with
+  the v0.5 expert layer, so the placeholders no longer dead-end.
 - **Relicensed from Apache-2.0 to proprietary (all rights reserved).** Strata is
   not open-source software. `LICENSE` replaced with a proprietary notice;
   `pyproject` license set to `LicenseRef-Proprietary` with a
   `Private :: Do Not Upload` classifier; README license badge + thesis wording
   updated to drop the open-source/"free" framing.
+
+### Added
+- **v0.42 web frontend (PR #54).** Rebuilt the web app to the v0.42 design and
+  wired it entirely to the live backend (30 concepts, 355 primitives, 5
+  frameworks) — the mock data is gone. New shell with a left sidebar, a ⌘K
+  command palette, and live library counts; new pages for concept / primitive /
+  framework detail (including the concept "disagreement view"), the
+  `/tam/<hash>` artifact page (export to link / Markdown / PDF), and a real
+  browse registry. How a user moves through it:
+
+  ```
+  Home  (search · popular concepts)
+    │  pick a concept, or type a market in plain English
+    ▼
+  /c · /p · /f detail  ──►  /build  (size it)  ──►  /tam/<hash>  (cite it)
+    │                                                export: URL · Markdown · PDF
+    └──►  /graph  (pyramid explorer)
+  ```
+- **Plain-English resolver runs on Claude Code.** Free-form market queries are
+  parsed and sourced through the local Claude Code subscription, so no paid
+  Anthropic API key is required (the API key path still works if one is set).
+- **TAM-over-time trajectory** (`GET /build/{concept}/trajectory`). Re-evaluates
+  a concept's frameworks at each date its sourced numbers were published, so the
+  app can chart how a TAM estimate has moved as evidence arrived (current vs
+  previous). Shows a single-snapshot state until a concept has numbers from more
+  than one date.
+- **Related-entities network view.** A force-directed bubble graph (opened from a
+  concept or TAM page) showing what connects to what — concepts sharing a lens,
+  a source, or a measurement, and the frameworks that size them.
+- **Modern, on-brand motion.** Reusable entrance / stagger / hover animations
+  tied to the brand-kit timing tokens, and they respect "reduce motion".
+- **Working light / dark theme.** A real theme toggle (the old sun-glyph button
+  was inert) flips a `html.dark` token set via `useSyncExternalStore`, with a
+  no-flash bootstrap script and `color-scheme`. Light stays the default; the
+  choice persists under `strata-theme`.
+- **Home "Featured TAMs" are computed live.** The landing page now sizes the
+  first few real concepts through `/build` and shows their actual ranges (and
+  live library counts) instead of hardcoded placeholder figures.
+
+### Fixed
+- **Honest dynamic-resolution failure.** When the LLM backend is unreachable
+  (no API key / exhausted credits) the `/build` resolver now says so plainly and
+  always offers a curated-concept fallback, instead of a misleading "failed to
+  parse AI response". The CLI layer surfaces the real cause (e.g. "Credit
+  balance is too low") instead of an empty error.
+- **Hydration mismatch on the library list pages** (`/c` `/p` `/f`) — the SSR
+  skeleton no longer disagrees with the hydrated cards (gated via
+  `useHasMounted`/`useSyncExternalStore`).
+- **`strata promote` now works for ingested primitives** — it strips the
+  ingest-only `metadata` block (provenance already lives in the pinned source),
+  so `ingest → promote → seed` completes end-to-end. Added 3 connector-sourced
+  primitives (EDGAR ×2, World Bank) to the data bank (358 total).
 
 ## [0.3.0] - 2026-05-28
 

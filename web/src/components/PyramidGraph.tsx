@@ -17,6 +17,8 @@ import {
 import "reactflow/dist/style.css";
 
 import {
+  PILLARS,
+  PILLAR_COLOR,
   PILLAR_LABEL,
   type Pillar,
   type Pyramid,
@@ -25,27 +27,54 @@ import {
   isGreyed,
 } from "@/lib/pyramid";
 
-// Triangle apex per pillar — the three locked U1 axes laid out as a pyramid:
-// Qualitative top-left, Quantitative top-right, Industry bottom-centre.
-const PILLAR_ANCHOR: Record<Pillar, { x: number; y: number; dx: number; dy: number }> = {
-  qualitative: { x: -360, y: 40, dx: 0, dy: 96 },
-  quantitative: { x: 360, y: 40, dx: 0, dy: 96 },
-  industry: { x: 0, y: 460, dx: 250, dy: 0 },
+// ── Layout geometry ──────────────────────────────────────────────────────────
+// The pyramid reads as three vertical columns (one per locked U1 axis) with the
+// converging TAM apex centered above them. Positions are EXPLICIT — ReactFlow's
+// auto-layout would squish ~30 industry leaves into an unreadable band, so we
+// place every node by hand and only use fitView to center the result once.
+const COL_X: Record<Pillar, number> = {
+  qualitative: -420,
+  quantitative: 0,
+  industry: 420,
 };
+const HEAD_Y = 0; // pillar heads sit on one row
+const LEAVES_TOP = 96; // first leaf below its head
+const ROW_GAP = 64; // vertical spacing between stacked leaves
+const SUBCOL_GAP = 200; // horizontal spacing when a pillar wraps into sub-columns
+const APEX_Y = -150; // TAM apex above the heads (converging legs read downward)
+
+// Industry has ~30 concepts. Cap the column to the top-N by weight and surface
+// the remainder behind a single "+N more" node so the band never overflows.
+const INDUSTRY_CAP = 14;
+const INDUSTRY_ROWS_PER_SUBCOL = 7; // wrap long columns into side-by-side stacks
 
 interface PyramidNodeData extends Record<string, unknown> {
   node: PyramidNode;
   selected: boolean;
   greyed: boolean;
+  color: string;
 }
 interface PillarNodeData extends Record<string, unknown> {
   pillar: Pillar;
+  color: string;
 }
-type FlowNode = Node<PyramidNodeData, "pyramid"> | Node<PillarNodeData, "pillar">;
+interface ApexNodeData extends Record<string, unknown> {
+  label: string;
+}
+interface MoreNodeData extends Record<string, unknown> {
+  count: number;
+}
+type FlowNode =
+  | Node<PyramidNodeData, "pyramid">
+  | Node<PillarNodeData, "pillar">
+  | Node<ApexNodeData, "apex">
+  | Node<MoreNodeData, "more">;
 
 const NODE_TYPES: NodeTypes = {
   pyramid: PyramidLeaf,
   pillar: PillarHead,
+  apex: ApexNode,
+  more: MoreNode,
 };
 
 const DEFAULT_EDGE_OPTIONS = {
@@ -53,7 +82,9 @@ const DEFAULT_EDGE_OPTIONS = {
   style: { stroke: "var(--canvas-line)", strokeWidth: 1.5 },
   animated: false,
 };
-const FIT_VIEW_OPTIONS = { padding: 0.2 };
+// Center the explicit layout on first paint; minZoom lets the tall industry
+// column zoom out without clipping. We never re-fit on selection.
+const FIT_VIEW_OPTIONS = { padding: 0.18 };
 const PRO_OPTIONS = { hideAttribution: true };
 
 export function PyramidGraph({
@@ -63,21 +94,22 @@ export function PyramidGraph({
 }: {
   pyramid: Pyramid;
   selection: Selection;
-  onSelect: (node: PyramidNode) => void;
+  onSelect: (node: PyramidNode, additive: boolean) => void;
 }) {
   const { nodes, edges } = useMemo(() => layout(pyramid, selection), [pyramid, selection]);
 
   const handleNodeClick = useCallback(
-    (_evt: React.MouseEvent, n: Node) => {
-      if (n.type === "pyramid") onSelect((n.data as PyramidNodeData).node);
+    (evt: React.MouseEvent, n: Node) => {
+      if (n.type === "pyramid") onSelect((n.data as PyramidNodeData).node, evt.shiftKey);
     },
     [onSelect],
   );
 
   return (
     <div
-      className="rounded-[var(--r-4)] h-[600px] overflow-hidden border border-[var(--card-border)]"
+      className="rounded-[var(--r-4)] h-[640px] overflow-hidden border border-[var(--card-border)]"
       style={{ background: "var(--canvas-bg)" }}
+      data-testid="pyramid-canvas"
     >
       <ReactFlowProvider>
         <ReactFlow
@@ -112,36 +144,62 @@ export function PyramidGraph({
   );
 }
 
+// Build the explicit node + edge sets. Each pillar is a vertical stack under
+// its head; the apex links to all three heads (converging legs). Industry caps
+// at INDUSTRY_CAP visible leaves and wraps into sub-columns so it never spills.
 function layout(pyramid: Pyramid, selection: Selection): { nodes: FlowNode[]; edges: Edge[] } {
   const nodes: FlowNode[] = [];
   const edges: Edge[] = [];
 
-  for (const pillar of Object.keys(PILLAR_ANCHOR) as Pillar[]) {
-    const anchor = PILLAR_ANCHOR[pillar];
+  // Apex TAM node, centered over the three heads.
+  nodes.push({
+    id: "apex",
+    type: "apex",
+    position: { x: COL_X.quantitative, y: APEX_Y },
+    data: { label: "TAM" },
+    draggable: false,
+  });
+
+  for (const pillar of PILLARS) {
+    const color = PILLAR_COLOR[pillar];
+    const baseX = COL_X[pillar];
     const headId = `head:${pillar}`;
     nodes.push({
       id: headId,
       type: "pillar",
-      position: { x: anchor.x, y: pillar === "industry" ? anchor.y - 110 : anchor.y - 70 },
-      data: { pillar },
+      position: { x: baseX, y: HEAD_Y },
+      data: { pillar, color },
       draggable: false,
     });
+    edges.push({
+      id: `e:apex:${headId}`,
+      source: "apex",
+      target: headId,
+      style: { stroke: color, strokeWidth: 1.5, opacity: 0.6 },
+    });
 
-    const leaves = pyramid.nodes.filter((n) => n.pillar === pillar);
-    const startX = anchor.dx ? anchor.x - ((leaves.length - 1) * anchor.dx) / 2 : anchor.x;
+    const all = pyramid.nodes.filter((n) => n.pillar === pillar);
+    // Industry can hold ~30 concepts — cap to top-N (already weight-sorted) and
+    // roll the rest into a single "+N more" node at the bottom of the column.
+    const capped = pillar === "industry" && all.length > INDUSTRY_CAP;
+    const leaves = capped ? all.slice(0, INDUSTRY_CAP) : all;
+    const rowsPerSub = pillar === "industry" ? INDUSTRY_ROWS_PER_SUBCOL : Number.POSITIVE_INFINITY;
 
     leaves.forEach((leaf, i) => {
+      const sub = Math.floor(i / rowsPerSub);
+      const row = i % rowsPerSub;
       nodes.push({
         id: leaf.id,
         type: "pyramid",
         position: {
-          x: startX + i * anchor.dx,
-          y: anchor.y + i * anchor.dy,
+          x: baseX + sub * SUBCOL_GAP,
+          y: LEAVES_TOP + row * ROW_GAP,
         },
         data: {
           node: leaf,
-          selected: selection[leaf.pillar] === leaf.key,
+          selected: (selection[leaf.pillar] ?? []).includes(leaf.key),
           greyed: isGreyed(pyramid, selection, leaf),
+          color,
         },
         draggable: false,
       });
@@ -151,20 +209,63 @@ function layout(pyramid: Pyramid, selection: Selection): { nodes: FlowNode[]; ed
         target: leaf.id,
       });
     });
+
+    if (capped) {
+      const hiddenCount = all.length - leaves.length;
+      const lastRow = (leaves.length - 1) % rowsPerSub;
+      const lastSub = Math.floor((leaves.length - 1) / rowsPerSub);
+      nodes.push({
+        id: `more:${pillar}`,
+        type: "more",
+        position: {
+          x: baseX + lastSub * SUBCOL_GAP,
+          y: LEAVES_TOP + (lastRow + 1) * ROW_GAP,
+        },
+        data: { count: hiddenCount },
+        draggable: false,
+      });
+      edges.push({
+        id: `e:${headId}:more`,
+        source: headId,
+        target: `more:${pillar}`,
+      });
+    }
   }
 
   return { nodes, edges };
 }
 
-function PillarHead({ data }: NodeProps<PillarNodeData>) {
+function ApexNode({ data }: NodeProps<ApexNodeData>) {
   return (
-    <div className="text-center" style={{ width: 200 }}>
+    <div
+      className="canvas-card px-4 py-2 text-center border-2 border-[var(--accent)]"
+      style={{ borderRadius: "var(--r-3)" }}
+    >
       <Handle
         type="source"
         position={Position.Bottom}
         style={{ background: "transparent", border: 0 }}
       />
-      <div className="display text-[18px] text-[var(--fg-1)] leading-none">
+      <div className="display text-[16px] text-[var(--fg-1)] leading-none">{data.label}</div>
+      <div className="text-[9px] uppercase tracking-[0.1em] text-[var(--fg-3)] mt-1">Apex</div>
+    </div>
+  );
+}
+
+function PillarHead({ data }: NodeProps<PillarNodeData>) {
+  return (
+    <div className="text-center" style={{ width: 170 }}>
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "transparent", border: 0 }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ background: "transparent", border: 0 }}
+      />
+      <div className="display text-[18px] leading-none" style={{ color: data.color }}>
         {PILLAR_LABEL[data.pillar]}
       </div>
       <div className="text-[10px] uppercase tracking-[0.08em] text-[var(--fg-3)] mt-1">Pillar</div>
@@ -173,18 +274,23 @@ function PillarHead({ data }: NodeProps<PillarNodeData>) {
 }
 
 function PyramidLeaf({ data }: NodeProps<PyramidNodeData>) {
-  const { node, selected, greyed } = data;
-  const ring = selected
-    ? "border-[var(--accent)] shadow-[0_0_0_2px_var(--accent-ring)]"
-    : "border-[var(--card-border)]";
+  const { node, selected, greyed, color } = data;
   return (
     <button
       type="button"
       aria-pressed={selected}
       data-greyed={greyed}
+      data-pillar={node.pillar}
       title={greyed ? `${node.label} — incompatible with current selection` : node.label}
-      className={`canvas-card w-[170px] px-3 py-2.5 text-left border ${ring} transition-opacity`}
-      style={{ borderRadius: "var(--r-3)", opacity: greyed ? 0.32 : 1, cursor: "pointer" }}
+      className="canvas-card w-[160px] px-3 py-2.5 text-left border-2 transition-opacity"
+      style={{
+        borderRadius: "var(--r-3)",
+        // Axis color on the stroke; selection deepens it with a ring halo.
+        borderColor: color,
+        boxShadow: selected ? `0 0 0 2px ${color}` : undefined,
+        opacity: greyed ? 0.32 : 1,
+        cursor: "pointer",
+      }}
     >
       <Handle
         type="target"
@@ -198,5 +304,21 @@ function PyramidLeaf({ data }: NodeProps<PyramidNodeData>) {
         <span className="role-chip shrink-0 tabular-nums">{node.weight}</span>
       </div>
     </button>
+  );
+}
+
+function MoreNode({ data }: NodeProps<MoreNodeData>) {
+  return (
+    <div
+      className="w-[160px] px-3 py-2 text-center border border-dashed border-[var(--card-border)] text-[11px] text-[var(--fg-3)]"
+      style={{ borderRadius: "var(--r-3)", background: "var(--bg-1)" }}
+    >
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ background: "transparent", border: 0 }}
+      />
+      +{data.count} more
+    </div>
   );
 }

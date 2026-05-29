@@ -1,89 +1,144 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("Build view", () => {
-  test("loads for a known concept query", async ({ page }) => {
-    await page.goto("/build?q=doc-gen-pc-insurance");
-    // Wait for either the build result or the resolve fallback to appear
+// /build is the workhorse surface (U1, U2, U6). These specs exercise the real
+// auto-mint flow end-to-end: the legacy ?q= entry redirects to a canonical
+// /build/<hash>?s= URL, a meaningful change (deselecting a framework) mints a
+// fresh hash, Back restores the prior state losslessly, and the rail renders in
+// U2 order. Requires the live backend + web servers (playwright.config webServer).
+
+const KNOWN = "doc-gen-pc-insurance";
+
+// The auto-mint address: /build/<hex hash>?s=<encoded state>. We assert the path
+// shape rather than an exact hash so the test survives data/eval changes.
+const BUILD_HASH_URL = /\/build\/[a-f0-9]{16,}\?s=/;
+
+test.describe("Build workhorse", () => {
+  test("known concept redirects to a canonical /build/<hash> URL", async ({ page }) => {
+    await page.goto(`/build?q=${KNOWN}`);
+    // ?q= entry resolves the concept then replaces the URL with the minted one.
+    await page.waitForURL(BUILD_HASH_URL, { timeout: 20_000 });
+    // The headline renders (triangulated midpoint or single-method estimate).
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+      timeout: 15_000,
+    });
+  });
+
+  test("renders the TAM headline and a formatted figure", async ({ page }) => {
+    await page.goto(`/build?q=${KNOWN}`);
+    await page.waitForURL(BUILD_HASH_URL, { timeout: 20_000 });
+
+    // Headline eyebrow is one of the two honesty modes — never a fake range.
     await expect(
-      page
-        .getByRole("heading", { level: 1 })
-        .or(page.getByText("Sizing"))
-        .first(),
+      page.getByText(/Triangulated midpoint|Single-method estimate/).first(),
     ).toBeVisible({ timeout: 15_000 });
+
+    // The headline figure is currency-formatted.
+    const figure = page.locator(".tam-num").first();
+    await expect(figure).toBeVisible();
+    expect(await figure.textContent()).toMatch(/^\$/);
   });
 
-  test("shows TAM midpoint and scenario count for known concept", async ({
-    page,
-  }) => {
-    await page.goto("/build?q=doc-gen-pc-insurance");
-    // Wait for the build result to fully load — look for "Triangulated midpoint"
-    await expect(page.getByText("Triangulated midpoint")).toBeVisible({
+  test("right rail renders in U2 accordion order", async ({ page }) => {
+    await page.goto(`/build?q=${KNOWN}`);
+    await page.waitForURL(BUILD_HASH_URL, { timeout: 20_000 });
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15_000,
     });
 
-    // The midpoint value should be formatted as currency
-    const midpointEl = page.locator(".tam-num").first();
-    await expect(midpointEl).toBeVisible();
-    const text = await midpointEl.textContent();
-    expect(text).toMatch(/^\$/);
-
-    // Scenario count visible
-    await expect(page.getByText(/scenarios/)).toBeVisible();
-  });
-
-  test("frameworks accordion is expanded by default", async ({ page }) => {
-    await page.goto("/build?q=doc-gen-pc-insurance");
-    await expect(page.getByText("Triangulated midpoint")).toBeVisible({
-      timeout: 15_000,
-    });
-
-    // "Frameworks" section should be expanded (aria-expanded=true)
-    const frameworksButton = page.getByRole("button", { name: /Frameworks/ });
-    await expect(frameworksButton).toHaveAttribute("aria-expanded", "true");
-  });
-
-  test("scenario cards show framework definition and value", async ({
-    page,
-  }) => {
-    await page.goto("/build?q=doc-gen-pc-insurance");
-    await expect(page.getByText("Triangulated midpoint")).toBeVisible({
-      timeout: 15_000,
-    });
-
-    // Each scenario card has a lens chip and a dollar value
-    const scenarioCards = page.locator("aside li.canvas-card");
-    const count = await scenarioCards.count();
-    expect(count).toBeGreaterThan(0);
-
-    for (let i = 0; i < count; i++) {
-      const card = scenarioCards.nth(i);
-      // Has a lens chip (uppercase text like "COST EFFICIENCY")
-      await expect(card.locator(".role-chip")).toBeVisible();
-      // Has a dollar value
-      const valueEl = card.locator(".tam-num");
-      await expect(valueEl).toBeVisible();
-      const val = await valueEl.textContent();
-      expect(val).toMatch(/^\$/);
+    // Target (pinned) → Frameworks → Scenarios → Independence → Lineage → Export.
+    // Each section tags itself with data-rail-section; we read them in DOM order
+    // and assert the U2 sequence. Banners is conditional (only when the data
+    // layer flags something), so it's allowed to interleave and is ignored.
+    const sections = page.locator("aside [data-rail-section]");
+    const labels = await sections.evaluateAll((els) =>
+      els.map((el) => el.getAttribute("data-rail-section") ?? ""),
+    );
+    const expected = ["Target", "Frameworks", "Scenarios", "Independence", "Lineage", "Export"];
+    let cursor = 0;
+    for (const label of labels) {
+      if (cursor < expected.length && label.startsWith(expected[cursor])) cursor += 1;
     }
+    expect(cursor).toBe(expected.length);
   });
 
-  test("back button navigates to landing", async ({ page }) => {
-    await page.goto("/build?q=doc-gen-pc-insurance");
-    await expect(page.getByText("Triangulated midpoint")).toBeVisible({
+  test("Frameworks and Scenarios are expanded; Independence/Lineage collapsed", async ({
+    page,
+  }) => {
+    await page.goto(`/build?q=${KNOWN}`);
+    await page.waitForURL(BUILD_HASH_URL, { timeout: 20_000 });
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15_000,
     });
 
-    const backButton = page.getByRole("button", { name: "Back to search" });
-    await backButton.click();
-    await page.waitForURL("/");
+    // Open sections expose their contents; collapsed ones show only the toggle.
+    await expect(page.getByRole("switch").first()).toBeVisible(); // a framework row
+    await expect(page.getByRole("button", { name: /Independence/ })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    await expect(page.getByRole("button", { name: /Lineage/ })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+
+  test("deselecting a framework mints a new /build/<hash> URL, Back restores", async ({ page }) => {
+    await page.goto(`/build?q=${KNOWN}`);
+    await page.waitForURL(BUILD_HASH_URL, { timeout: 20_000 });
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+      timeout: 15_000,
+    });
+
+    const switches = page.getByRole("switch");
+    const count = await switches.count();
+    // Toggling requires ≥2 frameworks (we refuse to clear the last one).
+    test.skip(count < 2, "concept has a single framework — nothing meaningful to toggle");
+
+    const before = page.url();
+    // Deselect the first framework — a meaningful change → auto-mint.
+    await switches.first().click();
+    await page.waitForFunction((prev) => window.location.href !== prev, before, {
+      timeout: 10_000,
+    });
+    const after = page.url();
+    expect(after).not.toBe(before);
+    expect(after).toMatch(BUILD_HASH_URL);
+
+    // Back restores the prior minted state (lossless — U6).
+    await page.goBack();
+    await page.waitForFunction((next) => window.location.href !== next, after, {
+      timeout: 10_000,
+    });
+    expect(page.url()).toBe(before);
+  });
+
+  test("a degenerate (single-method) TAM shows a point estimate, not a range", async ({ page }) => {
+    await page.goto(`/build?q=${KNOWN}`);
+    await page.waitForURL(BUILD_HASH_URL, { timeout: 20_000 });
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
+      timeout: 15_000,
+    });
+
+    const switches = page.getByRole("switch");
+    const count = await switches.count();
+    test.skip(count < 2, "cannot force a single-method state without ≥2 frameworks");
+
+    // Deselect every framework but one → single method family → degenerate.
+    for (let i = 0; i < count - 1; i++) {
+      // Re-query each iteration: the rail re-renders after each mint.
+      await page.getByRole("switch").nth(0).click();
+      await page.waitForLoadState("networkidle").catch(() => {});
+    }
+
+    await expect(page.getByText("Single-method estimate").first()).toBeVisible({
+      timeout: 10_000,
+    });
+    // Independence is greyed with the "needs ≥2 method families" caption.
+    await expect(page.getByText(/needs ≥2 method families/).first()).toBeVisible();
   });
 
   test("unknown query falls back to ResolveView", async ({ page }) => {
-    await page.goto(
-      "/build?q=" + encodeURIComponent("quantum computing TAM 2030"),
-    );
-    // ResolveView should appear with streaming indicators or back button
-    // Wait for either the resolve streaming UI or an error/loading state
+    await page.goto(`/build?q=${encodeURIComponent("quantum computing TAM 2030")}`);
     await expect(
       page
         .getByText(/resolving/i)

@@ -6,6 +6,9 @@
  * Never inline a hex in a component — refer back here.
  */
 :root {
+  /* Native form controls / scrollbars follow the active theme (see html.dark). */
+  color-scheme: light;
+
   /* Surfaces */
   --bg-0: #fafafa;
   --bg-1: #ffffff;
@@ -90,6 +93,7 @@
 
   /* Layout primitives */
   --sidebar-w: 240px;
+  --sidebar-w-collapsed: 56px;
   --topbar-h: 48px;
   --right-rail-w: 320px;
   --content-max: 1280px;
@@ -103,6 +107,55 @@
   --card-shadow-hover: 0 4px 12px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.06);
   --chip-bg: #f1f2ef;
   --chip-fg: #4b524b;
+}
+
+/*
+ * Dark theme — every token above re-pointed for a near-black canvas. Because
+ * components only ever read var(--xxx) (never inline hex), flipping this class
+ * on <html> recolors the whole app. The no-flash script in layout.tsx sets the
+ * class before paint; ThemeToggle flips it. Light stays the default.
+ */
+html.dark {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg-0: #0a0a0b;
+  --bg-1: #141416;
+  --bg-2: #1c1c1f;
+  --bg-3: #28282d;
+
+  /* Ink */
+  --fg-1: #f4f4f5;
+  --fg-2: #a1a1aa;
+  --fg-3: #71717a;
+  --fg-4: #52525b;
+
+  /* Borders / dividers */
+  --border-1: #26262a;
+  --border-2: #34343b;
+  --border-3: #52525b;
+
+  /* Accent (lifted for contrast on dark) */
+  --accent: #7c7cf0;
+  --accent-hover: #9090f4;
+  --accent-active: #6e6ee0;
+  --accent-fg-on: #0a0a0b;
+  --accent-tint: rgba(124, 124, 240, 0.18);
+  --accent-ring: rgba(124, 124, 240, 0.45);
+
+  /* Workflow-canvas + cards */
+  --canvas-bg: #16171a;
+  --canvas-line: #2a2b2f;
+  --card-bg: #161618;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --card-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.07);
+  --chip-bg: #202024;
+  --chip-fg: #c4c4cc;
+
+  /* Elevation — deeper shadows read better on a dark canvas */
+  --shadow-pop: 0 4px 14px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.03) inset;
 }
 
 @theme inline {
