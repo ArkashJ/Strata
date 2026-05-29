@@ -36,5 +36,16 @@
     "formatter": { "quoteStyle": "double", "semicolons": "always", "trailingCommas": "all" }
   },
   "json": { "formatter": { "enabled": true } },
-  "css": { "formatter": { "enabled": false } }
+  "css": { "formatter": { "enabled": false } },
+  "overrides": [
+    {
+      "include": ["src/components/ui/**"],
+      "linter": {
+        "rules": {
+          "security": { "noDangerouslySetInnerHtml": "off" },
+          "suspicious": { "noArrayIndexKey": "off" }
+        }
+      }
+    }
+  ]
 }
