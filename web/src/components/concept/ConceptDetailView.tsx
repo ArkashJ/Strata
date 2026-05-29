@@ -10,8 +10,10 @@
 
 import { useQueries, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useState } from "react";
 
 import { DisagreementView, toRows } from "@/components/concept/DisagreementBar";
+import { NetworkGraphModal } from "@/components/network/NetworkGraphModal";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -24,6 +26,7 @@ import type { PrimitiveDetail } from "@/lib/schemas";
 
 export function ConceptDetailView({ slug }: { slug: string }) {
   const concept = useQuery(conceptQuery(slug));
+  const [networkOpen, setNetworkOpen] = useState(false);
 
   // Hydrate every measurement primitive so the disagreement view can scale and
   // tier-color the bars. Order-stable: combine maps in measurement order.
@@ -109,6 +112,14 @@ export function ConceptDetailView({ slug }: { slug: string }) {
             <Button className="w-full justify-center">Build a TAM</Button>
           </Link>
 
+          <Button
+            variant="ghost"
+            className="w-full justify-center"
+            onClick={() => setNetworkOpen(true)}
+          >
+            Related entities
+          </Button>
+
           <RailSection title="Sibling concepts">
             {c.competing_concepts.length === 0 ? (
               <p className="text-[13px] text-[var(--fg-3)]">No competing concepts recorded.</p>
@@ -130,6 +141,13 @@ export function ConceptDetailView({ slug }: { slug: string }) {
           </RailSection>
         </aside>
       </div>
+
+      <NetworkGraphModal
+        rootSlug={c.slug}
+        rootName={c.name}
+        open={networkOpen}
+        onClose={() => setNetworkOpen(false)}
+      />
     </main>
   );
 }
