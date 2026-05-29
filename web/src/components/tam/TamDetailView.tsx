@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { ScenarioGraph } from "@/components/ScenarioGraph";
+import { NetworkGraphModal } from "@/components/network/NetworkGraphModal";
 import { Button } from "@/components/ui/Button";
 import { IndependenceDonut } from "@/components/ui/IndependenceDonut";
 import { NotFoundState } from "@/components/ui/NotFoundState";
@@ -67,6 +68,7 @@ function TamArtifact({ tam }: { tam: TAMOutput }) {
   const geo = tam.target.geo ?? "Global";
   const time = tam.target.time ?? "latest";
   const stage = tam.target.expansion_stage;
+  const [networkOpen, setNetworkOpen] = useState(false);
 
   return (
     <main className="tam-artifact mx-auto flex w-full max-w-[var(--content-max)] flex-1 flex-col px-8 py-8">
@@ -106,7 +108,12 @@ function TamArtifact({ tam }: { tam: TAMOutput }) {
 
       <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <PermalinkRow hash8={hash8} />
-        <ActionBar tam={tam} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="ghost" sm onClick={() => setNetworkOpen(true)}>
+            Related entities
+          </Button>
+          <ActionBar tam={tam} />
+        </div>
       </div>
 
       <ProvenanceBanner tam={tam} />
@@ -119,6 +126,13 @@ function TamArtifact({ tam }: { tam: TAMOutput }) {
 
         <RightRail tam={tam} />
       </div>
+
+      <NetworkGraphModal
+        rootSlug={tam.target.concept}
+        rootName={industry}
+        open={networkOpen}
+        onClose={() => setNetworkOpen(false)}
+      />
     </main>
   );
 }
