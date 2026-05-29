@@ -3,12 +3,13 @@
 Why this exists: the resolver's LLM calls should work off the developer's
 Claude Code subscription (no ANTHROPIC_API_KEY required). We do this by
 shelling out to the ``claude`` CLI in headless mode, which authenticates via
-the subscription. When ``ANTHROPIC_API_KEY`` is set in the environment the
-Anthropic SDK path is used instead, so production deployments keep working.
+the subscription. The Anthropic SDK path is an explicit opt-in for deployments
+that prefer a direct API key — it is NOT triggered merely by the presence of
+``ANTHROPIC_API_KEY`` (which may exist for other tools).
 
 Backend selection:
-  - ANTHROPIC_API_KEY unset → Claude Code CLI via ``subprocess.run``
-  - ANTHROPIC_API_KEY set    → Anthropic SDK (direct API call)
+  - default                       → Claude Code CLI via ``subprocess.run``
+  - STRATA_LLM_BACKEND=anthropic  → Anthropic SDK (direct API call)
 
 The callers are sync; the HTTP layer already wraps them in
 ``asyncio.to_thread``, so ``subprocess.run`` (blocking) is correct here.
@@ -48,7 +49,11 @@ def complete(
         RuntimeError: on non-zero CLI exit, ``is_error: true`` in the
                       envelope, or a missing ``result`` field.
     """
-    if os.environ.get("ANTHROPIC_API_KEY"):
+    # Claude Code is the default (the user's explicit choice). Use the Anthropic
+    # SDK ONLY when opted in via STRATA_LLM_BACKEND=anthropic — so a stray or
+    # low-credit ANTHROPIC_API_KEY that happens to be in the environment (e.g.
+    # for some other tool) never silently hijacks the resolver.
+    if os.environ.get("STRATA_LLM_BACKEND", "").strip().lower() == "anthropic":
         return _complete_sdk(prompt, system=system, model=model, max_tokens=max_tokens)
     return _complete_cli(prompt, system=system, model=model)
 

@@ -140,6 +140,29 @@ def test_complete_uses_sdk_when_api_key_set() -> None:
     mock_run.assert_not_called()
 
 
+# A stray ANTHROPIC_API_KEY must NOT route the resolver to the API — Claude Code
+# is the default; the SDK is an explicit STRATA_LLM_BACKEND=anthropic opt-in.
+@patch("subprocess.run")
+def test_complete_prefers_cli_even_when_api_key_present(mock_run: MagicMock) -> None:
+    mock_run.return_value = _fake_proc(_cli_envelope("from cli"))
+    with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "sk-stray"}, clear=False):
+        os.environ.pop("STRATA_LLM_BACKEND", None)
+        out = llm.complete("q")
+    assert out == "from cli"
+    mock_run.assert_called_once()
+
+
+def test_complete_uses_sdk_when_backend_opts_in() -> None:
+    """STRATA_LLM_BACKEND=anthropic routes complete() through the SDK path."""
+    with (
+        patch.dict("os.environ", {"STRATA_LLM_BACKEND": "anthropic"}, clear=False),
+        patch.object(llm, "_complete_sdk", return_value="from sdk") as sdk,
+    ):
+        out = llm.complete("q")
+    assert out == "from sdk"
+    sdk.assert_called_once()
+
+
 def test_complete_sdk_raises_on_non_text_block() -> None:
     """SDK path raises if the response block is not a TextBlock."""
     fake_block = MagicMock()

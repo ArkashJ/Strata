@@ -73,11 +73,17 @@ function PyramidIllustration() {
 }
 
 function KbdHint() {
-  // navigator.platform is deprecated but still broadly available for this cosmetic hint.
+  // navigator is undefined on the server, so the modifier glyph legitimately
+  // differs between the server ("Ctrl") and the client ("⌘" on macOS). That is
+  // a known, intentional mismatch — suppressHydrationWarning on the glyph tells
+  // React not to flag it (the React-blessed pattern for platform/locale text).
   const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
   return (
     <span className="text-[11px] text-[var(--fg-4)] flex items-center gap-1">
-      <kbd className="font-mono bg-[var(--bg-2)] border border-[var(--border-2)] rounded px-1 py-0.5 text-[10px]">
+      <kbd
+        suppressHydrationWarning
+        className="font-mono bg-[var(--bg-2)] border border-[var(--border-2)] rounded px-1 py-0.5 text-[10px]"
+      >
         {isMac ? "⌘" : "Ctrl"}
       </kbd>
       <kbd className="font-mono bg-[var(--bg-2)] border border-[var(--border-2)] rounded px-1 py-0.5 text-[10px]">
