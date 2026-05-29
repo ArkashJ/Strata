@@ -142,9 +142,15 @@ def _step1_concept(
             payload={"concept_slug": concept.slug, "name": concept.name},
         ),
     )
-    # Evaluator integration is fully covered by the existing /c /size paths.
-    # Step 1 returns a partial result that the renderer can finalise — the
-    # CLI calls into evaluator.size_concept itself for the scenario tree.
+    # Size the concept through the evaluator so the concept path returns the
+    # FULL composed TAM (value + attached primitives + lens), not just the
+    # name — the CLI compact view and the frontend charts both render off
+    # these fields. Falls back to the identity-only result when the concept has
+    # no applicable framework variant (so its disagreement view still loads).
+    sized = _size_registered_concept(state, registry, concept.slug, via="concept")
+    if sized is not None:
+        sized.definition = getattr(concept, "definition", None)
+        return sized
     return ResolverResult(
         status=PipelineStatus.OK,
         via="concept",
