@@ -1,0 +1,18 @@
+kind: concept
+slug: ai-legal-assistants-us
+schema_version: 1
+name: AI legal assistants (US)
+definition: >-
+  AI legal research, drafting, and review software (Harvey, CoCounsel, and
+  peers) sold per-seat into US legal services (NAICS 5411 — law firms, notaries,
+  title abstract, other legal). Scope is US legal-services employees; excludes
+  in-house corporate legal departments and consumer DIY legal tools. Sized
+  bottoms-up as addressable legal-services employees × blended annual seat spend.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+  - census-cbp-5411-employees-2022
+  - ai-legal-assistant-acv-per-seat-2024
+competing_concepts: []
+requires_clearance: []

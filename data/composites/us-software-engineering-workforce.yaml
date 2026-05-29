@@ -1,0 +1,24 @@
+kind: composite_primitive
+slug: us-software-engineering-workforce
+schema_version: 1
+concept_slug: ai-coding-assistants-us
+name: US software-engineering workforce (software publishers ∪ computer systems design)
+description: >-
+  Union of US employees in NAICS 5112 (Software publishers) and NAICS 5415
+  (Computer systems design and related services), Census County Business
+  Patterns 2022 — the addressable seat pool for AI coding assistants. Same-unit
+  set op (Q3): both members are people counts, so the union sums to the
+  engineering workforce across the two sectors (~3.0M).
+inputs:
+  - census-cbp-5112-employees-2022
+  - census-cbp-5415-employees-2022
+set_operation: union
+as_of: '2022-12-31'
+unit:
+  kind: stock
+  dimension: people
+geo:
+  level: country
+  codes:
+    - US
+geo_perspective: supply

@@ -1,0 +1,18 @@
+kind: concept
+slug: ai-coding-assistants-us
+schema_version: 1
+name: AI coding assistants (US)
+definition: >-
+  AI pair-programming and code-generation software (GitHub Copilot, Cursor,
+  and peers) sold per-seat to the US software-engineering workforce. Scope is
+  US-employed engineers in software publishing (NAICS 5112) and computer
+  systems design (NAICS 5415); excludes consumer/hobbyist use and non-US seats.
+  Sized bottoms-up as addressable engineers × blended annual seat spend.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+  - us-software-engineering-workforce
+  - ai-coding-assistant-acv-per-engineer-2024
+competing_concepts: []
+requires_clearance: []

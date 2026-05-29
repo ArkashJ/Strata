@@ -75,6 +75,27 @@ def test_complete_cli_passes_system_arg(mock_run: MagicMock) -> None:
 
 
 @patch("subprocess.run")
+def test_complete_cli_scrubs_anthropic_api_key(mock_run: MagicMock) -> None:
+    """The claude CLI subprocess must NOT inherit ANTHROPIC_API_KEY.
+
+    An inherited (and commonly dead/low-credit) key forces the CLI onto API
+    billing instead of the Claude Code subscription, which is exactly the
+    "feels mock" failure: the headless completion returns
+    'Credit balance is too low'. Scrubbing the key makes it use subscription
+    auth.
+    """
+    mock_run.return_value = _fake_proc(_cli_envelope("ok"))
+    with patch.dict("os.environ", {"ANTHROPIC_API_KEY": "sk-ant-dead"}, clear=False):
+        os.environ.pop("STRATA_LLM_BACKEND", None)
+        out = llm.complete("q")
+    assert out == "ok"
+    child_env = mock_run.call_args.kwargs.get("env")
+    assert child_env is not None, "subprocess.run must be called with an explicit env="
+    assert "ANTHROPIC_API_KEY" not in child_env, "dead key must be scrubbed from the child env"
+    assert "ANTHROPIC_AUTH_TOKEN" not in child_env
+
+
+@patch("subprocess.run")
 def test_complete_cli_raises_on_nonzero_exit(mock_run: MagicMock) -> None:
     mock_run.return_value = _fake_proc("", returncode=1, stderr="something went wrong")
     os.environ.pop("ANTHROPIC_API_KEY", None)

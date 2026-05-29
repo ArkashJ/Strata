@@ -14,22 +14,9 @@ import json
 import re
 from typing import Any
 
-import anthropic
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import llm as _llm
-
-# Compatibility export — slug.py and router.py still use the Anthropic SDK
-# directly because their prompts use structured cache_control blocks that
-# the Claude CLI path does not support.
-_anthropic_client: anthropic.Anthropic | None = None
-
-
-def get_anthropic_client() -> anthropic.Anthropic:
-    global _anthropic_client
-    if _anthropic_client is None:
-        _anthropic_client = anthropic.Anthropic()
-    return _anthropic_client
 
 
 class ParsedPrimitive(BaseModel):

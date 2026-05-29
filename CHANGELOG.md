@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Dynamic resolution now answers real TAM questions off the Claude Code
+  subscription.** The headless `claude -p` subprocess inherited a dead/low-credit
+  `ANTHROPIC_API_KEY` and failed with "Credit balance is too low" — the root
+  cause of the resolver "feeling mock". `resolver/llm._complete_cli` now scrubs
+  the key so completion uses subscription auth. `resolver/slug.py` and
+  `router.py` no longer call the Anthropic SDK directly — both route through
+  `llm.complete()` (backend switch + env scrub). Concept-hit queries return the
+  full composed TAM (value + attached primitives + lens), not just the name.
+
+### Added
+- **Composites are first-class in TAM math.** The evaluator and cross-record
+  validator resolve a framework input bound to a composite primitive — `union`
+  sums same-unit members; unit-crossing math stays in the framework (Q3). A
+  community-modeled input now surfaces a `MODELED` banner.
+- **Two worked, connector-sourced TAM questions:** `ai-coding-assistants-us`
+  (composite persona `us-software-engineering-workforce` = Census CBP 5112 + 5415
+  employees -> ~$900M) and `ai-legal-assistants-us` (Census CBP 5411 -> ~$947M),
+  both sized via the existing cost-efficiency framework.
+- **shadcn charts.** Installed shadcn (`components.json` + `ui/chart`); a resolved
+  query now renders an interactive composition chart (`ResolveResultChart`) bound
+  to the live payload, themed to the app tokens (light/dark).
+- **`GET /healthz/llm`** backend probe; the `strata` CLI now auto-loads `.env`.
+- **ast-grep rules** (`sgconfig.yml` + `rules/`) forbidding direct Anthropic SDK
+  use anywhere in `backend/src` except `resolver/llm.py`.
+- **Current-UI Playwright smoke** (`web/e2e/sp1-real-tam.spec.ts`). NOTE: the 16
+  legacy e2e specs predate the v0.42 UI (assert the removed Contribute nav) and
+  are stale — a tracked follow-up.
+
 ## [0.4.0] - 2026-05-28
 
 ### Changed

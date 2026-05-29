@@ -26,21 +26,9 @@ from strata.resolver.writer import AUTO_PRIMITIVES_DIR, upsert_primitive
 # ---------------------------------------------------------------------------
 
 
-def _make_text_response(text: str) -> MagicMock:
-    block = MagicMock()
-    block.text = text
-    resp = MagicMock()
-    resp.content = [block]
-    # Block must be instance of TextBlock for isinstance() check
-    from anthropic.types import TextBlock
-
-    block.__class__ = TextBlock
-    return resp
-
-
-@patch("strata.resolver.slug.get_anthropic_client")
-def test_resolve_slug_concept_hit(mock_client: MagicMock) -> None:
-    mock_client.return_value.messages.create.return_value = _make_text_response(
+@patch("strata.resolver.slug._llm.complete")
+def test_resolve_slug_concept_hit(mock_complete: MagicMock) -> None:
+    mock_complete.return_value = (
         '{"intent": "concept", "concept_slug": "us-pc-doc-gen", "primitive_slugs": [], '
         '"framework_hint": null, "confidence": 0.92}'
     )
@@ -60,9 +48,9 @@ def test_resolve_slug_concept_hit(mock_client: MagicMock) -> None:
     assert out.confidence == 0.92
 
 
-@patch("strata.resolver.slug.get_anthropic_client")
-def test_resolve_slug_primitive_hit(mock_client: MagicMock) -> None:
-    mock_client.return_value.messages.create.return_value = _make_text_response(
+@patch("strata.resolver.slug._llm.complete")
+def test_resolve_slug_primitive_hit(mock_complete: MagicMock) -> None:
+    mock_complete.return_value = (
         '{"intent": "primitive", "concept_slug": null, '
         '"primitive_slugs": ["bls-software-developers-us-2024"], '
         '"framework_hint": "cost_efficiency", "confidence": 0.81}'
@@ -83,15 +71,35 @@ def test_resolve_slug_primitive_hit(mock_client: MagicMock) -> None:
     assert out.framework_hint == "cost_efficiency"
 
 
-@patch("strata.resolver.slug.get_anthropic_client")
-def test_resolve_slug_novel(mock_client: MagicMock) -> None:
-    mock_client.return_value.messages.create.return_value = _make_text_response(
+@patch("strata.resolver.slug._llm.complete")
+def test_resolve_slug_novel(mock_complete: MagicMock) -> None:
+    mock_complete.return_value = (
         '{"intent": "novel", "concept_slug": null, "primitive_slugs": [], '
         '"framework_hint": null, "confidence": 0.4}'
     )
     out = resolve_slug("some unheard-of market", known_concepts=[], known_primitives=[])
     assert out.intent is ResolverIntent.NOVEL
     assert out.confidence < 0.5  # below threshold → pipeline skips registry steps
+
+
+@patch("strata.resolver.slug._llm.complete")
+def test_resolve_slug_routes_through_llm_complete(mock_complete: MagicMock) -> None:
+    """Slug resolution must go through llm.complete (so it honours the backend
+    switch + ANTHROPIC_API_KEY env scrub), never the Anthropic SDK directly."""
+    mock_complete.return_value = (
+        '{"intent": "novel", "concept_slug": null, "primitive_slugs": [], '
+        '"framework_hint": null, "confidence": 0.0}'
+    )
+    resolve_slug(
+        "q",
+        known_concepts=[ConceptSummary(slug="c", name="C", one_line_description="d")],
+        known_primitives=[],
+    )
+    mock_complete.assert_called_once()
+    # The registry index is passed as the system prompt (for prompt caching).
+    call = mock_complete.call_args
+    system_text = call.kwargs.get("system") or (call.args[1] if len(call.args) > 1 else "")
+    assert "REGISTRY INDEX" in system_text
 
 
 # ---------------------------------------------------------------------------

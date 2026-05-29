@@ -1,0 +1,19 @@
+id: no-direct-messages-create
+language: python
+severity: error
+message: >-
+  Do not call the Anthropic Messages API directly (`.messages.create(...)`).
+  Route LLM completions through strata.resolver.llm.complete() so they honour
+  the backend switch and the ANTHROPIC_API_KEY env scrub. This guards the
+  slug.py / router.py regression where a direct SDK call hit a dead/low-credit
+  key instead of the Claude Code subscription (SP-1 W1).
+note: |
+  Only backend/src/strata/resolver/llm.py (_complete_sdk) may call messages.create.
+files:
+  - "backend/src/**/*.py"
+ignores:
+  # Location-independent glob: the one file allowed to call messages.create,
+  # regardless of the directory ast-grep is invoked from.
+  - "**/strata/resolver/llm.py"
+rule:
+  pattern: $CLIENT.messages.create($$$)

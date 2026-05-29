@@ -84,11 +84,28 @@ def _complete_cli(
     if system:
         args += ["--append-system-prompt", system]
 
+    # The claude CLI authenticates via the Claude Code subscription ONLY when
+    # the API-key env vars are absent. An inherited key (commonly dead or
+    # low-credit) silently forces the headless completion onto API billing,
+    # which fails with "Credit balance is too low" — the root cause of the
+    # resolver "feeling mock". Scrub them so the subprocess uses subscription
+    # auth. Build an explicit env rather than mutating os.environ.
+    child_env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")
+    }
+
     # Close stdin: the prompt is passed as an arg, so the CLI must not block
     # waiting for piped input (otherwise it warns "no stdin data received" and
     # exits non-zero in a non-interactive subprocess).
     proc = subprocess.run(
-        args, capture_output=True, text=True, timeout=120, stdin=subprocess.DEVNULL
+        args,
+        capture_output=True,
+        text=True,
+        timeout=120,
+        stdin=subprocess.DEVNULL,
+        env=child_env,
     )
 
     if proc.returncode != 0:

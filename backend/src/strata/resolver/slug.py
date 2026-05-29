@@ -17,10 +17,9 @@ import re
 from enum import StrEnum
 from typing import Any
 
-from anthropic.types import TextBlock
 from pydantic import BaseModel, ConfigDict, Field
 
-from .parse import get_anthropic_client
+from . import llm as _llm
 
 
 class ResolverIntent(StrEnum):
@@ -90,7 +89,6 @@ def resolve_slug(
 ) -> ResolvedQuery:
     """Single Claude one-shot mapping a free-form query to ResolvedQuery."""
 
-    client = get_anthropic_client()
     registry_block = _build_registry_block(known_concepts, known_primitives)
 
     instruction = (
@@ -107,21 +105,10 @@ def resolve_slug(
         "Return ONLY JSON, no markdown."
     )
 
-    response = client.messages.create(
-        model=model,
-        max_tokens=512,
-        system=[
-            {
-                "type": "text",
-                "text": registry_block,
-                "cache_control": {"type": "ephemeral"},
-            }
-        ],
-        messages=[{"role": "user", "content": instruction}],
-    )
-
-    block = response.content[0]
-    if not isinstance(block, TextBlock):
-        raise ValueError("Expected text response from Claude")
-    raw: dict[str, Any] = json.loads(_strip_code_fence(block.text))
+    # Route through the shared LLM layer so slug resolution honours the backend
+    # switch (Claude CLI subscription by default; Anthropic SDK only on
+    # STRATA_LLM_BACKEND=anthropic) and the ANTHROPIC_API_KEY env scrub. The
+    # registry index is the system prompt; the SDK path caches it ephemerally.
+    raw_text = _llm.complete(instruction, system=registry_block, model=model, max_tokens=512)
+    raw: dict[str, Any] = json.loads(_strip_code_fence(raw_text))
     return ResolvedQuery.model_validate(raw)

@@ -36,6 +36,7 @@ import {
 } from "@/lib/resolver-schemas";
 import type { SourceTier } from "@/lib/schemas";
 import { PipelineTrace } from "./PipelineTrace";
+import { ResolveResultChart } from "./ResolveResultChart";
 
 // ── Chain-of-thought model ────────────────────────────────────────────────
 // One row per frozen pipeline phase. `detail` lines hang the legacy `step`
@@ -382,6 +383,8 @@ function ResultCard({ result }: { result: ResolverResult }) {
         </div>
         <IndependenceDonut score={result.independence_score} size={84} />
       </div>
+
+      <ResolveResultChart result={result} />
 
       {result.primitives_used.length > 0 ? (
         <div className="mt-5 flex flex-col gap-2 border-t border-[var(--border-1)] pt-4">

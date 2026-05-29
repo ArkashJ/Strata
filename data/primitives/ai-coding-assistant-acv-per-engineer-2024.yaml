@@ -1,0 +1,40 @@
+kind: atomic_primitive
+slug: ai-coding-assistant-acv-per-engineer-2024
+schema_version: 1
+concept_slug: ai-coding-assistants-us
+name: AI coding-assistant annual spend per engineer (blended, modeled)
+description: >-
+  Blended annual software spend per addressable US software engineer on AI
+  coding assistants at maturity. Community-modeled, not a sourced regulator
+  figure: anchored to GitHub Copilot Business ($19/user/mo = $228/yr) and
+  Cursor/peer enterprise tiers ($20-40/mo), blended above list to reflect
+  enterprise seats and platform add-ons. Ranged.
+value: 300.0
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+  denominator: per-seat-year
+as_of: '2024-12-31'
+expiry: '2027-05-28'
+geo:
+  level: country
+  codes:
+    - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: direct
+uncertainty:
+  range:
+    - 150.0
+    - 600.0
+  basis: >-
+    GitHub Copilot Business ($228/yr) anchors the low end; enterprise AI-IDE
+    bundles and platform seats anchor the high end. Blended across the full
+    engineering pool where adoption and willingness-to-pay vary widely.
+source:
+  slug: strata-modeled-ai-coding-acv-2024
+  tier: community-modeled
+  url: https://strata.internal/models/ai-coding-acv-2024
+  accessed: '2026-05-28'
+  snapshot_sha256: b9ee1e4978ed783523f417a2fbbeb4d72295695407d7713c72e529175aacb821

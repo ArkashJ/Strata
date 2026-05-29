@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import typer
+from dotenv import load_dotenv
 
 from strata import __version__
 from strata.evaluator import EvaluatorError, size_concept
@@ -40,6 +41,10 @@ _DATA_DIR_OPT = typer.Option(
 @app.callback()
 def root() -> None:
     """Preserve sub-command structure even when only one command exists."""
+    # Load .env (walks up from CWD) so `strata goal`, connectors, and `db`
+    # commands pick up EXA_API_KEY / DATABASE_URL the same way the HTTP layer
+    # does — without the caller having to source it manually.
+    load_dotenv()
 
 
 @app.command()

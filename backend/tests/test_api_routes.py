@@ -30,6 +30,27 @@ async def test_healthz(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_healthz_llm(client: AsyncClient, monkeypatch) -> None:
+    """The LLM-backend probe reports which backend is selected and whether it
+    looks reachable — without making a live completion or leaking secrets."""
+    monkeypatch.delenv("STRATA_LLM_BACKEND", raising=False)
+    resp = await client.get("/healthz/llm")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["backend"] == "claude-cli"
+    assert isinstance(body["available"], bool)
+    # No secret material may appear in the probe payload.
+    assert "key" not in body and "token" not in body
+
+    monkeypatch.setenv("STRATA_LLM_BACKEND", "anthropic")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-anything")
+    resp = await client.get("/healthz/llm")
+    body = resp.json()
+    assert body["backend"] == "anthropic-sdk"
+    assert body["available"] is True
+
+
+@pytest.mark.asyncio
 async def test_list_concepts(client: AsyncClient) -> None:
     resp = await client.get("/c")
     assert resp.status_code == 200
