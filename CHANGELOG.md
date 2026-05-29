@@ -34,6 +34,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Plain-English resolver runs on Claude Code.** Free-form market queries are
   parsed and sourced through the local Claude Code subscription, so no paid
   Anthropic API key is required (the API key path still works if one is set).
+- **TAM-over-time trajectory** (`GET /build/{concept}/trajectory`). Re-evaluates
+  a concept's frameworks at each date its sourced numbers were published, so the
+  app can chart how a TAM estimate has moved as evidence arrived (current vs
+  previous). Shows a single-snapshot state until a concept has numbers from more
+  than one date.
+- **Related-entities network view.** A force-directed bubble graph (opened from a
+  concept or TAM page) showing what connects to what — concepts sharing a lens,
+  a source, or a measurement, and the frameworks that size them.
+- **Modern, on-brand motion.** Reusable entrance / stagger / hover animations
+  tied to the brand-kit timing tokens, and they respect "reduce motion".
 
 ## [0.3.0] - 2026-05-28
 
