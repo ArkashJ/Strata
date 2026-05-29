@@ -7,20 +7,28 @@
 
 export const GEO_CHIPS = ["Global", "US", "EU"] as const;
 export const TIME_CHIPS = ["2025", "2026", "2027"] as const;
+// Expansion stage mirrors the backend ExpansionStage enum (wedge/adjacent/
+// platform); like geo + time it is a view-state chip, never a pillar.
+export const STAGE_CHIPS = ["wedge", "adjacent", "platform"] as const;
 
 export type GeoChip = (typeof GEO_CHIPS)[number];
 export type TimeChip = (typeof TIME_CHIPS)[number];
+export type StageChip = (typeof STAGE_CHIPS)[number];
 
 export function PyramidFilters({
   geo,
   time,
+  stage,
   onGeo,
   onTime,
+  onStage,
 }: {
   geo: GeoChip;
   time: TimeChip;
+  stage: StageChip;
   onGeo: (g: GeoChip) => void;
   onTime: (t: TimeChip) => void;
+  onStage: (s: StageChip) => void;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-4">
@@ -39,11 +47,25 @@ export function PyramidFilters({
           </Chip>
         ))}
       </ChipGroup>
+      <span className="w-px h-5 bg-[var(--border-1)]" aria-hidden />
+      <ChipGroup label="Stage">
+        {STAGE_CHIPS.map((s) => (
+          <Chip key={s} active={s === stage} onClick={() => onStage(s)} uppercase>
+            {s}
+          </Chip>
+        ))}
+      </ChipGroup>
     </div>
   );
 }
 
-function ChipGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function ChipGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex items-center gap-2">
       <span className="text-[10px] uppercase tracking-[0.08em] text-[var(--fg-3)]">{label}</span>
@@ -56,10 +78,12 @@ function Chip({
   active,
   onClick,
   children,
+  uppercase = false,
 }: {
   active: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  uppercase?: boolean;
 }) {
   return (
     <button
@@ -67,6 +91,8 @@ function Chip({
       aria-pressed={active}
       onClick={onClick}
       className={`px-2.5 py-1 rounded-[var(--r-round)] text-[12px] font-medium transition-colors ${
+        uppercase ? "uppercase tracking-[0.04em]" : ""
+      } ${
         active
           ? "bg-[var(--accent)] text-[var(--accent-fg-on)]"
           : "bg-[var(--bg-2)] text-[var(--fg-2)] hover:bg-[var(--bg-3)]"

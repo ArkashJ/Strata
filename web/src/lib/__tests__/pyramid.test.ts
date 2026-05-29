@@ -144,27 +144,29 @@ describe("compatibleFrameworks", () => {
 
   it("narrows by selected lens", () => {
     const p = fixture();
-    const out = compatibleFrameworks(p, { qualitative: "cost_efficiency" });
+    const out = compatibleFrameworks(p, { qualitative: ["cost_efficiency"] });
     expect(out.map((f) => f.slug).sort()).toEqual(["bottoms-up-seats", "top-down-spend"]);
   });
 
   it("narrows by selected method family", () => {
     const p = fixture();
-    const out = compatibleFrameworks(p, { quantitative: "value_chain" });
+    const out = compatibleFrameworks(p, { quantitative: ["value_chain"] });
     expect(out.map((f) => f.slug)).toEqual(["marketplace-throughput"]);
   });
 
   it("narrows by selected industry via its primary lens", () => {
     const p = fixture();
-    const out = compatibleFrameworks(p, { industry: "ai-agents-marketplace" });
+    const out = compatibleFrameworks(p, {
+      industry: ["ai-agents-marketplace"],
+    });
     expect(out.map((f) => f.slug)).toEqual(["marketplace-throughput"]);
   });
 
   it("intersects multiple selections", () => {
     const p = fixture();
     const out = compatibleFrameworks(p, {
-      qualitative: "cost_efficiency",
-      quantitative: "top_down_spend",
+      qualitative: ["cost_efficiency"],
+      quantitative: ["top_down_spend"],
     });
     expect(out.map((f) => f.slug)).toEqual(["top-down-spend"]);
   });
@@ -172,32 +174,64 @@ describe("compatibleFrameworks", () => {
   it("yields no frameworks for a contradictory selection", () => {
     const p = fixture();
     const out = compatibleFrameworks(p, {
-      qualitative: "platform_throughput",
-      quantitative: "bottoms_up_seats",
+      qualitative: ["platform_throughput"],
+      quantitative: ["bottoms_up_seats"],
     });
     expect(out).toEqual([]);
+  });
+
+  it("ORs keys within a pillar (shift-click union)", () => {
+    const p = fixture();
+    // Both lenses selected → every framework on either lens survives.
+    const out = compatibleFrameworks(p, {
+      qualitative: ["cost_efficiency", "platform_throughput"],
+    });
+    expect(out.map((f) => f.slug).sort()).toEqual([
+      "bottoms-up-seats",
+      "marketplace-throughput",
+      "top-down-spend",
+    ]);
+  });
+
+  it("treats an empty pillar array as no constraint", () => {
+    const p = fixture();
+    expect(compatibleFrameworks(p, { qualitative: [] })).toHaveLength(3);
   });
 });
 
 describe("isGreyed", () => {
   it("greys un-selected siblings within the same pillar", () => {
     const p = fixture();
-    const sel = { qualitative: "cost_efficiency" };
+    const sel = { qualitative: ["cost_efficiency"] };
     expect(isGreyed(p, sel, nodeById(p, "qualitative:platform_throughput"))).toBe(true);
     expect(isGreyed(p, sel, nodeById(p, "qualitative:cost_efficiency"))).toBe(false);
   });
 
+  it("keeps every OR'd sibling active within the same pillar", () => {
+    const p = fixture();
+    const sel = { qualitative: ["cost_efficiency", "platform_throughput"] };
+    expect(isGreyed(p, sel, nodeById(p, "qualitative:cost_efficiency"))).toBe(false);
+    expect(isGreyed(p, sel, nodeById(p, "qualitative:platform_throughput"))).toBe(false);
+  });
+
   it("greys cross-pillar nodes that lose all reachable frameworks", () => {
     const p = fixture();
-    const sel = { qualitative: "cost_efficiency" };
+    const sel = { qualitative: ["cost_efficiency"] };
     // value_chain only appears on a platform_throughput framework → greyed
     expect(isGreyed(p, sel, nodeById(p, "quantitative:value_chain"))).toBe(true);
     expect(isGreyed(p, sel, nodeById(p, "quantitative:bottoms_up_seats"))).toBe(false);
   });
 
+  it("ungreys a cross-pillar node once its lens is OR'd in", () => {
+    const p = fixture();
+    const sel = { qualitative: ["cost_efficiency", "platform_throughput"] };
+    // value_chain's framework lens is now selected → reachable.
+    expect(isGreyed(p, sel, nodeById(p, "quantitative:value_chain"))).toBe(false);
+  });
+
   it("greys industry nodes whose primary lens conflicts with a selected lens", () => {
     const p = fixture();
-    const sel = { qualitative: "cost_efficiency" };
+    const sel = { qualitative: ["cost_efficiency"] };
     expect(isGreyed(p, sel, nodeById(p, "industry:ai-agents-marketplace"))).toBe(true);
     expect(isGreyed(p, sel, nodeById(p, "industry:us-pc-doc-gen"))).toBe(false);
   });
@@ -210,34 +244,78 @@ describe("isGreyed", () => {
   });
 });
 
-describe("narrow", () => {
+describe("narrow (plain click)", () => {
   it("sets the selection for a pillar", () => {
     const p = fixture();
     expect(narrow({}, nodeById(p, "qualitative:cost_efficiency"))).toEqual({
-      qualitative: "cost_efficiency",
+      qualitative: ["cost_efficiency"],
     });
   });
 
   it("replaces a prior choice in the same pillar", () => {
     const p = fixture();
     const platform = nodeById(p, "qualitative:platform_throughput");
-    expect(narrow({ qualitative: "cost_efficiency" }, platform)).toEqual({
-      qualitative: "platform_throughput",
+    expect(narrow({ qualitative: ["cost_efficiency"] }, platform)).toEqual({
+      qualitative: ["platform_throughput"],
     });
   });
 
-  it("clears the pillar when re-clicking the active node", () => {
+  it("collapses a multi-select pillar to a single choice", () => {
+    const p = fixture();
+    const platform = nodeById(p, "qualitative:platform_throughput");
+    expect(narrow({ qualitative: ["cost_efficiency", "platform_throughput"] }, platform)).toEqual({
+      qualitative: ["platform_throughput"],
+    });
+  });
+
+  it("clears the pillar when re-clicking the sole active node", () => {
     const p = fixture();
     const node = nodeById(p, "qualitative:cost_efficiency");
-    expect(narrow({ qualitative: "cost_efficiency" }, node)).toEqual({});
+    expect(narrow({ qualitative: ["cost_efficiency"] }, node)).toEqual({});
   });
 
   it("keeps selections in other pillars intact", () => {
     const p = fixture();
     const mf = nodeById(p, "quantitative:top_down_spend");
-    expect(narrow({ qualitative: "cost_efficiency" }, mf)).toEqual({
-      qualitative: "cost_efficiency",
-      quantitative: "top_down_spend",
+    expect(narrow({ qualitative: ["cost_efficiency"] }, mf)).toEqual({
+      qualitative: ["cost_efficiency"],
+      quantitative: ["top_down_spend"],
+    });
+  });
+});
+
+describe("narrow (shift-click / additive)", () => {
+  it("ORs a second key into the pillar", () => {
+    const p = fixture();
+    const platform = nodeById(p, "qualitative:platform_throughput");
+    expect(
+      narrow({ qualitative: ["cost_efficiency"] }, platform, {
+        additive: true,
+      }),
+    ).toEqual({ qualitative: ["cost_efficiency", "platform_throughput"] });
+  });
+
+  it("removes just the toggled key, leaving the rest", () => {
+    const p = fixture();
+    const cost = nodeById(p, "qualitative:cost_efficiency");
+    expect(
+      narrow({ qualitative: ["cost_efficiency", "platform_throughput"] }, cost, {
+        additive: true,
+      }),
+    ).toEqual({ qualitative: ["platform_throughput"] });
+  });
+
+  it("clears the pillar when the last OR'd key is toggled off", () => {
+    const p = fixture();
+    const cost = nodeById(p, "qualitative:cost_efficiency");
+    expect(narrow({ qualitative: ["cost_efficiency"] }, cost, { additive: true })).toEqual({});
+  });
+
+  it("seeds a pillar from empty on the first shift-click", () => {
+    const p = fixture();
+    const cost = nodeById(p, "qualitative:cost_efficiency");
+    expect(narrow({}, cost, { additive: true })).toEqual({
+      qualitative: ["cost_efficiency"],
     });
   });
 });
