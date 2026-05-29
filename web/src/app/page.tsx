@@ -8,6 +8,7 @@ import { ConceptCard } from "@/components/ConceptCard";
 import { InterpretationCard, type InterpretationMatch } from "@/components/InterpretationCard";
 import { TamCard, type TamSummary } from "@/components/TamCard";
 import { StatBlock } from "@/components/ui/StatBlock";
+import { Stagger, StaggerItem } from "@/components/ui/motion";
 import { formatUSD } from "@/lib/format";
 import { rankByQuery } from "@/lib/fuzzy";
 import { conceptsQuery } from "@/lib/queries";
@@ -265,11 +266,13 @@ function LandingContent() {
         ) : !concepts || concepts.length === 0 ? (
           <p className="text-[13px] text-[var(--fg-3)]">No concepts loaded yet.</p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          <Stagger className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {concepts.slice(0, 8).map((c) => (
-              <ConceptCard key={c.slug} concept={c} />
+              <StaggerItem key={c.slug}>
+                <ConceptCard concept={c} />
+              </StaggerItem>
             ))}
-          </div>
+          </Stagger>
         )}
       </section>
 
