@@ -267,3 +267,26 @@ export const frameworkDetailSchema = z.object({
   horizon_class: horizonClassSchema,
 });
 export type FrameworkDetail = z.infer<typeof frameworkDetailSchema>;
+
+// ── TAM-over-time (GET /build/{slug}/trajectory · PR12) ───────────────────────
+// The TAM re-evaluated at each distinct primitive `as_of` date — the headline
+// "current vs previous" view. Most concepts share one as_of today, so a single
+// point is the common case; the chart must degrade to an honest snapshot, never
+// fabricate a curve. Field-for-field against the backend trajectory model.
+export const trajectoryPointSchema = z.object({
+  as_of: z.string(),
+  value: z.number(),
+  low: z.number(),
+  high: z.number(),
+  method_families: z.array(z.string()),
+  scenarios_n: z.number(),
+});
+export type TrajectoryPoint = z.infer<typeof trajectoryPointSchema>;
+
+export const tamTrajectorySchema = z.object({
+  concept_slug: z.string(),
+  concept_name: z.string(),
+  unit: unitSchema,
+  points: z.array(trajectoryPointSchema),
+});
+export type TamTrajectory = z.infer<typeof tamTrajectorySchema>;

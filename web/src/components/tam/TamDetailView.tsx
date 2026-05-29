@@ -2,13 +2,14 @@
 
 import { ScenarioGraph } from "@/components/ScenarioGraph";
 import { NetworkGraphModal } from "@/components/network/NetworkGraphModal";
+import { TamTrajectoryChart } from "@/components/tam/TamTrajectoryChart";
 import { Button } from "@/components/ui/Button";
 import { IndependenceDonut } from "@/components/ui/IndependenceDonut";
 import { NotFoundState } from "@/components/ui/NotFoundState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ApiError } from "@/lib/api-client";
 import { formatCompact, tierLabel } from "@/lib/format";
-import { tamQuery } from "@/lib/queries";
+import { tamQuery, trajectoryQuery } from "@/lib/queries";
 import type { TAMOutput } from "@/lib/schemas";
 import { isDegenerate, midScenario, tamRange, tamToMarkdown } from "@/lib/tam";
 // The frozen TAM artifact page (U6, U11 · design capture 19-tam-detail). The
@@ -121,6 +122,7 @@ function TamArtifact({ tam }: { tam: TAMOutput }) {
         <section className="flex min-w-0 flex-1 flex-col gap-6">
           <MidScenarioCard tam={tam} />
           <ScenarioTree tam={tam} />
+          <TrajectorySection slug={tam.target.concept} />
         </section>
 
         <RightRail tam={tam} />
@@ -164,6 +166,36 @@ function ScenarioTree({ tam }: { tam: TAMOutput }) {
 // Quote a value for safe embedding inside an [data-id="…"] attribute selector.
 function cssEscape(value: string): string {
   return value.replace(/["\\]/g, "\\$&");
+}
+
+// ── TAM over time ─────────────────────────────────────────────────────────────
+
+// Supplementary, not load-bearing: a failed/empty trajectory fetch leaves the
+// rest of the artifact intact, so we render nothing rather than an error card.
+function TrajectorySection({ slug }: { slug: string }) {
+  const traj = useQuery(trajectoryQuery(slug));
+
+  if (traj.isPending) {
+    return (
+      <div>
+        <h2 className="display text-[24px] text-[var(--fg-1)]">TAM over time</h2>
+        <Skeleton className="mt-3 h-[200px] w-full" />
+      </div>
+    );
+  }
+  if (traj.error || !traj.data) return null;
+
+  return (
+    <div>
+      <h2 className="display text-[24px] text-[var(--fg-1)]">TAM over time</h2>
+      <p className="mt-1 text-[13px] text-[var(--fg-3)]">
+        The TAM re-evaluated at each dated source snapshot — current vs the path it travelled.
+      </p>
+      <div className="canvas-card mt-3 p-6">
+        <TamTrajectoryChart trajectory={traj.data} />
+      </div>
+    </div>
+  );
 }
 
 // ── Mid scenario card ─────────────────────────────────────────────────────────
