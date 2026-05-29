@@ -57,6 +57,8 @@ from .tam_output import (
     ScenarioBanner,
     TAMOutput,
     TAMTarget,
+    TAMTrajectory,
+    TrajectoryPoint,
 )
 from .unit import Unit, UnitBasis, UnitDimension, UnitKind
 
@@ -105,6 +107,8 @@ __all__ = [
     "StandardSource",
     "TAMOutput",
     "TAMTarget",
+    "TAMTrajectory",
+    "TrajectoryPoint",
     "Uncertainty",
     "Unit",
     "UnitBasis",
