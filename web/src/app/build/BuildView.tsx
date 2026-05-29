@@ -1,33 +1,64 @@
 "use client";
 
+// Legacy /build?q=<query> entry. Every link into the build surface still arrives
+// here with a free-text query; this view's only job is to *route* it onward:
+//   • query matches a registry concept → size it, then redirect to the canonical
+//     auto-mint URL /build/<state_hash>?s=<encoded BuildState> (U6). The hash is
+//     the backend's evaluated-payload sha256 — the artifact address — and ?s=
+//     carries the concept so the workhorse page can re-run the evaluation (the
+//     backend does NOT persist TAMs, so the hash alone can't recover it).
+//   • query matches nothing → stream a dynamic resolution (ResolveView).
+// router.replace, not push: the ?q= URL is a transient entry point, not a state
+// the user should land back on with the Back button.
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
 
-import { LineageGraph } from "@/components/LineageGraph";
 import { ResolveView } from "@/components/ResolveView";
-import { ScenarioGraph } from "@/components/ScenarioGraph";
-import { formatUSD } from "@/lib/format";
 import { buildQuery, conceptsQuery } from "@/lib/queries";
-import type { TAMOutput } from "@/lib/schemas";
+import { type BuildState, encodeState } from "@/lib/state-hash";
 
 export function BuildView() {
+	const router = useRouter();
 	const params = useSearchParams();
 	const query = params.get("q") ?? "";
 
 	const concepts = useQuery(conceptsQuery);
-	const q = query.toLowerCase();
+	const q = query.toLowerCase().trim();
 	const matchedSlug =
 		concepts.data?.find(
 			(c) =>
 				c.slug === q ||
 				c.name.toLowerCase().includes(q) ||
-				q.includes(c.name.toLowerCase()),
+				(q.length > 0 && q.includes(c.name.toLowerCase())),
 		)?.slug ?? "";
 
 	const build = useQuery(buildQuery(matchedSlug));
 
-	if (concepts.isLoading || build.isLoading) {
+	// Redirect exactly once per resolved concept. A ref guards against re-firing
+	// when the query cache settles or the component re-renders mid-navigation.
+	const redirected = useRef(false);
+	useEffect(() => {
+		if (redirected.current || !build.data) return;
+		redirected.current = true;
+		const tam = build.data;
+		const state: BuildState = {
+			target_concept_slug: matchedSlug,
+			geo: tam.target.geo ?? null,
+			time: tam.target.time ?? null,
+			expansion_stage: tam.target.expansion_stage ?? null,
+			// Empty selection = "all frameworks", the unmodified default. Diverging
+			// from this is the first meaningful change the workhorse page mints on.
+			frameworks_selected: [],
+			framework_assumptions: {},
+			primitive_pins: {},
+		};
+		router.replace(`/build/${tam.state_hash}?s=${encodeState(state)}`, {
+			scroll: false,
+		});
+	}, [build.data, matchedSlug, router]);
+
+	if (concepts.isLoading || (matchedSlug && build.isLoading) || build.data) {
 		return (
 			<main className="flex-1 flex items-center justify-center text-[13px] text-[var(--fg-3)]">
 				Sizing…
@@ -35,198 +66,7 @@ export function BuildView() {
 		);
 	}
 
-	if (build.error || !build.data) {
-		// Concept not found in registry — fall back to dynamic streaming resolution
-		return <ResolveView query={query} />;
-	}
-
-	return <BuildResult tam={build.data} />;
-}
-
-function BuildResult({ tam }: { tam: TAMOutput }) {
-	const [lineageOpen, setLineageOpen] = useState(false);
-	const values = tam.scenarios.map((s) => s.value);
-	const midpoint = values.reduce((a, b) => a + b, 0) / values.length;
-	const minVal = Math.min(...values);
-	const maxVal = Math.max(...values);
-
-	return (
-		<main className="flex-1 flex flex-col">
-			<header className="w-full px-8 py-3 flex items-center justify-end border-b border-[var(--border-1)]">
-				<div className="flex items-center gap-3 text-[12px] text-[var(--fg-3)]">
-					<span className="font-mono">/build/{tam.state_hash.slice(0, 8)}</span>
-					<CopyButton />
-				</div>
-			</header>
-
-			<div className="flex-1 flex flex-col md:flex-row gap-8 px-8 py-8 max-w-[1280px] mx-auto w-full">
-				<section className="flex-1 flex flex-col gap-6 min-w-0">
-					<div>
-						<div className="text-[11px] tracking-[0.04em] uppercase text-[var(--fg-3)]">
-							TAM · {tam.target.geo ?? "Global"} · {tam.target.time ?? "latest"}
-						</div>
-						<h1 className="display text-[40px] mt-2 text-[var(--fg-1)] leading-[1.05]">
-							{tam.target.concept_name ?? tam.target.concept.replace(/-/g, " ")}
-						</h1>
-					</div>
-
-					<div className="flex items-baseline gap-6">
-						<div>
-							<div className="text-[11px] tracking-[0.04em] uppercase text-[var(--fg-3)]">
-								Triangulated midpoint
-							</div>
-							<div className="tam-num text-[48px] text-[var(--fg-1)] mt-1">
-								{formatUSD(midpoint)}
-							</div>
-							<div className="text-[13px] text-[var(--fg-3)] mt-1">
-								Range: {formatUSD(minVal)} — {formatUSD(maxVal)}
-							</div>
-						</div>
-						<div className="text-[13px] text-[var(--fg-2)] pb-2">
-							{tam.scenarios.length} scenarios
-							<span className="mx-2 text-[var(--fg-4)]">·</span>
-							independence{" "}
-							<span className="text-[var(--fg-1)] font-medium">
-								{tam.independence_score.toFixed(2)}
-							</span>
-						</div>
-					</div>
-
-					<ScenarioGraph tam={tam} />
-
-					{tam.uses_modeled_composites && (
-						<div
-							className="flex items-start gap-3 px-4 py-3 rounded-[var(--r-3)]
-                            bg-[var(--tier-analyst-tint)] text-[13px] text-[var(--fg-2)]"
-						>
-							<span className="font-medium text-[var(--tier-analyst)]">
-								Modeled composite
-							</span>
-							<span>
-								One scenario uses an analog-penetration composite. Result
-								depends on the analog assumption.
-							</span>
-						</div>
-					)}
-				</section>
-
-				<aside className="w-full md:w-[320px] md:shrink-0 flex flex-col gap-3">
-					<RailSection
-						title="Frameworks"
-						count={tam.scenarios.length}
-						defaultOpen
-					>
-						<ul className="flex flex-col gap-2 mt-1">
-							{tam.scenarios.map((s) => (
-								<li
-									key={s.framework}
-									className="canvas-card flex items-center justify-between px-3 py-2.5"
-									style={{ borderRadius: "var(--r-2)" }}
-								>
-									<div className="flex flex-col min-w-0 gap-1">
-										<span className="text-[13px] text-[var(--fg-1)] truncate">
-											{s.definition}
-										</span>
-										<span className="role-chip self-start uppercase tracking-[0.04em]">
-											{s.lens.replace(/_/g, " ")}
-										</span>
-									</div>
-									<span className="tam-num text-[15px] text-[var(--fg-1)] tabular-nums">
-										{formatUSD(s.value)}
-									</span>
-								</li>
-							))}
-						</ul>
-					</RailSection>
-					<RailSection
-						title="Independence"
-						badge={tam.independence_score.toFixed(2)}
-					>
-						<div className="text-[13px] text-[var(--fg-2)] leading-[1.5]">
-							{tam.method_families_used.length} method families ·{" "}
-							{tam.scenarios.length} scenarios. Higher is better.
-						</div>
-					</RailSection>
-					<RailSection title="Lineage graph">
-						<button
-							onClick={() => setLineageOpen(true)}
-							className="text-[13px] text-[var(--accent)] hover:underline"
-						>
-							Open lineage modal →
-						</button>
-					</RailSection>
-				</aside>
-			</div>
-
-			<LineageGraph
-				tam={tam}
-				open={lineageOpen}
-				onClose={() => setLineageOpen(false)}
-			/>
-		</main>
-	);
-}
-
-function CopyButton() {
-	const [copied, setCopied] = useState(false);
-	return (
-		<button
-			type="button"
-			className="px-3 py-1.5 rounded-[var(--r-2)] bg-[var(--bg-2)] text-[var(--fg-2)]
-                 hover:bg-[var(--bg-3)] hover:text-[var(--fg-1)] transition-colors"
-			onClick={() => {
-				if (typeof window !== "undefined") {
-					navigator.clipboard
-						.writeText(window.location.href)
-						.then(() => {
-							setCopied(true);
-							setTimeout(() => setCopied(false), 1500);
-						})
-						.catch(() => {});
-				}
-			}}
-		>
-			{copied ? "Copied!" : "Copy link"}
-		</button>
-	);
-}
-
-function RailSection({
-	title,
-	badge,
-	count,
-	defaultOpen = false,
-	children,
-}: {
-	title: string;
-	badge?: string;
-	count?: number;
-	defaultOpen?: boolean;
-	children: React.ReactNode;
-}) {
-	const [open, setOpen] = useState(defaultOpen);
-	return (
-		<section className="canvas-card" style={{ borderRadius: "var(--r-3)" }}>
-			<button
-				type="button"
-				aria-expanded={open}
-				onClick={() => setOpen(!open)}
-				className="w-full flex items-center justify-between px-4 py-3 text-left"
-			>
-				<span className="text-[13px] font-medium text-[var(--fg-1)] flex items-center gap-2">
-					<span className="text-[var(--fg-3)]">{open ? "▾" : "▸"}</span>
-					{title}
-					{count !== undefined && (
-						<span className="text-[var(--fg-3)] font-normal">{count}</span>
-					)}
-				</span>
-				{badge && (
-					<span className="text-[12px] text-[var(--fg-2)] tabular-nums">
-						{badge}
-					</span>
-				)}
-			</button>
-			{open && <div className="px-4 pb-3">{children}</div>}
-		</section>
-	);
+	// No concept matched (or the match failed to size) — fall back to dynamic
+	// streaming resolution.
+	return <ResolveView query={query} />;
 }
