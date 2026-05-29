@@ -59,6 +59,13 @@ interface Props {
 
 type Pinned = { kind: "node"; id: string } | { kind: "edge"; id: string } | null;
 
+// Self-contained inspector payload. Carries graph + expanded snapshots so the
+// render path reads state, not refs (React 19 react-hooks/refs).
+type Inspect =
+  | { kind: "node"; node: NetNode; expanded: boolean; graph: NetworkGraph }
+  | { kind: "edge"; edge: NetEdge; graph: NetworkGraph }
+  | null;
+
 const SIGNAL_LABEL: Record<NetEdge["signals"][number]["type"], string> = {
   primary_lens: "Shares primary lens",
   method_family: "Same method family",
@@ -115,13 +122,19 @@ export function NetworkGraphModal({ rootSlug, rootName, open, onClose }: Props) 
   const pinnedRef = useRef<Pinned>(null);
 
   const [pinned, setPinned] = useState<Pinned>(null);
-  const [inspect, setInspect] = useState<
-    { kind: "node"; node: NetNode } | { kind: "edge"; edge: NetEdge } | null
-  >(null);
+  // The inspector renders purely from this state object — it carries a snapshot
+  // of everything the JSX needs (graph, expanded flag) captured at pin/hover
+  // time, so the render path never reads a ref. Re-set after expand/collapse so
+  // it stays fresh.
+  const [inspect, setInspect] = useState<Inspect>(null);
   const [status, setStatus] = useState<string>("Building graph…");
   const [busy, setBusy] = useState(false);
 
-  pinnedRef.current = pinned;
+  // pinnedRef mirrors `pinned` for the vis-network event handlers (which close
+  // over a stale render). Synced in an effect — never assigned during render.
+  useEffect(() => {
+    pinnedRef.current = pinned;
+  }, [pinned]);
 
   // ── Highlight (fade everything outside a 1-hop neighbourhood) ──────────────
   const applyFade = useCallback((brightNodes: Set<string>, brightEdges: Set<string>) => {
@@ -226,6 +239,26 @@ export function NetworkGraphModal({ rootSlug, rootName, open, onClose }: Props) 
     if (p.kind === "node") highlightNode(p.id);
     else highlightEdge(p.id);
   }, [highlightNode, highlightEdge]);
+
+  // Build the self-contained inspector payload from a node/edge id, snapshotting
+  // the current graph + expanded set. Called only from event handlers / effects
+  // (never during render), so reading refs here is safe.
+  const buildInspect = useCallback((kind: "node" | "edge", id: string): Inspect => {
+    const graph = graphRef.current;
+    if (kind === "node") {
+      const node = graph.nodes.find((n) => n.id === id);
+      if (!node) return null;
+      return {
+        kind: "node",
+        node,
+        expanded: expandedRef.current.has(id),
+        graph,
+      };
+    }
+    const edge = graph.edges.find((e) => e.id === id);
+    if (!edge) return null;
+    return { kind: "edge", edge, graph };
+  }, []);
 
   // ── Render the live graph into the vis DataSets ────────────────────────────
   const renderGraph = useCallback((graph: NetworkGraph) => {
@@ -369,39 +402,47 @@ export function NetworkGraphModal({ rootSlug, rootName, open, onClose }: Props) 
       network.on("stabilized", freezeSim);
       network.on("dragEnd", freezeSim);
 
+      // Pin model handled entirely at the call site (no effect mirrors
+      // `pinned`): clicking toggles the pin, sets the highlight, and snapshots
+      // the inspector payload in one place.
+      const pinTo = (kind: "node" | "edge", id: string) => {
+        const prev = pinnedRef.current;
+        const alreadyPinned = prev && prev.kind === kind && prev.id === id;
+        if (alreadyPinned) {
+          setPinned(null);
+          clearHighlight();
+          setInspect(null);
+          return;
+        }
+        setPinned({ kind, id } as Pinned);
+        if (kind === "node") highlightNode(id);
+        else highlightEdge(id);
+        setInspect(buildInspect(kind, id));
+      };
+
       network.on("click", (p) => {
         if (p.nodes?.length) {
-          const id = String(p.nodes[0]);
-          setPinned((prev) =>
-            prev && prev.kind === "node" && prev.id === id ? null : { kind: "node", id },
-          );
+          pinTo("node", String(p.nodes[0]));
           return;
         }
         if (p.edges?.length) {
-          const id = String(p.edges[0]);
-          setPinned((prev) =>
-            prev && prev.kind === "edge" && prev.id === id ? null : { kind: "edge", id },
-          );
+          pinTo("edge", String(p.edges[0]));
           return;
         }
         setPinned(null);
+        clearHighlight();
+        setInspect(null);
       });
 
       network.on("hoverNode", (p) => {
         const id = String(p.node);
         highlightNode(id);
-        if (!pinnedRef.current) {
-          const node = graphRef.current.nodes.find((n) => n.id === id);
-          if (node) setInspect({ kind: "node", node });
-        }
+        if (!pinnedRef.current) setInspect(buildInspect("node", id));
       });
       network.on("hoverEdge", (p) => {
         const id = String(p.edge);
         highlightEdge(id);
-        if (!pinnedRef.current) {
-          const edge = graphRef.current.edges.find((e) => e.id === id);
-          if (edge) setInspect({ kind: "edge", edge });
-        }
+        if (!pinnedRef.current) setInspect(buildInspect("edge", id));
       });
       network.on("blurNode", () => {
         if (pinnedRef.current) reapplyPin();
@@ -441,26 +482,11 @@ export function NetworkGraphModal({ rootSlug, rootName, open, onClose }: Props) 
       visNodesRef.current = null;
       visEdgesRef.current = null;
     };
+    // Deps are [open, rootSlug] by design — see the block comment above the
+    // effect. The referenced callbacks are read through stable closures/refs;
+    // adding them would rebuild the whole network on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, rootSlug]);
-
-  // Sync the pinned highlight + inspector when the pin changes via canvas click.
-  useEffect(() => {
-    if (!networkRef.current) return;
-    if (!pinned) {
-      clearHighlight();
-      setInspect(null);
-      return;
-    }
-    if (pinned.kind === "node") {
-      highlightNode(pinned.id);
-      const node = graphRef.current.nodes.find((n) => n.id === pinned.id);
-      if (node) setInspect({ kind: "node", node });
-    } else {
-      highlightEdge(pinned.id);
-      const edge = graphRef.current.edges.find((e) => e.id === pinned.id);
-      if (edge) setInspect({ kind: "edge", edge });
-    }
-  }, [pinned, highlightNode, highlightEdge, clearHighlight]);
 
   useEffect(() => {
     if (!open) return;
@@ -535,6 +561,9 @@ export function NetworkGraphModal({ rootSlug, rootName, open, onClose }: Props) 
         }
         runPatternHighlight();
         reapplyPin();
+        // Re-snapshot the inspector so its `expanded` flag + graph reflect the
+        // freshly expanded branch.
+        setInspect(buildInspect("node", node.id));
         setStatus(
           addedNodeIds.length
             ? `Added ${addedNodeIds.length} related to ${node.label}.`
@@ -547,7 +576,7 @@ export function NetworkGraphModal({ rootSlug, rootName, open, onClose }: Props) 
         setBusy(false);
       }
     },
-    [busy, qc, renderGraph, reapplyPin, runPatternHighlight],
+    [busy, qc, renderGraph, reapplyPin, runPatternHighlight, buildInspect],
   );
 
   const collapse = useCallback(
@@ -562,10 +591,19 @@ export function NetworkGraphModal({ rootSlug, rootName, open, onClose }: Props) 
       renderGraph(graph);
       runPatternHighlight();
       reapplyPin();
+      // Re-snapshot so the inspector's `expanded` flag flips back and its graph
+      // no longer references the pruned nodes.
+      setInspect(buildInspect("node", node.id));
       setStatus(`Collapsed branch from ${node.label} (${removedNodeIds.length} removed).`);
     },
-    [renderGraph, reapplyPin, runPatternHighlight],
+    [renderGraph, reapplyPin, runPatternHighlight, buildInspect],
   );
+
+  const unpin = useCallback(() => {
+    setPinned(null);
+    clearHighlight();
+    setInspect(null);
+  }, [clearHighlight]);
 
   if (!open) return null;
 
@@ -644,15 +682,15 @@ export function NetworkGraphModal({ rootSlug, rootName, open, onClose }: Props) 
                 <NodeInspector
                   node={inspect.node}
                   pinned={pinned?.kind === "node" && pinned.id === inspect.node.id}
-                  expanded={expandedRef.current.has(inspect.node.id)}
+                  expanded={inspect.expanded}
                   busy={busy}
-                  graph={graphRef.current}
+                  graph={inspect.graph}
                   onExpand={() => expand(inspect.node)}
                   onCollapse={() => collapse(inspect.node)}
-                  onUnpin={() => setPinned(null)}
+                  onUnpin={unpin}
                 />
               ) : inspect?.kind === "edge" ? (
-                <EdgeInspector edge={inspect.edge} graph={graphRef.current} />
+                <EdgeInspector edge={inspect.edge} graph={inspect.graph} />
               ) : (
                 <div className="mt-8 text-center text-[var(--fg-3)]">
                   <p className="text-[14px]">Hover or click a node</p>
