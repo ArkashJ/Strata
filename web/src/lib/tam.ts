@@ -2,7 +2,7 @@
 // Q1), so "the number" is really a low/mid/high band derived from the scenario
 // set. These read-only helpers feed the artifact view, export, and the headline.
 import { formatCompact, tierLabel } from "./format";
-import type { Scenario, TAMOutput } from "./schemas";
+import type { Scenario, TAMOutput, TrajectoryPoint } from "./schemas";
 
 // A TAM with a single scenario, or where every scenario shares one value, has no
 // real spread — the UI should present it as a point estimate, not a range.
@@ -105,4 +105,26 @@ export function tamToMarkdown(tam: TAMOutput): string {
 
   lines.push(`*Generated from state \`${tam.state_hash}\` by ${tam.created_by}.*`);
   return lines.join("\n");
+}
+
+// ── Trajectory delta ──────────────────────────────────────────────────────────
+
+export interface TrajectoryDelta {
+  // Signed fractional change of the latest mid value vs the prior point. Null
+  // when there is no prior point or the prior value is zero (an undefined %).
+  pct: number;
+  direction: "up" | "down" | "flat";
+}
+
+// Percent change of the most-recent point's mid value against the one before it.
+// Returns null for <2 points or a zero base — the chart shows "current vs
+// previous" only when both halves of that comparison actually exist.
+export function trajectoryDelta(points: TrajectoryPoint[]): TrajectoryDelta | null {
+  if (points.length < 2) return null;
+  const prev = points[points.length - 2];
+  const curr = points[points.length - 1];
+  if (prev.value === 0) return null;
+  const pct = (curr.value - prev.value) / prev.value;
+  const direction = pct > 0 ? "up" : pct < 0 ? "down" : "flat";
+  return { pct, direction };
 }

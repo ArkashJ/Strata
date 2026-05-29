@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 // The /build workhorse view (U1, U2, U6 · design 18-build). A live TAM rendered
 // over a re-runnable concept evaluation, with a U2-ordered accordion rail and
 // auto-mint URL state.
@@ -25,9 +26,12 @@ import {
 	provenanceNotes,
 } from "@/components/rail/ProvenanceBanner";
 import { ScenarioGraph } from "@/components/ScenarioGraph";
+import { TamTrajectoryChart } from "@/components/tam/TamTrajectoryChart";
 import { Button } from "@/components/ui/Button";
 import { IndependenceDonut } from "@/components/ui/IndependenceDonut";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { formatCompact, lensLabel, tierLabel } from "@/lib/format";
+import { trajectoryQuery } from "@/lib/queries";
 import type { Scenario, TAMOutput } from "@/lib/schemas";
 import { type BuildState, encodeState, hashState } from "@/lib/state-hash";
 import { isDegenerate, midScenario, tamRange, tamToMarkdown } from "@/lib/tam";
@@ -144,6 +148,7 @@ export function BuildWorkspace({ tam: baseTam, state }: BuildWorkspaceProps) {
 						mid={mid}
 					/>
 					<ScenarioGraph tam={tam} />
+					<TrajectorySection slug={tam.target.concept} />
 				</section>
 
 				<Rail
@@ -156,6 +161,38 @@ export function BuildWorkspace({ tam: baseTam, state }: BuildWorkspaceProps) {
 				/>
 			</div>
 		</main>
+	);
+}
+
+// TAM-over-time, below the canvas. Supplementary: a failed/empty fetch renders
+// nothing so the workhorse view is unaffected (the trajectory is a read, not
+// part of the live evaluation the user is steering).
+function TrajectorySection({ slug }: { slug: string }) {
+	const traj = useQuery(trajectoryQuery(slug));
+
+	if (traj.isPending) {
+		return (
+			<div>
+				<h2 className="display text-[20px] text-[var(--fg-1)]">
+					TAM over time
+				</h2>
+				<Skeleton className="mt-3 h-[200px] w-full" />
+			</div>
+		);
+	}
+	if (traj.error || !traj.data) return null;
+
+	return (
+		<div>
+			<h2 className="display text-[20px] text-[var(--fg-1)]">TAM over time</h2>
+			<p className="mt-1 text-[13px] text-[var(--fg-3)]">
+				Current TAM vs the path it travelled, re-evaluated at each dated source
+				snapshot.
+			</p>
+			<div className="canvas-card mt-3 p-6">
+				<TamTrajectoryChart trajectory={traj.data} />
+			</div>
+		</div>
 	);
 }
 

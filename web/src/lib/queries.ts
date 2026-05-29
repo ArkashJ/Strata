@@ -7,6 +7,7 @@ import {
   type FrameworkSummary,
   type PrimitiveSummary,
   type TAMOutput,
+  type TamTrajectory,
   conceptDetailSchema,
   conceptSummarySchema,
   frameworkDetailSchema,
@@ -14,6 +15,7 @@ import {
   primitiveDetailSchema,
   primitiveSummarySchema,
   tamOutputSchema,
+  tamTrajectorySchema,
 } from "./schemas";
 
 function validated<T>(schema: z.ZodType<T>, data: unknown): T {
@@ -71,6 +73,17 @@ export const buildQuery = (conceptSlug: string) =>
     queryFn: async (): Promise<TAMOutput> => {
       const data = await api(`/build/${conceptSlug}`);
       return validated(tamOutputSchema, data);
+    },
+    enabled: !!conceptSlug,
+    staleTime: 5 * 60_000,
+  });
+
+export const trajectoryQuery = (conceptSlug: string) =>
+  queryOptions({
+    queryKey: ["trajectory", conceptSlug],
+    queryFn: async (): Promise<TamTrajectory> => {
+      const data = await api(`/build/${conceptSlug}/trajectory`);
+      return validated(tamTrajectorySchema, data);
     },
     enabled: !!conceptSlug,
     staleTime: 5 * 60_000,
