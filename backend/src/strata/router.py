@@ -3,10 +3,13 @@
 Single Claude call that takes a free-form query plus the union of all
 connector capability specs and returns a routing decision (or None).
 
-The manifest block is serialized into a system prompt with
-``cache_control: ephemeral`` so the 5-min Anthropic prompt cache
-amortises the ~21K-token cost across back-to-back ``goal`` invocations
-(spec §6.1, audit fix E).
+The manifest block is serialized into the system prompt and the call is
+routed through ``resolver.llm.complete`` (backend switch + ANTHROPIC_API_KEY
+env scrub). NOTE: the SDK-only ``cache_control: ephemeral`` optimisation
+(spec §6.1, audit fix E) that amortised the ~21K-token manifest across
+back-to-back ``goal`` invocations is NOT applied on this path — correctness
+(works off the Claude Code subscription, no funded key) over the prompt
+cache; restoring cache_control via ``llm.complete`` is a follow-up.
 """
 
 from __future__ import annotations
@@ -16,12 +19,11 @@ import logging
 import re
 from typing import Any
 
-from anthropic.types import TextBlock
 from pydantic import BaseModel, ConfigDict, Field
 
 from .connectors import all_capabilities
 from .connectors._capability import CapabilitySpec
-from .resolver.parse import get_anthropic_client
+from .resolver import llm as _llm
 
 _log = logging.getLogger(__name__)
 
@@ -86,7 +88,6 @@ def choose(
     if not candidates:
         return None
 
-    client = get_anthropic_client()
     manifest_block = _serialize_manifest(candidates)
 
     user_msg = (
@@ -100,26 +101,19 @@ def choose(
         "Return ONLY JSON, no markdown."
     )
 
-    response = client.messages.create(
-        model=model,
-        max_tokens=512,
-        system=[
-            {
-                "type": "text",
-                "text": "CAPABILITY MANIFEST:\n" + manifest_block,
-                "cache_control": {"type": "ephemeral"},
-            }
-        ],
-        messages=[{"role": "user", "content": user_msg}],
+    # Route through the shared LLM layer so connector routing works off the same
+    # backend (subscription CLI by default; SDK on STRATA_LLM_BACKEND=anthropic)
+    # and ANTHROPIC_API_KEY env scrub as the rest of the resolver. NOTE: this
+    # drops the SDK-only cache_control on the ~21K-token manifest block —
+    # correctness (works without a funded key) over the prompt-cache
+    # optimisation; restoring cache_control via llm.complete is a follow-up.
+    raw_text = _llm.complete(
+        user_msg, system="CAPABILITY MANIFEST:\n" + manifest_block, model=model, max_tokens=512
     )
-
-    block = response.content[0]
-    if not isinstance(block, TextBlock):
-        return None
     try:
-        raw: dict[str, Any] = json.loads(_strip_code_fence(block.text))
+        raw: dict[str, Any] = json.loads(_strip_code_fence(raw_text))
     except json.JSONDecodeError:
-        _log.warning("router returned non-JSON: %r", block.text[:200])
+        _log.warning("router returned non-JSON: %r", raw_text[:200])
         return None
 
     if not raw.get("connector"):

@@ -1,0 +1,4 @@
+# ast-grep config — structural lint rules that guard load-bearing invariants
+# the type checker and ruff can't express. Run: `ast-grep scan`.
+ruleDirs:
+  - rules
