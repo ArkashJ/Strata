@@ -76,5 +76,47 @@ table, applicability) — they close the pyramid-rail `/f/<slug>` 404.
 
 ---
 
-_Batch 2 (pyramid fix · build+state-hash · resolve · browse · contribute) to
-follow once PR5/PR6/PR8/PR9/PR10 land._
+---
+
+## Batch 2 — Pyramid fix · Build + state-hash · Real /data (PR5 · PR6 · PR9)
+
+### Pyramid explorer — `/graph` (fixed) ✅
+![Pyramid fixed](walkthrough/batch2/01-pyramid-fixed.png)
+
+The squished, unreadable band is gone. The pyramid now lays out as **three
+labelled columns** — Qualitative (grey), Quantitative (indigo), Industry (ochre)
+— converging up to an apex `TAM` node. Concept leaves stack readably (industry
+caps with a "+N more" node). New **STAGE** filter chips (WEDGE / ADJACENT /
+PLATFORM) sit beside Geo/Time; the right rail shows the selection + live
+compatible frameworks. Click narrows, shift-click ORs within a pillar.
+
+### Build workhorse — `/build/<hash>` (real URL state) ✅
+![Build with state-hash](walkthrough/batch2/02-build-statehash.png)
+
+Opening `/build?q=doc-gen-pc-insurance` now **mints a real URL**:
+`/build/fb1bab3e…?s=<base64url state>` — the hash is the backend's own
+`state_hash`, and the encoded state makes the page reconstructable/shareable.
+The view shows a genuine **two-method range** ($155M–$470M, ~3× spread,
+independence 1.00), a scenario tree (Target → Bottoms-up + Top-down), and the
+U2-ordered accordion rail (Target · Frameworks · Scenarios · Independence).
+
+### Data dashboard — `/data` (real, mock deleted) ✅
+![Data real](walkthrough/batch2/03-data-real.png)
+
+`/data` now reads the live `/build` evaluation (the `PC_DOC_GEN` mock and
+`web/src/lib/api.ts` are deleted). Headline $312M with the $155M–$470M range and
+a scenario-comparison bar chart from real scenarios; Charts/JSON toggle + "Open
+in Build".
+
+### Findings carried into the polish pass (PR11)
+- ⚠️ **Midpoint inconsistency.** `/build` header reads "TRIANGULATED MIDPOINT
+  $155M" while its scenario-tree Target node and `/data` both read **$312M**
+  (the true average of 155/470). `midScenario()` picks a scenario (the lower of
+  two) where the header should use the averaged midpoint — make them consistent.
+- ⚠️ **Bare `/build` hangs.** With no `?q=`/concept, `/build` sits on "Sizing…"
+  forever — needs an empty state or a concept picker.
+- Perf: a React Flow `nodeTypes`/`edgeTypes` object is created in render
+  (warning in console) — memoize it.
+
+_Batch 3 (TAM trajectory chart · related-entities network modal · animations)
+to follow once PR12/PR13/PR14 land._
