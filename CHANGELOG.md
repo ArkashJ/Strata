@@ -14,6 +14,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Private :: Do Not Upload` classifier; README license badge + thesis wording
   updated to drop the open-source/"free" framing.
 
+### Added
+- **v0.42 web frontend (PR #54).** Rebuilt the web app to the v0.42 design and
+  wired it entirely to the live backend (30 concepts, 355 primitives, 5
+  frameworks) — the mock data is gone. New shell with a left sidebar, a ⌘K
+  command palette, and live library counts; new pages for concept / primitive /
+  framework detail (including the concept "disagreement view"), the
+  `/tam/<hash>` artifact page (export to link / Markdown / PDF), and a real
+  browse registry. How a user moves through it:
+
+  ```
+  Home  (search · popular concepts)
+    │  pick a concept, or type a market in plain English
+    ▼
+  /c · /p · /f detail  ──►  /build  (size it)  ──►  /tam/<hash>  (cite it)
+    │                                                export: URL · Markdown · PDF
+    └──►  /graph  (pyramid explorer)
+  ```
+- **Plain-English resolver runs on Claude Code.** Free-form market queries are
+  parsed and sourced through the local Claude Code subscription, so no paid
+  Anthropic API key is required (the API key path still works if one is set).
+
 ## [0.3.0] - 2026-05-28
 
 ### v0.3 release — connector dispatch, live ingest, graph renderer, deploy hardening (PRs #46–#50)
