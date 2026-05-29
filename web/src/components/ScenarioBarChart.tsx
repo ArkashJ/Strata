@@ -12,14 +12,18 @@ import {
   YAxis,
 } from "recharts";
 
-import { type Scenario, formatUSD } from "@/lib/api";
+import { formatUSD, lensLabel } from "@/lib/format";
+import type { Scenario } from "@/lib/schemas";
 
-const METHOD_COLORS: Record<string, string> = {
-  bottoms_up_seats: "#5b5bd6",
-  top_down_spend: "#3fa66b",
-  analog_penetration: "#c99846",
-  comparable_revenue: "#2ba39a",
-  value_chain: "#8b5cd6",
+// Lens drives the colour here: the real Scenario carries no method_family, so we
+// key off the analysis lens the framework declares (matches FrameworkCard chips).
+const LENS_COLORS: Record<string, string> = {
+  cost_efficiency: "#5b5bd6",
+  revenue_generation: "#3fa66b",
+  latent_demand: "#c99846",
+  platform_throughput: "#2ba39a",
+  bundle_consolidation: "#d97849",
+  productivity_uplift: "#8b5cd6",
 };
 
 interface Props {
@@ -28,10 +32,10 @@ interface Props {
 
 export function ScenarioBarChart({ scenarios }: Props) {
   const data = scenarios.map((s) => ({
-    name: s.framework_name.length > 28 ? `${s.framework_name.slice(0, 25)}…` : s.framework_name,
+    name: s.definition.length > 28 ? `${s.definition.slice(0, 25)}…` : s.definition,
     value: s.value,
-    method: s.method_family,
-    fullName: s.framework_name,
+    lens: s.lens,
+    fullName: s.definition,
   }));
 
   const avg = scenarios.reduce((sum, s) => sum + s.value, 0) / scenarios.length;
@@ -63,9 +67,7 @@ export function ScenarioBarChart({ scenarios }: Props) {
                 <div className="tam-num text-[16px] text-[var(--fg-1)] mt-1">
                   {formatUSD(d.value)}
                 </div>
-                <div className="text-[11px] text-[var(--fg-3)] mt-0.5">
-                  {d.method.replace(/_/g, " ")}
-                </div>
+                <div className="text-[11px] text-[var(--fg-3)] mt-0.5">{lensLabel(d.lens)}</div>
               </div>
             );
           }}
@@ -83,7 +85,7 @@ export function ScenarioBarChart({ scenarios }: Props) {
         />
         <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={80}>
           {data.map((entry) => (
-            <Cell key={entry.name} fill={METHOD_COLORS[entry.method] ?? "var(--accent)"} />
+            <Cell key={entry.name} fill={LENS_COLORS[entry.lens] ?? "var(--accent)"} />
           ))}
         </Bar>
       </BarChart>
