@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import shutil
 from typing import Literal
 
 from fastapi import APIRouter
@@ -19,6 +21,26 @@ class Health(BaseModel):
     version: str
 
 
+class LLMHealth(BaseModel):
+    backend: Literal["claude-cli", "anthropic-sdk"]
+    available: bool
+
+
 @router.get("/healthz", response_model=Health, summary="Liveness probe")
 async def healthz() -> Health:
     return Health(env=settings.env, version=__version__)
+
+
+@router.get("/healthz/llm", response_model=LLMHealth, summary="Resolver LLM backend probe")
+async def healthz_llm() -> LLMHealth:
+    """Report the resolver's selected LLM backend and whether it looks reachable.
+
+    Lets the UI/ops tell "no backend configured" apart from a transient error.
+    Read-only and cheap: never makes a completion call, never echoes key/token
+    material (presence is reported as a bool only).
+    """
+    if os.environ.get("STRATA_LLM_BACKEND", "").strip().lower() == "anthropic":
+        return LLMHealth(
+            backend="anthropic-sdk", available=bool(os.environ.get("ANTHROPIC_API_KEY"))
+        )
+    return LLMHealth(backend="claude-cli", available=shutil.which("claude") is not None)
