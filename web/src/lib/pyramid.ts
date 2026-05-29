@@ -24,6 +24,15 @@ export const PILLAR_LABEL: Record<Pillar, string> = {
   industry: "Industry",
 };
 
+// The three axes share the accent + two tier hues so the eye reads
+// qualitative/quantitative/industry at a glance (brand-kit §1.7). The renderer
+// strokes each node in its pillar color; logic stays color-agnostic.
+export const PILLAR_COLOR: Record<Pillar, string> = {
+  qualitative: "var(--fg-2)",
+  quantitative: "var(--accent)",
+  industry: "var(--tier-analyst)",
+};
+
 export interface PyramidNode {
   id: string;
   pillar: Pillar;
@@ -43,9 +52,16 @@ export interface Pyramid {
   primitives: PrimitiveSummary[];
 }
 
-// A selection is at most one node per pillar (click-to-narrow collapses a
-// pillar to a single choice; clicking the active node clears it).
-export type Selection = Partial<Record<Pillar, string>>;
+// A selection holds zero-or-more keys per pillar. A plain click collapses a
+// pillar to a single choice; shift-click ORs additional choices into the
+// pillar (Q11 "Shift-click → OR within pillar"). An empty/absent array means
+// the pillar is unconstrained.
+export type Selection = Partial<Record<Pillar, string[]>>;
+
+// The active keys for a pillar, normalized to an array (absent → []).
+function selected(sel: Selection, pillar: Pillar): string[] {
+  return sel[pillar] ?? [];
+}
 
 function humanize(raw: string): string {
   return raw
@@ -131,24 +147,26 @@ export function buildPyramid(
 }
 
 /**
- * Frameworks compatible with the current selection. A framework survives iff:
- *   - the selected lens (if any) equals framework.lens, AND
- *   - the selected method family (if any) equals framework.method_family, AND
- *   - the selected industry (if any) shares that concept's primary lens.
+ * Frameworks compatible with the current selection. Within a pillar the chosen
+ * keys are OR'd (shift-click); across pillars they are AND'd. A framework
+ * survives iff:
+ *   - any selected lens equals framework.lens (or no lens is selected), AND
+ *   - any selected method family equals framework.method_family (or none), AND
+ *   - the framework's lens is the primary lens of some selected industry (or
+ *     no industry is selected).
  * With no selection, every framework is compatible.
  */
 export function compatibleFrameworks(p: Pyramid, sel: Selection): FrameworkSummary[] {
-  const lens = sel.qualitative;
-  const mf = sel.quantitative;
-  const industrySlug = sel.industry;
-  const industryLens = industrySlug
-    ? p.concepts.find((c) => c.slug === industrySlug)?.primary_lens
-    : undefined;
+  const lenses = selected(sel, "qualitative");
+  const mfs = selected(sel, "quantitative");
+  const industryLenses = selected(sel, "industry")
+    .map((slug) => p.concepts.find((c) => c.slug === slug)?.primary_lens)
+    .filter((l): l is string => Boolean(l));
 
   return p.frameworks.filter((f) => {
-    if (lens && f.lens !== lens) return false;
-    if (mf && f.method_family !== mf) return false;
-    if (industryLens && f.lens !== industryLens) return false;
+    if (lenses.length > 0 && !lenses.includes(f.lens)) return false;
+    if (mfs.length > 0 && !mfs.includes(f.method_family)) return false;
+    if (industryLenses.length > 0 && !industryLenses.includes(f.lens)) return false;
     return true;
   });
 }
@@ -157,42 +175,57 @@ export function compatibleFrameworks(p: Pyramid, sel: Selection): FrameworkSumma
  * Whether a node is greyed out (incompatible) under the current selection.
  *
  * Rules:
- *   - A pillar's own selected node is always active; its un-selected siblings
- *     grey out (the pillar has narrowed to one choice).
+ *   - When a pillar has any selection, its selected nodes stay active and the
+ *     un-selected siblings grey out (the pillar has narrowed to those choices).
  *   - A cross-pillar node greys out when no compatible framework (under the
  *     rest of the selection) is reachable through it.
- *   - Industry nodes additionally require their primary lens to match a
- *     selected lens.
+ *   - Industry nodes additionally require their primary lens to match one of
+ *     the selected lenses.
  */
 export function isGreyed(p: Pyramid, sel: Selection, node: PyramidNode): boolean {
-  const selectedInPillar = sel[node.pillar];
-  if (selectedInPillar !== undefined) {
-    return node.key !== selectedInPillar;
+  const selectedInPillar = selected(sel, node.pillar);
+  if (selectedInPillar.length > 0) {
+    return !selectedInPillar.includes(node.key);
   }
 
   // No selection in this node's pillar — test reachability against the rest of
-  // the selection by pretending this node were the choice for its pillar.
-  const probe: Selection = { ...sel, [node.pillar]: node.key };
+  // the selection by pretending this node were the sole choice for its pillar.
+  const probe: Selection = { ...sel, [node.pillar]: [node.key] };
   if (node.pillar === "industry") {
     // Industry must also be lens-coherent: if a lens is selected, the concept's
-    // primary lens must match it.
-    const lens = sel.qualitative;
+    // primary lens must match one of the selected lenses.
+    const lenses = selected(sel, "qualitative");
     const conceptLens = p.concepts.find((c) => c.slug === node.key)?.primary_lens;
-    if (lens && conceptLens && conceptLens !== lens) return true;
+    if (lenses.length > 0 && conceptLens && !lenses.includes(conceptLens)) return true;
   }
   return compatibleFrameworks(p, probe).length === 0;
 }
 
 /**
- * Toggle a node into/out of the selection. Selecting a node in a pillar
- * replaces any prior choice in that pillar; clicking the active node clears it.
+ * Toggle a node into/out of the selection.
+ *   - Plain click ({ additive: false }) replaces the pillar's choice with this
+ *     one; clicking the sole active node clears the pillar.
+ *   - Shift-click ({ additive: true }) ORs this node into the pillar (Q11);
+ *     re-shift-clicking an active node removes just that one.
  */
-export function narrow(sel: Selection, node: PyramidNode): Selection {
+export function narrow(
+  sel: Selection,
+  node: PyramidNode,
+  opts: { additive?: boolean } = {},
+): Selection {
   const next: Selection = { ...sel };
-  if (next[node.pillar] === node.key) {
-    delete next[node.pillar];
-  } else {
-    next[node.pillar] = node.key;
+  const current = selected(next, node.pillar);
+  const isActive = current.includes(node.key);
+
+  if (opts.additive) {
+    const widened = isActive ? current.filter((k) => k !== node.key) : [...current, node.key];
+    if (widened.length === 0) delete next[node.pillar];
+    else next[node.pillar] = widened;
+    return next;
   }
+
+  // Plain click: a sole active node toggles off; otherwise collapse to this one.
+  if (isActive && current.length === 1) delete next[node.pillar];
+  else next[node.pillar] = [node.key];
   return next;
 }
