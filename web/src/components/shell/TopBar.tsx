@@ -7,12 +7,10 @@
  * visible only below `md`, where the sidebar becomes an off-canvas drawer.
  */
 
-import Link from "next/link";
-
-import { Button } from "@/components/ui/Button";
 import { useUiStore } from "@/stores/ui-store";
 
-import { BellIcon, MenuIcon, SearchIcon, SettingsIcon } from "./icons";
+import { ThemeToggle } from "./ThemeToggle";
+import { BellIcon, MenuIcon, SearchIcon } from "./icons";
 
 export function TopBar() {
   const openPalette = useUiStore((s) => s.openPalette);
@@ -45,18 +43,10 @@ export function TopBar() {
       </button>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <Link href="/contribute">
-          <Button variant="primary" sm className="gap-1.5">
-            <ContributeGlyph />
-            <span className="hidden sm:inline">Contribute</span>
-          </Button>
-        </Link>
         <IconButton label="Notifications">
           <BellIcon />
         </IconButton>
-        <IconButton label="Settings">
-          <SettingsIcon />
-        </IconButton>
+        <ThemeToggle />
       </div>
     </header>
   );
@@ -77,28 +67,5 @@ function IconButton({
     >
       {children}
     </button>
-  );
-}
-
-// Small fork glyph that sits inside the Contribute button (see capture).
-function ContributeGlyph() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="6" cy="6" r="2.5" />
-      <circle cx="18" cy="6" r="2.5" />
-      <circle cx="12" cy="18" r="2.5" />
-      <path d="M6 8.5v1a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3v-1" />
-      <path d="M12 12.5v3" />
-    </svg>
   );
 }

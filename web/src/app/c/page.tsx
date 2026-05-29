@@ -10,9 +10,11 @@ import { ListHeader } from "@/components/ui/ListHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { lensLabel } from "@/lib/format";
 import { conceptsQuery } from "@/lib/queries";
+import { useHasMounted } from "@/lib/use-has-mounted";
 
 export default function ConceptsListPage() {
   const concepts = useQuery(conceptsQuery);
+  const mounted = useHasMounted();
   const [filter, setFilter] = useState("");
 
   const matches = useMemo(() => {
@@ -38,7 +40,7 @@ export default function ConceptsListPage() {
       />
 
       <div className="flex-1 px-8 py-8 max-w-[1280px] mx-auto w-full">
-        {concepts.isPending ? (
+        {!mounted || concepts.isPending ? (
           <CardGridSkeleton />
         ) : concepts.error ? (
           <ErrorState error={concepts.error} onRetry={() => concepts.refetch()} />

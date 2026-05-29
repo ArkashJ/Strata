@@ -1,14 +1,12 @@
 "use client";
 
 /**
- * Persistent left rail. Three nav groups (top / LIBRARY / COMMUNITY) plus a
- * branded header and a contributor footer, matching docs/design/captures/
- * 02-sidebar.png.
+ * Persistent left rail. Two nav groups (top / LIBRARY) plus a branded header
+ * and a contributor footer, matching docs/design/captures/02-sidebar.png.
  *
  * LIBRARY counts are live — one query per surface via useQueries, formatted
- * with Intl.NumberFormat. TAMs has no list endpoint yet, and the whole
- * COMMUNITY group is pre-auth, so those counts are static placeholders flagged
- * for follow-up.
+ * with Intl.NumberFormat. TAMs has no list endpoint yet, so that count points
+ * at /browse as a placeholder.
  */
 
 import { useQueries } from "@tanstack/react-query";
@@ -18,19 +16,15 @@ import { conceptsQuery, frameworksQuery, primitivesQuery } from "@/lib/queries";
 import { useUiStore } from "@/stores/ui-store";
 import { Logo } from "./Logo";
 import { NavItem } from "./NavItem";
+import { ThemeToggle } from "./ThemeToggle";
 import { hideDecorClass, hideLabelClass } from "./collapse";
 import {
-  ActivityIcon,
-  AnnotationsIcon,
   ConceptsIcon,
   FrameworksIcon,
   HomeIcon,
   PrimitivesIcon,
-  PullRequestIcon,
   PyramidIcon,
   SearchIcon,
-  SettingsIcon,
-  StarIcon,
   TamsIcon,
 } from "./icons";
 
@@ -88,13 +82,6 @@ export function Sidebar() {
         />
         {/* TODO(tams): no list endpoint yet — placeholder until /browse exposes a count. */}
         <NavItem icon={<TamsIcon />} label="TAMs" href="/browse" count={nf.format(0)} />
-
-        <GroupLabel collapsed={collapsed}>Community</GroupLabel>
-        {/* TODO(community): static counts — wire to the contribution API in a later PR. */}
-        <NavItem icon={<PullRequestIcon />} label="Pull requests" href="/contribute" count="—" />
-        <NavItem icon={<AnnotationsIcon />} label="Annotations" href="/contribute" count="—" />
-        <NavItem icon={<ActivityIcon />} label="Activity" href="/contribute" />
-        <NavItem icon={<StarIcon />} label="Starred" href="/contribute" />
       </nav>
 
       <SidebarFooter collapsed={collapsed} />
@@ -131,15 +118,11 @@ function SidebarFooter({ collapsed }: { collapsed: boolean }) {
         <div className="text-[13px] text-[var(--fg-1)] truncate">j.vega</div>
         <div className="text-[11px] text-[var(--fg-3)] truncate">verified · 27 contribs</div>
       </div>
-      <button
-        type="button"
-        aria-label="Settings"
+      <ThemeToggle
         className={`shrink-0 grid place-items-center w-7 h-7 rounded-[var(--r-2)] text-[var(--fg-3)] hover:bg-[var(--bg-2)] hover:text-[var(--fg-1)] transition-colors ${hideDecorClass(
           collapsed,
         )}`}
-      >
-        <SettingsIcon />
-      </button>
+      />
     </div>
   );
 }

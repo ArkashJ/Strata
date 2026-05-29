@@ -93,50 +93,21 @@ export function TamsIcon(props: IconProps) {
   );
 }
 
-export function PullRequestIcon(props: IconProps) {
+// Shown by ThemeToggle while in dark mode (click → switch to light).
+export function SunIcon(props: IconProps) {
   return (
     <Svg {...props}>
-      <circle cx="6" cy="6" r="2.5" />
-      <circle cx="6" cy="18" r="2.5" />
-      <circle cx="18" cy="18" r="2.5" />
-      <path d="M6 8.5v7" />
-      <path d="M18 15.5V12a3 3 0 0 0-3-3h-3.5" />
-      <path d="m13.5 6.5 2 2.5-2 2.5" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M22 12h-2M4 12H2M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M19.07 19.07l-1.41-1.41M6.34 6.34 4.93 4.93" />
     </Svg>
   );
 }
 
-export function AnnotationsIcon(props: IconProps) {
+// Shown by ThemeToggle while in light mode (click → switch to dark).
+export function MoonIcon(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M4 5h16v11H9l-4 3.5V5Z" />
-    </Svg>
-  );
-}
-
-export function ActivityIcon(props: IconProps) {
-  return (
-    <Svg {...props}>
-      <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1" />
-      <path d="M5.5 4v3.5H9" />
-      <path d="M12 8v4.5l3 1.8" />
-    </Svg>
-  );
-}
-
-export function StarIcon(props: IconProps) {
-  return (
-    <Svg {...props}>
-      <path d="m12 4 2.5 5.1 5.6.8-4 3.9 1 5.6L12 16.8 6.9 19.4l1-5.6-4-3.9 5.6-.8L12 4Z" />
-    </Svg>
-  );
-}
-
-export function SettingsIcon(props: IconProps) {
-  return (
-    <Svg {...props}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2.5v2M12 19.5v2M21.5 12h-2M4.5 12h-2M18.4 5.6l-1.4 1.4M7 17l-1.4 1.4M18.4 18.4 17 17M7 7 5.6 5.6" />
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
     </Svg>
   );
 }

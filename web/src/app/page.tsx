@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 
@@ -11,37 +11,12 @@ import { StatBlock } from "@/components/ui/StatBlock";
 import { Stagger, StaggerItem } from "@/components/ui/motion";
 import { formatUSD } from "@/lib/format";
 import { rankByQuery } from "@/lib/fuzzy";
-import { conceptsQuery } from "@/lib/queries";
+import { buildQuery, conceptsQuery, frameworksQuery, primitivesQuery } from "@/lib/queries";
+import { tamRange } from "@/lib/tam";
 
-// Static placeholder TAMs — replaced by /tam list endpoint in v0.4.
-const RECENT_TAMS: TamSummary[] = [
-  {
-    state_hash: "3f7a9c8e0000000000000000000000000000000000000000000000000000face",
-    concept_name: "Doc-gen tooling for P&C insurance carriers, US",
-    low: 11_000_000,
-    high: 497_000_000,
-    created_at: "2026-05-21T00:00:00Z",
-    lens: "cost_efficiency",
-  },
-  {
-    state_hash: "a1b2c3d400000000000000000000000000000000000000000000000000000001",
-    concept_name: "AI agents marketplace 2027",
-    low: 2_400_000_000,
-    high: 18_000_000_000,
-    created_at: "2026-05-20T00:00:00Z",
-    lens: "platform_throughput",
-  },
-  {
-    state_hash: "b5e6f7a800000000000000000000000000000000000000000000000000000002",
-    concept_name: "Stripe TAM — two-sided payments",
-    low: 48_000_000_000,
-    high: 220_000_000_000,
-    created_at: "2026-05-18T00:00:00Z",
-    lens: "platform_throughput",
-  },
-];
-
-// Site-wide stats — replaced by /stats endpoint in v0.4.
+// Fallback library counts shown until the live queries resolve (the real
+// numbers come from conceptsQuery / primitivesQuery / frameworksQuery). `sources`
+// has no list endpoint yet, so it stays the known seed count.
 const SITE_STATS = {
   concepts: 30,
   primitives: 350,
@@ -185,6 +160,34 @@ function LandingContent() {
   const [inputValue, setInputValue] = useState(rawQuery);
   const inputRef = useRef<HTMLInputElement>(null);
   const { data: concepts, isLoading } = useQuery(conceptsQuery);
+  const { data: primitives } = useQuery(primitivesQuery);
+  const { data: frameworks } = useQuery(frameworksQuery);
+
+  // "Recently updated" used to be invented figures. The backend doesn't persist
+  // TAMs, so instead of faking a list we size the first few real concepts live
+  // via /build and show their actual ranges. Rows link to /build?q=<slug> (the
+  // working static path), not /tam/<hash> (which can't recover an unpersisted TAM).
+  const featuredSlugs = (concepts ?? []).slice(0, 3).map((c) => c.slug);
+  const featuredBuilds = useQueries({
+    queries: featuredSlugs.map((slug) => buildQuery(slug)),
+  });
+  const featuredTams = featuredBuilds.flatMap((b, i) => {
+    // Correlate the build back to its concept by slug, not array index — a
+    // background refetch could momentarily reorder `concepts` and mislabel a TAM.
+    const concept = concepts?.find((c) => c.slug === featuredSlugs[i]);
+    if (!b.data || !concept) return [];
+    const { low, high } = tamRange(b.data);
+    const tam: TamSummary = {
+      state_hash: b.data.state_hash,
+      concept_name: concept.name,
+      low,
+      high,
+      created_at: b.data.created_at,
+      lens: concept.primary_lens,
+    };
+    return [{ tam, href: `/build?q=${encodeURIComponent(concept.slug)}` }];
+  });
+  const widestTam = [...featuredTams].map((f) => f.tam).sort((a, b) => b.high - a.high)[0];
 
   // ⌘K / Ctrl+K focuses the search input from anywhere on the page.
   useEffect(() => {
@@ -282,15 +285,17 @@ function LandingContent() {
         )}
       </section>
 
-      {/* Recently updated TAMs */}
+      {/* Featured TAMs — sized live from real concepts */}
       <section className="px-8 pb-10 max-w-[1280px] mx-auto w-full">
         <h2 className="text-[11px] font-medium uppercase tracking-[0.1em] text-[var(--fg-3)] mb-4">
-          Recently updated
+          Featured TAMs
         </h2>
         <div className="flex flex-col gap-2">
-          {RECENT_TAMS.map((tam) => (
-            <TamCard key={tam.state_hash} tam={tam} />
-          ))}
+          {featuredTams.length === 0 ? (
+            <p className="text-[13px] text-[var(--fg-3)]">Sizing featured concepts…</p>
+          ) : (
+            featuredTams.map(({ tam, href }) => <TamCard key={href} tam={tam} href={href} />)
+          )}
         </div>
       </section>
 
@@ -324,34 +329,35 @@ function LandingContent() {
       <footer className="px-8 py-8 border-t border-[var(--border-1)]">
         <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-8">
-            <StatBlock value={SITE_STATS.concepts} label="Concepts" />
-            <StatBlock value={`${SITE_STATS.primitives}+`} label="Primitives" />
-            <StatBlock value={SITE_STATS.frameworks} label="Frameworks" />
+            <StatBlock value={concepts?.length ?? SITE_STATS.concepts} label="Concepts" />
+            <StatBlock
+              value={`${primitives?.length ?? SITE_STATS.primitives}`}
+              label="Primitives"
+            />
+            <StatBlock value={frameworks?.length ?? SITE_STATS.frameworks} label="Frameworks" />
             <StatBlock value={SITE_STATS.sources} label="Sources" />
           </div>
-          <div className="text-center sm:text-right">
-            <p className="text-[11px] text-[var(--fg-3)] uppercase tracking-[0.08em]">
-              Widest range on record
-            </p>
-            <p className="tam-num text-[18px] text-[var(--fg-1)] mt-0.5">
-              {formatUSD(RECENT_TAMS[2]?.low ?? 0)}
-              <span className="text-[var(--fg-4)] mx-1 font-sans font-normal">–</span>
-              {formatUSD(RECENT_TAMS[2]?.high ?? 0)}
-            </p>
-          </div>
+          {widestTam ? (
+            <div className="text-center sm:text-right">
+              <p className="text-[11px] text-[var(--fg-3)] uppercase tracking-[0.08em]">
+                Widest range featured
+              </p>
+              <p className="tam-num text-[18px] text-[var(--fg-1)] mt-0.5">
+                {formatUSD(widestTam.low)}
+                <span className="text-[var(--fg-4)] mx-1 font-sans font-normal">–</span>
+                {formatUSD(widestTam.high)}
+              </p>
+            </div>
+          ) : null}
         </div>
         <div
           className="max-w-[1280px] mx-auto mt-6 pt-4 border-t border-[var(--border-1)]
                      flex items-center justify-between text-[11px] text-[var(--fg-4)]"
         >
-          <span>v0.3.0 — backend live</span>
+          <span>v0.4.0 — backend live</span>
           <span className="tracking-[0.2em] uppercase">
             <a href="https://github.com" className="hover:text-[var(--fg-2)] transition-colors">
               GitHub
-            </a>
-            {" · "}
-            <a href="/contribute" className="hover:text-[var(--fg-2)] transition-colors">
-              Contribute
             </a>
           </span>
         </div>

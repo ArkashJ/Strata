@@ -98,7 +98,7 @@ export function ConceptDetailView({ slug }: { slug: string }) {
           {measurementCount === 0 ? (
             <EmptyState
               title="No measurements yet"
-              description="This concept has no attached primitives. Contribute one to start the disagreement view."
+              description="This concept has no attached primitives, so there is no disagreement view to show yet."
             />
           ) : measurementResults.loading ? (
             <Skeleton className="h-[280px]" />

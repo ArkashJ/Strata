@@ -19,6 +19,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 
 import { IndependenceDonut } from "@/components/ui/IndependenceDonut";
@@ -453,34 +454,41 @@ function NearestConceptFallback({ query }: { query: string }) {
   const concepts = useQuery(conceptsQuery);
   if (concepts.isPending || !concepts.data) return null;
 
+  // Prefer lexical matches; when the free-text query overlaps nothing, fall back
+  // to the first few concepts so the panel is never an empty dead end (the error
+  // copy promises a path "below" — always deliver one). Links carry an exact
+  // concept slug, which BuildView routes straight to the static build (no LLM).
   const ranked = rankByQuery(concepts.data, query, (c) => `${c.name} ${c.slug}`).slice(0, 3);
-  if (ranked.length === 0) return null;
+  const suggestions = ranked.length > 0 ? ranked.map((r) => r.item) : concepts.data.slice(0, 3);
+  const heading =
+    ranked.length > 0 ? "Closest concepts in the registry" : "Start from the curated library";
 
   return (
     <div
       className="mt-4 flex flex-col gap-2 canvas-card px-5 py-4"
       style={{ borderRadius: "var(--r-3)" }}
     >
-      <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)]">
-        Closest concepts in the registry
-      </div>
+      <div className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)]">{heading}</div>
       <p className="text-[12px] text-[var(--fg-3)]">
-        We couldn&rsquo;t resolve this query live. These curated concepts are the nearest match —
-        open one to build a TAM on sourced primitives.
+        We couldn&rsquo;t resolve this query live. Open a curated concept to build a TAM on sourced
+        primitives — no AI backend required.
       </p>
       <ul className="mt-1 flex flex-col gap-1">
-        {ranked.map(({ item }) => (
+        {suggestions.map((item) => (
           <li key={item.slug}>
-            <a
+            <Link
               href={`/build?q=${encodeURIComponent(item.slug)}`}
               className="flex items-center justify-between gap-2 rounded-[var(--r-2)] px-2 py-1.5 text-[13px] text-[var(--fg-1)] hover:bg-[var(--bg-2)] hover:text-[var(--accent)] transition-colors"
             >
               <span className="truncate">{item.name}</span>
               <span className="text-[var(--fg-4)]">→</span>
-            </a>
+            </Link>
           </li>
         ))}
       </ul>
+      <Link href="/c" className="mt-1 text-[12px] text-[var(--accent)] hover:underline">
+        Browse all {concepts.data.length} concepts →
+      </Link>
     </div>
   );
 }

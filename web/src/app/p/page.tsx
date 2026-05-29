@@ -10,11 +10,13 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { ListHeader } from "@/components/ui/ListHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { primitivesQuery } from "@/lib/queries";
+import { useHasMounted } from "@/lib/use-has-mounted";
 
 const PAGE_SIZE = 50;
 
 export default function PrimitivesListPage() {
   const primitives = useQuery(primitivesQuery);
+  const mounted = useHasMounted();
   const [filter, setFilter] = useState("");
   const [visible, setVisible] = useState(PAGE_SIZE);
 
@@ -47,7 +49,7 @@ export default function PrimitivesListPage() {
       />
 
       <div className="flex-1 px-8 py-8 max-w-[1080px] mx-auto w-full">
-        {primitives.isPending ? (
+        {!mounted || primitives.isPending ? (
           <TableSkeleton />
         ) : primitives.error ? (
           <ErrorState error={primitives.error} onRetry={() => primitives.refetch()} />

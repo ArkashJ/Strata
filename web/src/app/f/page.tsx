@@ -10,9 +10,11 @@ import { ListHeader } from "@/components/ui/ListHeader";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { lensLabel, tierLabel } from "@/lib/format";
 import { frameworksQuery } from "@/lib/queries";
+import { useHasMounted } from "@/lib/use-has-mounted";
 
 export default function FrameworksListPage() {
   const frameworks = useQuery(frameworksQuery);
+  const mounted = useHasMounted();
   const [filter, setFilter] = useState("");
 
   const matches = useMemo(() => {
@@ -39,7 +41,7 @@ export default function FrameworksListPage() {
       />
 
       <div className="flex-1 px-8 py-8 max-w-[1080px] mx-auto w-full">
-        {frameworks.isPending ? (
+        {!mounted || frameworks.isPending ? (
           <CardGridSkeleton />
         ) : frameworks.error ? (
           <ErrorState error={frameworks.error} onRetry={() => frameworks.refetch()} />

@@ -34,15 +34,21 @@ function relativeDate(iso: string): string {
 
 interface TamCardProps {
   tam: TamSummary;
+  /**
+   * Where the card navigates. Defaults to the frozen artifact page
+   * /tam/<hash>; callers backed by a live (unpersisted) build pass
+   * /build?q=<slug> so the row resolves instead of 404-ing.
+   */
+  href?: string;
 }
 
-export function TamCard({ tam }: TamCardProps) {
+export function TamCard({ tam, href }: TamCardProps) {
   const router = useRouter();
 
   return (
     <button
       type="button"
-      onClick={() => router.push(`/tam/${tam.state_hash}`)}
+      onClick={() => router.push(href ?? `/tam/${tam.state_hash}`)}
       className="canvas-card group w-full text-left px-4 py-3 flex items-center gap-4
                  cursor-pointer hover:translate-y-[-1px] active:translate-y-0
                  transition-transform duration-[var(--t-fast)]"
