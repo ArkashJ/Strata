@@ -29,9 +29,13 @@ export function ListHeader({ title, count, filter, onFilter, placeholder }: List
         </Link>
         <span className="text-[var(--fg-4)]">/</span>
         <h1 className="text-[15px] font-medium text-[var(--fg-1)]">{title}</h1>
-        {count !== undefined ? (
-          <span className="text-[13px] text-[var(--fg-3)] tabular-nums">{count}</span>
-        ) : null}
+        {/* The count comes from a client-side query, so it's undefined during
+            SSR and known after hydration. Always render the slot (stable DOM
+            structure) and let React reconcile the text — suppressHydrationWarning
+            marks the SSR-vs-client content difference as intentional, not a bug. */}
+        <span suppressHydrationWarning className="text-[13px] text-[var(--fg-3)] tabular-nums">
+          {count ?? ""}
+        </span>
       </div>
       <input
         type="search"

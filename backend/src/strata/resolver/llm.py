@@ -84,7 +84,12 @@ def _complete_cli(
     if system:
         args += ["--append-system-prompt", system]
 
-    proc = subprocess.run(args, capture_output=True, text=True, timeout=120)
+    # Close stdin: the prompt is passed as an arg, so the CLI must not block
+    # waiting for piped input (otherwise it warns "no stdin data received" and
+    # exits non-zero in a non-interactive subprocess).
+    proc = subprocess.run(
+        args, capture_output=True, text=True, timeout=120, stdin=subprocess.DEVNULL
+    )
 
     if proc.returncode != 0:
         stderr_snip = proc.stderr[:400] if proc.stderr else "<no stderr>"
