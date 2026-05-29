@@ -12,11 +12,12 @@ export function isDegenerate(tam: TAMOutput): boolean {
   return Math.min(...values) === Math.max(...values);
 }
 
-// The middle scenario by value (median position). Used as the headline figure.
+// The scenario nearest the triangulated midpoint (the mean) — the most
+// representative single method, used to ring a tree leaf and pick a display
+// unit. Not the headline figure itself (that's the mean, see tamRange).
 export function midScenario(tam: TAMOutput): Scenario {
-  const sorted = [...tam.scenarios].sort((a, b) => a.value - b.value);
-  const mid = Math.floor((sorted.length - 1) / 2);
-  return sorted[mid];
+  const mean = tam.scenarios.reduce((sum, s) => sum + s.value, 0) / tam.scenarios.length;
+  return [...tam.scenarios].sort((a, b) => Math.abs(a.value - mean) - Math.abs(b.value - mean))[0];
 }
 
 export interface TamRange {

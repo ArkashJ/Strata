@@ -8,9 +8,8 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
-
-import { ScenarioGraph } from "@/components/ScenarioGraph";
 import { NetworkGraphModal } from "@/components/network/NetworkGraphModal";
+import { ScenarioGraph } from "@/components/ScenarioGraph";
 import { Button } from "@/components/ui/Button";
 import { IndependenceDonut } from "@/components/ui/IndependenceDonut";
 import { NotFoundState } from "@/components/ui/NotFoundState";
@@ -181,7 +180,7 @@ function MidScenarioCard({ tam }: { tam: TAMOutput }) {
     <div className="canvas-card flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <div className="text-[11px] uppercase tracking-[0.06em] text-[var(--fg-3)]">
-          Mid scenario
+          Triangulated midpoint
         </div>
         <div className="tam-num mt-1 text-[44px] leading-[1] text-[var(--fg-1)]">
           {formatCompact(range.mid, mid.unit)}
