@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — YC remediation Wave 3 (architecture, trust & ops)
+- **Company substrate.** API-key auth (`api/auth.py`, hashed `X-API-Key` →
+  `Principal{org_id}`; 401 when required) on the LLM/compute routes; a per-org
+  **token-bucket rate limit** (`api/ratelimit.py`, 429 + `Retry-After`);
+  **usage metering** (`api/metering.py` + `GET /usage`) and a `/metrics`
+  Prometheus endpoint; a request-id + structured-timing middleware
+  (`X-Request-Id` on every response); **CORS fails closed in prod** (no
+  wildcard). Tenancy: migration 003 adds `api_keys`, `usage_events`, and a
+  `tenant_data` table with **Postgres row-level security** (policy keyed on
+  `current_setting('app.org_id')`, `FORCE RLS`) — cross-tenant reads return 0
+  rows (verified against a live PG). This is the hard prerequisite for the
+  Wave-5B private OAuth data.
+
 ### Added — YC remediation Wave 1 (AI defensibility & data rigor)
 - **Every emitted number is grounded.** A citation-host allowlist
   (`resolver/citations.py`) rejects fabricated / `strata.internal` hosts; the
