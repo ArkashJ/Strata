@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — YC remediation Wave 4 (GTM, moat & narrative)
+- **Growth loop.** Promoted TAMs (`TAMOutput.is_promoted`, `POST /build/{slug}/promote`,
+  `GET /browse`) feed a Next `sitemap.ts` + `robots.ts` so shareable, SSR'd
+  `/tam/<hash>` pages are crawlable and indexable. An **embeddable widget**
+  (`/embed/tam/<hash>`) renders a compact iframe-able TAM card (CSP
+  `frame-ancestors *` on `/embed` only). A validator-gated **`POST /contribute`**
+  accepts proposed primitives/annotations (regulator/first-party auto-accept,
+  low-tier → needs-review, malformed → rejected; annotations never auto-applied
+  to math, E1). A **doc-count CI check** (`scripts/check_doc_counts.py`) fails the
+  build when `VERSION` ≠ `pyproject` or a tag runs ahead. Promoted TAMs are exempt
+  from FIFO eviction.
+
 ### Added — YC remediation Wave 5B/5C (private OAuth data + integrations gallery)
 - **Connect-your-data (the network-effect moat).** A generic inbound OAuth
   connector framework (`connectors/saas/`): a fund connects its SaaS (HubSpot
