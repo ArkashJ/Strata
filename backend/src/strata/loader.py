@@ -95,6 +95,7 @@ def load_data_dir(root: Path) -> LoadedRecords:
 
     if not root.exists():
         raise LoaderError(root, "data directory does not exist")
+    signals_root = root / "signals"
     out = LoadedRecords()
     for path in sorted(_iter_yaml_files(root)):
         raw = _read_yaml(path)
@@ -106,7 +107,7 @@ def load_data_dir(root: Path) -> LoadedRecords:
             raise LoaderError(path, "missing or non-string `kind` field")
         if kind_raw not in KNOWN_KINDS:
             raise LoaderError(path, f"unknown kind {kind_raw!r}")
-        _dispatch(out, kind_raw, raw, path, is_signal="signals" in path.parts)
+        _dispatch(out, kind_raw, raw, path, is_signal=path.is_relative_to(signals_root))
     return out
 
 

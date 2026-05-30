@@ -16,6 +16,7 @@ from .models import (
     CompositePrimitive,
     Concept,
     Framework,
+    SourceTier,
     TAMOutput,
 )
 
@@ -40,7 +41,7 @@ class Registry:
     tam_outputs: dict[str, TAMOutput]
     # Read-only prediction-market / non-sizing signals (Q20). Never consumed by
     # the evaluator or any framework — exposed for display only.
-    signals: dict[str, AtomicPrimitive] = field(default_factory=dict)
+    signals: dict[str, AtomicPrimitive] = field(default_factory=dict[str, AtomicPrimitive])
 
     @classmethod
     async def from_db(cls) -> Registry:
@@ -57,13 +58,19 @@ class Registry:
             concepts = await load_concepts_from_db(session)
             frameworks = await load_frameworks_from_db(session)
 
+        # Mirror the YAML loader's signal quarantine on the prod path: a
+        # prediction-market primitive seeded into the DB must NOT reach the
+        # evaluator (Q20). Split by source tier before indexing.
+        sizing = [p for p in primitives if p.source.tier is not SourceTier.PREDICTION_MARKET]
+        signals = [p for p in primitives if p.source.tier is SourceTier.PREDICTION_MARKET]
         return cls(
-            atomic=_index(primitives, lambda r: r.slug, "atomic_primitive"),
+            atomic=_index(sizing, lambda r: r.slug, "atomic_primitive"),
             composite={},
             concepts=_index(concepts, lambda r: r.slug, "concept"),
             frameworks=_index(frameworks, lambda r: r.slug, "framework"),
             annotations={},
             tam_outputs={},
+            signals=_index(signals, lambda r: r.slug, "signal"),
         )
 
     @classmethod
