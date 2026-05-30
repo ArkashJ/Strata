@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added — YC remediation Wave 0 (demo-blockers)
+- **`/tam/<hash>` is server-rendered with OpenGraph (AC0.8).** The artifact route
+  is now a Next.js Server Component that fetches the TAM server-side and seeds the
+  client view via tanstack `initialData`, so a shared link's initial HTML carries
+  the headline value (crawlers + previews see it, not an empty root).
+  `generateMetadata` emits `og:title`/`og:description`; a `next/og`
+  `opengraph-image.tsx` renders value + concept + a triangulation ring. e2e spec
+  `tam-share-og.spec.ts` asserts SSR value + OG tags.
 - **5 triangulated demo concepts (AC0.6/AC0.7).** Seeded `demo-ai-dev-tooling-us`,
   `demo-ai-insurance-claims-us`, `demo-ai-sales-ops-us`, `demo-ai-clinical-docs-us`,
   `demo-ai-legal-research-us` — each sized two independent ways (bottoms-up persona
