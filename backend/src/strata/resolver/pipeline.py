@@ -55,6 +55,7 @@ from .slug import (
     resolve_slug,
 )
 from .units import UnitMismatchError, assert_multipliable
+from .verify import apply_verifier
 
 # Injection seams so the HTTP route can force a deterministic fallback path
 # (its own patchable parse/search functions) without touching the network for
@@ -552,7 +553,7 @@ def _step4_fallback(
     for h in hits:
         tam_value *= float(h["value"])
 
-    return ResolverResult(
+    result = ResolverResult(
         status=PipelineStatus.OK,
         via="fallback",
         estimate_kind="single_method",
@@ -576,6 +577,8 @@ def _step4_fallback(
         banner="synthesized via fallback — not in data bank, do not cite without manual verification",
         events=state.events,
     )
+    # AC1.4: critic pass — flag implausible inputs / bad units as a dark_estimate.
+    return apply_verifier(result)
 
 
 def _format_usd(value: float) -> str:
