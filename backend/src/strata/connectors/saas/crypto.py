@@ -11,6 +11,8 @@ from __future__ import annotations
 import logging
 import os
 import secrets
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from threading import Lock
 
@@ -88,24 +90,42 @@ def get_vault() -> TokenVault:
 
 class PendingAuthStore:
     """CSRF defense for the OAuth flow: a random ``state`` is minted at authorize
-    and must be echoed back (and consumed once) at callback. Binds the callback
-    to the org that started the flow — not to whatever principal hits the
-    callback URL."""
+    and must be echoed back (and consumed once) at callback. Entries expire after
+    ``ttl_seconds`` and are pruned lazily, so abandoned flows can't accumulate
+    (no unbounded growth / DoS via /authorize floods)."""
 
-    def __init__(self) -> None:
-        self._pending: dict[str, tuple[str, str]] = {}
+    def __init__(
+        self, ttl_seconds: float = 600.0, now_fn: Callable[[], float] = time.monotonic
+    ) -> None:
+        self._pending: dict[str, tuple[str, str, float]] = {}
+        self._ttl = ttl_seconds
+        self._now = now_fn
         self._lock = Lock()
+
+    def _prune(self, now: float) -> None:
+        expired = [s for s, (_, _, exp) in self._pending.items() if exp < now]
+        for s in expired:
+            self._pending.pop(s, None)
 
     def create(self, org_id: str, provider: str) -> str:
         state = secrets.token_urlsafe(32)
+        now = self._now()
         with self._lock:
-            self._pending[state] = (org_id, provider)
+            self._prune(now)
+            self._pending[state] = (org_id, provider, now + self._ttl)
         return state
 
     def consume(self, state: str) -> tuple[str, str] | None:
-        """Return (org_id, provider) and invalidate the state (single use)."""
+        """Return (org_id, provider) and invalidate the state (single use);
+        an expired state is treated as missing."""
+        now = self._now()
         with self._lock:
-            return self._pending.pop(state, None)
+            self._prune(now)
+            entry = self._pending.pop(state, None)
+        if entry is None:
+            return None
+        org_id, provider, _ = entry
+        return (org_id, provider)
 
 
 _pending_auth = PendingAuthStore()

@@ -61,8 +61,10 @@ async def callback(
     provider: str, code: str, state: str, redirect_uri: str = "", principal: Principal = _PRINCIPAL
 ) -> dict[str, str]:
     connector = _connector_or_404(provider)
-    # Verify + consume the CSRF state; the bound org comes from it, not the
-    # callback request's principal.
+    # Authenticated dashboard flow: the callback is hit by the SAME org that
+    # started the flow (carrying its API key), so we both consume the single-use
+    # CSRF state AND require it to match the caller's org — defense in depth. A
+    # forged, expired, replayed, or cross-org state is rejected.
     pending = get_pending_auth().consume(state)
     if pending is None or pending != (principal.org_id, provider):
         raise HTTPException(400, "invalid or expired OAuth state")
