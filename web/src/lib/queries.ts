@@ -131,11 +131,32 @@ export const trajectoryQuery = (conceptSlug: string) =>
   });
 
 // Per-input ±pct TAM swing for the sensitivity tornado (Wave 2 / AC2.3).
+// Validated like every other query so a malformed response degrades to the
+// SensitivitySection error guard instead of crashing TornadoChart at render.
+const sensitivityResponseSchema = z.object({
+  concept_slug: z.string(),
+  base: z.number(),
+  pct: z.number(),
+  inputs: z.array(
+    z.object({
+      primitive_slug: z.string(),
+      name: z.string(),
+      base: z.number(),
+      low: z.number(),
+      high: z.number(),
+      impact: z.number(),
+    }),
+  ),
+}) satisfies z.ZodType<SensitivityResponse>;
+
 export const sensitivityQuery = (conceptSlug: string, pct = 0.2) =>
   queryOptions({
     queryKey: ["sensitivity", conceptSlug, pct],
     queryFn: async (): Promise<SensitivityResponse> =>
-      api<SensitivityResponse>(`/build/${conceptSlug}/sensitivity?pct=${pct}`),
+      validated(
+        sensitivityResponseSchema,
+        await api(`/build/${conceptSlug}/sensitivity?pct=${pct}`),
+      ),
     enabled: !!conceptSlug,
     staleTime: 5 * 60_000,
   });
