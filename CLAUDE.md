@@ -19,9 +19,14 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-30)
 
-- **Version:** `0.6.0` (beta). `VERSION` + `pyproject` pinned; tags follow
+- **Version:** `0.7.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).
+- **In flight (PR #65 — YC remediation Wave 2, stacked on #64):** motion craft —
+  `CountUp`/`Pulse`/`useHoverIntent` motion primitives; TAM headline count-up
+  payoff; pyramid **right-click menu + 250ms hover ghost card**; **sensitivity
+  tornado** (`GET /build/{slug}/sensitivity` → `TornadoChart`, sorted by |impact|);
+  all motion `prefers-reduced-motion`-gated. 486 backend tests, 130 web tests.
 - **In flight (PR #64 — YC remediation Wave 5A, stacked on #63):** read-only
   **Strata MCP server** (`strata.mcp`) — 5 sourced tools (`search_concepts`,
   `get_primitive`, `list_frameworks`, `size_tam`, `resolve_market`) over stdio
