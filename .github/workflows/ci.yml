@@ -76,6 +76,9 @@ jobs:
       - name: Snapshot integrity
         run: uv run strata verify-integrity --data-dir ../data
 
+      - name: Doc-count consistency (VERSION == pyproject == tag)
+        run: uv run python scripts/check_doc_counts.py
+
       - name: Migrate + seed against throwaway Postgres (dry run)
         run: |
           uv run alembic upgrade head
