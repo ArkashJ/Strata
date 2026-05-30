@@ -22,16 +22,20 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 - **Version:** `0.4.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).
-- **In flight (PR #55 — "Strata Live"):** the `/build` page is now **interactive**.
-  Clicking a primitive graph node opens an override panel to set a **what-if value**
-  or **swap a sourced primitive**; the TAM recomputes live via `POST /build/recompute`
-  (override-aware evaluator — `EvalOverrides` threaded through `size_concept`; unit-
-  checked; what-if scenarios carry a `user_override` banner and never persist as
-  primitives, Q20). Adds result charts (method-comparison + composition), an optional
-  **Clerk** sign-in + `/dashboard` (graceful no-op without keys — prod build stays
-  green), an `audit_events` table + `GET /audit`, and an animated landing page.
-  **Prod resolver is live on the paid Anthropic SDK** (`STRATA_LLM_BACKEND=anthropic`
-  on Railway; `/healthz/llm` → `anthropic-sdk`, available). 453 backend tests pass.
+- **Shipped (PR #55 + #56 "Strata Live", merged to main 2026-05-30):** the `/build`
+  page is **interactive**. Clicking a primitive graph node opens an override panel to
+  set a **what-if value** or **swap a sourced primitive**; the TAM recomputes live via
+  `POST /build/recompute` (override-aware evaluator — `EvalOverrides` threaded through
+  `size_concept`; unit-checked, 422 on mismatch or unconsumed override; what-if
+  scenarios carry a `user_override` banner and never persist as primitives, Q20). Adds
+  result charts (method-comparison + composition), an optional **Clerk** sign-in +
+  `/dashboard` (graceful no-op without keys — prod build stays green; set
+  `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` to enable), an `audit_events`
+  table + `GET /audit`, and an animated landing page. **Prod resolver runs on the paid
+  Anthropic SDK** (`STRATA_LLM_BACKEND=anthropic` on Railway; `/healthz/llm` →
+  `anthropic-sdk`). CORS for Vercel previews via `STRATA_CORS_ORIGIN_REGEX`. 455 backend
+  tests pass. Node clicks need `pointer-events-auto` (ReactFlow disables them on
+  non-draggable nodes); CI runs `alembic upgrade head` before pytest (audit table).
 - **Phase:** Schemas locked, **backend fully functional**, frontend PoC working,
   dynamic query resolution proven end-to-end. **v0.3 shipped (PRs #46–#50):**
   connector dispatch (`connectors/_dispatch.py` — `call_and_convert` turns a
@@ -44,8 +48,9 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   tests; CI type/lint gate scoped to `src/` (zero errors there; `tests/`
   strict-mode debt tracked as a follow-up).
 - **Backend (`backend/src/strata/`):** All business logic implemented —
-  models, loader, registry, validators, evaluator, scoring, 10 API routes
-  (including `POST /resolve` for dynamic TAM resolution via Claude + Exa),
+  models, loader, registry, validators, evaluator, scoring, 12 API routes
+  (including `POST /resolve` for dynamic TAM resolution via Claude + Exa,
+  `POST /build/recompute` for override-aware live recompute, `GET /audit`),
   plus the **connectors** ingest layer (15 connectors: BLS, FRED, Census,
   EDGAR, World Bank, Kalshi, **OECD, Eurostat, UN Comtrade, FDIC, CMS,
   EIA, USDA NASS, FAA, openFDA** — all typed clients, disk cache, Strata
@@ -105,6 +110,9 @@ User types market query
 │  /c /p /f /build/{slug}  → Registry → Evaluator    │
 │  POST /resolve           → Claude parse → Exa search│
 │                            → evaluate → SSE stream  │
+│  POST /build/recompute   → EvalOverrides → re-eval  │
+│                            (what-if / swap, new hash)│
+│  GET /audit              → resolve/recompute events │
 │  Evaluator: multiply all inputs → scenario tree     │
 └────────────────────────┬────────────────────────────┘
                          │
