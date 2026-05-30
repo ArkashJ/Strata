@@ -58,7 +58,7 @@ def verify_snapshot_store(snapshots_dir: Path) -> IntegrityReport:
     for path in sorted(snapshots_dir.iterdir()):
         if not path.is_file() or path.name.startswith("."):
             continue
-        expected = path.name.split(".")[0]  # allow an optional extension
+        expected = path.stem  # filename without extension == the expected hash
         actual = sha256_hex(path.read_bytes())
         if actual != expected:
             failures.append(f"{path.name}: expected {expected}, got {actual}")
