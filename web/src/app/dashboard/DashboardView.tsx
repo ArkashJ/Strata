@@ -259,7 +259,11 @@ const DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
 
 // Compact "3h ago" style label from an epoch-ms number or an ISO timestamp.
 function relativeTime(input: number | string): string {
-  const ms = typeof input === "number" ? input : Date.parse(input);
+  // A naive ISO timestamp (no Z / offset) is parsed as LOCAL time by Date.parse;
+  // the audit `ts` is UTC, so append Z when no zone is present to avoid TZ drift.
+  const normalized =
+    typeof input === "string" && !/[Z+]|-\d\d:\d\d$/.test(input) ? `${input}Z` : input;
+  const ms = typeof normalized === "number" ? normalized : Date.parse(normalized);
   if (!Number.isFinite(ms)) return "";
   let duration = (ms - Date.now()) / 1000;
   for (const div of DIVISIONS) {

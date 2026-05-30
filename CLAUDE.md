@@ -17,11 +17,21 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ---
 
-## Repo state (as of 2026-05-28)
+## Repo state (as of 2026-05-30)
 
 - **Version:** `0.4.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).
+- **In flight (PR #55 — "Strata Live"):** the `/build` page is now **interactive**.
+  Clicking a primitive graph node opens an override panel to set a **what-if value**
+  or **swap a sourced primitive**; the TAM recomputes live via `POST /build/recompute`
+  (override-aware evaluator — `EvalOverrides` threaded through `size_concept`; unit-
+  checked; what-if scenarios carry a `user_override` banner and never persist as
+  primitives, Q20). Adds result charts (method-comparison + composition), an optional
+  **Clerk** sign-in + `/dashboard` (graceful no-op without keys — prod build stays
+  green), an `audit_events` table + `GET /audit`, and an animated landing page.
+  **Prod resolver is live on the paid Anthropic SDK** (`STRATA_LLM_BACKEND=anthropic`
+  on Railway; `/healthz/llm` → `anthropic-sdk`, available). 453 backend tests pass.
 - **Phase:** Schemas locked, **backend fully functional**, frontend PoC working,
   dynamic query resolution proven end-to-end. **v0.3 shipped (PRs #46–#50):**
   connector dispatch (`connectors/_dispatch.py` — `call_and_convert` turns a

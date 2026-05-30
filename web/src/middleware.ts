@@ -8,21 +8,38 @@
 // middleware degrades to a pure pass-through. Protection only engages once keys
 // are configured.
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { type NextRequest, NextResponse } from "next/server";
+import { type NextFetchEvent, type NextRequest, NextResponse } from "next/server";
 
 import { clerkEnabled } from "@/lib/clerk";
 
-const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
+// The Clerk handler's call signature, declared inline to avoid the deprecated
+// `NextMiddleware` type import.
+type MiddlewareFn = (
+  req: NextRequest,
+  event: NextFetchEvent,
+) => Response | Promise<Response | undefined> | undefined;
 
-const protect = clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect();
+// Build the Clerk handler LAZILY — `clerkMiddleware()` reads the publishable key
+// at construction time, so calling it at module scope would run on every Edge
+// cold-start, including keyless prod. We only construct it once, inside the guard,
+// after confirming keys exist. Cached so it's built at most once per worker.
+let _protect: MiddlewareFn | null = null;
+
+function getProtect(): MiddlewareFn {
+  if (!_protect) {
+    const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
+    _protect = clerkMiddleware(async (auth, req) => {
+      if (isProtectedRoute(req)) {
+        await auth.protect();
+      }
+    }) as unknown as MiddlewareFn;
   }
-});
+  return _protect;
+}
 
-export default function middleware(req: NextRequest, event: Parameters<typeof protect>[1]) {
+export default function middleware(req: NextRequest, event: NextFetchEvent) {
   if (!clerkEnabled) return NextResponse.next();
-  return protect(req, event);
+  return getProtect()(req, event);
 }
 
 export const config = {

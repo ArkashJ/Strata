@@ -73,7 +73,9 @@ export function BuildHashView({ hash, s }: { hash: string; s: string | null }) {
 			label: resolvedName,
 			conceptSlug: slug,
 		});
-	}, [hash, s, slug, resolvedName, state, active.data]);
+		// `state` is intentionally excluded — it's a fresh object each render
+		// (safeDecode(s)); `s` already captures the only meaningful change.
+	}, [hash, s, slug, resolvedName, active.data]);
 
 	// No ?s= (or a corrupt one): the hash can't be resolved to a concept. This is
 	// the backend-persistence gap, surfaced honestly rather than as a fake load.
