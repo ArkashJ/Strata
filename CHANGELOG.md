@@ -42,8 +42,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the same way for local runs (keys read from the gitignored `.env`).
 - Fixed a corrupt production API URL (a stray newline in `NEXT_PUBLIC_API_URL`)
   that would have broken every frontend request.
+- **Preview deploys can reach the backend.** Added a configurable
+  `STRATA_CORS_ORIGIN_REGEX` so Vercel preview URLs (whose subdomain carries a
+  per-deploy hash) are allowed by CORS — the cause of "Failed to fetch" on a
+  preview link. Off by default; no change to existing behaviour.
 
 ### Fixed
+- **Graph nodes are now clickable.** A browser walkthrough found that the editable
+  primitive nodes on `/build` could not be clicked — ReactFlow turns off pointer
+  events on non-draggable nodes, so the override panel never opened for real
+  users. The edit number now re-enables clicks on itself.
 - **Dynamic resolution now answers real TAM questions off the Claude Code
   subscription.** The headless `claude -p` subprocess inherited a dead/low-credit
   `ANTHROPIC_API_KEY` and failed with "Credit balance is too low" — the root
