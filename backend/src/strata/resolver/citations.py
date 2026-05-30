@@ -58,6 +58,9 @@ CONNECTOR_HOSTS: frozenset[str] = frozenset(
 _AGGREGATOR_HOSTS: frozenset[str] = frozenset(
     {"data.worldbank.org", "worldbank.org", "oecd.org", "data.oecd.org", "comtrade.un.org"}
 )
+# Prediction markets are NOT regulators — classify them honestly (a kalshi.com
+# probability is a signal, not a sourced measurement).
+_PREDICTION_MARKET_HOSTS: frozenset[str] = frozenset({"kalshi.com"})
 
 
 class FabricatedHostError(ValueError):
@@ -105,6 +108,8 @@ def tier_for_host(host: str) -> SourceTier:
     novel web hit is at best `regulator` (gov/edu) or `aggregator`, else
     `community`; the model's claimed tier is discarded by the caller."""
     host = host.lower()
+    if host in _PREDICTION_MARKET_HOSTS:
+        return SourceTier.PREDICTION_MARKET
     if host in _AGGREGATOR_HOSTS:
         return SourceTier.AGGREGATOR
     if _gov_or_edu(host) or host in CONNECTOR_HOSTS:

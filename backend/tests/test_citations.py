@@ -65,3 +65,5 @@ def test_tier_from_host_not_model() -> None:
     assert tier_for_host(host_of("https://www.bls.gov/x")) is SourceTier.REGULATOR
     assert tier_for_host(host_of("https://data.worldbank.org/x")) is SourceTier.AGGREGATOR
     assert tier_for_host(host_of("https://some-blog.example/x")) is SourceTier.COMMUNITY
+    # A prediction market is not a regulator (review fix).
+    assert tier_for_host(host_of("https://kalshi.com/markets/x")) is SourceTier.PREDICTION_MARKET
