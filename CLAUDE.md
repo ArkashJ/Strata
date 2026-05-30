@@ -19,9 +19,16 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-30)
 
-- **Version:** `0.7.0` (beta). `VERSION` + `pyproject` pinned; tags follow
+- **Version:** `0.8.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).
+- **In flight (PR #66 — YC remediation Wave 1, stacked on #65):** AI
+  defensibility — citation-host allowlist (`resolver/citations.py`, no fabricated
+  hosts); tier derived from host class, never the LLM; unit guard
+  (`resolver/units.py`, no money²); verifier→`dark_estimate` (`resolver/verify.py`);
+  snapshot integrity (`strata verify-integrity`, `IntegrityError`); resolver eval
+  harness (`strata.evals.resolver_eval`, 30 golden, CI ≥0.8); staleness
+  (`Source.freshness_sla_days` + `StaleChip`). 508 backend tests, 133 web.
 - **In flight (PR #65 — YC remediation Wave 2, stacked on #64):** motion craft —
   `CountUp`/`Pulse`/`useHoverIntent` motion primitives; TAM headline count-up
   payoff; pyramid **right-click menu + 250ms hover ghost card**; **sensitivity
