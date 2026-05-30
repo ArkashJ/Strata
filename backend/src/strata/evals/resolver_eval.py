@@ -55,7 +55,8 @@ def evaluate_case(reg: Registry, case: GoldenCase) -> CaseResult:
     if matched != case.expected_concept:
         return CaseResult(case, matched, False, f"concept {matched!r} != {case.expected_concept!r}")
     try:
-        tam = size_concept(reg, matched)
+        # matched == case.expected_concept (a str) here, post the guard above.
+        tam = size_concept(reg, case.expected_concept)
     except Exception as exc:  # evaluator regression
         return CaseResult(case, matched, False, f"size_concept raised: {exc.__class__.__name__}")
 
