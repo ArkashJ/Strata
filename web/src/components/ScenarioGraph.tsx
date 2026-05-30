@@ -277,7 +277,11 @@ function PrimitiveCard({ data }: NodeProps<PrimitiveNodeData>) {
     : editable
       ? "hover:ring-1 hover:ring-[var(--accent)] cursor-pointer"
       : "";
-  const className = `canvas-card w-[180px] px-3 py-2.5 text-left transition-shadow ${ring}`;
+  // ReactFlow sets pointer-events:none on non-draggable/non-selectable nodes so
+  // clicks fall through to the pan surface — which would make this button
+  // unclickable. Re-enable it on the button itself (a child can opt back in).
+  const interactive = editable ? "pointer-events-auto" : "";
+  const className = `canvas-card w-[180px] px-3 py-2.5 text-left transition-shadow ${ring} ${interactive}`;
 
   if (editable) {
     return (
