@@ -7,6 +7,7 @@
 // workhorse view.
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useEffect } from "react";
 
 import { BuildWorkspace } from "@/components/build/BuildWorkspace";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +15,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { NotFoundState } from "@/components/ui/NotFoundState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ApiError } from "@/lib/api-client";
+import { recordBuildVisit } from "@/lib/build-history";
 import { buildQuery, hasOverrides, recomputeQuery } from "@/lib/queries";
 import { type BuildState, decodeState } from "@/lib/state-hash";
 
@@ -58,6 +60,20 @@ export function BuildHashView({ hash, s }: { hash: string; s: string | null }) {
 	});
 	const recompute = useQuery(recomputeQuery(state ?? EMPTY_STATE));
 	const active = overriding ? recompute : build;
+
+	// Remember this build so it surfaces under "Your builds" on /dashboard. The
+	// backend doesn't persist TAMs, so we keep the hash + encoded state locally;
+	// recording on successful resolve (not on mount) avoids saving dead links.
+	const resolvedName = active.data?.target.concept_name ?? slug;
+	useEffect(() => {
+		if (!state || !active.data || !s) return;
+		recordBuildVisit({
+			hash,
+			encoded: s,
+			label: resolvedName,
+			conceptSlug: slug,
+		});
+	}, [hash, s, slug, resolvedName, state, active.data]);
 
 	// No ?s= (or a corrupt one): the hash can't be resolved to a concept. This is
 	// the backend-persistence gap, surfaced honestly rather than as a fake load.

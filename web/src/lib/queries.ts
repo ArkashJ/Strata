@@ -3,12 +3,14 @@ import { z } from "zod";
 
 import { api } from "./api-client";
 import {
+  type AuditEvent,
   type ConceptSummary,
   type FrameworkSummary,
   type PrimitiveSummary,
   type RecomputeRequest,
   type TAMOutput,
   type TamTrajectory,
+  auditEventSchema,
   conceptDetailSchema,
   conceptSummarySchema,
   frameworkDetailSchema,
@@ -134,4 +136,16 @@ export const tamQuery = (stateHash: string) =>
     },
     enabled: !!stateHash,
     staleTime: Number.POSITIVE_INFINITY,
+  });
+
+// Paginated audit feed (newest-first) for the dashboard. The backend already
+// orders by ts desc, so we render rows in the order returned.
+export const auditQuery = (limit = 50, offset = 0) =>
+  queryOptions({
+    queryKey: ["audit", limit, offset],
+    queryFn: async (): Promise<AuditEvent[]> => {
+      const data = await api(`/audit?limit=${limit}&offset=${offset}`);
+      return validated(z.array(auditEventSchema), data);
+    },
+    staleTime: 30_000,
   });

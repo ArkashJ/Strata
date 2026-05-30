@@ -309,3 +309,18 @@ export const tamTrajectorySchema = z.object({
   points: z.array(trajectoryPointSchema),
 });
 export type TamTrajectory = z.infer<typeof tamTrajectorySchema>;
+
+// ── Audit feed (GET /audit · Strata Live Track C) ─────────────────────────────
+// One row per user-visible action (resolve / recompute / promote). Mirrors the
+// backend AuditEvent Pydantic model field-for-field: `actor` is the Clerk user
+// id or "anon", `target` is the touched slug/hash, `meta` is freeform jsonb.
+// `ts` is an ISO-8601 datetime string (FastAPI serializes datetime as such).
+export const auditEventSchema = z.object({
+  id: z.number(),
+  actor: z.string().nullable(),
+  action: z.string(),
+  target: z.string().nullable(),
+  ts: z.string(),
+  meta: z.record(z.unknown()).nullable().optional(),
+});
+export type AuditEvent = z.infer<typeof auditEventSchema>;
