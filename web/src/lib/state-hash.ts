@@ -1,9 +1,21 @@
+import type { Unit } from "./schemas";
+
 // Build-view state canonicalization + content-addressing.
 //
 // Every meaningful state change on /build mints a /build/<state-hash> URL (U5).
 // Equivalent states must collide, so we canonicalize (sort keys, drop nullish)
 // before hashing. The hash is SHA-256 hex via Web Crypto; the encoded form is
 // base64url JSON so the full state survives a round-trip through the URL.
+
+// A transient what-if scalar override on a primitive. URL-only: it is never
+// written back to the registry as a citable primitive (Q20). The backend flags
+// every scenario it touches with a `user_override` banner + uses_synthetic.
+export interface PrimitiveOverride {
+  value: number;
+  // structured Unit (kind/dimension/...); the backend validates it against the
+  // consuming framework input's unit_signature before recomputing.
+  unit: Unit;
+}
 
 export interface BuildState {
   target_concept_slug: string;
@@ -15,6 +27,8 @@ export interface BuildState {
   framework_assumptions: Record<string, Record<string, string>>;
   // input role / slot → pinned primitive slug
   primitive_pins: Record<string, string>;
+  // primitive slug → transient what-if scalar override (not sourced)
+  primitive_overrides: Record<string, PrimitiveOverride>;
 }
 
 // Recursively sort object keys so logically-equal states serialize identically.
@@ -46,6 +60,7 @@ export function canonicalizeState(state: BuildState): string {
     frameworks_selected: [...state.frameworks_selected].sort(),
     framework_assumptions: state.framework_assumptions ?? {},
     primitive_pins: state.primitive_pins ?? {},
+    primitive_overrides: state.primitive_overrides ?? {},
   };
   return JSON.stringify(sortValue(normalized));
 }

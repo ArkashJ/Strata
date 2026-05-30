@@ -1,0 +1,148 @@
+"use client";
+
+// For ONE selected scenario, how its inputs multiply toward the headline value.
+// Each bar is one input primitive's own magnitude (people, $/seat, adoption %…) —
+// the inputs span orders of magnitude and different units, so the value axis is
+// log-scaled and every bar carries its own real value + unit as a label. The bar
+// length is a visual cue; the label carries the truth.
+//
+// This is a MULTIPLICATIVE decomposition, not an additive stack — the inputs do
+// not sum to the TAM, they multiply. The footer spells out the product so the
+// reader never misreads bar areas as shares.
+//
+// Honesty: the evaluator may leave inputs unenriched (value null). When no input
+// carries a numeric value we render a plain "inputs not enumerated" state rather
+// than a fabricated breakdown.
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts";
+
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import type { ChartConfig } from "@/components/ui/chart";
+import { formatCompact } from "@/lib/format";
+import type { InputUsed, Scenario, Unit } from "@/lib/schemas";
+
+const ROLE_COLORS: Record<string, string> = {
+  base_value: "#5b5bd6",
+  growth_index: "#3fa66b",
+  regime_modifier: "#c99846",
+  conditional_adjustment: "#d97849",
+};
+
+function inputLabel(input: InputUsed): string {
+  return input.name ?? input.role_name ?? input.primitive_slug.replace(/-/g, " ");
+}
+
+function unitSuffix(unit: Unit | null | undefined): string {
+  if (!unit) return "";
+  if (unit.denominator) return `/${unit.denominator}`;
+  if (unit.dimension && unit.dimension !== "currency") return unit.dimension;
+  return "";
+}
+
+function truncate(s: string, max = 22): string {
+  return s.length > max ? `${s.slice(0, max - 1)}…` : s;
+}
+
+interface Datum {
+  label: string;
+  full: string;
+  role: string;
+  value: number;
+  display: string;
+  fill: string;
+}
+
+export function CompositionChart({ scenario }: { scenario: Scenario }) {
+  // Only inputs the evaluator actually sized can be drawn; never invent a value.
+  const sized = scenario.inputs_used.filter(
+    (i) => i.value != null && Number.isFinite(i.value) && (i.value ?? 0) > 0,
+  );
+
+  if (sized.length === 0) {
+    return (
+      <div className="text-[13px] text-[var(--fg-3)]">
+        Inputs not enumerated for this scenario · the framework's primitive values aren't enriched
+        yet.
+      </div>
+    );
+  }
+
+  const data: Datum[] = sized.map((input) => {
+    const value = input.value ?? 0;
+    const full = inputLabel(input);
+    const suffix = unitSuffix(input.unit);
+    return {
+      label: truncate(full),
+      full,
+      role: input.role,
+      value,
+      display: `${formatCompact(value, input.unit)}${suffix ? ` ${suffix}` : ""}`,
+      fill: ROLE_COLORS[input.role] ?? "var(--accent)",
+    };
+  });
+
+  const config: ChartConfig = { value: { label: "Input" } };
+  const height = Math.min(Math.max(sized.length * 44, 120), 420);
+
+  return (
+    <div>
+      <ChartContainer config={config} className="aspect-auto w-full" style={{ height }}>
+        <BarChart accessibilityLayer data={data} layout="vertical" margin={{ left: 8, right: 80 }}>
+          <CartesianGrid horizontal={false} stroke="var(--border-1)" strokeDasharray="3 3" />
+          {/* Log scale: inputs span orders of magnitude; labels carry the real value. */}
+          <XAxis type="number" dataKey="value" scale="log" domain={["auto", "auto"]} hide />
+          <YAxis
+            type="category"
+            dataKey="label"
+            width={150}
+            tickLine={false}
+            axisLine={false}
+            tick={{ fontSize: 11, fill: "var(--fg-3)" }}
+          />
+          <ChartTooltip
+            cursor={false}
+            content={
+              <ChartTooltipContent
+                hideIndicator
+                labelKey="full"
+                formatter={(_v, _n, item) => {
+                  const d = item.payload as Datum;
+                  return (
+                    <div className="flex flex-col">
+                      <span className="text-[12px] font-medium text-[var(--fg-1)]">{d.full}</span>
+                      <span className="tam-num text-[14px] text-[var(--fg-1)]">{d.display}</span>
+                      <span className="text-[11px] text-[var(--fg-3)]">
+                        {d.role.replace(/_/g, " ")}
+                      </span>
+                    </div>
+                  );
+                }}
+              />
+            }
+          />
+          <Bar dataKey="value" radius={[0, 4, 4, 0]} maxBarSize={36}>
+            <LabelList
+              dataKey="display"
+              position="right"
+              className="fill-[var(--fg-2)]"
+              fontSize={11}
+            />
+          </Bar>
+        </BarChart>
+      </ChartContainer>
+      {/* The product line: makes the multiplicative (not additive) relationship explicit. */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-[var(--fg-3)]">
+        <span className="font-medium text-[var(--fg-2)]">Multiplies to</span>
+        {sized.map((input, i) => (
+          <span key={input.primitive_slug} className="font-mono">
+            {i > 0 && <span className="mx-0.5 text-[var(--fg-4)]">×</span>}
+            {formatCompact(input.value ?? 0, input.unit)}
+          </span>
+        ))}
+        <span className="mx-0.5 text-[var(--fg-4)]">=</span>
+        <span className="font-mono font-medium text-[var(--fg-1)]">
+          {formatCompact(scenario.value, scenario.unit)}
+        </span>
+      </div>
+    </div>
+  );
+}

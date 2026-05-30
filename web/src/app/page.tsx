@@ -7,6 +7,9 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { ConceptCard } from "@/components/ConceptCard";
 import { InterpretationCard, type InterpretationMatch } from "@/components/InterpretationCard";
 import { TamCard, type TamSummary } from "@/components/TamCard";
+import { Hero } from "@/components/landing/Hero";
+import { HowItWorks } from "@/components/landing/HowItWorks";
+import { Reveal } from "@/components/landing/Reveal";
 import { StatBlock } from "@/components/ui/StatBlock";
 import { Stagger, StaggerItem } from "@/components/ui/motion";
 import { formatUSD } from "@/lib/format";
@@ -214,56 +217,20 @@ function LandingContent() {
 
   return (
     <main className="flex-1 flex flex-col">
-      {/* Hero */}
-      <section className="flex flex-col items-center justify-center px-8 pt-16 pb-10">
-        <h1 className="display text-[48px] md:text-[64px] text-center max-w-[820px] text-[var(--fg-1)]">
-          A defensible <em className="text-[var(--accent)] not-italic font-display italic">TAM</em>{" "}
-          in four minutes.
-        </h1>
-        <p className="mt-6 text-[15px] text-[var(--fg-2)] text-center max-w-[560px]">
-          Type any market. Strata picks the frameworks, pre-fills the primitives, and shows you the
-          range with sources you can cite in a memo.
-        </p>
+      {/* Animated hero — query box stays wired to the same submit/route path */}
+      <Hero
+        inputRef={inputRef}
+        value={inputValue}
+        onChange={setInputValue}
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit(inputValue);
+        }}
+        kbdHint={<KbdHint />}
+      />
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            submit(inputValue);
-          }}
-          className="mt-10 w-full max-w-[640px]"
-        >
-          <div className="relative">
-            <input
-              ref={inputRef}
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Doc-gen tooling for P&C insurance carriers, US"
-              // biome-ignore lint/a11y/noAutofocus: intentional — search is the page's only purpose
-              autoFocus
-              aria-label="Market sizing query"
-              className="w-full h-[56px] pl-5 pr-36 rounded-[var(--r-3)]
-                         bg-[var(--bg-1)] border border-[var(--border-2)]
-                         text-[15px] text-[var(--fg-1)] placeholder:text-[var(--fg-3)]
-                         shadow-[var(--shadow-pop)]
-                         focus:border-[var(--accent)] transition-colors"
-            />
-            <button
-              type="submit"
-              className="absolute right-1.5 top-1.5 h-[44px] px-5 rounded-[var(--r-2)]
-                         bg-[var(--accent)] text-[var(--accent-fg-on)]
-                         text-[13px] font-medium tracking-[-0.01em]
-                         hover:bg-[var(--accent-hover)] active:bg-[var(--accent-active)]
-                         transition-colors"
-            >
-              Size it →
-            </button>
-          </div>
-          <div className="mt-2 flex justify-end pr-1">
-            <KbdHint />
-          </div>
-        </form>
-      </section>
+      {/* How it works — text-only explainer strip */}
+      <HowItWorks />
 
       {/* Popular concepts grid */}
       <section className="px-8 pb-10 max-w-[1280px] mx-auto w-full">
@@ -285,45 +252,55 @@ function LandingContent() {
         )}
       </section>
 
-      {/* Featured TAMs — sized live from real concepts */}
-      <section className="px-8 pb-10 max-w-[1280px] mx-auto w-full">
-        <h2 className="text-[11px] font-medium uppercase tracking-[0.1em] text-[var(--fg-3)] mb-4">
-          Featured TAMs
-        </h2>
-        <div className="flex flex-col gap-2">
-          {featuredTams.length === 0 ? (
-            <p className="text-[13px] text-[var(--fg-3)]">Sizing featured concepts…</p>
-          ) : (
-            featuredTams.map(({ tam, href }) => <TamCard key={href} tam={tam} href={href} />)
-          )}
-        </div>
-      </section>
+      {/* Featured TAMs — sized live from real concepts (live data preserved) */}
+      <Reveal>
+        <section className="px-8 pb-10 max-w-[1280px] mx-auto w-full">
+          <h2 className="text-[11px] font-medium uppercase tracking-[0.1em] text-[var(--fg-3)] mb-4">
+            Featured TAMs
+          </h2>
+          <div className="flex flex-col gap-2">
+            {featuredTams.length === 0 ? (
+              <p className="text-[13px] text-[var(--fg-3)]">Sizing featured concepts…</p>
+            ) : (
+              <Stagger className="flex flex-col gap-2">
+                {featuredTams.map(({ tam, href }) => (
+                  <StaggerItem key={href}>
+                    <TamCard tam={tam} href={href} />
+                  </StaggerItem>
+                ))}
+              </Stagger>
+            )}
+          </div>
+        </section>
+      </Reveal>
 
       {/* Pyramid CTA */}
-      <section
-        className="mx-8 mb-10 max-w-[1280px] xl:mx-auto rounded-[var(--r-4)]
+      <Reveal className="mx-8 mb-10 max-w-[1280px] xl:mx-auto">
+        <section
+          className="rounded-[var(--r-4)]
                    border border-[var(--border-1)] bg-[var(--bg-1)] px-8 py-8
                    flex flex-col md:flex-row items-center gap-6"
-      >
-        <PyramidIllustration />
-        <div className="flex-1 text-center md:text-left">
-          <p className="text-[14px] font-medium text-[var(--fg-1)]">Explore the data pyramid</p>
-          <p className="mt-1 text-[12px] text-[var(--fg-3)] max-w-[480px]">
-            Every TAM is built from atomic primitives — sourced numbers with a chain of custody.
-            Browse the pyramid to see how they compose into frameworks and outputs.
-          </p>
-        </div>
-        <a
-          href="/graph"
-          className="shrink-0 h-[36px] px-5 rounded-[var(--r-2)]
+        >
+          <PyramidIllustration />
+          <div className="flex-1 text-center md:text-left">
+            <p className="text-[14px] font-medium text-[var(--fg-1)]">Explore the data pyramid</p>
+            <p className="mt-1 text-[12px] text-[var(--fg-3)] max-w-[480px]">
+              Every TAM is built from atomic primitives — sourced numbers with a chain of custody.
+              Browse the pyramid to see how they compose into frameworks and outputs.
+            </p>
+          </div>
+          <a
+            href="/graph"
+            className="shrink-0 h-[36px] px-5 rounded-[var(--r-2)]
                      border border-[var(--border-2)] bg-[var(--bg-0)]
                      text-[13px] font-medium text-[var(--fg-1)]
                      hover:bg-[var(--bg-2)] transition-colors
                      flex items-center"
-        >
-          Open graph →
-        </a>
-      </section>
+          >
+            Open graph →
+          </a>
+        </section>
+      </Reveal>
 
       {/* Stats footer */}
       <footer className="px-8 py-8 border-t border-[var(--border-1)]">

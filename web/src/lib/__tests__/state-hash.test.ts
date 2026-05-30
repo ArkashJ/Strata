@@ -17,6 +17,7 @@ function baseState(): BuildState {
     frameworks_selected: ["bottoms-up-cost-efficiency"],
     framework_assumptions: {},
     primitive_pins: {},
+    primitive_overrides: {},
   };
 }
 
@@ -30,9 +31,11 @@ describe("canonicalizeState", () => {
       frameworks_selected: [],
       framework_assumptions: { f: { persona_pool: "p1", cost_per_persona: "p2" } },
       primitive_pins: { slot_a: "p1", slot_b: "p2" },
+      primitive_overrides: {},
     };
     // Same logical state, keys built in a different order.
     const b: BuildState = {
+      primitive_overrides: {},
       primitive_pins: { slot_b: "p2", slot_a: "p1" },
       framework_assumptions: { f: { cost_per_persona: "p2", persona_pool: "p1" } },
       frameworks_selected: [],
@@ -57,6 +60,7 @@ describe("canonicalizeState", () => {
       frameworks_selected: baseState().frameworks_selected,
       framework_assumptions: {},
       primitive_pins: {},
+      primitive_overrides: {},
     };
     expect(canonicalizeState(withNulls)).toBe(canonicalizeState(withUndef));
   });
@@ -65,6 +69,17 @@ describe("canonicalizeState", () => {
     const a = baseState();
     const b = { ...baseState(), geo: "EU" };
     expect(canonicalizeState(a)).not.toBe(canonicalizeState(b));
+  });
+
+  it("a what-if override changes the canonical state (and thus the hash)", () => {
+    const base = baseState();
+    const withOverride: BuildState = {
+      ...base,
+      primitive_overrides: {
+        "wtp-per-seat": { value: 50, unit: { kind: "currency", dimension: "money" } },
+      },
+    };
+    expect(canonicalizeState(base)).not.toBe(canonicalizeState(withOverride));
   });
 });
 

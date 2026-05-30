@@ -6,6 +6,7 @@ import {
   type ConceptSummary,
   type FrameworkSummary,
   type PrimitiveSummary,
+  type RecomputeRequest,
   type TAMOutput,
   type TamTrajectory,
   conceptDetailSchema,
@@ -17,6 +18,7 @@ import {
   tamOutputSchema,
   tamTrajectorySchema,
 } from "./schemas";
+import type { BuildState } from "./state-hash";
 
 function validated<T>(schema: z.ZodType<T>, data: unknown): T {
   return schema.parse(data);
@@ -75,6 +77,40 @@ export const buildQuery = (conceptSlug: string) =>
       return validated(tamOutputSchema, data);
     },
     enabled: !!conceptSlug,
+    staleTime: 5 * 60_000,
+  });
+
+// True when the user has diverged from the registry defaults — i.e. a what-if
+// scalar or a primitive swap is in play, so the TAM must be recomputed server-side
+// rather than read from GET /build/{slug}.
+export function hasOverrides(state: BuildState): boolean {
+  const fa = state.framework_assumptions ?? {};
+  const po = state.primitive_overrides ?? {};
+  return Object.values(fa).some((m) => Object.keys(m).length > 0) || Object.keys(po).length > 0;
+}
+
+function toRecomputeRequest(state: BuildState): RecomputeRequest {
+  return {
+    concept_slug: state.target_concept_slug,
+    framework_assumptions: state.framework_assumptions,
+    primitive_overrides: state.primitive_overrides,
+  };
+}
+
+// POST the overrides; the backend re-evaluates and mints a fresh state_hash. The
+// query key includes the canonical override payload so distinct what-ifs cache
+// independently and an unchanged override re-uses the result.
+export const recomputeQuery = (state: BuildState) =>
+  queryOptions({
+    queryKey: ["recompute", toRecomputeRequest(state)],
+    queryFn: async (): Promise<TAMOutput> => {
+      const data = await api("/build/recompute", {
+        method: "POST",
+        body: JSON.stringify(toRecomputeRequest(state)),
+      });
+      return validated(tamOutputSchema, data);
+    },
+    enabled: !!state.target_concept_slug && hasOverrides(state),
     staleTime: 5 * 60_000,
   });
 

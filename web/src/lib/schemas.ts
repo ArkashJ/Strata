@@ -102,6 +102,25 @@ export const tamOutputSchema = z.object({
 });
 export type TAMOutput = z.infer<typeof tamOutputSchema>;
 
+// ── Recompute (POST /build/recompute) ─────────────────────────────────────────
+// The edit→recompute contract. `framework_assumptions` re-points an input to a
+// different SOURCED primitive (schema-pure, no banner). `primitive_overrides`
+// injects a transient what-if scalar — never persisted as a primitive (Q20); the
+// backend flags every scenario it touches with a `user_override` banner and sets
+// uses_synthetic_primitives. Mirrors the backend RecomputeRequest field-for-field.
+export const primitiveOverrideSchema = z.object({
+  value: z.number(),
+  unit: unitSchema,
+});
+export type PrimitiveOverrideWire = z.infer<typeof primitiveOverrideSchema>;
+
+export const recomputeRequestSchema = z.object({
+  concept_slug: z.string(),
+  framework_assumptions: z.record(z.record(z.string())).optional(),
+  primitive_overrides: z.record(primitiveOverrideSchema).optional(),
+});
+export type RecomputeRequest = z.infer<typeof recomputeRequestSchema>;
+
 export const conceptSummarySchema = z.object({
   slug: z.string(),
   name: z.string(),
