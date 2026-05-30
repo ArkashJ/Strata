@@ -16,5 +16,6 @@ measurements:
 - demo-naic-pc-carriers-2024
 - demo-pc-carrier-ai-claims-spend-2024
 competing_concepts:
+- demo-ai-clinical-docs-us
 - demo-ai-dev-tooling-us
 requires_clearance: []

@@ -27,7 +27,7 @@ Idempotent: rewrites the same files. The two shared frameworks
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import yaml
@@ -69,8 +69,33 @@ def _orgs() -> dict[str, object]:
     return {"kind": "stock", "dimension": "organizations"}
 
 
-def _usd_seat() -> dict[str, object]:
-    return {"kind": "intensive", "dimension": "currency", "currency": "USD"}
+def _usd_per_seat() -> dict[str, object]:
+    """Bottoms-up loaded cost per persona/seat — self-describing denominator so
+    a reader can't confuse it with a per-firm figure (units-are-structured)."""
+    return {
+        "kind": "intensive",
+        "dimension": "currency",
+        "denominator": "per-seat-per-year",
+        "currency": "USD",
+        "basis": "nominal",
+    }
+
+
+def _usd_per_firm() -> dict[str, object]:
+    """Top-down annual spend per target firm."""
+    return {
+        "kind": "intensive",
+        "dimension": "currency",
+        "denominator": "per-firm-per-year",
+        "currency": "USD",
+        "basis": "nominal",
+    }
+
+
+# Cost-per-persona primitives are authored with the per-seat unit; the build
+# loop overrides spend-per-firm primitives to the per-firm unit by role so the
+# two never look interchangeable in the YAML (units-are-structured).
+_usd_seat = _usd_per_seat
 
 
 # ── The five demo concepts — real anchors, independently-sourced disagreement ──
@@ -514,14 +539,27 @@ def main() -> int:
     prim_dir = root / "data" / "primitives"
     concept_dir = root / "data" / "concepts"
 
+    # Symmetric rivalry: if A lists B, B lists A. The /c disagreement view reads
+    # competing_concepts as a bilateral signal, so close it under symmetry.
+    competing: dict[str, set[str]] = {d.slug: set(d.competing) for d in DEMOS}
+    for d in DEMOS:
+        for other in d.competing:
+            if other in competing:
+                competing[other].add(d.slug)
+
     n_prims = 0
     bottoms_up: dict[str, dict[str, str]] = {}
     top_down: dict[str, dict[str, str]] = {}
     for d in DEMOS:
-        for p in (d.persona, d.cost_per_persona, d.firms, d.spend_per_firm, d.disagree):
+        # per-firm unit on the top-down spend primitive (by role), so it never
+        # looks interchangeable with the per-seat cost primitive in the YAML.
+        spend = replace(d.spend_per_firm, unit=_usd_per_firm())
+        for p in (d.persona, d.cost_per_persona, d.firms, spend, d.disagree):
             _dump(prim_dir / f"{p.slug}.yaml", _primitive_doc(p, d.slug))
             n_prims += 1
-        _dump(concept_dir / f"{d.slug}.yaml", _concept_doc(d))
+        doc = _concept_doc(d)
+        doc["competing_concepts"] = sorted(competing[d.slug])
+        _dump(concept_dir / f"{d.slug}.yaml", doc)
         bottoms_up[d.slug] = {
             "persona_pool": d.persona.slug,
             "cost_per_persona": d.cost_per_persona.slug,

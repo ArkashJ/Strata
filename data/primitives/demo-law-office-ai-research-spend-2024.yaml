@@ -9,7 +9,9 @@ value: 20000
 unit:
   kind: intensive
   dimension: currency
+  denominator: per-firm-per-year
   currency: USD
+  basis: nominal
 as_of: '2024-12-31'
 geo:
   level: country

@@ -17,5 +17,6 @@ measurements:
 - demo-census-cbp-5112-software-publishers-2022
 - demo-software-publisher-ai-tooling-spend-per-firm-2024
 competing_concepts:
+- demo-ai-insurance-claims-us
 - demo-ai-sales-ops-us
 requires_clearance: []
