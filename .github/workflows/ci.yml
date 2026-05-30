@@ -58,6 +58,10 @@ jobs:
         # ambiguous chars) tracked as a follow-up; not gated yet to avoid blocking
         # on unrelated cleanup.
         run: |
+          # Migrate first: the audit-events test queries a real table, so the
+          # schema must exist before pytest (the PG service is always reachable
+          # in CI, so that test does not skip).
+          uv run alembic upgrade head
           uv run pytest
           uv run pyright src
           uv run ruff check src
