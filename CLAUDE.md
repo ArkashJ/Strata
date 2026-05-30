@@ -19,9 +19,17 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-30)
 
-- **Version:** `0.8.0` (beta). `VERSION` + `pyproject` pinned; tags follow
+- **Version:** `0.9.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).
+- **In flight (PR #67 — YC remediation Wave 3, stacked on #66):** company
+  substrate — API-key auth (`api/auth.py`, `Principal{org_id}`, 401), per-org
+  token-bucket rate-limit (`api/ratelimit.py`, 429+Retry-After), usage metering
+  (`GET /usage`) + `/metrics`, request-id/timing middleware, CORS fails closed in
+  prod, and **Postgres RLS** (migration 003 `tenant_data` + `FORCE RLS` on
+  `app.org_id`; cross-tenant read = 0 rows). In-process stores are the active
+  path; the `api_keys`/`usage_events` tables are forward scaffolding. Hard
+  prerequisite for Wave 5B. 516 backend tests.
 - **In flight (PR #66 — YC remediation Wave 1, stacked on #65):** AI
   defensibility — citation-host allowlist (`resolver/citations.py`, no fabricated
   hosts); tier derived from host class, never the LLM; unit guard
