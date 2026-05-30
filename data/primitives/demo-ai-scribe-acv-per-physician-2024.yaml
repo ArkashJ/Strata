@@ -4,7 +4,7 @@ schema_version: 1
 concept_slug: demo-ai-clinical-docs-us
 name: AI clinical-scribe ACV per physician seat (2024)
 description: Blended annual contract value per physician seat for AI ambient documentation,
-  paraphrased from vendor pricing (~$200–300/mo).
+  paraphrased from vendor pricing (~$200-300/mo).
 value: 3000
 unit:
   kind: intensive

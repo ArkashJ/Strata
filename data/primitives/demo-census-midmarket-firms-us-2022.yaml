@@ -2,8 +2,8 @@ kind: atomic_primitive
 slug: demo-census-midmarket-firms-us-2022
 schema_version: 1
 concept_slug: demo-ai-sales-ops-us
-name: US mid-market employer firms (Census SUSB 100–999 employees, 2022)
-description: Statistics of US Businesses count of employer firms with 100–999 employees,
+name: US mid-market employer firms (Census SUSB 100-999 employees, 2022)
+description: Statistics of US Businesses count of employer firms with 100-999 employees,
   United States, 2022.
 value: 120000
 unit:

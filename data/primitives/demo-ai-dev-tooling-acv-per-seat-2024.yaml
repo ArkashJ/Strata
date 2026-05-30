@@ -5,7 +5,7 @@ concept_slug: demo-ai-dev-tooling-us
 name: AI dev-tooling annual contract value per developer seat (2024)
 description: Blended enterprise ACV per developer seat across AI coding assistants
   (GitHub Copilot Enterprise, Cursor, etc.), paraphrased from public list pricing
-  (~$19–39/user/mo plus platform).
+  (~$19-39/user/mo plus platform).
 value: 1800
 unit:
   kind: intensive

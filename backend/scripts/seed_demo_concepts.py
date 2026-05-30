@@ -100,7 +100,7 @@ DEMOS: list[Demo] = [
             "AI dev-tooling annual contract value per developer seat (2024)",
             "Blended enterprise ACV per developer seat across AI coding assistants "
             "(GitHub Copilot Enterprise, Cursor, etc.), paraphrased from public "
-            "list pricing (~$19–39/user/mo plus platform).",
+            "list pricing (~$19-39/user/mo plus platform).",
             1_800,
             _usd_seat(),
             "2024-12-31",
@@ -248,8 +248,8 @@ DEMOS: list[Demo] = [
         ),
         firms=Prim(
             "demo-census-midmarket-firms-us-2022",
-            "US mid-market employer firms (Census SUSB 100–999 employees, 2022)",
-            "Statistics of US Businesses count of employer firms with 100–999 "
+            "US mid-market employer firms (Census SUSB 100-999 employees, 2022)",
+            "Statistics of US Businesses count of employer firms with 100-999 "
             "employees, United States, 2022.",
             120_000,
             _orgs(),
@@ -306,7 +306,7 @@ DEMOS: list[Demo] = [
             "demo-ai-scribe-acv-per-physician-2024",
             "AI clinical-scribe ACV per physician seat (2024)",
             "Blended annual contract value per physician seat for AI ambient "
-            "documentation, paraphrased from vendor pricing (~$200–300/mo).",
+            "documentation, paraphrased from vendor pricing (~$200-300/mo).",
             3_000,
             _usd_seat(),
             "2024-12-31",
