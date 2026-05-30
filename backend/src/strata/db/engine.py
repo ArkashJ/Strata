@@ -64,7 +64,6 @@ async def org_session_scope(org_id: str) -> AsyncGenerator[AsyncSession]:
     """A transactional session with RLS scoped to ``org_id`` — every query inside
     sees only that tenant's rows. This is the runtime activation of the Wave-3
     RLS policies (the migration created them; this enforces them per request)."""
-    async with SessionLocal() as session:
-        async with session.begin():
-            await set_org_scope(session, org_id)
-            yield session
+    async with SessionLocal() as session, session.begin():
+        await set_org_scope(session, org_id)
+        yield session
