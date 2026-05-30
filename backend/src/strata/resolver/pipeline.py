@@ -42,9 +42,9 @@ from typing import Any, Literal, cast
 
 from ..evaluator import size_concept
 from ..models import AtomicPrimitive
-from ..registry import Registry
+from ..registry import Registry, RegistryError
 from . import writer
-from .events import PipelineEvent, PipelineEventKind, PipelineStatus, ResolverResult
+from .events import PipelineEvent, PipelineEventKind, PipelineStatus, ResolverResult, ScenarioLite
 from .parse import ParsedQuery, parse_query
 from .search import PrimitiveHit, search_primitive
 from .slug import (
@@ -277,9 +277,15 @@ def _size_registered_concept(
         }
         for iu in primary.inputs_used
     ]
+    # A concept that spans ≥2 method families is a triangulated estimate; one
+    # framework (or one family) is single_method and earns an honesty banner.
+    triangulated = len(tam.method_families_used) >= 2
+    scenario_tree = _scenario_tree(registry, tam.scenarios, triangulated=triangulated)
     return ResolverResult(
         status=PipelineStatus.OK,
         via=via,
+        estimate_kind="triangulated" if triangulated else "single_method",
+        scenarios=scenario_tree,
         tam_value=primary.value,
         formatted_tam=_format_usd(primary.value),
         concept_name=tam.target.concept_name,
@@ -287,8 +293,31 @@ def _size_registered_concept(
         framework_name=primary.framework,
         independence_score=tam.independence_score,
         primitives_used=inputs_used,
+        banner=None if triangulated else "single method family — not yet triangulated",
         events=state.events,
     )
+
+
+def _scenario_tree(registry: Registry, scenarios: Any, *, triangulated: bool) -> list[ScenarioLite]:
+    """Map evaluator ``Scenario`` objects into the wire-level ``ScenarioLite``
+    tree (AC0.2). ``method`` is the framework's method_family so the UI can show
+    method spread; ``label`` is the variant scope (or framework slug)."""
+    tree: list[ScenarioLite] = []
+    for s in scenarios:
+        try:
+            method = registry.get_framework(s.framework).method_family.value
+        except RegistryError:
+            method = s.lens.value
+        tree.append(
+            ScenarioLite(
+                label=s.framework_variant or s.framework,
+                value=s.value,
+                method=method,
+                framework=s.framework,
+                triangulated=triangulated,
+            )
+        )
+    return tree
 
 
 def _step3_connector(state: _RunState, query: str, options: RunOptions) -> ResolverResult | None:
@@ -513,6 +542,16 @@ def _step4_fallback(
     return ResolverResult(
         status=PipelineStatus.OK,
         via="fallback",
+        estimate_kind="single_method",
+        scenarios=[
+            ScenarioLite(
+                label=parsed.lens.replace("_", " ").title(),
+                value=tam_value,
+                method=parsed.lens,
+                framework=parsed.lens.replace("_", " ").title(),
+                triangulated=False,
+            )
+        ],
         tam_value=tam_value,
         formatted_tam=_format_usd(tam_value),
         concept_name=parsed.concept_name,

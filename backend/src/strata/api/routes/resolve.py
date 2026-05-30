@@ -30,6 +30,7 @@ from strata.db.audit import record_audit_safe
 from strata.registry import Registry
 from strata.resolver import RunOptions, parse_query, run, search_primitive
 from strata.resolver.events import PipelineStatus, ResolverResult
+from strata.resolver.match import match_concept
 from strata.resolver.slug import ResolvedQuery, ResolverIntent
 
 router = APIRouter(tags=["resolve"])
@@ -63,10 +64,14 @@ def _format_usd(value: float) -> str:
     return f"${value:,.0f}"
 
 
-def _http_slug(_query: str) -> ResolvedQuery:
-    """HTTP slug seam: the network endpoint is the dynamic-synthesis surface,
-    so it always takes the fallback path. Returning NOVEL skips the registry +
-    router steps (no extra Claude round-trips on the request hot path)."""
+def _registry_first_slug(query: str, registry: Registry) -> ResolvedQuery:
+    """Registry-first slug seam (AC0.2): if the query already names a curated
+    concept, resolve it to a CONCEPT intent (no LLM round-trip) so the pipeline
+    returns the full triangulated scenario tree. On a miss, fall through to
+    NOVEL → the dynamic-synthesis fallback path."""
+    slug = match_concept(registry, query)
+    if slug is not None:
+        return ResolvedQuery(intent=ResolverIntent.CONCEPT, concept_slug=slug, confidence=1.0)
     return ResolvedQuery(intent=ResolverIntent.NOVEL, confidence=0.0)
 
 
@@ -85,7 +90,7 @@ async def resolve_query(
                 body.query,
                 registry=registry,
                 options=RunOptions(allow_live=False, allow_fallback=True, model=_MODEL),
-                slug_fn=_http_slug,
+                slug_fn=lambda q: _registry_first_slug(q, registry),
                 parse_fn=parse_query,
                 search_fn=search_primitive,
             )
@@ -164,11 +169,21 @@ async def resolve_query(
         tam_value = result.tam_value if result.tam_value is not None else 0.0
 
         # ── result (frozen §9.1) ───────────────────────────────────────
+        # The scenario tree (AC0.2/AC0.3): a concept hit carries ≥2 scenarios
+        # across method families; the novel path carries a single
+        # ``triangulated=false`` scenario. Fall back to a single point only when
+        # the pipeline emitted no tree at all.
+        scenarios = (
+            [s.model_dump() for s in result.scenarios]
+            if result.scenarios
+            else [{"label": "point", "value": tam_value, "triangulated": False}]
+        )
         yield _sse(
             "result",
             {
                 "tam_usd": tam_value,
-                "scenarios": [{"label": "point", "value": tam_value}],
+                "estimate_kind": result.estimate_kind,
+                "scenarios": scenarios,
                 "sources": [
                     {"url": p.get("source_url"), "tier": p.get("source_tier")} for p in primitives
                 ],

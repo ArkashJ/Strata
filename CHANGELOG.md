@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added — YC remediation Wave 0 (demo-blockers)
+- **Resolver is registry-first and tree-shaped (AC0.2/AC0.3).** `POST /resolve`
+  now matches the query against curated concepts first (`resolver/match.py`,
+  pure-Python exact + fuzzy, no LLM). A concept hit returns the full
+  **multi-scenario tree** with `estimate_kind="triangulated"` when it spans ≥2
+  method families; a novel query falls through to single-method synthesis with
+  `estimate_kind="single_method"` and a mandatory honesty banner — a point is
+  never dressed up as a triangulated TAM. The SSE `result` event now carries
+  `scenarios[]` (`{label,value,method,framework,triangulated}`) + `estimate_kind`.
 - **Prediction-market primitives quarantined as signals (AC0.5).** The 202
   Kalshi event-contract probabilities moved from `data/primitives/` →
   `data/signals/`; the loader routes anything under `signals/` into a read-only

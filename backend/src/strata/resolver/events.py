@@ -55,6 +55,22 @@ class PipelineEvent(BaseModel):
     message: str | None = None
 
 
+class ScenarioLite(BaseModel):
+    """One scenario in the resolver's emitted tree (AC0.2/AC0.3).
+
+    A concept hit emits one per applicable framework variant; the novel
+    fallback emits a single ``triangulated=False`` entry. ``method`` is the
+    framework's ``method_family`` so the UI can show method spread."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    label: str
+    value: float
+    method: str
+    framework: str
+    triangulated: bool
+
+
 class ResolverResult(BaseModel):
     """The terminal value the renderer turns into compact / stream / JSON output."""
 
@@ -62,6 +78,11 @@ class ResolverResult(BaseModel):
 
     status: PipelineStatus
     via: Literal["concept", "primitive", "connector", "fallback", "none"]
+    # Estimate provenance for the honesty banner (AC0.3): a registry concept hit
+    # that spans ≥2 method families is "triangulated"; a single-method or novel
+    # synthesis is "single_method" and MUST carry a banner.
+    estimate_kind: Literal["triangulated", "single_method"] | None = None
+    scenarios: list[ScenarioLite] = Field(default_factory=list[ScenarioLite])
     tam_value: float | None = None
     formatted_tam: str | None = None
     concept_name: str | None = None
