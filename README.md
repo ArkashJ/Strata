@@ -6,7 +6,7 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://strata-pied-three.vercel.app)
 [![License: Proprietary](https://img.shields.io/badge/license-proprietary-red.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.9.0-informational)
+![Version](https://img.shields.io/badge/version-0.10.0-informational)
 ![Status](https://img.shields.io/badge/status-beta-brightgreen)
 
 ![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
