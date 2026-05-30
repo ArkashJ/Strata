@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — YC remediation Wave 1 (AI defensibility & data rigor)
+- **Every emitted number is grounded.** A citation-host allowlist
+  (`resolver/citations.py`) rejects fabricated / `strata.internal` hosts; the
+  novel resolver keeps only Exa-returned URLs and derives **source tier from the
+  host class, never the LLM** (AC1.1/AC1.2). A **unit guard** blocks
+  dimensionally-invalid TAM multiplies (money² / no-currency) (AC1.6). A
+  **verifier/critic pass** stamps a `dark_estimate` banner on flagged synthesis
+  (AC1.4). **Snapshot integrity** (`strata verify-integrity`, `IntegrityError`)
+  verifies stored snapshots hash to their sha256 (AC1.3). A **resolver eval
+  harness** (`strata.evals.resolver_eval`, 30 golden cases) gates CI at ≥0.8
+  pass-rate (AC1.5). **Staleness**: `Source.freshness_sla_days` + a `StaleChip`
+  flag primitives past their freshness SLA (AC1.7).
+
 ### Added — YC remediation Wave 2 (motion & visual craft)
 - **Recompute payoff + live pyramid.** New motion primitives (`CountUp` rAF
   count-up, `Pulse`, `useHoverIntent`) wire a count-up + pulse into the TAM

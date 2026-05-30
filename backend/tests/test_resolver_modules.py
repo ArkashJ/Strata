@@ -141,12 +141,14 @@ def test_parse_query_strips_markdown_fences(mock_complete: MagicMock) -> None:
 def test_search_primitive_happy_path(mock_exa: MagicMock, mock_complete: MagicMock) -> None:
     """Exa returns a highlight → LLM extracts a number → PrimitiveHit."""
     result_item = MagicMock(
-        url="https://example.com/x", title="Source", highlights=["The figure is 1234567."]
+        url="https://www.bls.gov/x", title="Source", highlights=["The figure is 1234567."]
     )
     mock_exa.return_value.search.return_value = MagicMock(results=[result_item])
+    # AC1.2: even though the model CLAIMS 'community', the emitted tier is derived
+    # from the (gov) host → regulator. The model's tier is dropped.
     mock_complete.return_value = (
-        '{"value": 1234567, "name": "Test source", "source_url": "https://example.com/x", '
-        '"source_tier": "regulator"}'
+        '{"value": 1234567, "name": "Test source", "source_url": "https://www.bls.gov/x", '
+        '"source_tier": "community"}'
     )
 
     from strata.resolver.parse import ParsedPrimitive
@@ -197,7 +199,7 @@ def _good_primitive_yaml(slug: str = "test-prim-2026") -> dict[str, object]:
         "source": {
             "slug": "test-source-2026",
             "tier": "regulator",
-            "url": "https://example.com",
+            "url": "https://www.fdic.gov/bank-data",
             "accessed": "2026-05-27",
             "snapshot_sha256": "a" * 64,
         },
