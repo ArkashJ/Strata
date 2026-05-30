@@ -46,7 +46,6 @@ from ..registry import Registry, RegistryError
 from . import writer
 from .events import PipelineEvent, PipelineEventKind, PipelineStatus, ResolverResult, ScenarioLite
 from .parse import ParsedQuery, parse_query
-from .units import UnitMismatchError, assert_multipliable
 from .search import PrimitiveHit, search_primitive
 from .slug import (
     ConceptSummary,
@@ -55,6 +54,7 @@ from .slug import (
     ResolverIntent,
     resolve_slug,
 )
+from .units import UnitMismatchError, assert_multipliable
 
 # Injection seams so the HTTP route can force a deterministic fallback path
 # (its own patchable parse/search functions) without touching the network for
