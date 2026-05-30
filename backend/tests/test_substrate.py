@@ -6,6 +6,8 @@ migration-level test gated on a live DB.
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
@@ -15,6 +17,9 @@ from strata.api.auth import _KEY_STORE, register_key
 from strata.api.metering import get_meter
 from strata.api.ratelimit import get_limiter
 from strata.config import settings
+from tests.test_resolve import MOCK_PARSED
+from tests.test_resolve import MOCK_PRIMITIVE_1 as MOCK_P1
+from tests.test_resolve import MOCK_PRIMITIVE_2 as MOCK_P2
 
 
 @pytest.fixture
@@ -40,11 +45,19 @@ def _reset_state():
         _KEY_STORE.pop(k, None)
 
 
+def _mock_resolver(fn):
+    """Mock the LLM fallback so /resolve returns fast + offline (status-only tests)."""
+    fn = patch("strata.api.routes.resolve.search_primitive", side_effect=[MOCK_P1, MOCK_P2])(fn)
+    fn = patch("strata.api.routes.resolve.parse_query", return_value=MOCK_PARSED)(fn)
+    return fn
+
+
 # ── AC3.1 auth ────────────────────────────────────────────────────────────
 
 
+@_mock_resolver
 @pytest.mark.asyncio
-async def test_auth_required(client: AsyncClient) -> None:
+async def test_auth_required(_mp, _ms, client: AsyncClient) -> None:
     register_key("secret-key-1", "org-acme")
     settings.require_auth = True
     # Missing key → 401.
@@ -61,8 +74,9 @@ async def test_auth_required(client: AsyncClient) -> None:
 # ── AC3.2 rate limit ──────────────────────────────────────────────────────
 
 
+@_mock_resolver
 @pytest.mark.asyncio
-async def test_rate_limit_429(client: AsyncClient) -> None:
+async def test_rate_limit_429(_mp, _ms, client: AsyncClient) -> None:
     get_limiter().capacity = 2.0
     get_limiter().refill_per_sec = 0.0  # no refill within the test window
     get_limiter().reset()
