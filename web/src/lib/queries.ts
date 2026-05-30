@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
+import type { SensitivityResponse } from "@/components/charts/TornadoChart";
 import { api } from "./api-client";
 import {
   type AuditEvent,
@@ -125,6 +126,16 @@ export const trajectoryQuery = (conceptSlug: string) =>
       const data = await api(`/build/${conceptSlug}/trajectory`);
       return validated(tamTrajectorySchema, data);
     },
+    enabled: !!conceptSlug,
+    staleTime: 5 * 60_000,
+  });
+
+// Per-input ±pct TAM swing for the sensitivity tornado (Wave 2 / AC2.3).
+export const sensitivityQuery = (conceptSlug: string, pct = 0.2) =>
+  queryOptions({
+    queryKey: ["sensitivity", conceptSlug, pct],
+    queryFn: async (): Promise<SensitivityResponse> =>
+      api<SensitivityResponse>(`/build/${conceptSlug}/sensitivity?pct=${pct}`),
     enabled: !!conceptSlug,
     staleTime: 5 * 60_000,
   });
