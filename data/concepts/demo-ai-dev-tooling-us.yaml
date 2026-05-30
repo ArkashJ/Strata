@@ -1,0 +1,21 @@
+kind: concept
+slug: demo-ai-dev-tooling-us
+schema_version: 1
+name: AI developer tooling (US software developers)
+definition: 'US adoption of AI coding-assistant and developer-productivity tooling
+  (autocomplete, agentic refactor, test-gen) priced per software-developer seat. Scope:
+  professional software developers employed in the US; excludes hobbyist and student
+  users.'
+analysis_lens:
+  primary: cost_efficiency
+  secondary: revenue_generation
+modifiers: {}
+measurements:
+- demo-bls-software-developers-us-2024
+- demo-cps-software-developers-us-2024
+- demo-ai-dev-tooling-acv-per-seat-2024
+- demo-census-cbp-5112-software-publishers-2022
+- demo-software-publisher-ai-tooling-spend-per-firm-2024
+competing_concepts:
+- demo-ai-sales-ops-us
+requires_clearance: []

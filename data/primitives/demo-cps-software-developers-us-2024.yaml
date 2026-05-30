@@ -1,0 +1,31 @@
+kind: atomic_primitive
+slug: demo-cps-software-developers-us-2024
+schema_version: 1
+concept_slug: demo-ai-dev-tooling-us
+name: US software developers headcount (CPS / industry estimate, 2024)
+description: Alternative US software-developer population estimate from labor-force
+  survey microdata, which counts self-identified developers across all industries
+  — materially higher than the OEWS occupational estimate.
+value: 2183300
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-cps-software-developers-us-2024-src
+  tier: analyst-paraphrase
+  original_publisher: CPS labor-force microdata
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'US software developers headcount (CPS / industry estimate, 2024):
+    ~2,183,300. Paraphrased from CPS labor-force microdata; verify against the full
+    source before citing.'
+  url: https://www.census.gov/programs-surveys/cps.html
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

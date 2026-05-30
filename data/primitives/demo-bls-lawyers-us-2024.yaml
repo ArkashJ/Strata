@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: demo-bls-lawyers-us-2024
+schema_version: 1
+concept_slug: demo-ai-legal-research-us
+name: US lawyers headcount (BLS OEWS 23-1011, May 2024)
+description: BLS OEWS estimate for SOC 23-1011 (Lawyers), United States, May 2024.
+value: 731300
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-05-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-bls-lawyers-us-2024-src
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes231011.htm
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: demo-bls-sales-reps-us-2024
+schema_version: 1
+concept_slug: demo-ai-sales-ops-us
+name: US wholesale/manufacturing sales reps headcount (BLS OEWS 41-4012, 2024)
+description: BLS OEWS estimate for SOC 41-4012 (Sales Reps, Wholesale & Manufacturing,
+  except Technical & Scientific Products), United States, May 2024.
+value: 1460000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-05-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-bls-sales-reps-us-2024-src
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes414012.htm
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

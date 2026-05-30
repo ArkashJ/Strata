@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: demo-census-cbp-physician-offices-us-2022
+schema_version: 1
+concept_slug: demo-ai-clinical-docs-us
+name: US physician-office establishments (Census CBP NAICS 6211, 2022)
+description: County Business Patterns establishment count for NAICS 6211 (Offices
+  of Physicians), United States, 2022.
+value: 230000
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-census-cbp-physician-offices-us-2022-src
+  tier: regulator
+  url: https://www.census.gov/programs-surveys/cbp.html
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

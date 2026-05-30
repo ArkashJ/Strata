@@ -1,0 +1,20 @@
+kind: concept
+slug: demo-ai-sales-ops-us
+schema_version: 1
+name: AI sales-ops tooling (US sales reps)
+definition: 'US adoption of AI sales-operations and revenue-intelligence tooling priced
+  per sales-rep seat. Scope: US business-to-business sales representatives; excludes
+  retail floor staff.'
+analysis_lens:
+  primary: cost_efficiency
+  secondary: revenue_generation
+modifiers: {}
+measurements:
+- demo-bls-sales-reps-us-2024
+- demo-acs-sales-reps-us-2024
+- demo-ai-sales-ops-acv-per-seat-2024
+- demo-census-midmarket-firms-us-2022
+- demo-midmarket-ai-sales-spend-2024
+competing_concepts:
+- demo-ai-dev-tooling-us
+requires_clearance: []

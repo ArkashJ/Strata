@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: demo-bls-ces-claims-adjusters-us-2024
+schema_version: 1
+concept_slug: demo-ai-insurance-claims-us
+name: US claims-adjuster employment (industry survey estimate, 2024)
+description: Alternative claims-adjuster employment estimate including in-house carrier
+  staff not captured by the occupational survey, materially higher than the OEWS figure.
+value: 385000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-bls-ces-claims-adjusters-us-2024-src
+  tier: analyst-paraphrase
+  original_publisher: CES industry survey
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'US claims-adjuster employment (industry survey estimate, 2024):
+    ~385,000. Paraphrased from CES industry survey; verify against the full source
+    before citing.'
+  url: https://www.bls.gov/ces/
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

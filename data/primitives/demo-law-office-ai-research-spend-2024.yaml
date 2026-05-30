@@ -1,0 +1,31 @@
+kind: atomic_primitive
+slug: demo-law-office-ai-research-spend-2024
+schema_version: 1
+concept_slug: demo-ai-legal-research-us
+name: AI legal-research spend per law office (2024)
+description: Estimated annual AI legal-research spend per US law office, paraphrased
+  from analyst commentary.
+value: 20000
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-law-office-ai-research-spend-2024-src
+  tier: analyst-paraphrase
+  original_publisher: Thomson Reuters / analyst commentary
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'AI legal-research spend per law office (2024): ~20,000. Paraphrased
+    from Thomson Reuters / analyst commentary; verify against the full source before
+    citing.'
+  url: https://legal.thomsonreuters.com/
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

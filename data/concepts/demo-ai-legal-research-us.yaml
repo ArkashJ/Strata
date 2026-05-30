@@ -1,0 +1,19 @@
+kind: concept
+slug: demo-ai-legal-research-us
+schema_version: 1
+name: AI legal research (US lawyers)
+definition: 'US adoption of AI legal-research and drafting tooling priced per lawyer
+  seat. Scope: practicing US lawyers; excludes paralegals and law students.'
+analysis_lens:
+  primary: cost_efficiency
+  secondary: revenue_generation
+modifiers: {}
+measurements:
+- demo-bls-lawyers-us-2024
+- demo-aba-licensed-lawyers-us-2024
+- demo-ai-legal-research-acv-per-seat-2024
+- demo-census-cbp-law-offices-us-2022
+- demo-law-office-ai-research-spend-2024
+competing_concepts:
+- demo-ai-clinical-docs-us
+requires_clearance: []

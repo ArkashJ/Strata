@@ -1,0 +1,29 @@
+kind: atomic_primitive
+slug: demo-aamc-active-physicians-us-2024
+schema_version: 1
+concept_slug: demo-ai-clinical-docs-us
+name: US active physicians (association census, 2024)
+description: Association census of active US physicians (including residents and hospital-employed
+  physicians) — materially higher than the OEWS wage-employment occupational estimate.
+value: 1040000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-aamc-active-physicians-us-2024-src
+  tier: analyst-paraphrase
+  original_publisher: AAMC physician workforce data
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'US active physicians (association census, 2024): ~1,040,000. Paraphrased
+    from AAMC physician workforce data; verify against the full source before citing.'
+  url: https://www.aamc.org/data-reports/workforce
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

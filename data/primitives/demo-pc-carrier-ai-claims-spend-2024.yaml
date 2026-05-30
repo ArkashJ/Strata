@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: demo-pc-carrier-ai-claims-spend-2024
+schema_version: 1
+concept_slug: demo-ai-insurance-claims-us
+name: AI claims-tooling spend per P&C carrier (2024)
+description: Estimated annual AI claims-automation spend per US P&C carrier, paraphrased
+  from analyst commentary.
+value: 900000
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-pc-carrier-ai-claims-spend-2024-src
+  tier: analyst-paraphrase
+  original_publisher: Celent / analyst commentary
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'AI claims-tooling spend per P&C carrier (2024): ~900,000. Paraphrased
+    from Celent / analyst commentary; verify against the full source before citing.'
+  url: https://www.celent.com/
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

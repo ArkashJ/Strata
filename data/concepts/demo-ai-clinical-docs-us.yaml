@@ -1,0 +1,20 @@
+kind: concept
+slug: demo-ai-clinical-docs-us
+schema_version: 1
+name: AI clinical documentation (US physicians)
+definition: 'US adoption of AI ambient clinical-documentation (''AI scribe'') software
+  priced per physician seat. Scope: active US physicians; excludes nurses and allied
+  health.'
+analysis_lens:
+  primary: cost_efficiency
+  secondary: revenue_generation
+modifiers: {}
+measurements:
+- demo-bls-physicians-us-2024
+- demo-aamc-active-physicians-us-2024
+- demo-ai-scribe-acv-per-physician-2024
+- demo-census-cbp-physician-offices-us-2022
+- demo-physician-office-ai-scribe-spend-2024
+competing_concepts:
+- demo-ai-insurance-claims-us
+requires_clearance: []
