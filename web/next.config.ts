@@ -7,10 +7,9 @@ const nextConfig: NextConfig = {
       // the frame policy on that path only (the rest of the app stays default).
       {
         source: "/embed/:path*",
-        headers: [
-          { key: "X-Frame-Options", value: "ALLOWALL" },
-          { key: "Content-Security-Policy", value: "frame-ancestors *" },
-        ],
+        // CSP frame-ancestors is the real, spec-valid framing control (an
+        // X-Frame-Options "ALLOWALL" is not a valid value and is ignored).
+        headers: [{ key: "Content-Security-Policy", value: "frame-ancestors *" }],
       },
     ];
   },

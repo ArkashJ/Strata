@@ -125,8 +125,12 @@ class Registry:
         # call may carry new flags (e.g. is_promoted) for the same state_hash —
         # updating an existing key preserves its FIFO position.
         self.tam_outputs[tam.state_hash] = tam
+        # Evict the oldest NON-promoted output first; promoted TAMs are durable
+        # public endpoints (/browse + sitemap) and must not be FIFO-evicted.
         while len(self.tam_outputs) > cap:
-            oldest = next(iter(self.tam_outputs))
+            oldest = next((k for k, v in self.tam_outputs.items() if not v.is_promoted), None)
+            if oldest is None:
+                break  # everything left is promoted — keep it
             del self.tam_outputs[oldest]
 
 
