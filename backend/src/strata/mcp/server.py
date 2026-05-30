@@ -21,7 +21,7 @@ import asyncio
 import contextlib
 import json
 import sys
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from pathlib import Path
 from typing import Any
 
@@ -38,7 +38,7 @@ _SERVER_NAME = "strata"
 _registry_cache: Registry | None = None
 
 
-def _load_registry() -> Registry:
+def load_registry() -> Registry:
     """Build a read-only registry. Cached per process (the MCP surface never
     mutates it, so one load is safe)."""
     global _registry_cache
@@ -52,7 +52,10 @@ def _load_registry() -> Registry:
     return _registry_cache
 
 
-def build_server() -> Server:
+def build_server(get_registry: Callable[[], Registry] = load_registry) -> Server:
+    """Build the MCP server. ``get_registry`` is resolved per ``tools/call`` so
+    the API-mounted instance can share the live (prod: DB-loaded) registry rather
+    than the on-disk YAML — see ``build_streamable_http_app`` / ``app.py``."""
     server: Server = Server(_SERVER_NAME)
 
     @server.list_tools()
@@ -70,7 +73,7 @@ def build_server() -> Server:
     async def _call_tool(  # pyright: ignore[reportUnusedFunction]
         name: str, arguments: dict[str, Any]
     ) -> list[types.TextContent]:
-        reg = _load_registry()
+        reg = get_registry()
         try:
             result = call_tool(reg, name, arguments)
         except ToolError as exc:
@@ -88,17 +91,17 @@ async def run_stdio() -> None:
         await server.run(read, write, server.create_initialization_options())
 
 
-def build_streamable_http_app() -> Any:
+def build_streamable_http_app(get_registry: Callable[[], Registry] = load_registry) -> Any:
     """ASGI app for the hosted transport, with its session-manager lifespan.
 
     Mounted at ``/mcp`` by the FastAPI app. Stateless so each request is
     self-contained (no server-side session affinity needed behind a load
-    balancer)."""
+    balancer). ``get_registry`` lets the API share its live registry (prod: DB)."""
     from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
     from starlette.applications import Starlette
     from starlette.routing import Mount
 
-    server = build_server()
+    server = build_server(get_registry)
     manager = StreamableHTTPSessionManager(app=server, json_response=True, stateless=True)
 
     async def _handle(scope: Any, receive: Any, send: Any) -> None:

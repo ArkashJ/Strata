@@ -88,9 +88,15 @@ def create_app() -> FastAPI:
     # Mount the read-only Strata MCP server at /mcp (Wave 5A). Best-effort: a
     # failure to build it must not take down the REST API.
     try:
-        from strata.mcp.server import build_streamable_http_app
+        from strata.mcp.server import build_streamable_http_app, load_registry
 
-        mcp_app = build_streamable_http_app()
+        # Resolved per request: in prod the lifespan sets app.state.registry to
+        # the DB-loaded registry; fall back to on-disk YAML in dev. This keeps
+        # the hosted MCP surface in sync with the REST API's data (review fix).
+        def _mcp_registry() -> object:
+            return getattr(app.state, "registry", None) or load_registry()
+
+        mcp_app = build_streamable_http_app(get_registry=_mcp_registry)  # type: ignore[arg-type]
         app.state.mcp_app = mcp_app
         app.mount("/mcp", mcp_app)
     except Exception:  # MCP is additive; never block API boot on its failure

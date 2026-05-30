@@ -39,6 +39,8 @@ SIZE_TAM: dict[str, Any] = {
         "concept_slug": {"type": "string", "description": "Exact curated concept slug."},
         "query": {"type": "string", "description": "Free-text query (registry-matched)."},
     },
+    # Exactly one of concept_slug / query — a client must supply one.
+    "minProperties": 1,
     "additionalProperties": False,
 }
 
