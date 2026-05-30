@@ -70,6 +70,12 @@ jobs:
       - name: Validate YAML data bank
         run: uv run strata validate ../data
 
+      - name: Resolver eval (regression baseline >= 0.8)
+        run: uv run python -m strata.evals.resolver_eval --assert-baseline 0.8
+
+      - name: Snapshot integrity
+        run: uv run strata verify-integrity --data-dir ../data
+
       - name: Migrate + seed against throwaway Postgres (dry run)
         run: |
           uv run alembic upgrade head
