@@ -43,6 +43,16 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = Field(default_factory=lambda: ["*"])
 
+    # ── Wave 3 substrate: auth / rate-limit / metering ──────────────────
+    # Comma-separated ``rawkey:org_id`` pairs seeding the in-process key store
+    # (dev/self-host). Prod also reads hashed keys from the ``api_keys`` table.
+    api_keys_raw: str = ""
+    # When True, protected (write/compute/LLM) routes require a valid API key.
+    # Off in dev/test by default so the curated read API stays open locally.
+    require_auth: bool = False
+    # Token-bucket rate limit per key on LLM/compute routes.
+    rate_limit_rpm: int = Field(default=60, ge=1)
+
     # Regex for additional allowed origins — used for Vercel preview deploys whose
     # subdomain carries a per-deploy hash (so an exact-origin list can't enumerate
     # them). e.g. ``https://strata-[a-z0-9-]+-arkashjs-projects\.vercel\.app``.

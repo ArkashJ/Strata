@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from time import perf_counter
+from typing import Any
+from uuid import uuid4
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from strata import __version__
@@ -17,6 +20,7 @@ from strata.api.routes import (
     healthz,
     primitives,
     resolve,
+    usage,
 )
 from strata.config import settings
 from strata.logging import configure_logging, get_logger
@@ -69,13 +73,54 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json",
     )
 
+    # AC3.4: CORS must not be wildcard in prod. A "*" origin list in prod is a
+    # misconfiguration — narrow to the explicit regex (Vercel previews) only, so
+    # an unconfigured prod deploy fails closed rather than open.
+    cors_origins = settings.cors_origins
+    if settings.env == "prod" and cors_origins == ["*"]:
+        log.warning("strata.cors.wildcard_blocked_in_prod")
+        cors_origins = []
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
+        allow_origins=cors_origins,
         allow_origin_regex=settings.cors_origin_regex,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # AC3.5/AC3.3: request-id + structured timing log + per-org metering.
+    @app.middleware("http")
+    async def _observability(  # pyright: ignore[reportUnusedFunction]
+        request: Request, call_next: Any
+    ) -> Any:
+        from strata.api.auth import principal_for
+        from strata.api.metering import get_meter
+
+        request_id = uuid4().hex
+        request.state.request_id = request_id
+        start = perf_counter()
+        try:
+            principal = principal_for(request)
+            org_id = principal.org_id
+        except HTTPException:
+            org_id = "public"
+        response = await call_next(request)
+        elapsed_ms = (perf_counter() - start) * 1000
+        response.headers["X-Request-Id"] = request_id
+        # Meter only the real API surface (skip docs/openapi/metrics).
+        route = request.url.path
+        if not route.startswith(("/docs", "/redoc", "/openapi", "/metrics", "/mcp")):
+            get_meter().record(org_id, route)
+        log.info(
+            "strata.request",
+            request_id=request_id,
+            method=request.method,
+            path=route,
+            status=response.status_code,
+            org=org_id,
+            ms=round(elapsed_ms, 1),
+        )
+        return response
 
     app.include_router(healthz.router)
     app.include_router(concepts.router)
@@ -84,6 +129,7 @@ def create_app() -> FastAPI:
     app.include_router(build.router)
     app.include_router(resolve.router)
     app.include_router(audit.router)
+    app.include_router(usage.router)
 
     # Mount the read-only Strata MCP server at /mcp (Wave 5A). Best-effort: a
     # failure to build it must not take down the REST API.

@@ -25,7 +25,9 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from strata.api.auth import Principal, require_principal
 from strata.api.deps import get_registry
+from strata.api.ratelimit import enforce_rate_limit
 from strata.db.audit import record_audit_safe
 from strata.registry import Registry
 from strata.resolver import RunOptions, parse_query, run, search_primitive
@@ -36,6 +38,7 @@ from strata.resolver.slug import ResolvedQuery, ResolverIntent
 router = APIRouter(tags=["resolve"])
 
 _get_registry = Depends(get_registry)
+_require_principal = Depends(require_principal)
 
 # Load .env — walks up directory tree automatically.
 load_dotenv()
@@ -77,8 +80,14 @@ def _registry_first_slug(query: str, registry: Registry) -> ResolvedQuery:
 
 @router.post("/resolve")
 async def resolve_query(
-    body: ResolveRequest, registry: Registry = _get_registry
+    body: ResolveRequest,
+    registry: Registry = _get_registry,
+    principal: Principal = _require_principal,
 ) -> StreamingResponse:
+    # AC3.1/AC3.2: auth resolves the principal (401 if required+missing); the
+    # LLM route is token-bucket rate-limited per org (429 + Retry-After).
+    enforce_rate_limit(principal.org_id)
+
     async def generate() -> AsyncIterator[str]:
         # ── parsing event (frozen §9.1) ────────────────────────────────
         yield _sse("parsing", {"query": body.query, "model": _MODEL})
