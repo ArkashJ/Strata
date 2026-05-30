@@ -19,9 +19,17 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-30)
 
-- **Version:** `0.9.0` (beta). `VERSION` + `pyproject` pinned; tags follow
+- **Version:** `0.10.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).
+- **In flight (PR #68 — YC remediation Wave 5B/5C, stacked on #67):** inbound
+  OAuth connectors (`connectors/saas/`) — connect SaaS (HubSpot pilot + stub)
+  → Fernet-encrypted org-scoped tokens → **private, org-namespaced first-party
+  primitives** (isolated cross-tenant; feed the same evaluator with a `private`
+  banner; disconnect purges). OAuth has single-use CSRF state + auth-only routes.
+  `AtomicPrimitive.visibility/org_id`. Frontend `/integrations` gallery
+  (simple-icons `BrandIcon`, 3 groups, old-vs-new, pipeline flow). 523 backend,
+  137 web tests.
 - **In flight (PR #67 — YC remediation Wave 3, stacked on #66):** company
   substrate — API-key auth (`api/auth.py`, `Principal{org_id}`, 401), per-org
   token-bucket rate-limit (`api/ratelimit.py`, 429+Retry-After), usage metering
