@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from strata.api.app import create_app
-from strata.api.auth import _KEY_STORE, hash_key, register_key
+from strata.api.auth import _KEY_STORE, register_key
 from strata.api.metering import get_meter
 from strata.api.ratelimit import get_limiter
 from strata.config import settings
@@ -33,8 +33,11 @@ async def client(app: FastAPI):
 def _reset_state():
     get_meter().reset()
     get_limiter().reset()
+    initial_keys = set(_KEY_STORE)
     yield
     settings.require_auth = False
+    for k in set(_KEY_STORE) - initial_keys:
+        _KEY_STORE.pop(k, None)
 
 
 # ── AC3.1 auth ────────────────────────────────────────────────────────────
@@ -52,8 +55,7 @@ async def test_auth_required(client: AsyncClient) -> None:
     assert r.status_code == 401
     # Valid key → not 401 (the resolve stream returns 200).
     r = await client.post("/resolve", json={"query": "test"}, headers={"X-API-Key": "secret-key-1"})
-    assert r.status_code == 200
-    _KEY_STORE.pop(hash_key("secret-key-1"), None)
+    assert r.status_code == 200  # _reset_state fixture purges the registered key
 
 
 # ── AC3.2 rate limit ──────────────────────────────────────────────────────

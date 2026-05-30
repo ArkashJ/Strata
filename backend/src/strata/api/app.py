@@ -107,9 +107,13 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         elapsed_ms = (perf_counter() - start) * 1000
         response.headers["X-Request-Id"] = request_id
-        # Meter only the real API surface (skip docs/openapi/metrics).
+        # Meter only the real API surface (skip docs/openapi/metrics) and never
+        # count rejected-auth probes — a bad-key 401 must not inflate the public
+        # org's meter or mask credential-stuffing.
         route = request.url.path
-        if not route.startswith(("/docs", "/redoc", "/openapi", "/metrics", "/mcp")):
+        if response.status_code != 401 and not route.startswith(
+            ("/docs", "/redoc", "/openapi", "/metrics", "/mcp")
+        ):
             get_meter().record(org_id, route)
         log.info(
             "strata.request",

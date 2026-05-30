@@ -10,6 +10,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from threading import Lock
 
 from fastapi import HTTPException
 
@@ -28,6 +29,7 @@ class RateLimiter:
         self.refill_per_sec = rpm / 60.0
         self._now = now_fn
         self._buckets: dict[str, _Bucket] = {}
+        self._lock = Lock()
 
     def _refill(self, b: _Bucket, now: float) -> None:
         elapsed = max(0.0, now - b.updated)
@@ -35,18 +37,24 @@ class RateLimiter:
         b.updated = now
 
     def check(self, key: str) -> tuple[bool, float]:
-        """Consume one token. Returns (allowed, retry_after_seconds)."""
-        now = self._now()
-        b = self._buckets.get(key)
-        if b is None:
-            b = _Bucket(tokens=self.capacity, updated=now)
-            self._buckets[key] = b
-        self._refill(b, now)
-        if b.tokens >= 1.0:
-            b.tokens -= 1.0
-            return True, 0.0
-        retry_after = (1.0 - b.tokens) / self.refill_per_sec if self.refill_per_sec > 0 else 60.0
-        return False, retry_after
+        """Consume one token. Returns (allowed, retry_after_seconds).
+
+        Locked so concurrent requests for one org can't both read tokens>=1 and
+        both decrement past zero (the read-modify-write would otherwise race)."""
+        with self._lock:
+            now = self._now()
+            b = self._buckets.get(key)
+            if b is None:
+                b = _Bucket(tokens=self.capacity, updated=now)
+                self._buckets[key] = b
+            self._refill(b, now)
+            if b.tokens >= 1.0:
+                b.tokens -= 1.0
+                return True, 0.0
+            retry_after = (
+                (1.0 - b.tokens) / self.refill_per_sec if self.refill_per_sec > 0 else 60.0
+            )
+            return False, retry_after
 
     def reset(self) -> None:
         self._buckets.clear()
