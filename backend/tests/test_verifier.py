@@ -52,6 +52,29 @@ def test_verifier_flags_absurd_magnitude() -> None:
     assert has_dark_estimate(apply_verifier(r))
 
 
+def test_large_currency_pool_is_not_flagged() -> None:
+    # A trillion-dollar spend pool is legitimate; the magnitude check is
+    # currency-exempt (review fix).
+    r = _result(
+        [
+            {"slug": "pool", "value": 1.2e14, "unit": _CURRENCY},
+            {
+                "slug": "share",
+                "value": 0.1,
+                "unit": {"kind": "dimensionless", "dimension": "percent"},
+            },
+        ]
+    )
+    assert not has_dark_estimate(apply_verifier(r))
+
+
+def test_banner_compose_keeps_original() -> None:
+    r = _result([{"slug": "pop", "value": -5, "unit": _PEOPLE}])
+    out = apply_verifier(r)
+    assert "dark_estimate" in (out.banner or "")
+    assert "synthesized via fallback" in (out.banner or "")  # original preserved
+
+
 def test_registry_results_not_downgraded() -> None:
     # A concept-sourced result is trusted; the verifier never stamps it.
     r = _result([{"slug": "x", "value": -5, "unit": _PEOPLE}], via="concept")

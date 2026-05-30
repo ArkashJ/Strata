@@ -15,9 +15,18 @@ from dataclasses import dataclass
 from .events import ResolverResult
 from .units import UnitMismatchError, assert_multipliable
 
-# A single TAM input factor above this is almost certainly an extraction error
-# (no real seat-count / unit-cost / spend pool is > 10^13 in base units).
+# A single NON-currency factor (seat count, population, units) above this is
+# almost certainly an extraction error. Currency factors are exempt — a real USD
+# spend pool can be trillions (world GDP ~1e14) and the unit guard already
+# ensures dimensional correctness.
 _IMPLAUSIBLE_MAGNITUDE = 1e13
+
+
+def _dimension_of(unit: object) -> str | None:
+    if isinstance(unit, dict):
+        d = unit.get("dimension")
+        return str(d) if d is not None else None
+    return str(getattr(unit, "dimension", "") or "") or None
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,7 +54,7 @@ def verify(result: ResolverResult) -> list[Flag]:
             continue
         if not math.isfinite(v) or v <= 0:
             flags.append(Flag("outlier", f"input {p.get('slug')!r} has implausible value {v!r}"))
-        elif v > _IMPLAUSIBLE_MAGNITUDE:
+        elif v > _IMPLAUSIBLE_MAGNITUDE and _dimension_of(p.get("unit")) != "currency":
             flags.append(
                 Flag("outlier", f"input {p.get('slug')!r} value {v:g} exceeds plausible magnitude")
             )
@@ -63,7 +72,9 @@ def apply_verifier(result: ResolverResult) -> ResolverResult:
     flags = verify(result)
     if flags:
         reasons = "; ".join(f.message for f in flags)
-        result.banner = f"dark_estimate — unverified synthesis flagged: {reasons}"
+        # Compose, never replace — keep the original "do not cite / promote" note.
+        original = f" {result.banner}" if result.banner else ""
+        result.banner = f"dark_estimate — unverified synthesis flagged: {reasons}.{original}"
     return result
 
 
