@@ -42,7 +42,12 @@ async def session_scope() -> AsyncGenerator[AsyncSession]:
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
-    """FastAPI dependency. Sessions are scoped to a single request."""
+    """FastAPI dependency for NON-tenant DB access (no RLS scoping).
+
+    For any route reading/writing tenant-scoped rows (Wave 5B private data,
+    anything under an RLS policy), use ``api.deps.get_org_session`` instead — it
+    sets ``app.org_id`` so the Postgres RLS policies actually enforce isolation.
+    """
     async with SessionLocal() as session:
         yield session
 

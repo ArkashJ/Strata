@@ -62,6 +62,34 @@ async def test_contribute_accepts_valid_regulator(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_contributions_persist_and_review_queue(client: AsyncClient) -> None:
+    # Persistence + review queue need Postgres; skip cleanly without it.
+    import socket
+
+    from strata.config import settings
+
+    try:
+        hp = str(settings.database_url).split("@", 1)[1].split("/", 1)[0]
+        host, _, port = hp.partition(":")
+        socket.create_connection((host, int(port or 5432)), timeout=1.0).close()
+    except OSError:
+        pytest.skip("no Postgres")
+
+    from strata.api.auth import _KEY_STORE, hash_key, register_key
+
+    await client.post("/contribute", json={"kind": "atomic_primitive", "payload": _GOOD_PRIM})
+    # Review queue is auth-guarded.
+    assert (await client.get("/contributions")).status_code == 401
+    register_key("review-key", "org-review")
+    try:
+        resp = await client.get("/contributions", headers={"X-API-Key": "review-key"})
+        assert resp.status_code == 200
+        assert any(c["status"] == "accepted" for c in resp.json())
+    finally:
+        _KEY_STORE.pop(hash_key("review-key"), None)
+
+
+@pytest.mark.asyncio
 async def test_contribute_rejects_malformed(client: AsyncClient) -> None:
     bad = {**_GOOD_PRIM, "value": "not-a-number", "unit": {}}
     r = await client.post("/contribute", json={"kind": "atomic_primitive", "payload": bad})
