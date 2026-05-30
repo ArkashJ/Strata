@@ -46,6 +46,7 @@ from ..registry import Registry, RegistryError
 from . import writer
 from .events import PipelineEvent, PipelineEventKind, PipelineStatus, ResolverResult, ScenarioLite
 from .parse import ParsedQuery, parse_query
+from .units import UnitMismatchError, assert_multipliable
 from .search import PrimitiveHit, search_primitive
 from .slug import (
     ConceptSummary,
@@ -533,6 +534,18 @@ def _step4_fallback(
             via="fallback",
             events=state.events,
             error="not enough primitives synthesized via fallback",
+        )
+
+    # AC1.6: refuse to emit a TAM from a dimensionally-invalid multiply (two
+    # currency factors, or none) instead of silently producing a wrong number.
+    try:
+        assert_multipliable([h.get("unit") for h in hits])
+    except UnitMismatchError as exc:
+        return ResolverResult(
+            status=PipelineStatus.FAILED,
+            via="fallback",
+            events=state.events,
+            error=f"unit guard: {exc}",
         )
 
     tam_value = 1.0
