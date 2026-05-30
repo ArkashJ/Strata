@@ -65,3 +65,48 @@ async def test_rls_cross_tenant_read_is_zero() -> None:
         assert orgs == {"rls-org-a"}, f"RLS leaked cross-tenant rows: {orgs}"
     finally:
         await conn.close()
+
+
+@pytest.mark.asyncio
+async def test_rls_enforced_through_app_session() -> None:
+    """AC3.6 runtime: RLS is enforced through the real ``set_org_scope`` (the
+    per-request activation of ``app.org_id``) on a SQLAlchemy session, not just
+    raw SQL. A NullPool engine avoids pytest-asyncio cross-event-loop pool reuse.
+    """
+    from contextlib import asynccontextmanager
+
+    from sqlalchemy import text
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    from sqlalchemy.pool import NullPool
+
+    from strata.config import settings
+    from strata.db.engine import set_org_scope
+
+    eng = create_async_engine(str(settings.database_url), poolclass=NullPool)
+    maker = async_sessionmaker(bind=eng, expire_on_commit=False)
+
+    @asynccontextmanager
+    async def org_scope(org_id: str):
+        async with maker() as session, session.begin():
+            await set_org_scope(session, org_id)  # the real per-request RLS wiring
+            yield session
+
+    try:
+        async with org_scope("app-org-a") as s:
+            await s.execute(
+                text("DELETE FROM tenant_data WHERE org_id IN ('app-org-a','app-org-b')")
+            )
+        async with org_scope("app-org-a") as s:
+            await s.execute(
+                text("INSERT INTO tenant_data (org_id, payload) VALUES ('app-org-a','a')")
+            )
+        async with org_scope("app-org-b") as s:
+            await s.execute(
+                text("INSERT INTO tenant_data (org_id, payload) VALUES ('app-org-b','b')")
+            )
+        async with org_scope("app-org-a") as s:
+            rows = (await s.execute(text("SELECT org_id FROM tenant_data"))).fetchall()
+        orgs = {r[0] for r in rows}
+        assert orgs == {"app-org-a"}, f"RLS leaked through the app session: {orgs}"
+    finally:
+        await eng.dispose()

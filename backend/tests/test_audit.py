@@ -57,9 +57,16 @@ async def test_audit_returns_rows_newest_first(client: AsyncClient) -> None:
     assert f"first-{tag}" in targets
     assert targets.index(f"second-{tag}") < targets.index(f"first-{tag}")
 
-    # Via the route.
-    resp = await client.get("/audit?limit=50")
-    assert resp.status_code == 200
+    # Via the route — now auth-guarded (operational data, no anonymous access).
+    from strata.api.auth import _KEY_STORE, hash_key, register_key
+
+    assert (await client.get("/audit?limit=50")).status_code == 401  # anonymous rejected
+    register_key("audit-key", "org-ops")
+    try:
+        resp = await client.get("/audit?limit=50", headers={"X-API-Key": "audit-key"})
+        assert resp.status_code == 200
+    finally:
+        _KEY_STORE.pop(hash_key("audit-key"), None)
     body = resp.json()
     route_targets = [e["target"] for e in body]
     assert route_targets.index(f"second-{tag}") < route_targets.index(f"first-{tag}")

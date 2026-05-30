@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from strata.api.auth import Principal, require_principal
+from strata.api.ratelimit import enforce_rate_limit
 from strata.models import Annotation, AtomicPrimitive
 
 router = APIRouter(tags=["contribute"])
@@ -94,6 +95,7 @@ def _validate(req: ContributionRequest) -> tuple[ContributionStatus, list[str]]:
 async def contribute(
     req: ContributionRequest, principal: Principal = _PRINCIPAL
 ) -> ContributionResponse:
+    enforce_rate_limit(principal.org_id)
     status, reasons = _validate(req)
     cid = (
         get_contribution_store().add(principal.org_id, req, status)
