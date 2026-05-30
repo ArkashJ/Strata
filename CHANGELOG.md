@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added — YC remediation Wave 0 (demo-blockers)
+- **Prediction-market primitives quarantined as signals (AC0.5).** The 202
+  Kalshi event-contract probabilities moved from `data/primitives/` →
+  `data/signals/`; the loader routes anything under `signals/` into a read-only
+  `registry.signals` dict that the evaluator and frameworks never touch (Q20).
+  `strata stats` now prints "sizing-grade primitives" and "signals" separately.
+  One-shot idempotent migration: `backend/scripts/quarantine_signals.py`.
 - **Built/recomputed TAMs now persist (AC0.1).** `GET /build/{slug}` and
   `POST /build/recompute` remember their evaluated `TAMOutput` in the registry
   (FIFO-capped), so a copied `/tam/<hash>` share-link resolves within the

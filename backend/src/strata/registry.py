@@ -7,7 +7,7 @@ truth for dev/test; Postgres is the source of truth in prod.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .loader import LoadedRecords
 from .models import (
@@ -38,6 +38,9 @@ class Registry:
     frameworks: dict[str, Framework]
     annotations: dict[str, Annotation]
     tam_outputs: dict[str, TAMOutput]
+    # Read-only prediction-market / non-sizing signals (Q20). Never consumed by
+    # the evaluator or any framework — exposed for display only.
+    signals: dict[str, AtomicPrimitive] = field(default_factory=dict)
 
     @classmethod
     async def from_db(cls) -> Registry:
@@ -72,6 +75,7 @@ class Registry:
             frameworks=_index(records.frameworks, lambda r: r.slug, "framework"),
             annotations=_index(records.annotations, lambda r: r.slug, "annotation"),
             tam_outputs=_index(records.tam_outputs, lambda r: r.state_hash, "tam_output"),
+            signals=_index(records.signals, lambda r: r.slug, "signal"),
         )
 
     def primitive(self, slug: str) -> AtomicPrimitive | CompositePrimitive:
