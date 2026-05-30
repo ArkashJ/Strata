@@ -15,7 +15,7 @@
 // Applying either re-mints the /build URL; BuildHashView then POSTs the overrides
 // to /build/recompute and the headline + graph + charts recompute.
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { formatCompact } from "@/lib/format";
@@ -252,8 +252,12 @@ function SwapTab({
   // numeric value. The backend validates the unit signature and 422s on a real
   // mismatch, so we keep the client filter permissive (same concept) rather than
   // trying to compare structured units against the summary's unit_label string.
-  const candidates = (primitives.data ?? []).filter(
-    (p) => p.concept_slug === conceptSlug && p.value != null && p.slug !== currentSlug,
+  const candidates = useMemo(
+    () =>
+      (primitives.data ?? []).filter(
+        (p) => p.concept_slug === conceptSlug && p.value != null && p.slug !== currentSlug,
+      ),
+    [primitives.data, conceptSlug, currentSlug],
   );
 
   if (primitives.isPending) {

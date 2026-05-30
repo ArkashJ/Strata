@@ -102,19 +102,21 @@ function toRecomputeRequest(state: BuildState): RecomputeRequest {
 // POST the overrides; the backend re-evaluates and mints a fresh state_hash. The
 // query key includes the canonical override payload so distinct what-ifs cache
 // independently and an unchanged override re-uses the result.
-export const recomputeQuery = (state: BuildState) =>
-  queryOptions({
-    queryKey: ["recompute", toRecomputeRequest(state)],
+export const recomputeQuery = (state: BuildState) => {
+  const req = toRecomputeRequest(state);
+  return queryOptions({
+    queryKey: ["recompute", req],
     queryFn: async (): Promise<TAMOutput> => {
       const data = await api("/build/recompute", {
         method: "POST",
-        body: JSON.stringify(toRecomputeRequest(state)),
+        body: JSON.stringify(req),
       });
       return validated(tamOutputSchema, data);
     },
     enabled: !!state.target_concept_slug && hasOverrides(state),
     staleTime: 5 * 60_000,
   });
+};
 
 export const trajectoryQuery = (conceptSlug: string) =>
   queryOptions({
