@@ -43,6 +43,9 @@ class BannerKind(StrEnum):
     DARK_ESTIMATE = "dark-estimate"
     ANALYST_PARAPHRASE = "analyst-paraphrase"
     USER_OVERRIDE = "user_override"
+    # Wave 5B — a private, org-scoped first-party primitive (connected SaaS
+    # data); flags that the TAM is sharpened by data only this tenant can see.
+    PRIVATE = "private"
 
 
 class TAMTarget(BaseModel):

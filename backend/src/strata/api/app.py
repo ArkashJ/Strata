@@ -19,6 +19,7 @@ from strata.api.routes import (
     frameworks,
     healthz,
     primitives,
+    integrations,
     resolve,
     usage,
 )
@@ -134,6 +135,7 @@ def create_app() -> FastAPI:
     app.include_router(resolve.router)
     app.include_router(audit.router)
     app.include_router(usage.router)
+    app.include_router(integrations.router)
 
     # Mount the read-only Strata MCP server at /mcp (Wave 5A). Best-effort: a
     # failure to build it must not take down the REST API.
