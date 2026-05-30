@@ -2,7 +2,26 @@
 // names resolve to `null` so <BrandIcon> can render a safe fallback glyph and
 // never crash. Gov/source marks (not in simple-icons) use a hand hex + the
 // monogram fallback.
-import * as si from "simple-icons";
+// Individual (tree-shakeable) imports — only the marks we render ship in the
+// bundle, and it stays small even if BrandIcon ever becomes a client component.
+// Vendors dropped from simple-icons v16 (Slack/Salesforce/Segment) are
+// intentionally absent → they fall back to a monogram.
+import {
+  type SimpleIcon,
+  siAirtable,
+  siAnthropic,
+  siClaude,
+  siGithub,
+  siGmail,
+  siGooglesheets,
+  siHubspot,
+  siJira,
+  siLinear,
+  siNotion,
+  siQuickbooks,
+  siSnowflake,
+  siStripe,
+} from "simple-icons";
 
 export interface BrandMark {
   path: string;
@@ -10,25 +29,22 @@ export interface BrandMark {
   title: string;
 }
 
-// Vendor name (lowercased) → simple-icons export key.
-const SI_KEYS: Record<string, string> = {
-  github: "siGithub",
-  slack: "siSlack",
-  gmail: "siGmail",
-  notion: "siNotion",
-  jira: "siJira",
-  linear: "siLinear",
-  salesforce: "siSalesforce",
-  hubspot: "siHubspot",
-  snowflake: "siSnowflake",
-  stripe: "siStripe",
-  quickbooks: "siQuickbooks",
-  "google sheets": "siGooglesheets",
-  googlesheets: "siGooglesheets",
-  segment: "siSegment",
-  airtable: "siAirtable",
-  anthropic: "siAnthropic",
-  claude: "siClaude",
+// Vendor name (lowercased) → simple-icons mark.
+const MARKS: Record<string, SimpleIcon> = {
+  github: siGithub,
+  gmail: siGmail,
+  notion: siNotion,
+  jira: siJira,
+  linear: siLinear,
+  hubspot: siHubspot,
+  snowflake: siSnowflake,
+  stripe: siStripe,
+  quickbooks: siQuickbooks,
+  "google sheets": siGooglesheets,
+  googlesheets: siGooglesheets,
+  airtable: siAirtable,
+  anthropic: siAnthropic,
+  claude: siClaude,
 };
 
 // Gov / public-data source marks aren't in simple-icons — give them a tinted
@@ -57,11 +73,8 @@ function normalize(name: string): string {
 }
 
 export function brandMark(name: string): BrandMark | null {
-  const key = SI_KEYS[normalize(name)];
-  if (key) {
-    const icon = (si as Record<string, unknown>)[key] as BrandMark | undefined;
-    if (icon?.path) return { path: icon.path, hex: `#${icon.hex}`, title: icon.title };
-  }
+  const icon = MARKS[normalize(name)];
+  if (icon?.path) return { path: icon.path, hex: `#${icon.hex}`, title: icon.title };
   return null;
 }
 

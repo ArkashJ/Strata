@@ -47,6 +47,16 @@ export function PyramidIcon(props: IconProps) {
   );
 }
 
+export function IntegrationsIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      <path d="M10 6.5h4a3 3 0 0 1 3 3V14" />
+    </Svg>
+  );
+}
+
 export function SearchIcon(props: IconProps) {
   return (
     <Svg {...props}>
