@@ -24,6 +24,12 @@ class RegistryError(KeyError):
     pass
 
 
+# FIFO bound on ephemeral build/recompute TAM outputs kept in-memory so their
+# permalinks resolve within a session. Large enough for a demo, small enough to
+# bound a long-lived process.
+_TAM_CACHE_CAP = 512
+
+
 @dataclass(slots=True)
 class Registry:
     atomic: dict[str, AtomicPrimitive]
@@ -95,6 +101,21 @@ class Registry:
 
     def iter_frameworks(self) -> Iterator[Framework]:
         yield from self.frameworks.values()
+
+    def remember_tam(self, tam: TAMOutput, *, cap: int = _TAM_CACHE_CAP) -> None:
+        """Persist an evaluated TAM so ``GET /tam/<hash>`` resolves (AC0.1).
+
+        Curated TAMs loaded from ``data/tams/`` and freshly-minted ones share
+        the same dict; equivalent states collide on ``state_hash`` (Q38) so a
+        re-build is idempotent. The cache is FIFO-capped to bound memory on a
+        long-lived process — only ephemeral build/recompute outputs are evicted
+        (curated YAML TAMs are re-seeded from disk on registry rebuild)."""
+        if tam.state_hash in self.tam_outputs:
+            return
+        self.tam_outputs[tam.state_hash] = tam
+        while len(self.tam_outputs) > cap:
+            oldest = next(iter(self.tam_outputs))
+            del self.tam_outputs[oldest]
 
 
 def _index[T](records: Iterable[T], slug_of: Callable[[T], str], kind: str) -> dict[str, T]:

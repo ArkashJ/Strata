@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — YC remediation Wave 0 (demo-blockers)
+- **Built/recomputed TAMs now persist (AC0.1).** `GET /build/{slug}` and
+  `POST /build/recompute` remember their evaluated `TAMOutput` in the registry
+  (FIFO-capped), so a copied `/tam/<hash>` share-link resolves within the
+  session instead of 404-ing. `reg.remember_tam` is idempotent on `state_hash`.
+
 ### Added
 - **Interactive edit → recompute on `/build` (the core loop).** Click a primitive
   node on the graph to open an override panel and either (a) type/slide a

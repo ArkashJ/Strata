@@ -76,9 +76,11 @@ async def build_tam(
     reg: Registry = _REG,
 ) -> TAMOutput:
     try:
-        return size_concept(reg, concept_slug)
+        out = size_concept(reg, concept_slug)
     except EvaluatorError as exc:
         raise HTTPException(422, str(exc)) from exc
+    reg.remember_tam(out)
+    return out
 
 
 @router.post(
@@ -112,6 +114,7 @@ async def recompute_tam(
     except EvaluatorError as exc:
         raise HTTPException(422, str(exc)) from exc
 
+    reg.remember_tam(out)
     await record_audit_safe(
         actor=None,
         action="recompute",
