@@ -29,6 +29,28 @@ uv run ruff check .
 uv run pyright
 ```
 
+## MCP server (Strata in Claude)
+
+Strata exposes its curated data bank + evaluator as a **read-only** MCP server,
+so any MCP client (Claude Desktop, IDE agents) gets **sourced, hash-pinned**
+market numbers. Five tools: `search_concepts`, `get_primitive`,
+`list_frameworks`, `size_tam`, `resolve_market`. Every numeric payload carries
+its `source_url`, `source_tier`, and `snapshot_sha256`; nothing mutates the
+registry.
+
+Local (stdio) — add to Claude:
+
+```sh
+claude mcp add strata -- uv run --directory /ABSOLUTE/PATH/to/backend strata-mcp --stdio
+```
+
+Hosted (streamable HTTP) is mounted on the API at `/mcp` (local-trust today;
+gated by the Wave-3 API key in prod):
+
+```sh
+claude mcp add --transport http strata https://<your-strata-host>/mcp
+```
+
 Layout:
 
 ```

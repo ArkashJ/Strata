@@ -48,6 +48,26 @@ A tool for VCs (and operators) to **cut through the noise**:
 
 See [`docs/00-vision.md`](docs/00-vision.md) for the full thesis.
 
+## Connect to Claude (MCP)
+
+Strata ships a **read-only MCP server** so any agent (Claude Desktop, IDE
+assistants) can pull **sourced, hash-pinned** market numbers — every figure
+carries its source URL, tier, and `snapshot_sha256`. Five tools:
+`search_concepts`, `get_primitive`, `list_frameworks`, `size_tam`,
+`resolve_market`.
+
+```sh
+# local (stdio)
+claude mcp add strata -- uv run --directory /ABS/PATH/backend strata-mcp --stdio
+# hosted (HTTP, mounted at /mcp on the API)
+claude mcp add --transport http strata https://<your-strata-host>/mcp
+```
+
+```
+agent ── tools/call ──> Strata MCP ──> registry + evaluator (read-only)
+                                   └──> sourced TAM tree (url · tier · sha256)
+```
+
 ## The three product layers
 
 | Layer | Name | What's in it |
