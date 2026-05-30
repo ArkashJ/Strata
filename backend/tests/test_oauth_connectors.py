@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
 from strata.api.app import create_app
+from strata.api.auth import _KEY_STORE, hash_key, register_key
 from strata.connectors.saas.base import SaaSConnector
 from strata.connectors.saas.crypto import get_vault
 from strata.connectors.saas.hubspot import HubSpotConnector
@@ -60,13 +61,46 @@ def test_oauth_token_scoped_encrypted() -> None:
     vault.purge("org-a", "stub")
 
 
+def _state_from(url: str) -> str:
+    from urllib.parse import parse_qs, urlparse
+
+    return parse_qs(urlparse(url).query)["state"][0]
+
+
 @pytest.mark.asyncio
-async def test_oauth_callback_stores_encrypted(client: AsyncClient) -> None:
-    r = await client.get("/integrations/stub/callback", params={"code": "abc"})
-    assert r.status_code == 200
-    stored = get_vault().get("public", "stub")  # anonymous principal org is "public"
-    assert stored is not None and stored.reveal() == "stub-token-abc"
-    get_vault().purge("public", "stub")
+async def test_oauth_flow_requires_auth_and_valid_state(client: AsyncClient) -> None:
+    register_key("oauth-key", "org-z")
+    headers = {"X-API-Key": "oauth-key"}
+    try:
+        # Anonymous (no key) is rejected on a tenant-secret route.
+        anon = await client.get("/integrations/stub/authorize")
+        assert anon.status_code == 401
+
+        # Authorize mints a CSRF state bound to org-z.
+        authz = await client.get("/integrations/stub/authorize", headers=headers)
+        assert authz.status_code == 200
+        state = _state_from(authz.json()["authorize_url"])
+
+        # A forged/missing state is rejected.
+        bad = await client.get(
+            "/integrations/stub/callback",
+            params={"code": "abc", "state": "forged"},
+            headers=headers,
+        )
+        assert bad.status_code == 400
+
+        # The real state completes the flow and stores an encrypted, org-scoped token.
+        ok = await client.get(
+            "/integrations/stub/callback",
+            params={"code": "abc", "state": state},
+            headers=headers,
+        )
+        assert ok.status_code == 200
+        stored = get_vault().get("org-z", "stub")
+        assert stored is not None and stored.reveal() == "stub-token-abc"
+    finally:
+        get_vault().purge("org-z", "stub")
+        _KEY_STORE.pop(hash_key("oauth-key"), None)
 
 
 # ── AC5B.2 — private primitive isolated per org ───────────────────────────

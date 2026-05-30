@@ -8,11 +8,15 @@ per-process key is generated so nothing runs unencrypted.
 
 from __future__ import annotations
 
+import logging
 import os
+import secrets
 from dataclasses import dataclass
 from threading import Lock
 
 from cryptography.fernet import Fernet
+
+_log = logging.getLogger(__name__)
 
 
 def _load_or_make_key() -> bytes:
@@ -20,7 +24,12 @@ def _load_or_make_key() -> bytes:
     if raw:
         return raw.encode()
     # Dev/test: ephemeral per-process key — tokens are still never stored in the
-    # clear; they just don't survive a restart (fine for non-prod).
+    # clear; they just don't survive a restart. Loud about it so a prod deploy
+    # that forgot STRATA_FERNET_KEY doesn't silently lose tokens on restart.
+    _log.warning(
+        "STRATA_FERNET_KEY unset — using an EPHEMERAL key; stored OAuth tokens "
+        "will not survive a process restart. Set STRATA_FERNET_KEY in prod."
+    )
     return Fernet.generate_key()
 
 
@@ -75,3 +84,32 @@ _vault = TokenVault()
 
 def get_vault() -> TokenVault:
     return _vault
+
+
+class PendingAuthStore:
+    """CSRF defense for the OAuth flow: a random ``state`` is minted at authorize
+    and must be echoed back (and consumed once) at callback. Binds the callback
+    to the org that started the flow — not to whatever principal hits the
+    callback URL."""
+
+    def __init__(self) -> None:
+        self._pending: dict[str, tuple[str, str]] = {}
+        self._lock = Lock()
+
+    def create(self, org_id: str, provider: str) -> str:
+        state = secrets.token_urlsafe(32)
+        with self._lock:
+            self._pending[state] = (org_id, provider)
+        return state
+
+    def consume(self, state: str) -> tuple[str, str] | None:
+        """Return (org_id, provider) and invalidate the state (single use)."""
+        with self._lock:
+            return self._pending.pop(state, None)
+
+
+_pending_auth = PendingAuthStore()
+
+
+def get_pending_auth() -> PendingAuthStore:
+    return _pending_auth

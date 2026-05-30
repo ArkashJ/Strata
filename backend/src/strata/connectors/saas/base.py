@@ -7,6 +7,8 @@ connected data into **private, org-scoped, first-party** ``AtomicPrimitive``s.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from abc import ABC, abstractmethod
 from datetime import date
 from typing import Any
@@ -47,9 +49,19 @@ def make_private_primitive(
     value: float,
     unit: dict[str, Any],
     as_of: date,
+    raw_payload: Any = None,
 ) -> AtomicPrimitive:
     """Build a private first-party primitive. Slug is org-namespaced so two
-    tenants' same metric never collide, and it can never shadow a public slug."""
+    tenants' same metric never collide, and it can never shadow a public slug.
+
+    ``snapshot_sha256`` is a real content hash over the fetched payload (or the
+    value when no raw payload is passed), honoring the hash-pinning invariant."""
+    snapshot_basis = (
+        json.dumps(raw_payload, sort_keys=True, default=str)
+        if raw_payload is not None
+        else f"{slug_stub}:{value}:{as_of.isoformat()}"
+    )
+    snapshot_sha256 = hashlib.sha256(snapshot_basis.encode()).hexdigest()
     return AtomicPrimitive.model_validate(
         {
             "kind": "atomic_primitive",
@@ -70,7 +82,7 @@ def make_private_primitive(
                 "tier": "first_party",
                 "url": f"https://{provider}.com/",
                 "accessed": as_of.isoformat(),
-                "snapshot_sha256": "f1" * 32,
+                "snapshot_sha256": snapshot_sha256,
             },
             "visibility": "private",
             "org_id": org_id,
