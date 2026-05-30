@@ -21,6 +21,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/healthz/llm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolver LLM backend probe
+         * @description Report the resolver's selected LLM backend and whether it looks reachable.
+         *
+         *     Lets the UI/ops tell "no backend configured" apart from a transient error.
+         *     Read-only and cheap: never makes a completion call, never echoes key/token
+         *     material (presence is reported as a bool only).
+         */
+        get: operations["healthz_llm_healthz_llm_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/c": {
         parameters: {
             query?: never;
@@ -152,6 +176,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/build/recompute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recompute a concept's TAM with what-if overrides / primitive swaps */
+        post: operations["recompute_tam_build_recompute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/build/{concept_slug}/trajectory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** TAM-over-time series derived from primitive as_of dates */
+        get: operations["build_trajectory_build__concept_slug__trajectory_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tam/{state_hash}": {
         parameters: {
             query?: never;
@@ -180,6 +238,23 @@ export interface paths {
         put?: never;
         /** Resolve Query */
         post: operations["resolve_query_resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent audit events (newest first) */
+        get: operations["get_audit_audit_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -274,6 +349,26 @@ export interface components {
              */
             derives_from: string[];
         };
+        /** AuditEvent */
+        AuditEvent: {
+            /** Id */
+            id: number;
+            /** Actor */
+            actor: string | null;
+            /** Action */
+            action: string;
+            /** Target */
+            target: string | null;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
         /**
          * BannerKind
          * @description Banner taxonomy. Surfaces in the UI (U10) and in PDF/markdown exports
@@ -282,10 +377,11 @@ export interface components {
          *     `analyst_paraphrase` covers Q40; `synthetic` and `modeled` cover Q20;
          *     `subsidy` covers regime-modifier frameworks (e.g. IRA); `regulated` covers
          *     Q36 clearance-gated outputs; `dark_estimate` flags low-confidence
-         *     primitives.
+         *     primitives. `user_override` flags a transient what-if scalar the user typed
+         *     in the `/build` UI — never a sourced/persisted primitive (Strata Live).
          * @enum {string}
          */
-        BannerKind: "synthetic" | "modeled" | "subsidy" | "regulated" | "dark-estimate" | "analyst-paraphrase";
+        BannerKind: "synthetic" | "modeled" | "subsidy" | "regulated" | "dark-estimate" | "analyst-paraphrase" | "user_override";
         /**
          * CompositePrimitive
          * @description Same-unit set op over atomic primitives (Q3).
@@ -573,6 +669,16 @@ export interface components {
             name?: string | null;
             unit?: components["schemas"]["Unit"] | null;
         };
+        /** LLMHealth */
+        LLMHealth: {
+            /**
+             * Backend
+             * @enum {string}
+             */
+            backend: "claude-cli" | "anthropic-sdk";
+            /** Available */
+            available: boolean;
+        };
         /** MarginCaptureModifier */
         MarginCaptureModifier: {
             /** Middleman */
@@ -590,6 +696,12 @@ export interface components {
             /** Pricing Premium */
             pricing_premium: number;
         };
+        /** OverrideValueIn */
+        OverrideValueIn: {
+            /** Value */
+            value: number;
+            unit: components["schemas"]["Unit"];
+        };
         /** PrimitiveSummary */
         PrimitiveSummary: {
             /** Slug */
@@ -604,6 +716,21 @@ export interface components {
             value: number | null;
             /** Unit Label */
             unit_label: string;
+        };
+        /** RecomputeRequest */
+        RecomputeRequest: {
+            /** Concept Slug */
+            concept_slug: string;
+            /** Framework Assumptions */
+            framework_assumptions?: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            } | null;
+            /** Primitive Overrides */
+            primitive_overrides?: {
+                [key: string]: components["schemas"]["OverrideValueIn"];
+            } | null;
         };
         /** RegulatoryUnlockModifier */
         RegulatoryUnlockModifier: {
@@ -648,6 +775,11 @@ export interface components {
              * @default []
              */
             banners: components["schemas"]["ScenarioBanner"][];
+            /**
+             * Uses Synthetic Primitives
+             * @default false
+             */
+            uses_synthetic_primitives: boolean;
         };
         /** ScenarioBanner */
         ScenarioBanner: {
@@ -737,6 +869,48 @@ export interface components {
             /** @default n/a */
             expansion_stage: components["schemas"]["ExpansionStage"];
         };
+        /**
+         * TAMTrajectory
+         * @description TAM-over-time series derived from primitive ``as_of`` dates.
+         *
+         *     Each point represents the evaluator output at a distinct ``as_of``
+         *     date — using only the primitives available at or before that date. Points
+         *     where no framework is fully satisfiable are omitted; ``points: []`` means
+         *     the concept has no resolvable history at all.
+         */
+        TAMTrajectory: {
+            /** Concept Slug */
+            concept_slug: string;
+            /** Concept Name */
+            concept_name: string;
+            unit: components["schemas"]["Unit"];
+            /** Points */
+            points: components["schemas"]["TrajectoryPoint"][];
+        };
+        /**
+         * TrajectoryPoint
+         * @description One data point in a TAM-over-time trajectory.
+         *
+         *     `value` is the triangulated midpoint of all satisfiable scenarios at this
+         *     snapshot date; `low`/`high` are the min/max of those scenario values.
+         */
+        TrajectoryPoint: {
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Value */
+            value: number;
+            /** Low */
+            low: number;
+            /** High */
+            high: number;
+            /** Method Families */
+            method_families: string[];
+            /** Scenarios N */
+            scenarios_n: number;
+        };
         /** Uncertainty */
         Uncertainty: {
             /** Range */
@@ -817,6 +991,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    healthz_llm_healthz_llm_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LLMHealth"];
                 };
             };
         };
@@ -1005,6 +1199,70 @@ export interface operations {
             };
         };
     };
+    recompute_tam_build_recompute_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecomputeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TAMOutput"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    build_trajectory_build__concept_slug__trajectory_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                concept_slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TAMTrajectory"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_tam_tam__state_hash__get: {
         parameters: {
             query?: never;
@@ -1056,6 +1314,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_audit_audit_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditEvent"][];
                 };
             };
             /** @description Validation Error */
