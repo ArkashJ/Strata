@@ -42,6 +42,10 @@ class _SourceBase(BaseModel):
     url: str
     accessed: date
     snapshot_sha256: Sha256Hex
+    # Wave 1 / AC1.7 — freshness SLA in days. A primitive whose data period
+    # (``as_of``) is older than this many days is rendered with a `stale` chip.
+    # ``None`` means no SLA declared (never auto-flagged stale).
+    freshness_sla_days: int | None = None
 
 
 class StandardSource(_SourceBase):
