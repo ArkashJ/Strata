@@ -77,6 +77,38 @@ async def test_recompute_unknown_concept_404(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
+async def test_recompute_unknown_swap_primitive_422(client: AsyncClient) -> None:
+    # A framework_assumptions swap to a non-existent primitive raises ValueError
+    # in the evaluator; the route must translate that to 422, not leak a 500.
+    resp = await client.post(
+        "/build/recompute",
+        json={
+            "concept_slug": _CONCEPT,
+            "framework_assumptions": {
+                "bottoms-up-cost-efficiency": {"cost_per_persona": "does-not-exist"}
+            },
+        },
+    )
+    assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_recompute_unconsumed_override_422(client: AsyncClient) -> None:
+    # A what-if override on a slug no applicable framework input binds must be
+    # rejected (not silently 200 + base TAM) — the inverse of an unknown swap.
+    resp = await client.post(
+        "/build/recompute",
+        json={
+            "concept_slug": _CONCEPT,
+            "primitive_overrides": {
+                "not-a-bound-input-slug": {"value": 1.0, "unit": _USD_INTENSIVE}
+            },
+        },
+    )
+    assert resp.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_recompute_framework_swap_no_banner(client: AsyncClient) -> None:
     resp = await client.post(
         "/build/recompute",

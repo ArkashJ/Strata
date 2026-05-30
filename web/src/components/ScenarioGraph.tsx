@@ -246,15 +246,20 @@ function PrimitiveCard({ data }: NodeProps<PrimitiveNodeData>) {
   const { input, onEdit, overridden, frameworkSlug } = data;
   const editable = typeof onEdit === "function";
 
+  // The ReactFlow connection handle. Kept as a SIBLING of the card (not a child
+  // of the editable <button>) — a <button> may not contain a <div>, and a button
+  // is the correct semantic element for the click target (a11y).
+  const handle = (
+    <Handle
+      type="target"
+      position={Position.Top}
+      style={{ background: "transparent", border: 0 }}
+    />
+  );
   // Read-only graphs (e.g. /tam artifacts) keep the static card. On /build the
   // node is a button that opens the override panel — the edit→recompute entry.
-  const body = (
+  const content = (
     <>
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ background: "transparent", border: 0 }}
-      />
       <div className="text-[11px] text-[var(--fg-2)] leading-[1.3] line-clamp-2">
         {input.name ?? input.primitive_slug.replace(/-/g, " ")}
       </div>
@@ -285,21 +290,25 @@ function PrimitiveCard({ data }: NodeProps<PrimitiveNodeData>) {
 
   if (editable) {
     return (
-      <button
-        type="button"
-        onClick={() => onEdit?.(input, frameworkSlug)}
-        className={className}
-        style={{ borderRadius: "var(--r-3)" }}
-        title="Edit this assumption — swap the primitive or set a what-if value"
-      >
-        {body}
-      </button>
+      <>
+        {handle}
+        <button
+          type="button"
+          onClick={() => onEdit?.(input, frameworkSlug)}
+          className={className}
+          style={{ borderRadius: "var(--r-3)" }}
+          title="Edit this assumption — swap the primitive or set a what-if value"
+        >
+          {content}
+        </button>
+      </>
     );
   }
 
   return (
     <div className={className} style={{ borderRadius: "var(--r-3)" }}>
-      {body}
+      {handle}
+      {content}
     </div>
   );
 }

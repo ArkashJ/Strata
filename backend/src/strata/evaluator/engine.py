@@ -95,6 +95,23 @@ def size_concept(
     builds = list(_iter_scenario_builds(registry, concept, overrides))
     if not builds:
         raise EvaluatorError(f"concept {concept_slug!r} has no applicable framework variants")
+    # A what-if override on a slug that no applicable framework input binds would
+    # otherwise be silently dropped (200 + base TAM, no banner) — the inverse of
+    # an unknown swap, which already raises. Reject it so the API can't claim a
+    # recompute happened when the override changed nothing.
+    if overrides is not None and overrides.primitive_overrides:
+        consumed = {
+            iu.primitive_slug
+            for b in builds
+            for iu in b.inputs_used
+            if iu.primitive_slug in overrides.primitive_overrides
+        }
+        unconsumed = sorted(set(overrides.primitive_overrides) - consumed)
+        if unconsumed:
+            raise EvaluatorError(
+                f"primitive_overrides {unconsumed} are not consumed by any applicable "
+                f"framework input for concept {concept.slug!r}"
+            )
     scenarios = tuple(_build_to_scenario(b) for b in builds)
     method_families = sorted({b.framework.method_family for b in builds}, key=lambda m: m.value)
     payload: dict[str, object] = {
