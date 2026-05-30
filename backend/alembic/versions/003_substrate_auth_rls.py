@@ -58,6 +58,9 @@ def upgrade() -> None:
     )
     # Row-level security: a session sees only rows for its app.org_id, and may
     # only insert rows for it. FORCE so the table owner is subject too.
+    # ``current_setting(..., true)`` returns NULL (not an error) when app.org_id
+    # is unset; ``org_id = NULL`` is NULL → the row is invisible and inserts are
+    # rejected. So an unset session var fails CLOSED (sees zero rows), not open.
     op.execute("ALTER TABLE tenant_data ENABLE ROW LEVEL SECURITY")
     op.execute("ALTER TABLE tenant_data FORCE ROW LEVEL SECURITY")
     op.execute(

@@ -2,8 +2,9 @@
 
 Every metered request bumps an in-process counter keyed by ``(org_id, route)``;
 ``GET /usage`` returns the caller's org totals. The in-process store is the
-source of truth for tests and single-container deploys; prod additionally
-appends to a ``usage_events`` table (best-effort, never blocks the request).
+active source of truth (tests + single-container deploys). The ``usage_events``
+Postgres table (migration 003) is forward scaffolding for durable, cross-process
+metering — appending to it is a follow-up, not yet wired.
 """
 
 from __future__ import annotations

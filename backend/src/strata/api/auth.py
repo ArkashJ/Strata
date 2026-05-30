@@ -1,10 +1,14 @@
 """API-key authentication (Wave 3 / AC3.1).
 
 A request authenticates with an ``X-API-Key`` header. Keys are stored **hashed**
-(sha256) — the in-process store is seeded from ``settings.api_keys_raw``
-(``rawkey:org_id`` pairs) for dev/self-host; prod additionally loads hashed keys
-from the ``api_keys`` table. A valid key resolves to a ``Principal`` carrying the
-tenant ``org_id`` used for rate-limiting, metering, and Postgres RLS.
+(sha256) in an in-process store seeded from ``settings.api_keys_raw``
+(``rawkey:org_id`` pairs) for dev/self-host. A valid key resolves to a
+``Principal`` carrying the tenant ``org_id`` used for rate-limiting, metering,
+and Postgres RLS.
+
+The ``api_keys`` Postgres table (migration 003) is the **forward scaffolding** for
+a DB-backed key store; loading it at boot into ``_KEY_STORE`` is a follow-up — the
+in-process store is the active path today.
 
 When ``settings.require_auth`` is False (dev default) the protected routes still
 run but under an anonymous ``public`` principal, so the curated read API stays
