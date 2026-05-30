@@ -67,21 +67,27 @@ def get_contribution_store() -> _ContributionStore:
 
 
 def _validate(req: ContributionRequest) -> tuple[ContributionStatus, list[str]]:
-    model = AtomicPrimitive if req.kind == "atomic_primitive" else Annotation
+    """Structural (L1) validation + tier gate. Cross-record referential checks
+    (concept_slug exists, slug uniqueness) run later at `strata promote` time —
+    this intake never writes to the data bank, only routes the review queue."""
+    if req.kind == "annotation":
+        try:
+            TypeAdapter(Annotation).validate_python(req.payload)
+        except ValidationError as exc:
+            return "rejected", [f"{e['loc']}: {e['msg']}" for e in exc.errors()][:8]
+        # Annotations are pure commentary (E1) — never auto-publish into math.
+        return "needs_review", ["annotation queued for review (never auto-applied to math)"]
+
     try:
-        TypeAdapter(model).validate_python(req.payload)
+        prim = TypeAdapter(AtomicPrimitive).validate_python(req.payload)
     except ValidationError as exc:
         return "rejected", [f"{e['loc']}: {e['msg']}" for e in exc.errors()][:8]
 
-    if req.kind == "annotation":
-        # Annotations are pure commentary (E1) — never auto-publish into math,
-        # always human-reviewed.
-        return "needs_review", ["annotation queued for review (never auto-applied to math)"]
-
-    tier = str(((req.payload.get("source") or {}).get("tier")) or "")
+    # Read the tier from the VALIDATED object (a coerced enum), not the raw dict.
+    tier = prim.source.tier.value
     if tier in _AUTO_ACCEPT_TIERS:
         return "accepted", [f"validated; {tier} tier auto-accepted"]
-    return "needs_review", [f"{tier or 'unknown'}-tier source requires human review before publish"]
+    return "needs_review", [f"{tier}-tier source requires human review before publish"]
 
 
 @router.post("/contribute", response_model=ContributionResponse)
