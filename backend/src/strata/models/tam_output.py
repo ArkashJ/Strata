@@ -32,7 +32,8 @@ class BannerKind(StrEnum):
     `analyst_paraphrase` covers Q40; `synthetic` and `modeled` cover Q20;
     `subsidy` covers regime-modifier frameworks (e.g. IRA); `regulated` covers
     Q36 clearance-gated outputs; `dark_estimate` flags low-confidence
-    primitives.
+    primitives. `user_override` flags a transient what-if scalar the user typed
+    in the `/build` UI — never a sourced/persisted primitive (Strata Live).
     """
 
     SYNTHETIC = "synthetic"
@@ -41,6 +42,7 @@ class BannerKind(StrEnum):
     REGULATED = "regulated"
     DARK_ESTIMATE = "dark-estimate"
     ANALYST_PARAPHRASE = "analyst-paraphrase"
+    USER_OVERRIDE = "user_override"
 
 
 class TAMTarget(BaseModel):
@@ -91,6 +93,11 @@ class Scenario(BaseModel):
     inputs_used: tuple[InputUsed, ...]
     assumptions: dict[str, str] = Field(default_factory=dict[str, str])
     banners: tuple[ScenarioBanner, ...] = ()
+
+    # True when a transient what-if scalar override fed this scenario (Strata
+    # Live). Carries the synthetic flag down to the per-scenario level so the
+    # UI can mark the affected node, not just the whole TAM.
+    uses_synthetic_primitives: bool = False
 
 
 class TAMOutput(BaseModel):

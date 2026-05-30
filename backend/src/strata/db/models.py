@@ -102,6 +102,26 @@ class ConceptRow(Base):
     )
 
 
+class AuditEventRow(Base):
+    """Append-only audit log (Strata Live Track C).
+
+    One row per user-visible action (resolve / recompute / promote). ``actor``
+    is the Clerk user id or ``'anon'`` when unauthenticated; ``meta`` carries
+    free-form JSON context (query text, hash, etc.).
+    """
+
+    __tablename__ = "audit_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    actor: Mapped[str | None] = mapped_column(String(128), nullable=True, default="anon")
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    target: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    ts: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
+    meta: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+
+
 class FrameworkRow(Base):
     """Framework record in Postgres."""
 
