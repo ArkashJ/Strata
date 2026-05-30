@@ -18,8 +18,8 @@ from strata.api.routes import (
     concepts,
     frameworks,
     healthz,
-    primitives,
     integrations,
+    primitives,
     resolve,
     usage,
 )
