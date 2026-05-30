@@ -3,11 +3,14 @@ import { z } from "zod";
 
 import { api } from "./api-client";
 import {
+  type AuditEvent,
   type ConceptSummary,
   type FrameworkSummary,
   type PrimitiveSummary,
+  type RecomputeRequest,
   type TAMOutput,
   type TamTrajectory,
+  auditEventSchema,
   conceptDetailSchema,
   conceptSummarySchema,
   frameworkDetailSchema,
@@ -17,6 +20,7 @@ import {
   tamOutputSchema,
   tamTrajectorySchema,
 } from "./schemas";
+import type { BuildState } from "./state-hash";
 
 function validated<T>(schema: z.ZodType<T>, data: unknown): T {
   return schema.parse(data);
@@ -78,6 +82,42 @@ export const buildQuery = (conceptSlug: string) =>
     staleTime: 5 * 60_000,
   });
 
+// True when the user has diverged from the registry defaults — i.e. a what-if
+// scalar or a primitive swap is in play, so the TAM must be recomputed server-side
+// rather than read from GET /build/{slug}.
+export function hasOverrides(state: BuildState): boolean {
+  const fa = state.framework_assumptions ?? {};
+  const po = state.primitive_overrides ?? {};
+  return Object.values(fa).some((m) => Object.keys(m).length > 0) || Object.keys(po).length > 0;
+}
+
+function toRecomputeRequest(state: BuildState): RecomputeRequest {
+  return {
+    concept_slug: state.target_concept_slug,
+    framework_assumptions: state.framework_assumptions,
+    primitive_overrides: state.primitive_overrides,
+  };
+}
+
+// POST the overrides; the backend re-evaluates and mints a fresh state_hash. The
+// query key includes the canonical override payload so distinct what-ifs cache
+// independently and an unchanged override re-uses the result.
+export const recomputeQuery = (state: BuildState) => {
+  const req = toRecomputeRequest(state);
+  return queryOptions({
+    queryKey: ["recompute", req],
+    queryFn: async (): Promise<TAMOutput> => {
+      const data = await api("/build/recompute", {
+        method: "POST",
+        body: JSON.stringify(req),
+      });
+      return validated(tamOutputSchema, data);
+    },
+    enabled: !!state.target_concept_slug && hasOverrides(state),
+    staleTime: 5 * 60_000,
+  });
+};
+
 export const trajectoryQuery = (conceptSlug: string) =>
   queryOptions({
     queryKey: ["trajectory", conceptSlug],
@@ -98,4 +138,16 @@ export const tamQuery = (stateHash: string) =>
     },
     enabled: !!stateHash,
     staleTime: Number.POSITIVE_INFINITY,
+  });
+
+// Paginated audit feed (newest-first) for the dashboard. The backend already
+// orders by ts desc, so we render rows in the order returned.
+export const auditQuery = (limit = 50, offset = 0) =>
+  queryOptions({
+    queryKey: ["audit", limit, offset],
+    queryFn: async (): Promise<AuditEvent[]> => {
+      const data = await api(`/audit?limit=${limit}&offset=${offset}`);
+      return validated(z.array(auditEventSchema), data);
+    },
+    staleTime: 30_000,
   });

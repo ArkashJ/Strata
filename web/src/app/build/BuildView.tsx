@@ -52,6 +52,7 @@ export function BuildView() {
 			frameworks_selected: [],
 			framework_assumptions: {},
 			primitive_pins: {},
+			primitive_overrides: {},
 		};
 		router.replace(`/build/${tam.state_hash}?s=${encodeState(state)}`, {
 			scroll: false,

@@ -118,6 +118,18 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
   real values, enriched primitive cards, min-max range display
 - **Dynamic queries** — type ANY market → Claude parses → Exa finds real data →
   evaluates framework → streams chain of thought via SSE
+- **Edit and recompute (PR #55)** — on a sized TAM, click a number in the graph to
+  set a **what-if value** or **swap in a different sourced figure**; the whole TAM
+  recomputes live. What-if values are clearly flagged and never saved as sourced
+  data. Result charts (method comparison + input composition) render alongside.
+
+  ```
+  click a number  ->  set what-if / swap source  ->  TAM recomputes  ->  share the link
+                                                      (what-if flagged)
+  ```
+- **Dashboard + activity log (PR #55, optional sign-in)** — `/dashboard` shows
+  library counts, your recent builds, and an audit feed. Sign-in (Clerk) is off
+  until you add keys; the app runs the same without them.
 - **22 data connectors** — BLS, FRED, Census, EDGAR, World Bank, Kalshi, OECD,
   Eurostat, UN Comtrade, FDIC, CMS, EIA, USDA NASS, FAA, openFDA, plus 7 added
   in v0.3 (Alpha Vantage, Nasdaq Data Link, yfinance, Reddit, GitHub, Stack

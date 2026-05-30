@@ -20,6 +20,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { hideDecorClass, hideLabelClass } from "./collapse";
 import {
   ConceptsIcon,
+  DashboardIcon,
   FrameworksIcon,
   HomeIcon,
   PrimitivesIcon,
@@ -58,6 +59,7 @@ export function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto px-2 py-3 flex flex-col gap-1" aria-label="Primary">
         <NavItem icon={<HomeIcon />} label="Home" href="/" exact />
+        <NavItem icon={<DashboardIcon />} label="Dashboard" href="/dashboard" />
         <NavItem icon={<PyramidIcon />} label="Pyramid explorer" href="/graph" />
         <NavItem icon={<SearchIcon />} label="Search" onClick={openPalette} />
 

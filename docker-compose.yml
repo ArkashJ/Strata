@@ -33,6 +33,11 @@ services:
       STRATA_DATA_DIR: /app/data
       # Run migrations + seed YAML into Postgres on first boot (entrypoint.sh).
       STRATA_SEED_ON_BOOT: "1"
+      # Container has no `claude` CLI, so the resolver uses the Anthropic SDK path.
+      # Keys interpolate from the gitignored root .env — never committed.
+      STRATA_LLM_BACKEND: anthropic
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      EXA_API_KEY: ${EXA_API_KEY:-}
     ports: ["8000:8000"]
 
   web:

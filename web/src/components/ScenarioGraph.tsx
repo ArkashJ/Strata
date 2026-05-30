@@ -31,6 +31,13 @@ interface FrameworkNodeData extends Record<string, unknown> {
 interface PrimitiveNodeData extends Record<string, unknown> {
   kind: "primitive";
   input: InputUsed;
+  // The framework this input feeds — the key for a primitive-swap assumption.
+  frameworkSlug: string;
+  // Present only when the graph is interactive (on /build). Clicking the node
+  // opens the override panel for this input's primitive.
+  onEdit?: (input: InputUsed, frameworkSlug: string) => void;
+  // The user has a what-if override or swap active on this primitive slug.
+  overridden?: boolean;
 }
 type StrataNode =
   | Node<TargetNodeData, "target">
@@ -52,8 +59,20 @@ const DEFAULT_EDGE_OPTIONS = {
 const FIT_VIEW_OPTIONS = { padding: 0.18 };
 const PRO_OPTIONS = { hideAttribution: true };
 
-export function ScenarioGraph({ tam }: { tam: TAMOutput }) {
-  const { nodes, edges } = useMemo(() => buildGraph(tam), [tam]);
+export interface ScenarioGraphProps {
+  tam: TAMOutput;
+  // When provided, base-value primitive nodes become clickable and open the
+  // override panel — the edit→recompute entry point. Omit for read-only graphs.
+  onEditPrimitive?: (input: InputUsed, frameworkSlug: string) => void;
+  // Primitive slugs with an active what-if override or swap, rendered accented.
+  overriddenSlugs?: ReadonlySet<string>;
+}
+
+export function ScenarioGraph({ tam, onEditPrimitive, overriddenSlugs }: ScenarioGraphProps) {
+  const { nodes, edges } = useMemo(
+    () => buildGraph(tam, onEditPrimitive, overriddenSlugs),
+    [tam, onEditPrimitive, overriddenSlugs],
+  );
 
   return (
     <div
@@ -97,7 +116,11 @@ interface GraphData {
   edges: Edge[];
 }
 
-function buildGraph(tam: TAMOutput): GraphData {
+function buildGraph(
+  tam: TAMOutput,
+  onEditPrimitive?: (input: InputUsed, frameworkSlug: string) => void,
+  overriddenSlugs?: ReadonlySet<string>,
+): GraphData {
   const frameworkCount = tam.scenarios.length;
   const frameworkSpacing = 320;
   const frameworkStartX = -((frameworkCount - 1) * frameworkSpacing) / 2;
@@ -150,7 +173,13 @@ function buildGraph(tam: TAMOutput): GraphData {
         id: pId,
         type: "primitive",
         position: { x: pX, y: pY },
-        data: { kind: "primitive", input },
+        data: {
+          kind: "primitive",
+          input,
+          frameworkSlug: scenario.framework,
+          onEdit: onEditPrimitive,
+          overridden: overriddenSlugs?.has(input.primitive_slug) ?? false,
+        },
         draggable: false,
       });
       edges.push({ id: `e-${fId}-${pId}`, source: fId, target: pId });
@@ -214,24 +243,72 @@ function FrameworkCard({ data }: NodeProps<FrameworkNodeData>) {
 }
 
 function PrimitiveCard({ data }: NodeProps<PrimitiveNodeData>) {
-  const { input } = data;
-  return (
-    <div
-      className="canvas-card w-[180px] px-3 py-2.5 text-left"
-      style={{ borderRadius: "var(--r-3)" }}
-    >
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ background: "transparent", border: 0 }}
-      />
+  const { input, onEdit, overridden, frameworkSlug } = data;
+  const editable = typeof onEdit === "function";
+
+  // The ReactFlow connection handle. Kept as a SIBLING of the card (not a child
+  // of the editable <button>) — a <button> may not contain a <div>, and a button
+  // is the correct semantic element for the click target (a11y).
+  const handle = (
+    <Handle
+      type="target"
+      position={Position.Top}
+      style={{ background: "transparent", border: 0 }}
+    />
+  );
+  // Read-only graphs (e.g. /tam artifacts) keep the static card. On /build the
+  // node is a button that opens the override panel — the edit→recompute entry.
+  const content = (
+    <>
       <div className="text-[11px] text-[var(--fg-2)] leading-[1.3] line-clamp-2">
         {input.name ?? input.primitive_slug.replace(/-/g, " ")}
       </div>
       <div className="tam-num text-[15px] text-[var(--fg-1)] mt-1.5 tabular-nums">
-        {input.value != null ? formatCompact(input.value, input.unit) : input.role_name}
+        {input.value != null && input.unit
+          ? formatCompact(input.value, input.unit)
+          : (input.role_name ?? input.role.replace(/_/g, " "))}
       </div>
-      <div className="text-[10px] text-[var(--fg-3)] mt-0.5">{input.role.replace(/_/g, " ")}</div>
+      <div className="mt-0.5 flex items-center justify-between gap-1">
+        <span className="text-[10px] text-[var(--fg-3)]">{input.role.replace(/_/g, " ")}</span>
+        {editable ? (
+          <span className="text-[10px] text-[var(--accent)]">{overridden ? "edited" : "edit"}</span>
+        ) : null}
+      </div>
+    </>
+  );
+
+  const ring = overridden
+    ? "ring-2 ring-[var(--accent)]"
+    : editable
+      ? "hover:ring-1 hover:ring-[var(--accent)] cursor-pointer"
+      : "";
+  // ReactFlow sets pointer-events:none on non-draggable/non-selectable nodes so
+  // clicks fall through to the pan surface — which would make this button
+  // unclickable. Re-enable it on the button itself (a child can opt back in).
+  const interactive = editable ? "pointer-events-auto" : "";
+  const className = `canvas-card w-[180px] px-3 py-2.5 text-left transition-shadow ${ring} ${interactive}`;
+
+  if (editable) {
+    return (
+      <>
+        {handle}
+        <button
+          type="button"
+          onClick={() => onEdit?.(input, frameworkSlug)}
+          className={className}
+          style={{ borderRadius: "var(--r-3)" }}
+          title="Edit this assumption — swap the primitive or set a what-if value"
+        >
+          {content}
+        </button>
+      </>
+    );
+  }
+
+  return (
+    <div className={className} style={{ borderRadius: "var(--r-3)" }}>
+      {handle}
+      {content}
     </div>
   );
 }

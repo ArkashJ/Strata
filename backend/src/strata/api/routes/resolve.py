@@ -26,6 +26,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from strata.api.deps import get_registry
+from strata.db.audit import record_audit_safe
 from strata.registry import Registry
 from strata.resolver import RunOptions, parse_query, run, search_primitive
 from strata.resolver.events import PipelineStatus, ResolverResult
@@ -182,6 +183,12 @@ async def resolve_query(
                 "primitives_used": primitives,
                 "banner": result.banner,
             },
+        )
+        await record_audit_safe(
+            actor=None,
+            action="resolve",
+            target=result.concept_name or body.query[:128],
+            meta={"query": body.query, "lens": result.lens, "tam_value": tam_value},
         )
         yield _sse("done", {})
 

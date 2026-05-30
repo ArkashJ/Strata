@@ -7,6 +7,7 @@
 // workhorse view.
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useEffect } from "react";
 
 import { BuildWorkspace } from "@/components/build/BuildWorkspace";
 import { Button } from "@/components/ui/Button";
@@ -14,7 +15,8 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { NotFoundState } from "@/components/ui/NotFoundState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ApiError } from "@/lib/api-client";
-import { buildQuery } from "@/lib/queries";
+import { recordBuildVisit } from "@/lib/build-history";
+import { buildQuery, hasOverrides, recomputeQuery } from "@/lib/queries";
 import { type BuildState, decodeState } from "@/lib/state-hash";
 
 // Decode ?s= defensively — a hand-edited or truncated param must not throw past
@@ -35,11 +37,45 @@ function safeDecode(encoded: string | null): BuildState | null {
 	}
 }
 
+// A neutral state for the recompute hook when ?s= is missing/corrupt — keeps the
+// hook order stable while staying disabled (empty slug + no overrides).
+const EMPTY_STATE: BuildState = {
+	target_concept_slug: "",
+	frameworks_selected: [],
+	framework_assumptions: {},
+	primitive_pins: {},
+	primitive_overrides: {},
+};
+
 export function BuildHashView({ hash, s }: { hash: string; s: string | null }) {
 	const state = safeDecode(s);
-	// Disabled when state is null so we never fire a /build/ request with an empty
-	// slug (which would 422 and look like a server fault rather than a missing ?s=).
-	const build = useQuery(buildQuery(state?.target_concept_slug ?? ""));
+	const slug = state?.target_concept_slug ?? "";
+	// When the user has diverged (a what-if scalar or a primitive swap), the TAM
+	// must be recomputed server-side; otherwise the registry default GET suffices.
+	// Both hooks always run (stable order); enabled flags pick exactly one.
+	const overriding = state ? hasOverrides(state) : false;
+	const build = useQuery({
+		...buildQuery(slug),
+		enabled: !!slug && !overriding,
+	});
+	const recompute = useQuery(recomputeQuery(state ?? EMPTY_STATE));
+	const active = overriding ? recompute : build;
+
+	// Remember this build so it surfaces under "Your builds" on /dashboard. The
+	// backend doesn't persist TAMs, so we keep the hash + encoded state locally;
+	// recording on successful resolve (not on mount) avoids saving dead links.
+	const resolvedName = active.data?.target.concept_name ?? slug;
+	useEffect(() => {
+		if (!state || !active.data || !s) return;
+		recordBuildVisit({
+			hash,
+			encoded: s,
+			label: resolvedName,
+			conceptSlug: slug,
+		});
+		// `state` is intentionally excluded — it's a fresh object each render
+		// (safeDecode(s)); `s` already captures the only meaningful change.
+	}, [hash, s, slug, resolvedName, active.data]);
 
 	// No ?s= (or a corrupt one): the hash can't be resolved to a concept. This is
 	// the backend-persistence gap, surfaced honestly rather than as a fake load.
@@ -61,9 +97,9 @@ export function BuildHashView({ hash, s }: { hash: string; s: string | null }) {
 		);
 	}
 
-	if (build.isPending) return <LoadingShell />;
+	if (active.isPending) return <LoadingShell />;
 
-	if (build.error instanceof ApiError && build.error.status === 404) {
+	if (active.error instanceof ApiError && active.error.status === 404) {
 		return (
 			<Centered>
 				<NotFoundState
@@ -81,19 +117,19 @@ export function BuildHashView({ hash, s }: { hash: string; s: string | null }) {
 		);
 	}
 
-	if (build.error || !build.data) {
+	if (active.error || !active.data) {
 		return (
 			<Centered>
 				<ErrorState
-					title="Could not size this concept"
-					error={build.error}
-					onRetry={() => build.refetch()}
+					title={overriding ? "Could not recompute with your overrides" : "Could not size this concept"}
+					error={active.error}
+					onRetry={() => active.refetch()}
 				/>
 			</Centered>
 		);
 	}
 
-	return <BuildWorkspace tam={build.data} state={state} />;
+	return <BuildWorkspace tam={active.data} state={state} recomputing={active.isFetching} />;
 }
 
 function Centered({ children }: { children: React.ReactNode }) {

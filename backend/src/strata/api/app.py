@@ -9,7 +9,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from strata import __version__
-from strata.api.routes import build, concepts, frameworks, healthz, primitives, resolve
+from strata.api.routes import (
+    audit,
+    build,
+    concepts,
+    frameworks,
+    healthz,
+    primitives,
+    resolve,
+)
 from strata.config import settings
 from strata.logging import configure_logging, get_logger
 
@@ -54,6 +62,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
+        allow_origin_regex=settings.cors_origin_regex,
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -64,6 +73,7 @@ def create_app() -> FastAPI:
     app.include_router(frameworks.router)
     app.include_router(build.router)
     app.include_router(resolve.router)
+    app.include_router(audit.router)
     return app
 
 

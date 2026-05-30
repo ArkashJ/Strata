@@ -102,6 +102,25 @@ export const tamOutputSchema = z.object({
 });
 export type TAMOutput = z.infer<typeof tamOutputSchema>;
 
+// ── Recompute (POST /build/recompute) ─────────────────────────────────────────
+// The edit→recompute contract. `framework_assumptions` re-points an input to a
+// different SOURCED primitive (schema-pure, no banner). `primitive_overrides`
+// injects a transient what-if scalar — never persisted as a primitive (Q20); the
+// backend flags every scenario it touches with a `user_override` banner and sets
+// uses_synthetic_primitives. Mirrors the backend RecomputeRequest field-for-field.
+export const primitiveOverrideSchema = z.object({
+  value: z.number(),
+  unit: unitSchema,
+});
+export type PrimitiveOverrideWire = z.infer<typeof primitiveOverrideSchema>;
+
+export const recomputeRequestSchema = z.object({
+  concept_slug: z.string(),
+  framework_assumptions: z.record(z.record(z.string())).optional(),
+  primitive_overrides: z.record(primitiveOverrideSchema).optional(),
+});
+export type RecomputeRequest = z.infer<typeof recomputeRequestSchema>;
+
 export const conceptSummarySchema = z.object({
   slug: z.string(),
   name: z.string(),
@@ -290,3 +309,18 @@ export const tamTrajectorySchema = z.object({
   points: z.array(trajectoryPointSchema),
 });
 export type TamTrajectory = z.infer<typeof tamTrajectorySchema>;
+
+// ── Audit feed (GET /audit · Strata Live Track C) ─────────────────────────────
+// One row per user-visible action (resolve / recompute / promote). Mirrors the
+// backend AuditEvent Pydantic model field-for-field: `actor` is the Clerk user
+// id or "anon", `target` is the touched slug/hash, `meta` is freeform jsonb.
+// `ts` is an ISO-8601 datetime string (FastAPI serializes datetime as such).
+export const auditEventSchema = z.object({
+  id: z.number(),
+  actor: z.string().nullable(),
+  action: z.string(),
+  target: z.string().nullable(),
+  ts: z.string(),
+  meta: z.record(z.unknown()).nullable().optional(),
+});
+export type AuditEvent = z.infer<typeof auditEventSchema>;

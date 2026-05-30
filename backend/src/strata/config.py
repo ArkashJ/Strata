@@ -43,6 +43,11 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = Field(default_factory=lambda: ["*"])
 
+    # Regex for additional allowed origins — used for Vercel preview deploys whose
+    # subdomain carries a per-deploy hash (so an exact-origin list can't enumerate
+    # them). e.g. ``https://strata-[a-z0-9-]+-arkashjs-projects\.vercel\.app``.
+    cors_origin_regex: str | None = None
+
     data_dir: str = "data"
 
     # ── SQLAlchemy async engine pool (prod-tuned defaults) ──────────────

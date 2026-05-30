@@ -7,7 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Interactive edit → recompute on `/build` (the core loop).** Click a primitive
+  node on the graph to open an override panel and either (a) type/slide a
+  **what-if value** or (b) **swap in a different sourced primitive**. The TAM
+  recomputes live — headline, graph, and charts update, and what-if scenarios are
+  flagged so no unsourced number is ever passed off as sourced.
+
+  ```
+  click node -> override panel -> /build/<hash>?s=  -> POST /build/recompute
+                                                          (override-aware evaluator)
+                                                       -> new TAM (what-if banner)
+  ```
+
+  - Backend: `POST /build/recompute` takes per-input overrides, checks each
+    override's unit against the framework input, and returns a freshly hashed TAM.
+    What-if values are never written to the data bank (Q20); they live in the URL
+    only and carry a `user_override` banner into exports.
+- **Result charts.** A method-comparison chart and an input-composition chart
+  (shadcn / recharts) render on every sized TAM.
+- **Dashboard + sign-in (optional).** A `/dashboard` page shows live library
+  counts, your recently built TAMs, and an activity (audit) feed. Sign-in uses
+  Clerk and is **off by default** — with no Clerk keys the app runs exactly as
+  before; add keys to turn it on.
+- **Activity log.** An `audit_events` table plus `GET /audit` records resolve and
+  recompute events; the dashboard reads this feed.
+- **Animated landing page** with a live query box; the live "Featured TAMs" are
+  unchanged (still sized from real data, no invented figures).
+
+### Changed / Ops
+- **Live answers in production.** The Railway backend now runs the paid Anthropic
+  path (`STRATA_LLM_BACKEND=anthropic` + funded key + Exa key); `GET /healthz/llm`
+  reports `{"backend":"anthropic-sdk","available":true}`. `docker-compose` is wired
+  the same way for local runs (keys read from the gitignored `.env`).
+- Fixed a corrupt production API URL (a stray newline in `NEXT_PUBLIC_API_URL`)
+  that would have broken every frontend request.
+- **Preview deploys can reach the backend.** Added a configurable
+  `STRATA_CORS_ORIGIN_REGEX` so Vercel preview URLs (whose subdomain carries a
+  per-deploy hash) are allowed by CORS — the cause of "Failed to fetch" on a
+  preview link. Off by default; no change to existing behaviour.
+
 ### Fixed
+- **Graph nodes are now clickable.** A browser walkthrough found that the editable
+  primitive nodes on `/build` could not be clicked — ReactFlow turns off pointer
+  events on non-draggable nodes, so the override panel never opened for real
+  users. The edit number now re-enables clicks on itself.
 - **Dynamic resolution now answers real TAM questions off the Claude Code
   subscription.** The headless `claude -p` subprocess inherited a dead/low-credit
   `ANTHROPIC_API_KEY` and failed with "Credit balance is too low" — the root

@@ -13,7 +13,7 @@ from __future__ import annotations
 import hashlib
 import math
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 
 from ..hashing import mint_state_hash
@@ -46,6 +46,32 @@ class EvaluatorError(RuntimeError):
     pass
 
 
+@dataclass(frozen=True, slots=True)
+class OverrideValue:
+    """A transient what-if scalar the user typed in the `/build` UI (Strata
+    Live). Never persisted as a primitive; carries the consuming unit so the
+    route can validate it against the framework input signature."""
+
+    value: float
+    unit: Unit
+
+
+@dataclass(frozen=True, slots=True)
+class EvalOverrides:
+    """Override-aware evaluation inputs (Strata Live Track A).
+
+    - ``primitive_overrides`` substitutes a primitive's sourced value with a
+      user what-if scalar at evaluation time → ``user_override`` banner +
+      ``uses_synthetic_primitives``. The registry is NEVER mutated.
+    - ``framework_assumptions`` re-points a named framework input to a
+      different *existing* primitive slug before evaluation (schema-pure, no
+      banner).
+    """
+
+    primitive_overrides: dict[str, OverrideValue] = field(default_factory=dict)
+    framework_assumptions: dict[str, dict[str, str]] = field(default_factory=dict)
+
+
 @dataclass(slots=True)
 class _ScenarioBuild:
     framework: Framework
@@ -54,16 +80,38 @@ class _ScenarioBuild:
     value: float
     inputs_used: list[InputUsed]
     banners: list[ScenarioBanner]
+    uses_synthetic: bool = False
 
 
-def size_concept(registry: Registry, concept_slug: str) -> TAMOutput:
+def size_concept(
+    registry: Registry,
+    concept_slug: str,
+    overrides: EvalOverrides | None = None,
+) -> TAMOutput:
     try:
         concept = registry.get_concept(concept_slug)
     except RegistryError as exc:
         raise EvaluatorError(f"concept {concept_slug!r} not found") from exc
-    builds = list(_iter_scenario_builds(registry, concept))
+    builds = list(_iter_scenario_builds(registry, concept, overrides))
     if not builds:
         raise EvaluatorError(f"concept {concept_slug!r} has no applicable framework variants")
+    # A what-if override on a slug that no applicable framework input binds would
+    # otherwise be silently dropped (200 + base TAM, no banner) — the inverse of
+    # an unknown swap, which already raises. Reject it so the API can't claim a
+    # recompute happened when the override changed nothing.
+    if overrides is not None and overrides.primitive_overrides:
+        consumed = {
+            iu.primitive_slug
+            for b in builds
+            for iu in b.inputs_used
+            if iu.primitive_slug in overrides.primitive_overrides
+        }
+        unconsumed = sorted(set(overrides.primitive_overrides) - consumed)
+        if unconsumed:
+            raise EvaluatorError(
+                f"primitive_overrides {unconsumed} are not consumed by any applicable "
+                f"framework input for concept {concept.slug!r}"
+            )
     scenarios = tuple(_build_to_scenario(b) for b in builds)
     method_families = sorted({b.framework.method_family for b in builds}, key=lambda m: m.value)
     payload: dict[str, object] = {
@@ -85,7 +133,21 @@ def size_concept(registry: Registry, concept_slug: str) -> TAMOutput:
             for b in builds
         ],
     }
+    if overrides is not None:
+        # Fold the override knobs into the hashed payload so equivalent
+        # override states collide and distinct ones mint a fresh hash (Q38).
+        payload["overrides"] = {
+            "primitive_overrides": {
+                slug: {"value": ov.value, "unit": ov.unit.model_dump(mode="json")}
+                for slug, ov in sorted(overrides.primitive_overrides.items())
+            },
+            "framework_assumptions": {
+                fw: dict(sorted(binds.items()))
+                for fw, binds in sorted(overrides.framework_assumptions.items())
+            },
+        }
     tam_hash = mint_state_hash(payload)
+    uses_synthetic = any(b.uses_synthetic for b in builds)
     return TAMOutput(
         kind="tam_output",
         state_hash=tam_hash,
@@ -96,12 +158,16 @@ def size_concept(registry: Registry, concept_slug: str) -> TAMOutput:
         scenarios=scenarios,
         method_families_used=tuple(method_families),
         independence_score=_independence(builds),
-        uses_synthetic_primitives=False,
+        uses_synthetic_primitives=uses_synthetic,
         uses_modeled_composites=False,
     )
 
 
-def _iter_scenario_builds(registry: Registry, concept: Concept) -> Iterator[_ScenarioBuild]:
+def _iter_scenario_builds(
+    registry: Registry,
+    concept: Concept,
+    overrides: EvalOverrides | None = None,
+) -> Iterator[_ScenarioBuild]:
     """Yield one build per framework whose variant scope == concept.slug AND
     whose lens matches the concept's primary or secondary lens.
     """
@@ -117,7 +183,7 @@ def _iter_scenario_builds(registry: Registry, concept: Concept) -> Iterator[_Sce
         variant = fw.variant_for(concept.slug)
         if variant is None:
             continue
-        yield _build_scenario(registry, fw, variant, fw.lens)
+        yield _build_scenario(registry, fw, variant, fw.lens, overrides)
 
 
 @dataclass(slots=True)
@@ -184,25 +250,58 @@ def _build_scenario(
     fw: Framework,
     variant: FrameworkVariant,
     lens: AnalysisLens,
+    overrides: EvalOverrides | None = None,
 ) -> _ScenarioBuild:
     value = 1.0
     inputs_used: list[InputUsed] = []
     banners: list[ScenarioBanner] = []
+    uses_synthetic = False
+
+    # framework_assumptions re-point named inputs to a different EXISTING
+    # primitive (schema-pure). Validate up front so a bad slug fails cleanly.
+    assumptions = overrides.framework_assumptions.get(fw.slug, {}) if overrides else {}
+    for input_name, repointed in assumptions.items():
+        if repointed not in registry.atomic and repointed not in registry.composite:
+            raise ValueError(
+                f"framework_assumptions[{fw.slug!r}][{input_name!r}] points at "
+                f"{repointed!r}, which is not a known primitive"
+            )
+
+    primitive_overrides = overrides.primitive_overrides if overrides else {}
 
     for input_def in fw.inputs:
-        primitive_slug = variant.default_inputs.get(input_def.name)
+        primitive_slug = assumptions.get(input_def.name) or variant.default_inputs.get(
+            input_def.name
+        )
         if primitive_slug is None:
             raise EvaluatorError(
                 f"framework {fw.slug!r} variant scope={variant.scope!r} missing "
                 f"binding for input {input_def.name!r}"
             )
         resolved = _resolve_input(registry, primitive_slug)
-        value *= resolved.value
+        input_banners = resolved.banners
+        input_value = resolved.value
+        # A transient what-if scalar substitutes the sourced value (Strata
+        # Live). The unit is kept; never written back to the registry.
+        if primitive_slug in primitive_overrides:
+            ov = primitive_overrides[primitive_slug]
+            input_value = ov.value
+            uses_synthetic = True
+            input_banners = [
+                ScenarioBanner(
+                    kind=BannerKind.USER_OVERRIDE,
+                    message=(
+                        f"{resolved.name} overridden with a transient what-if value "
+                        f"{ov.value:g} (not a sourced primitive)."
+                    ),
+                )
+            ]
+        value *= input_value
         if not math.isfinite(value):
             raise EvaluatorError(
                 f"framework {fw.slug!r} variant scope={variant.scope!r} produced "
                 f"non-finite value after multiplying primitive {primitive_slug!r} "
-                f"(value={resolved.value!r})"
+                f"(value={input_value!r})"
             )
         inputs_used.append(
             InputUsed(
@@ -210,12 +309,12 @@ def _build_scenario(
                 role=input_def.role,
                 primitive_slug=primitive_slug,
                 snapshot_sha256=resolved.snapshot_sha256,
-                value=resolved.value,
+                value=input_value,
                 name=resolved.name,
                 unit=resolved.unit,
             )
         )
-        banners.extend(resolved.banners)
+        banners.extend(input_banners)
 
     return _ScenarioBuild(
         framework=fw,
@@ -224,6 +323,7 @@ def _build_scenario(
         value=value,
         inputs_used=inputs_used,
         banners=_dedupe_banners(banners),
+        uses_synthetic=uses_synthetic,
     )
 
 
@@ -280,6 +380,7 @@ def _build_to_scenario(b: _ScenarioBuild) -> Scenario:
         inputs_used=tuple(b.inputs_used),
         assumptions={},
         banners=tuple(b.banners),
+        uses_synthetic_primitives=b.uses_synthetic,
     )
 
 

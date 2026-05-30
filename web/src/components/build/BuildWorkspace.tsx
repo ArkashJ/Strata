@@ -19,7 +19,9 @@ import { useQuery } from "@tanstack/react-query";
 // live in component or ui-store state, off the URL).
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
+import { CompositionChart, ScenarioComparisonChart } from "@/components/charts";
 import { LineageGraph } from "@/components/LineageGraph";
+import { OverridePanel } from "@/components/build/OverridePanel";
 import { AccordionSection } from "@/components/rail/AccordionSection";
 import {
 	ProvenanceBanner,
@@ -32,7 +34,7 @@ import { IndependenceDonut } from "@/components/ui/IndependenceDonut";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatCompact, lensLabel, tierLabel } from "@/lib/format";
 import { trajectoryQuery } from "@/lib/queries";
-import type { Scenario, TAMOutput } from "@/lib/schemas";
+import type { InputUsed, Scenario, TAMOutput, Unit } from "@/lib/schemas";
 import { type BuildState, encodeState, hashState } from "@/lib/state-hash";
 import { isDegenerate, midScenario, tamRange, tamToMarkdown } from "@/lib/tam";
 
@@ -70,16 +72,43 @@ function applySelection(tam: TAMOutput, selected: string[]): TAMOutput {
 }
 
 export interface BuildWorkspaceProps {
-	// The backend evaluation for `state.target_concept_slug`. Re-fetched on each
-	// mount; never persisted server-side.
+	// The backend evaluation for `state.target_concept_slug` — the registry default
+	// or, when overrides are active, the recomputed TAM. Never persisted server-side.
 	tam: TAMOutput;
 	// The reconstructed user state (from ?s= or a fresh concept default).
 	state: BuildState;
+	// True while a recompute is in flight (overrides changed) — drives the
+	// headline/graph "recomputing…" affordance.
+	recomputing?: boolean;
 }
 
-export function BuildWorkspace({ tam: baseTam, state }: BuildWorkspaceProps) {
+export function BuildWorkspace({
+	tam: baseTam,
+	state,
+	recomputing = false,
+}: BuildWorkspaceProps) {
 	const router = useRouter();
 	const universe = useMemo(() => allFrameworkSlugs(baseTam), [baseTam]);
+
+	// The input whose override panel is open (null = closed). Click a base-value
+	// graph node to open it.
+	const [editing, setEditing] = useState<{
+		input: InputUsed;
+		frameworkSlug: string;
+	} | null>(null);
+
+	// Accent any node the user has touched: a what-if scalar (keyed by the original
+	// primitive slug) or a swap (whose target slug becomes the node's primitive
+	// after recompute, so highlighting the target matches the post-recompute graph).
+	const overriddenSlugs = useMemo(() => {
+		const slugs = new Set(Object.keys(state.primitive_overrides ?? {}));
+		for (const roles of Object.values(state.framework_assumptions ?? {})) {
+			for (const targetSlug of Object.values(roles)) slugs.add(targetSlug);
+		}
+		return slugs;
+	}, [state.primitive_overrides, state.framework_assumptions]);
+
+	const conceptSlug = state.target_concept_slug;
 
 	// Default to every framework when the state carries no explicit selection
 	// (a fresh concept open). An explicit selection means the user has diverged.
@@ -127,6 +156,61 @@ export function BuildWorkspace({ tam: baseTam, state }: BuildWorkspaceProps) {
 		[selected, state, mint],
 	);
 
+	const onEditPrimitive = useCallback(
+		(input: InputUsed, frameworkSlug: string) => setEditing({ input, frameworkSlug }),
+		[],
+	);
+
+	// Apply a transient what-if scalar: stash it under the primitive slug and
+	// re-mint. BuildHashView sees the override and routes to /build/recompute.
+	const applyWhatIf = useCallback(
+		(input: InputUsed, value: number, unit: Unit) => {
+			void mint({
+				...state,
+				primitive_overrides: {
+					...state.primitive_overrides,
+					[input.primitive_slug]: { value, unit },
+				},
+			});
+			setEditing(null);
+		},
+		[state, mint],
+	);
+
+	// Re-point an input to a different sourced primitive (schema-pure swap).
+	const applySwap = useCallback(
+		(input: InputUsed, frameworkSlug: string, primitiveSlug: string) => {
+			const fa = state.framework_assumptions ?? {};
+			void mint({
+				...state,
+				framework_assumptions: {
+					...fa,
+					[frameworkSlug]: { ...(fa[frameworkSlug] ?? {}), [input.role_name]: primitiveSlug },
+				},
+			});
+			setEditing(null);
+		},
+		[state, mint],
+	);
+
+	// Drop both override kinds for one input, returning it to the sourced value.
+	const clearOverride = useCallback(
+		(input: InputUsed, frameworkSlug: string) => {
+			const overrides = { ...(state.primitive_overrides ?? {}) };
+			delete overrides[input.primitive_slug];
+			const fa = { ...(state.framework_assumptions ?? {}) };
+			if (fa[frameworkSlug]) {
+				const inner = { ...fa[frameworkSlug] };
+				delete inner[input.role_name];
+				if (Object.keys(inner).length === 0) delete fa[frameworkSlug];
+				else fa[frameworkSlug] = inner;
+			}
+			void mint({ ...state, primitive_overrides: overrides, framework_assumptions: fa });
+			setEditing(null);
+		},
+		[state, mint],
+	);
+
 	const degenerate = isDegenerate(tam);
 	const range = tamRange(tam);
 	const mid = midScenario(tam);
@@ -146,8 +230,21 @@ export function BuildWorkspace({ tam: baseTam, state }: BuildWorkspaceProps) {
 						degenerate={degenerate}
 						range={range}
 						mid={mid}
+						recomputing={recomputing}
 					/>
-					<ScenarioGraph tam={tam} />
+					<div className="relative">
+						{recomputing ? (
+							<div className="pointer-events-none absolute right-3 top-3 z-10 rounded-[var(--r-1)] bg-[var(--bg-0)]/90 px-2 py-1 text-[11px] text-[var(--accent)]">
+								recomputing…
+							</div>
+						) : null}
+						<ScenarioGraph
+							tam={tam}
+							onEditPrimitive={onEditPrimitive}
+							overriddenSlugs={overriddenSlugs}
+						/>
+					</div>
+					<ChartsSection tam={tam} mid={mid} />
 					<TrajectorySection slug={tam.target.concept} />
 				</section>
 
@@ -160,7 +257,48 @@ export function BuildWorkspace({ tam: baseTam, state }: BuildWorkspaceProps) {
 					degenerate={degenerate}
 				/>
 			</div>
+
+			{editing ? (
+				<OverridePanel
+					input={editing.input}
+					frameworkSlug={editing.frameworkSlug}
+					conceptSlug={conceptSlug}
+					currentOverride={state.primitive_overrides?.[editing.input.primitive_slug]?.value}
+					currentSwap={state.framework_assumptions?.[editing.frameworkSlug]?.[editing.input.role_name]}
+					onApplyWhatIf={(value, unit) => applyWhatIf(editing.input, value, unit)}
+					onApplySwap={(slug) => applySwap(editing.input, editing.frameworkSlug, slug)}
+					onClear={() => clearOverride(editing.input, editing.frameworkSlug)}
+					onClose={() => setEditing(null)}
+				/>
+			) : null}
 		</main>
+	);
+}
+
+// Method-comparison + composition charts (Track B). The composition view is
+// driven by the midpoint scenario — the one the headline reports.
+function ChartsSection({ tam, mid }: { tam: TAMOutput; mid: Scenario }) {
+	return (
+		<div className="flex flex-col gap-6">
+			<div>
+				<h2 className="display text-[20px] text-[var(--fg-1)]">Method comparison</h2>
+				<p className="mt-1 text-[13px] text-[var(--fg-3)]">
+					Each independent method's estimate, side by side.
+				</p>
+				<div className="canvas-card mt-3 p-6">
+					<ScenarioComparisonChart tam={tam} />
+				</div>
+			</div>
+			<div>
+				<h2 className="display text-[20px] text-[var(--fg-1)]">How this scenario is built</h2>
+				<p className="mt-1 text-[13px] text-[var(--fg-3)]">
+					The sourced inputs that multiply into the headline midpoint.
+				</p>
+				<div className="canvas-card mt-3 p-6">
+					<CompositionChart scenario={mid} />
+				</div>
+			</div>
+		</div>
 	);
 }
 
@@ -240,22 +378,34 @@ function HeadlineCard({
 	degenerate,
 	range,
 	mid,
+	recomputing = false,
 }: {
 	tam: TAMOutput;
 	degenerate: boolean;
 	range: ReturnType<typeof tamRange>;
 	mid: Scenario;
+	recomputing?: boolean;
 }) {
 	const leafCount = tam.scenarios.length;
 	const spread = range.low > 0 ? range.high / range.low : null;
+	// Any what-if scalar in the evaluation flips this flag on the recomputed TAM.
+	const hasWhatIf = tam.uses_synthetic_primitives;
 
 	return (
 		<div className="canvas-card flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
 			<div className="min-w-0">
-				<div className="text-[11px] uppercase tracking-[0.06em] text-[var(--fg-3)]">
+				<div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.06em] text-[var(--fg-3)]">
 					{degenerate ? "Single-method estimate" : "Triangulated midpoint"}
+					{hasWhatIf ? (
+						<span className="rounded-[var(--r-1)] bg-[var(--bg-2)] px-1.5 py-0.5 normal-case tracking-normal text-[var(--accent)]">
+							what-if
+						</span>
+					) : null}
 				</div>
-				<div className="tam-num mt-1 text-[44px] leading-[1] text-[var(--fg-1)]">
+				<div
+					className="tam-num mt-1 text-[44px] leading-[1] text-[var(--fg-1)] transition-opacity"
+					style={{ opacity: recomputing ? 0.5 : 1 }}
+				>
 					{formatCompact(range.mid, mid.unit)}
 				</div>
 				{degenerate ? (

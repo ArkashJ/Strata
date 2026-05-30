@@ -9,6 +9,7 @@
 
 import { useUiStore } from "@/stores/ui-store";
 
+import { AuthControl } from "./AuthControl";
 import { ThemeToggle } from "./ThemeToggle";
 import { BellIcon, MenuIcon, SearchIcon } from "./icons";
 
@@ -47,6 +48,7 @@ export function TopBar() {
           <BellIcon />
         </IconButton>
         <ThemeToggle />
+        <AuthControl />
       </div>
     </header>
   );

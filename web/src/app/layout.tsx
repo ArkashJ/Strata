@@ -1,5 +1,7 @@
 import { AppShell } from "@/components/shell/AppShell";
+import { clerkEnabled } from "@/lib/clerk";
 import { Providers } from "@/lib/providers";
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
@@ -31,7 +33,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
+  const tree = (
     <html
       lang="en"
       // The no-flash script below mutates <html> (dark class + color-scheme)
@@ -58,4 +60,9 @@ export default function RootLayout({
       </body>
     </html>
   );
+
+  // Only mount ClerkProvider when a publishable key is configured. Wrapping it
+  // unconditionally throws at build/runtime when the key is absent (prod today),
+  // so without keys we render the app exactly as before.
+  return clerkEnabled ? <ClerkProvider>{tree}</ClerkProvider> : tree;
 }
