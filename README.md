@@ -6,7 +6,7 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://strata-pied-three.vercel.app)
 [![License: Proprietary](https://img.shields.io/badge/license-proprietary-red.svg)](LICENSE)
-![Version](https://img.shields.io/badge/version-0.5.0-informational)
+![Version](https://img.shields.io/badge/version-0.6.0-informational)
 ![Status](https://img.shields.io/badge/status-beta-brightgreen)
 
 ![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
@@ -47,6 +47,26 @@ A tool for VCs (and operators) to **cut through the noise**:
 5. Optionally read **expert annotations** that flag blind spots.
 
 See [`docs/00-vision.md`](docs/00-vision.md) for the full thesis.
+
+## Connect to Claude (MCP)
+
+Strata ships a **read-only MCP server** so any agent (Claude Desktop, IDE
+assistants) can pull **sourced, hash-pinned** market numbers — every figure
+carries its source URL, tier, and `snapshot_sha256`. Five tools:
+`search_concepts`, `get_primitive`, `list_frameworks`, `size_tam`,
+`resolve_market`.
+
+```sh
+# local (stdio)
+claude mcp add strata -- uv run --directory /ABS/PATH/backend strata-mcp --stdio
+# hosted (HTTP, mounted at /mcp on the API)
+claude mcp add --transport http strata https://<your-strata-host>/mcp
+```
+
+```
+agent ── tools/call ──> Strata MCP ──> registry + evaluator (read-only)
+                                   └──> sourced TAM tree (url · tier · sha256)
+```
 
 ## The three product layers
 

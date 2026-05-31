@@ -35,7 +35,17 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None]:
         log.info("strata.registry.loading_from_db")
         application.state.registry = await Registry.from_db()
         log.info("strata.registry.loaded_from_db")
-    yield
+
+    # Run the mounted MCP server's session-manager lifespan alongside the API
+    # (Wave 5A). Mounted sub-apps don't get their lifespan run automatically, so
+    # delegate to it here; the hosted /mcp transport is local-trust until the
+    # Wave-3 API-key middleware gates it.
+    mcp_app = getattr(application.state, "mcp_app", None)
+    if mcp_app is not None:
+        async with mcp_app.router.lifespan_context(mcp_app):
+            yield
+    else:
+        yield
     log.info("strata.shutdown")
 
 
@@ -74,6 +84,24 @@ def create_app() -> FastAPI:
     app.include_router(build.router)
     app.include_router(resolve.router)
     app.include_router(audit.router)
+
+    # Mount the read-only Strata MCP server at /mcp (Wave 5A). Best-effort: a
+    # failure to build it must not take down the REST API.
+    try:
+        from strata.mcp.server import build_streamable_http_app, load_registry
+
+        # Resolved per request: in prod the lifespan sets app.state.registry to
+        # the DB-loaded registry; fall back to on-disk YAML in dev. This keeps
+        # the hosted MCP surface in sync with the REST API's data (review fix).
+        def _mcp_registry() -> object:
+            return getattr(app.state, "registry", None) or load_registry()
+
+        mcp_app = build_streamable_http_app(get_registry=_mcp_registry)  # type: ignore[arg-type]
+        app.state.mcp_app = mcp_app
+        app.mount("/mcp", mcp_app)
+    except Exception:  # MCP is additive; never block API boot on its failure
+        log.warning("strata.mcp.mount_failed", exc_info=True)
+
     return app
 
 

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — YC remediation Wave 5A (Strata MCP server)
+- **Strata in Claude via MCP.** A read-only MCP server (`strata.mcp`) exposes the
+  curated data bank + evaluator as five tools — `search_concepts`, `get_primitive`,
+  `list_frameworks`, `size_tam`, `resolve_market` — over **stdio**
+  (`strata-mcp --stdio`) and a **streamable-HTTP** transport mounted at `/mcp`.
+  Every numeric payload is sourced: `source_url` + `source_tier` +
+  `snapshot_sha256`; the internal `strata.internal` host is scrubbed to `null`
+  (modeled numbers carry no external citation, pre-staging Wave 1's allowlist).
+  `resolve_market` is registry-first and LLM-free, so an agent can never get an
+  unsourced number. No tool mutates the registry. `claude mcp add` snippet in
+  both READMEs.
+
 ### Added — YC remediation Wave 0 (demo-blockers)
 - **`/tam/<hash>` is server-rendered with OpenGraph (AC0.8).** The artifact route
   is now a Next.js Server Component that fetches the TAM server-side and seeds the

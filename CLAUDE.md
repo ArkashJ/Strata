@@ -19,9 +19,15 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-30)
 
-- **Version:** `0.5.0` (beta). `VERSION` + `pyproject` pinned; tags follow
+- **Version:** `0.6.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).
+- **In flight (PR #64 — YC remediation Wave 5A, stacked on #63):** read-only
+  **Strata MCP server** (`strata.mcp`) — 5 sourced tools (`search_concepts`,
+  `get_primitive`, `list_frameworks`, `size_tam`, `resolve_market`) over stdio
+  (`strata-mcp`) + a streamable-HTTP `/mcp` mount. Every payload carries
+  `source_url`+`tier`+`snapshot_sha256`; `resolve_market` is registry-first +
+  LLM-free. 483 backend tests. Hosted `/mcp` auth lands in Wave 3.
 - **In flight (PR #63 — YC remediation Wave 0, demo-blockers):** built/recomputed
   TAMs persist so `/tam/<hash>` resolves (FIFO-capped `reg.remember_tam`); `/resolve`
   is **registry-first** (`resolver/match.py`) and returns a multi-scenario tree
