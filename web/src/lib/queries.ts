@@ -6,6 +6,7 @@ import { api } from "./api-client";
 import {
   type AuditEvent,
   type ConceptSummary,
+  type Connector,
   type FrameworkSummary,
   type PrimitiveSummary,
   type RecomputeRequest,
@@ -15,6 +16,7 @@ import {
   auditEventSchema,
   conceptDetailSchema,
   conceptSummarySchema,
+  connectorSchema,
   frameworkDetailSchema,
   frameworkSummarySchema,
   primitiveDetailSchema,
@@ -58,6 +60,14 @@ export const primitiveQuery = (slug: string) =>
     queryFn: async () => validated(primitiveDetailSchema, await api(`/p/${slug}`)),
     enabled: !!slug,
   });
+
+export const connectorsQuery = queryOptions({
+  queryKey: ["connectors"],
+  queryFn: async (): Promise<Connector[]> => {
+    const data = await api("/connectors");
+    return validated(z.array(connectorSchema), data);
+  },
+});
 
 export const signalsQuery = queryOptions({
   queryKey: ["signals"],

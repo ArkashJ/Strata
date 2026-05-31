@@ -88,6 +88,19 @@ export const tamTargetSchema = z.object({
   expansion_stage: z.string(),
 });
 
+// Bottoms-up vs tops-down agreement (MV2). Present only when ≥2 independent
+// method families sized the concept; null otherwise (the UI must not fake a
+// second method). Mirrors the backend Convergence model field-for-field.
+export const convergenceSchema = z.object({
+  low_family: methodFamilySchema,
+  high_family: methodFamilySchema,
+  low_value: z.number(),
+  high_value: z.number(),
+  ratio: z.number(),
+  unit: unitSchema,
+});
+export type Convergence = z.infer<typeof convergenceSchema>;
+
 export const tamOutputSchema = z.object({
   kind: z.literal("tam_output"),
   state_hash: z.string(),
@@ -97,6 +110,7 @@ export const tamOutputSchema = z.object({
   target: tamTargetSchema,
   scenarios: z.array(scenarioSchema).min(1),
   method_families_used: z.array(methodFamilySchema),
+  convergence: convergenceSchema.nullable().optional(),
   independence_score: z.number().min(0).max(1),
   uses_synthetic_primitives: z.boolean(),
   uses_modeled_composites: z.boolean(),
@@ -163,6 +177,26 @@ export const signalSummarySchema = z.object({
   uncertainty_basis: z.string().nullable().optional(),
 });
 export type SignalSummary = z.infer<typeof signalSummarySchema>;
+
+// Ingest connectors (GET /connectors · connector-explorer). The typed clients
+// that manufacture sourced primitives (connector → primitive → framework → TAM).
+// `primitives_in_bank` is a LIVE count of what this connector has produced in the
+// current data bank; 0 means capability-only (honest — not yet ingested).
+export const connectorCapabilitySchema = z.object({
+  method: z.string(),
+  description: z.string(),
+  returns: z.string(),
+});
+export const connectorSchema = z.object({
+  connector: z.string(),
+  source_tier: z.string(),
+  method_count: z.number(),
+  capabilities: z.array(connectorCapabilitySchema),
+  primitives_in_bank: z.number(),
+  sample_primitive_slug: z.string().nullable(),
+  sample_source_url: z.string().nullable(),
+});
+export type Connector = z.infer<typeof connectorSchema>;
 
 export const frameworkSummarySchema = z.object({
   slug: z.string(),

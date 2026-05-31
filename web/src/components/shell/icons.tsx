@@ -112,6 +112,14 @@ export function TamsIcon(props: IconProps) {
   );
 }
 
+export function ConnectorsIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 4h16l-6 8v6l-4 2v-8L4 4Z" />
+    </Svg>
+  );
+}
+
 export function SignalsIcon(props: IconProps) {
   return (
     <Svg {...props}>

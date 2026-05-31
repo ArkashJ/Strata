@@ -148,6 +148,15 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
 ```
 
 **What works today:**
+- **Bottoms-up vs top-down cross-check** — when a market is sized by two
+  independent methods, the TAM page leads with an agreement banner ("lower $X ·
+  higher $Y · spread N×"). The triangulation a VC builds by hand, shown automatically.
+- **Forwardable report** — `/tam/<hash>/report` turns any sized market into a clean
+  one-page PDF: headline number, the math per method, what moves the answer, and a
+  sources table where every input carries its tier and snapshot hash.
+- **Downloadable charts** — export any result chart as PNG or SVG for a deck or memo.
+- **Live market signals** — `/signals` surfaces 202 prediction-market readings
+  (Kalshi) read-only, clearly walled off from the sourced TAM math.
 - **Static builds** — 6 pre-seeded concepts across 5 of 6 TAM lenses, each with
   real values, enriched primitive cards, min-max range display
 - **Dynamic queries** — type ANY market → Claude parses → Exa finds real data →

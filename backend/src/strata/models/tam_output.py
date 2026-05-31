@@ -106,6 +106,27 @@ class Scenario(BaseModel):
     uses_synthetic_primitives: bool = False
 
 
+class Convergence(BaseModel):
+    """Bottoms-up vs tops-down cross-check (MV2). When a concept is sized by ≥2
+    *independent* method families, the two family medians are compared head to
+    head: the agreement ratio (high/low) is the triangulation signal a VC would
+    otherwise assemble by hand. This is pure synthesis of already-sourced
+    scenario values — no new number is invented. ``None`` (the default) means the
+    concept has a single method family, so there is nothing to converge and the
+    UI must NOT manufacture a second method."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    low_family: MethodFamily
+    high_family: MethodFamily
+    low_value: float
+    high_value: float
+    # high_value / low_value. 1.0 = perfect agreement; the further from 1, the
+    # wider the methods disagree. Labelled "method agreement", never "confidence".
+    ratio: float = Field(ge=1.0)
+    unit: Unit
+
+
 class TAMOutput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -120,6 +141,9 @@ class TAMOutput(BaseModel):
     scenarios: tuple[Scenario, ...] = Field(min_length=1)
 
     method_families_used: tuple[MethodFamily, ...] = ()
+    # Bottoms-up vs tops-down agreement (MV2). Present only when ≥2 independent
+    # method families sized this concept; None otherwise (don't fake a method).
+    convergence: Convergence | None = None
     independence_score: float = Field(default=0.0, ge=0.0, le=1.0)
     uses_synthetic_primitives: bool = False
     uses_modeled_composites: bool = False

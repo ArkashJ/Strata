@@ -15,6 +15,7 @@ import math
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
+from statistics import median
 
 from ..hashing import mint_state_hash
 from ..models import (
@@ -23,9 +24,11 @@ from ..models import (
     AtomicPrimitive,
     BannerKind,
     Concept,
+    Convergence,
     Framework,
     FrameworkVariant,
     InputUsed,
+    MethodFamily,
     Scenario,
     ScenarioBanner,
     SetOperation,
@@ -157,6 +160,7 @@ def size_concept(
         target=TAMTarget(concept=concept.slug, concept_name=concept.name),
         scenarios=scenarios,
         method_families_used=tuple(method_families),
+        convergence=_convergence(builds),
         independence_score=_independence(builds),
         uses_synthetic_primitives=uses_synthetic,
         uses_modeled_composites=False,
@@ -403,6 +407,40 @@ def _build_to_scenario(b: _ScenarioBuild) -> Scenario:
         assumptions={},
         banners=tuple(b.banners),
         uses_synthetic_primitives=b.uses_synthetic,
+    )
+
+
+def _convergence(builds: list[_ScenarioBuild]) -> Convergence | None:
+    """MV2: bottoms-up vs tops-down cross-check. Group builds by method family,
+    take each family's median value, and compare the lowest-valued family head
+    to head with the highest-valued one. Returns None unless ≥2 distinct families
+    sized the concept (a single method has nothing to converge with — never
+    fabricate a second). Pure synthesis of already-sourced scenario values."""
+    by_family: dict[MethodFamily, list[float]] = {}
+    for b in builds:
+        by_family.setdefault(b.framework.method_family, []).append(b.value)
+    if len(by_family) < 2:
+        return None
+    # Comparing values across families is only meaningful if they share a unit;
+    # a ratio between USD/year and a stock USD would be dimensionally invalid. If
+    # the families disagree on output unit, there is nothing honest to converge.
+    output_unit = builds[0].framework.output_unit
+    if any(b.framework.output_unit != output_unit for b in builds):
+        return None
+    family_median = {fam: median(values) for fam, values in by_family.items()}
+    low_family = min(family_median, key=lambda f: family_median[f])
+    high_family = max(family_median, key=lambda f: family_median[f])
+    low_value = family_median[low_family]
+    high_value = family_median[high_family]
+    if low_value <= 0:
+        return None
+    return Convergence(
+        low_family=low_family,
+        high_family=high_family,
+        low_value=low_value,
+        high_value=high_value,
+        ratio=high_value / low_value,
+        unit=output_unit,
     )
 
 

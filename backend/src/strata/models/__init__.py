@@ -51,6 +51,7 @@ from .source import (
 )
 from .tam_output import (
     BannerKind,
+    Convergence,
     ExpansionStage,
     InputUsed,
     Scenario,
@@ -79,6 +80,7 @@ __all__ = [
     "ConceptAnalysisLens",
     "ConceptKind",
     "ConceptModifiers",
+    "Convergence",
     "DeliveryMode",
     "DistributionShape",
     "ExpansionStage",

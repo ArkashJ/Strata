@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — connector explorer (answers "how do connectors come into play")
+- **`GET /connectors` + `/connectors` page (sidebar link):** the ingest catalog.
+  Lists all 22 typed connectors from the capability registry, and cross-references
+  the live data bank by source host so each shows a **real** `primitives_in_bank`
+  count + a sample primitive you can open (census 38 · bls 27 · fred 22 ·
+  worldbank 21 · edgar 16 = 124 sourced primitives). Capability-only connectors
+  are listed honestly as "wired, not yet ingested" (0, no fabricated sample). The
+  page draws the pipeline — `API → typed client → snapshot pin → atomic primitive
+  → framework → TAM` — so a partner sees why every number is defensible. Read-only,
+  no live API calls in the request path; sample is slug-sorted for determinism.
+  Kalshi is deliberately excluded (its data is the quarantined `/signals`). 5
+  backend + 3 e2e tests; pyright/ruff/typecheck/biome clean.
+
+### Added — forwardable market-sizing report (tournament finalist · P2.4)
+- **`/tam/<hash>/report`:** a clean, print-first **one-page report** generated from
+  any TAM — the document a partner forwards. Letterhead + permalink, an executive
+  KPI strip (triangulated TAM · range · methods · independence), the convergence
+  cross-check, a **"how it was sized"** breakdown showing each method's equation
+  (`A × B × … = TAM`), a sensitivity tornado ("what moves the answer"), a
+  **Sources & provenance** table (every input with tier + SHA-256 snapshot), and
+  honest footnotes (modeled/paraphrase banners). "Print / Save as PDF" via a
+  scoped print stylesheet; reachable from the TAM Export rail ("Generate report").
+  All derived from the existing artifact — no new number. 4 Playwright e2e tests;
+  verified live (PDF export confirmed).
+
+### Added — convergence cross-check + downloadable graphs (tournament champion)
+- **Bottoms-up vs tops-down convergence (MV2):** when a concept is sized by ≥2
+  independent method families, the evaluator emits a `convergence` object
+  (`engine.py` `_convergence` → `TAMOutput.convergence`) and the `/tam/<hash>`
+  page leads with an **animated agreement banner** — "lower estimate $X · higher
+  estimate $Y · spread N×", graded tight/broad/wide. This is the triangulation a
+  VC assembles by hand; pure synthesis of already-sourced scenario values, never a
+  fabricated second method. Renders **only** for multi-family concepts (single
+  method → `null`, no banner). Refuses to compare across mismatched units. Honesty
+  framing throughout: "method agreement", never "confidence". (e.g. doc-gen-pc:
+  bottoms-up $155M / top-down $470M / 3.0×.)
+- **Downloadable graphs:** every result chart (sensitivity tornado, TAM-over-time)
+  gets a **PNG / SVG** export (`lib/chart-export.ts` inlines computed styles so
+  CSS-var theming survives the detached SVG; `ChartDownload` button). Client-side
+  only, no new data — the forwardable image for a deck or memo.
+- Tests: 2 convergence backend tests (multi-family present, single-method null);
+  537 pytest pass, pyright/ruff clean on `src`, web typecheck + biome clean.
+  Verified live via Playwright against a real `/tam/<hash>`.
+
 ### Added — prediction-market signals surface (docs/22 T1)
 - **`GET /signals` + `/signals` page:** the 202 `prediction_market` primitives
   quarantined to `data/signals/` (Q20) now have a read-only surface. The backend
