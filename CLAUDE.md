@@ -30,8 +30,14 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   footer GitHub link, and suppressed the unearned independence donut for
   single-method estimates. Note: the **202 "missing" primitives are the
   `prediction_market` signals quarantined to `data/signals/`** (no UI surface yet),
-  not data loss. P1/P2 (equation footer, card defensibility, semiconductor
-  value-chain primitives, micropayments) tracked in `docs/21`.
+  not data loss. **P1 defensibility shipped:** the resolve result shows the
+  explicit equation ("Multiplies to 3M × $300 = $900M", gated to multiplicative
+  lenses), Featured TAM cards carry an independence ring + method badge, `/audit`
+  degrades gracefully for anonymous callers, and modeled inputs get a loud
+  honesty banner. **Remaining (docs/21):** P1.3 seed triangulated hero concepts
+  with competing measurements (needs real sourcing — no invented figures), and
+  P2 (analytic graph, sensitivity tornado, **semiconductor value-chain
+  primitives**, printable report, micropayments).
 - **Version:** `0.11.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).
