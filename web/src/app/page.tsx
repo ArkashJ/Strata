@@ -188,6 +188,8 @@ function LandingContent() {
       high,
       created_at: b.data.created_at,
       lens: concept.primary_lens,
+      independence_score: b.data.independence_score,
+      method_families: b.data.method_families_used.length,
     };
     return [{ tam, href: `/tam/${tam.state_hash}` }];
   });
