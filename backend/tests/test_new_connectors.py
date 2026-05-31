@@ -7,7 +7,7 @@ All tests are mock/fixture-based — no live API calls. Live smokes go through
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pytest
@@ -48,13 +48,20 @@ from strata.connectors import (
     user_to_source_yaml,
 )
 
-
 # ---------------------------------------------------------------------------
 # Client construction / auth-gate
 # ---------------------------------------------------------------------------
 
 
-def test_alpha_vantage_requires_api_key() -> None:
+def test_alpha_vantage_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Hermetic: the client falls back to settings.alpha_vantage_api_key when no
+    # key is passed, so neutralize any developer .env value before asserting the
+    # genuine keyless behavior.
+    from strata.config import settings
+
+    monkeypatch.setattr(settings, "alpha_vantage_api_key", None)
+    monkeypatch.delenv("STRATA_ALPHA_VANTAGE_API_KEY", raising=False)
+    monkeypatch.delenv("ALPHA_VANTAGE_API_KEY", raising=False)
     with pytest.raises(AlphaVantageClientError):
         AlphaVantageClient(api_key="")
 
@@ -78,8 +85,14 @@ def test_github_works_without_token(tmp_path: Path) -> None:
     client.close()
 
 
-def test_nasdaq_works_without_key(tmp_path: Path) -> None:
-    # Nasdaq free datasets do not require a key
+def test_nasdaq_works_without_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Nasdaq free datasets do not require a key. Hermetic: clear any developer
+    # .env value so the keyless path is exercised deterministically.
+    from strata.config import settings
+
+    monkeypatch.setattr(settings, "nasdaq_data_link_api_key", None)
+    monkeypatch.delenv("STRATA_NASDAQ_DATA_LINK_API_KEY", raising=False)
+    monkeypatch.delenv("NASDAQ_DATA_LINK_API_KEY", raising=False)
     client = NasdaqDataLinkClient(api_key=None, cache_dir=tmp_path, tier=NasdaqTier.FREE)
     assert client.api_key is None
     client.close()
@@ -209,7 +222,7 @@ def test_yfinance_converter() -> None:
         shares_outstanding=15_500_000_000,
         short_name="Apple Inc.",
         exchange="NasdaqGS",
-        quote_as_of=datetime(2026, 5, 27, tzinfo=timezone.utc),
+        quote_as_of=datetime(2026, 5, 27, tzinfo=UTC),
     )
     prim = quote_to_primitive_yaml(
         quote, slug="yfin-aapl-2026", concept_slug="apple", accessed=_accessed()
@@ -224,7 +237,7 @@ def test_reddit_converter() -> None:
         name="MachineLearning",
         subscribers=2_900_000,
         active_user_count=4500,
-        created_utc=datetime(2008, 6, 22, tzinfo=timezone.utc),
+        created_utc=datetime(2008, 6, 22, tzinfo=UTC),
         public_description="Machine learning community.",
         over_18=False,
     )
@@ -244,8 +257,8 @@ def test_github_converter() -> None:
         open_issues_count=2300,
         subscribers_count=1500,
         language="JavaScript",
-        created_at=datetime(2016, 10, 5, tzinfo=timezone.utc),
-        pushed_at=datetime(2026, 5, 26, tzinfo=timezone.utc),
+        created_at=datetime(2016, 10, 5, tzinfo=UTC),
+        pushed_at=datetime(2026, 5, 26, tzinfo=UTC),
     )
     prim = repo_to_primitive_yaml(
         repo, slug="gh-vercel-nextjs-2026", concept_slug="js-frameworks", accessed=_accessed()

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import date
 from pathlib import Path
 
@@ -24,7 +25,7 @@ from strata.connectors.nasdaq_data_link import (
 
 
 def _client(
-    cache_dir: Path, payload: dict[str, object], *, status: int = 200
+    cache_dir: Path, payload: Mapping[str, object], *, status: int = 200
 ) -> tuple[NasdaqDataLinkClient, dict[str, str]]:
     seen: dict[str, str] = {}
 

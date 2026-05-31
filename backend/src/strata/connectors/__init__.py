@@ -104,6 +104,14 @@ from .comtrade import (
 from .dune import (
     DuneClient,
     DuneClientError,
+    ExecutionHandle,
+    ExecutionState,
+    ExecutionStatus,
+    QueryPerformance,
+    QueryResult,
+    capabilities,
+    run_query_result_to_primitive_yaml,
+    run_query_result_to_source_yaml,
 )
 from .dune import (
     ExecutionHandle as DuneExecutionHandle,
@@ -120,6 +128,7 @@ from .dune import (
 from .dune import (
     QueryResult as DuneQueryResult,
 )
+from .dune import capabilities as dune_capabilities
 from .dune import (
     run_query_result_to_primitive_yaml as dune_run_query_result_to_primitive_yaml,
 )
@@ -504,6 +513,9 @@ __all__ = [
     "EurostatFrequency",
     "EurostatObservation",
     "EurostatResponse",
+    "ExecutionHandle",
+    "ExecutionState",
+    "ExecutionStatus",
     # FAA
     "FAAAirportStatus",
     "FAAAirportSummary",
@@ -602,6 +614,8 @@ __all__ = [
     "Observation",
     "OpenFDAClient",
     "OpenFDAClientError",
+    "QueryPerformance",
+    "QueryResult",
     # Reddit
     "RedditClient",
     "RedditClientError",
@@ -640,12 +654,14 @@ __all__ = [
     "airport_to_primitive_yaml",
     "airport_to_source_yaml",
     "all_capabilities",
+    "capabilities",
     "clearance_count_to_primitive_yaml",
     "cms_to_source_yaml",
     "concept_to_primitive_yaml",
     "concept_to_source_yaml",
     "datapoint_to_primitive_yaml",
     "datapoint_to_source_yaml",
+    "dune_capabilities",
     "dune_run_query_result_to_primitive_yaml",
     "dune_run_query_result_to_source_yaml",
     "enrollment_to_primitive_yaml",
@@ -681,6 +697,8 @@ __all__ = [
     "quote_to_source_yaml",
     "repo_to_primitive_yaml",
     "repo_to_source_yaml",
+    "run_query_result_to_primitive_yaml",
+    "run_query_result_to_source_yaml",
     "series_to_primitive_yaml",
     "series_to_source_yaml",
     "spending_to_primitive_yaml",

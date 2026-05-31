@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import date
 from pathlib import Path
 
@@ -27,7 +28,7 @@ from strata.connectors.alpha_vantage import (
 
 def _client(
     cache_dir: Path,
-    routes: dict[str, dict[str, object]],
+    routes: Mapping[str, object],
     *,
     status: int = 200,
 ) -> AlphaVantageClient:
