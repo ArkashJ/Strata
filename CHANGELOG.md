@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — forwardable market-sizing report (tournament finalist · P2.4)
+- **`/tam/<hash>/report`:** a clean, print-first **one-page report** generated from
+  any TAM — the document a partner forwards. Letterhead + permalink, an executive
+  KPI strip (triangulated TAM · range · methods · independence), the convergence
+  cross-check, a **"how it was sized"** breakdown showing each method's equation
+  (`A × B × … = TAM`), a sensitivity tornado ("what moves the answer"), a
+  **Sources & provenance** table (every input with tier + SHA-256 snapshot), and
+  honest footnotes (modeled/paraphrase banners). "Print / Save as PDF" via a
+  scoped print stylesheet; reachable from the TAM Export rail ("Generate report").
+  All derived from the existing artifact — no new number. 4 Playwright e2e tests;
+  verified live (PDF export confirmed).
+
 ### Added — convergence cross-check + downloadable graphs (tournament champion)
 - **Bottoms-up vs tops-down convergence (MV2):** when a concept is sized by ≥2
   independent method families, the evaluator emits a `convergence` object

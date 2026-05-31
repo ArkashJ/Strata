@@ -428,6 +428,11 @@ function RightRail({ tam }: { tam: TAMOutput }) {
 
       <RailSection title="Export">
         <div className="flex flex-col gap-2">
+          <Link href={`/tam/${tam.state_hash}/report`} className="w-full">
+            <Button sm className="w-full justify-start">
+              Generate report →
+            </Button>
+          </Link>
           <DownloadMarkdownButton tam={tam} />
           <Button variant="ghost" sm onClick={() => window.print()} className="justify-start">
             Download PDF
