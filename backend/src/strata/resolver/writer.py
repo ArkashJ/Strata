@@ -23,6 +23,7 @@ import yaml
 from pydantic import TypeAdapter
 
 from ..models import AtomicPrimitive
+from .citations import CONNECTOR_HOSTS, assert_real_host
 
 AUTO_PRIMITIVES_DIR: Path = Path.home() / ".strata" / "auto-primitives"
 
@@ -53,6 +54,12 @@ def upsert_primitive(
 
     # Schema validate via Pydantic at the writer chokepoint.
     TypeAdapter(AtomicPrimitive).validate_python(primitive_yaml)
+
+    # AC1.1: a connector must never write a primitive citing a fabricated /
+    # internal host — catch it at the writer boundary, before it can reach the
+    # registry or be surfaced as a citation.
+    source_url = str((primitive_yaml.get("source") or {}).get("url", ""))
+    assert_real_host(source_url, CONNECTOR_HOSTS)
 
     primitive_yaml = dict(primitive_yaml)
     metadata: dict[str, Any] = dict(primitive_yaml.get("metadata", {}) or {})

@@ -19,6 +19,7 @@ from exa_py import Exa
 from pydantic import BaseModel, ConfigDict
 
 from . import llm as _llm
+from .citations import host_of, tier_for_host
 from .parse import ParsedPrimitive
 
 _exa_client: Exa | None = None
@@ -84,6 +85,15 @@ The value should be a raw number (e.g. 2183300 not "2.18M"). If money, give annu
         raw_text = _llm.complete(prompt, model=model, max_tokens=256)
         raw: dict[str, Any] = json.loads(_strip_code_fence(raw_text))
 
+        # AC1.1: never trust an LLM-authored URL — it can hallucinate a host.
+        # Keep the model's pick only if it's an actual Exa result URL; else use
+        # the top result. Either way the host is provably real (Exa returned it).
+        result_urls = {r.url for r in results.results if r.url}
+        llm_url = str(raw.get("source_url", "")).strip()
+        chosen_url = llm_url if llm_url in result_urls else top_url
+        # AC1.2: tier comes from the host class, never the LLM's claimed tier.
+        tier = tier_for_host(host_of(chosen_url)).value
+
         return PrimitiveHit(
             role=prim.role,
             name=str(raw.get("name", prim.description)),
@@ -91,8 +101,8 @@ The value should be a raw number (e.g. 2183300 not "2.18M"). If money, give annu
             unit=prim.expected_unit
             if prim.expected_unit
             else {"kind": "stock", "dimension": "people"},
-            source_url=str(raw.get("source_url", top_url)),
-            source_tier=str(raw.get("source_tier", "community")),
+            source_url=chosen_url,
+            source_tier=tier,
         )
     except json.JSONDecodeError:
         _log.warning("Failed to parse extraction result for %s", prim.role)

@@ -316,6 +316,20 @@ def stats(data_dir: Path = _DATA_DIR_OPT) -> None:
         typer.echo(f"  {lens:24} {count:>4}")
 
 
+@app.command("verify-integrity")
+def verify_integrity(data_dir: Path = _DATA_DIR_OPT) -> None:
+    """Verify stored source snapshots hash to their declared sha256 (AC1.3)."""
+    from strata.integrity import verify_snapshot_store
+
+    report = verify_snapshot_store(data_dir / "snapshots")
+    typer.echo(f"Verified {report.verified} snapshot(s).")
+    if not report.ok:
+        for failure in report.failures:
+            typer.echo(f"  INTEGRITY FAILURE: {failure}", err=True)
+        raise typer.Exit(code=1)
+    typer.echo("All stored snapshots intact.")
+
+
 # ── Connector smoke tests ───────────────────────────────────────────
 
 

@@ -1,0 +1,123 @@
+# Wave 1 / AC1.5 resolver regression baseline (generated from the evaluator).
+# Regenerate after intentional data/evaluator changes; CI asserts pass-rate >= 0.8.
+cases:
+- query: Accrual — AI Tax Software for US CPA Firms
+  expected_concept: accrual-ai-tax-software
+  expected_lens: bundle_consolidation
+  magnitude: 9
+- query: AI coding assistants (US)
+  expected_concept: ai-coding-assistants-us
+  expected_lens: cost_efficiency
+  magnitude: 8
+- query: AI legal assistants (US)
+  expected_concept: ai-legal-assistants-us
+  expected_lens: cost_efficiency
+  magnitude: 8
+- query: Contrario AI — AI Recruiting Agents
+  expected_concept: contrario-ai-recruiting
+  expected_lens: bundle_consolidation
+  magnitude: 10
+- query: AI clinical documentation (US physicians)
+  expected_concept: demo-ai-clinical-docs-us
+  expected_lens: cost_efficiency
+  magnitude: 9
+- query: AI developer tooling (US software developers)
+  expected_concept: demo-ai-dev-tooling-us
+  expected_lens: cost_efficiency
+  magnitude: 10
+- query: AI claims automation (US P&C insurance)
+  expected_concept: demo-ai-insurance-claims-us
+  expected_lens: cost_efficiency
+  magnitude: 9
+- query: AI legal research (US lawyers)
+  expected_concept: demo-ai-legal-research-us
+  expected_lens: cost_efficiency
+  magnitude: 9
+- query: AI sales-ops tooling (US sales reps)
+  expected_concept: demo-ai-sales-ops-us
+  expected_lens: cost_efficiency
+  magnitude: 10
+- query: P&C insurance document generation
+  expected_concept: doc-gen-pc-insurance
+  expected_lens: cost_efficiency
+  magnitude: 8
+- query: Echelon — ServiceNow Development Agents
+  expected_concept: echelon-servicenow-agents
+  expected_lens: bundle_consolidation
+  magnitude: 9
+- query: Effective AI - US Insurance Actuarial & Underwriting Knowledge Work
+  expected_concept: effective-ai-insurance-knowledge
+  expected_lens: cost_efficiency
+  magnitude: 9
+- query: Endeavor — Mfg/Distribution Back-Office AI
+  expected_concept: endeavor-mfg-back-office
+  expected_lens: cost_efficiency
+  magnitude: 10
+- query: Gather — AI Customer Research Agent
+  expected_concept: gather-customer-research
+  expected_lens: cost_efficiency
+  magnitude: 9
+- query: GTM operations tooling North America
+  expected_concept: gtm-ops-tooling-na
+  expected_lens: cost_efficiency
+  magnitude: 9
+- query: Kaizen Labs
+  expected_concept: kaizen-labs-govtech
+  expected_lens: bundle_consolidation
+  magnitude: 9
+- query: Kyber
+  expected_concept: kyber-pc-doc-gen
+  expected_lens: cost_efficiency
+  magnitude: 9
+- query: Melius — AI Creative Canvas for Marketers
+  expected_concept: melius-creative-canvas
+  expected_lens: bundle_consolidation
+  magnitude: 9
+- query: Midmarket SaaS spend North America
+  expected_concept: midmarket-saas-spend-na
+  expected_lens: revenue_generation
+  magnitude: 10
+- query: Minerva — AI-native US SMB CPA firm
+  expected_concept: minerva-ai-accounting-firm
+  expected_lens: bundle_consolidation
+  magnitude: 9
+- query: Miravoice - AI Phone Surveys replacing CATI
+  expected_concept: miravoice-phone-surveys
+  expected_lens: bundle_consolidation
+  magnitude: 9
+- query: Moda — AI Brand-Design Agents
+  expected_concept: moda-ai-design
+  expected_lens: bundle_consolidation
+  magnitude: 10
+- query: Numeral — Global Sales-Tax / VAT Compliance Automation
+  expected_concept: numeral-tax-compliance
+  expected_lens: bundle_consolidation
+  magnitude: 8
+- query: P&C insurance payment processing throughput
+  expected_concept: payments-throughput-pc-insurance
+  expected_lens: platform_throughput
+  magnitude: 9
+- query: Piramidal — clinical EEG foundation model, multi-jurisdiction
+  expected_concept: piramidal-eeg-multi-geo
+  expected_lens: platform_throughput
+  magnitude: 9
+- query: PlayerZero — AI Code Quality &amp; Debug Assist
+  expected_concept: playerzero-code-quality
+  expected_lens: bundle_consolidation
+  magnitude: 9
+- query: Sieve — Multimodal Video/Audio AI Infrastructure
+  expected_concept: sieve-multimodal-infra
+  expected_lens: platform_throughput
+  magnitude: 9
+- query: SignalLabs — US Healthcare Payer/Provider Decision AI
+  expected_concept: signallabs-healthcare-decision-ai
+  expected_lens: cost_efficiency
+  magnitude: 10
+- query: Skyramp — AI QA & Test Automation (Global SaaS)
+  expected_concept: skyramp-qa-automation
+  expected_lens: cost_efficiency
+  magnitude: 8
+- query: Software engineering productivity tooling
+  expected_concept: software-eng-productivity
+  expected_lens: productivity_uplift
+  magnitude: 9

@@ -13,6 +13,7 @@
 
 import { useMemo, useState } from "react";
 
+import { StaleChip } from "@/components/ui/StaleChip";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { formatCompact } from "@/lib/format";
 import type { AtomicPrimitive, PrimitiveDetail, SourceTier } from "@/lib/schemas";
@@ -32,6 +33,8 @@ export interface DisagreementRow {
   tier: SourceTier;
   asOf: string;
   unit: AtomicPrimitive["unit"];
+  // Wave 1 / AC1.7 — source freshness SLA (days), drives the stale chip.
+  freshnessSlaDays?: number | null;
 }
 
 export function toRows(measurements: PrimitiveDetail[]): DisagreementRow[] {
@@ -42,6 +45,8 @@ export function toRows(measurements: PrimitiveDetail[]): DisagreementRow[] {
     tier: p.source.tier,
     asOf: p.as_of,
     unit: p.unit,
+    freshnessSlaDays:
+      (p.source as { freshness_sla_days?: number | null }).freshness_sla_days ?? null,
   }));
 }
 
@@ -85,7 +90,13 @@ export function DisagreementView({ rows }: { rows: DisagreementRow[] }) {
   );
 }
 
-function SegmentedToggle({ view, onChange }: { view: View; onChange: (v: View) => void }) {
+function SegmentedToggle({
+  view,
+  onChange,
+}: {
+  view: View;
+  onChange: (v: View) => void;
+}) {
   const options: { key: View; label: string }[] = [
     { key: "stacked", label: "STACKED" },
     { key: "table", label: "TABLE" },
@@ -184,7 +195,12 @@ function MeasurementTable({ rows }: { rows: DisagreementRow[] }) {
               <td className="py-2.5 pr-4 text-right font-mono tabular-nums text-[var(--fg-1)]">
                 {formatCompact(r.value, r.unit)}
               </td>
-              <td className="py-2.5 font-mono text-[var(--fg-3)]">{r.asOf}</td>
+              <td className="py-2.5 font-mono text-[var(--fg-3)]">
+                <span className="inline-flex items-center gap-2">
+                  {r.asOf}
+                  <StaleChip asOf={r.asOf} freshnessSlaDays={r.freshnessSlaDays} />
+                </span>
+              </td>
             </tr>
           ))}
         </tbody>
