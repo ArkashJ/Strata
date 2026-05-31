@@ -9,9 +9,12 @@
  * at /browse as a placeholder.
  */
 
+import { Show, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { useQueries } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 
 import { Skeleton } from "@/components/ui/Skeleton";
+import { clerkEnabled } from "@/lib/clerk";
 import { conceptsQuery, frameworksQuery, primitivesQuery } from "@/lib/queries";
 import { useUiStore } from "@/stores/ui-store";
 import { Logo } from "./Logo";
@@ -110,23 +113,73 @@ function SidebarHeader({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-// TODO(auth): hard-coded contributor — replace with the signed-in user.
+// Identity is never fabricated: show the real Clerk user when signed in, a
+// Sign-in affordance when Clerk is configured but signed out, and an honest
+// "Guest" in the keyless deploy. (Was previously a hard-coded fake contributor.)
 function SidebarFooter({ collapsed }: { collapsed: boolean }) {
   const hide = hideLabelClass(collapsed);
   return (
     <div className="shrink-0 flex items-center gap-2.5 px-3 py-3 border-t border-[var(--border-1)]">
-      <span className="shrink-0 grid place-items-center w-7 h-7 rounded-full bg-[var(--accent)] text-[var(--accent-fg-on)] text-[11px] font-medium">
-        JV
-      </span>
-      <div className={`min-w-0 flex-1 leading-tight ${hide}`}>
-        <div className="text-[13px] text-[var(--fg-1)] truncate">j.vega</div>
-        <div className="text-[11px] text-[var(--fg-3)] truncate">verified · 27 contribs</div>
-      </div>
+      {clerkEnabled ? <ClerkIdentity hide={hide} /> : <GuestIdentity hide={hide} />}
       <ThemeToggle
-        className={`shrink-0 grid place-items-center w-7 h-7 rounded-[var(--r-2)] text-[var(--fg-3)] hover:bg-[var(--bg-2)] hover:text-[var(--fg-1)] transition-colors ${hideDecorClass(
+        className={`shrink-0 ml-auto grid place-items-center w-7 h-7 rounded-[var(--r-2)] text-[var(--fg-3)] hover:bg-[var(--bg-2)] hover:text-[var(--fg-1)] transition-colors ${hideDecorClass(
           collapsed,
         )}`}
       />
+    </div>
+  );
+}
+
+function Avatar({ children }: { children: ReactNode }) {
+  return (
+    <span className="shrink-0 grid place-items-center w-7 h-7 rounded-full bg-[var(--bg-3)] text-[var(--fg-3)] text-[11px] font-medium">
+      {children}
+    </span>
+  );
+}
+
+function GuestIdentity({ hide }: { hide: string }) {
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-2.5">
+      <Avatar>·</Avatar>
+      <div className={`min-w-0 leading-tight ${hide}`}>
+        <div className="text-[13px] text-[var(--fg-2)] truncate">Guest</div>
+        <div className="text-[11px] text-[var(--fg-4)] truncate">local session</div>
+      </div>
+    </div>
+  );
+}
+
+function ClerkIdentity({ hide }: { hide: string }) {
+  return (
+    <>
+      <Show when="signed-out">
+        <SignInButton mode="modal">
+          <button
+            type="button"
+            className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+          >
+            <Avatar>↪</Avatar>
+            <span className={`text-[13px] text-[var(--fg-2)] truncate ${hide}`}>Sign in</span>
+          </button>
+        </SignInButton>
+      </Show>
+      <Show when="signed-in">
+        <SignedInIdentity hide={hide} />
+      </Show>
+    </>
+  );
+}
+
+function SignedInIdentity({ hide }: { hide: string }) {
+  const { user } = useUser();
+  const label = user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "Account";
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-2.5">
+      <UserButton appearance={{ elements: { avatarBox: "h-7 w-7" } }} />
+      <div className={`min-w-0 leading-tight ${hide}`}>
+        <div className="text-[13px] text-[var(--fg-1)] truncate">{label}</div>
+      </div>
     </div>
   );
 }

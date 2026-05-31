@@ -333,7 +333,12 @@ function LandingContent() {
         >
           <span>v0.4.0 — backend live</span>
           <span className="tracking-[0.2em] uppercase">
-            <a href="https://github.com" className="hover:text-[var(--fg-2)] transition-colors">
+            <a
+              href="https://github.com/ArkashJ/Strata"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[var(--fg-2)] transition-colors"
+            >
               GitHub
             </a>
           </span>

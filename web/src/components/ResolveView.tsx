@@ -381,7 +381,15 @@ function ResultCard({ result }: { result: ResolverResult }) {
             {result.lens ? ` · ${lensLabel(result.lens)}` : ""}
           </div>
         </div>
-        <IndependenceDonut score={result.independence_score} size={84} />
+        {result.independence_score > 0 ? (
+          <IndependenceDonut score={result.independence_score} size={84} />
+        ) : (
+          // Don't lead with an independence ring a single-method estimate didn't
+          // earn — the "not yet triangulated" banner below tells the honest story.
+          <span className="shrink-0 self-start rounded-[var(--r-2)] bg-[var(--bg-2)] px-2 py-1 text-[11px] text-[var(--fg-3)]">
+            single method
+          </span>
+        )}
       </div>
 
       <ResolveResultChart result={result} />
