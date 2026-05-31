@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — portfolio sizing + company layer (P1)
+- **The verbatim guard (`strata.sizing.guard`)** — the Q20 wall, productized. Two
+  gates in series: a *semantic magnitude match* ($4.2B ≡ 4.2 billion ≡
+  4,200,000,000 ≡ USD 4.2bn) with **clause-bounded role locality** (a revenue
+  value matched against a "market cap" sentence is rejected), then
+  **corroboration** (≥2 independent role-matched spans, or a 2nd source). Verdicts
+  gate eligibility: only `verbatim_corroborated` is public-eligible;
+  `verbatim_single` is org-private only. 24 adversarial tests.
+- **`strata.sizing` service** — `size_company(reg, company, opts)`, productized
+  from `scripts/tam_77_pipeline.py`. Registry-first and **offline-safe by
+  default**: with no live flags it matches a curated market or returns an honest
+  `unsizable` — it never calls an LLM/Exa on a render path (F3). Analyst-sourced
+  inputs persist **org-private first** (F2); public promotion is gated on ≥2
+  corroborating sources or review.
+- **`companies` table** (migration 006, org-scoped + RLS) + `CompanyRecord` model,
+  behind `STRATA_PORTFOLIO_ENABLED` (F6 — table created always, write surfaces
+  ship dark). Idempotent JSON-backed `CompanyStore` for the local/CLI path.
+- **Surfaces:** `strata portfolio import|size|list|gaps` CLI; three **write-capable
+  MCP tools** (`import_portfolio`/`size_company`/`list_portfolio`, flag-gated,
+  offline-safe sizing); `GET /portfolio`; a thin read-only **`/portfolio`** page
+  (sized rows link to `/build/<market>`, "unsizable" rows shown as honesty).
+- **Deterministic cached demo (F3/F5):** a curated 25-company subset
+  (`portfolios/portfolio_demo_subset.yaml`) pre-sized **offline** by
+  `scripts/presize_demo.py` into a baked `portfolio_demo.json` (20 sized · 5
+  honestly unsizable). The demo renders entirely from cache — zero live LLM/Exa.
+- 582 backend tests (40 new), pyright/ruff clean on `src`; web typecheck/biome clean.
+- Spec: `docs/superpowers/specs/2026-05-31-portfolio-sizing-company-layer-design.md` (§12).
+
 ### Fixed — prod data integrity: re-seed now actually repairs stale rows
 - **Root cause of the prod `/build` failures ("no applicable framework variants")
   and the "cannot fetch enough market data" errors:** every Postgres upsert in
