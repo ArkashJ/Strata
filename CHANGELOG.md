@@ -40,6 +40,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Modeled-input honesty (P1.5):** results containing `community-modeled` /
   `strata.internal` figures show a loud banner so the headline TAM is never
   mistaken for a fully externally-sourced number.
+- **Per-input source-tier mix on the TAM artifact (P2.4):** the evaluator now
+  threads each input's source tier onto `InputUsed` (composite → members' shared
+  tier or `mixed`); the `/tam/<hash>` artifact renders a real provenance
+  breakdown (e.g. `analyst-paraphrase 1/2 · community-modeled 1/2`) in place of
+  the old "not yet exposed" placeholder — the "where every number came from" a
+  partner needs before forwarding. (The sensitivity tornado already ships on the
+  artifact via `TornadoChart`.)
 
 ### Changed — re-audit hardening (flip existential Risks 2 & 5)
 - **Substrate wired at runtime (Risk 5).** `set_org_scope`/`org_session_scope`/
