@@ -120,6 +120,15 @@ export function ConnectorsIcon(props: IconProps) {
   );
 }
 
+export function PortfolioIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M3 7h18v12H3z" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </Svg>
+  );
+}
+
 export function SignalsIcon(props: IconProps) {
   return (
     <Svg {...props}>

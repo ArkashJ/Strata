@@ -198,6 +198,27 @@ export const connectorSchema = z.object({
 });
 export type Connector = z.infer<typeof connectorSchema>;
 
+// Portfolio (P1) — read-only cached demo subset.
+export const portfolioCompanySchema = z.object({
+  name: z.string(),
+  domain: z.string(),
+  vertical: z.string().nullable(),
+  status: z.string(),
+  market_concept_slug: z.string().nullable(),
+  tam_value: z.number().nullable(),
+  reason: z.string().nullable(),
+  state_hash: z.string().nullable(),
+  has_analyst_input: z.boolean(),
+});
+export const portfolioResponseSchema = z.object({
+  org_id: z.string(),
+  enabled: z.boolean(),
+  counts: z.record(z.string(), z.number()),
+  companies: z.array(portfolioCompanySchema),
+});
+export type PortfolioCompany = z.infer<typeof portfolioCompanySchema>;
+export type PortfolioResponse = z.infer<typeof portfolioResponseSchema>;
+
 export const frameworkSummarySchema = z.object({
   slug: z.string(),
   name: z.string(),

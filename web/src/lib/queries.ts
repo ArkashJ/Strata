@@ -8,6 +8,7 @@ import {
   type ConceptSummary,
   type Connector,
   type FrameworkSummary,
+  type PortfolioResponse,
   type PrimitiveSummary,
   type RecomputeRequest,
   type SignalSummary,
@@ -19,6 +20,7 @@ import {
   connectorSchema,
   frameworkDetailSchema,
   frameworkSummarySchema,
+  portfolioResponseSchema,
   primitiveDetailSchema,
   primitiveSummarySchema,
   signalSummarySchema,
@@ -66,6 +68,14 @@ export const connectorsQuery = queryOptions({
   queryFn: async (): Promise<Connector[]> => {
     const data = await api("/connectors");
     return validated(z.array(connectorSchema), data);
+  },
+});
+
+export const portfolioQuery = queryOptions({
+  queryKey: ["portfolio"],
+  queryFn: async (): Promise<PortfolioResponse> => {
+    const data = await api("/portfolio");
+    return validated(portfolioResponseSchema, data);
   },
 });
 
