@@ -16,7 +16,7 @@ import type { ReactNode } from "react";
 import { SimpleSignInControl } from "@/components/auth/SimpleSignIn";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { clerkEnabled } from "@/lib/clerk";
-import { conceptsQuery, frameworksQuery, primitivesQuery } from "@/lib/queries";
+import { conceptsQuery, frameworksQuery, primitivesQuery, signalsQuery } from "@/lib/queries";
 import { useUiStore } from "@/stores/ui-store";
 import { Logo } from "./Logo";
 import { NavItem } from "./NavItem";
@@ -32,6 +32,7 @@ import {
   PrimitivesIcon,
   PyramidIcon,
   SearchIcon,
+  SignalsIcon,
   TamsIcon,
 } from "./icons";
 
@@ -55,8 +56,8 @@ export function Sidebar() {
   const collapsed = useUiStore((s) => s.sidebarCollapsed);
   const openPalette = useUiStore((s) => s.openPalette);
 
-  const [concepts, primitives, frameworks] = useQueries({
-    queries: [conceptsQuery, primitivesQuery, frameworksQuery],
+  const [concepts, primitives, frameworks, signals] = useQueries({
+    queries: [conceptsQuery, primitivesQuery, frameworksQuery, signalsQuery],
   });
 
   return (
@@ -92,6 +93,13 @@ export function Sidebar() {
         />
         {/* TODO(tams): no list endpoint yet — placeholder until /browse exposes a count. */}
         <NavItem icon={<TamsIcon />} label="TAMs" href="/browse" count={nf.format(0)} />
+        {/* Prediction-market signals (Q20): read-only, never feed a TAM. */}
+        <NavItem
+          icon={<SignalsIcon />}
+          label="Signals"
+          href="/signals"
+          count={<Count value={signals.data?.length} pending={signals.isPending} />}
+        />
       </nav>
 
       <SidebarFooter collapsed={collapsed} />
@@ -146,10 +154,7 @@ function ClerkIdentity({ hide }: { hide: string }) {
     <>
       <Show when="signed-out">
         <SignInButton mode="modal">
-          <button
-            type="button"
-            className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
-          >
+          <button type="button" className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
             <Avatar>↪</Avatar>
             <span className={`text-[13px] text-[var(--fg-2)] truncate ${hide}`}>Sign in</span>
           </button>

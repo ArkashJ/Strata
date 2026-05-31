@@ -112,6 +112,14 @@ export function TamsIcon(props: IconProps) {
   );
 }
 
+export function SignalsIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M3 12h3l2.5 6 4-13 2.5 7H21" />
+    </Svg>
+  );
+}
+
 // Shown by ThemeToggle while in dark mode (click → switch to light).
 export function SunIcon(props: IconProps) {
   return (

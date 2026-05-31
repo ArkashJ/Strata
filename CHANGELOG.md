@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — prediction-market signals surface (docs/22 T1)
+- **`GET /signals` + `/signals` page:** the 202 `prediction_market` primitives
+  quarantined to `data/signals/` (Q20) now have a read-only surface. The backend
+  route (`api/routes/signals.py`) lists each signal's value, source URL, tier, and
+  SHA256 snapshot pin; the web page (`/signals`, sidebar link with a live count)
+  groups them by concept behind a loud banner that states they **never feed a TAM**.
+  A differentiator a general LLM can't reproduce — live Kalshi event probabilities
+  next to a sized number, with the quarantine made explicit. 4 backend tests
+  (incl. a `/p`-leak invariant) + 4 Playwright e2e tests; full gate green
+  (534 pytest pass, pyright/ruff clean, web typecheck clean).
+
 ### Fixed — full-app QA + adversarial-tournament P0 remediation
 - **Local dev unblocked:** dev/non-prod CORS now auto-allows any `localhost:*`
   origin, so `next dev` works on whatever port it grabs (was hard-coded

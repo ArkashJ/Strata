@@ -9,6 +9,7 @@ import {
   type FrameworkSummary,
   type PrimitiveSummary,
   type RecomputeRequest,
+  type SignalSummary,
   type TAMOutput,
   type TamTrajectory,
   auditEventSchema,
@@ -18,6 +19,7 @@ import {
   frameworkSummarySchema,
   primitiveDetailSchema,
   primitiveSummarySchema,
+  signalSummarySchema,
   tamOutputSchema,
   tamTrajectorySchema,
 } from "./schemas";
@@ -56,6 +58,14 @@ export const primitiveQuery = (slug: string) =>
     queryFn: async () => validated(primitiveDetailSchema, await api(`/p/${slug}`)),
     enabled: !!slug,
   });
+
+export const signalsQuery = queryOptions({
+  queryKey: ["signals"],
+  queryFn: async (): Promise<SignalSummary[]> => {
+    const data = await api("/signals");
+    return validated(z.array(signalSummarySchema), data);
+  },
+});
 
 export const frameworksQuery = queryOptions({
   queryKey: ["frameworks"],

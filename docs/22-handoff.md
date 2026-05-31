@@ -100,7 +100,7 @@ the billing layer + gating, not net-new measurement.
 
 | # | TODO | File(s) | Notes |
 |---|---|---|---|
-| T1 | Surface the 202 quarantined signals read-only | new `api/routes/signals.py` + a `/signals` web route | `registry.signals` already holds them; `GET /signals` returns 0 today. A differentiator (live prediction-market signals) Claude can't give. |
+| ~~T1~~ ✅ | ~~Surface the 202 quarantined signals read-only~~ **Done** | `api/routes/signals.py` + `/signals` web route + sidebar link | Shipped: `GET /signals` + `/signals` page (grouped by concept, value/source/snapshot receipt, loud "never feeds a TAM" banner). 4 backend + 4 e2e tests; `/p`-leak invariant enforced. |
 | T2 | Equation footer for additive frameworks | `ResolveResultChart.tsx` | Currently gated to multiplicative lenses. To show `bundle_consolidation` (sum-then-discount), propagate an `equation_kind` from the backend (`ResolverResult`) instead of inferring from `lens`. |
 | T3 | Persist favorites/identity server-side | `db/`, `identity-store.ts`, `favorites-store.ts` | Today both are localStorage-only (per-browser). Tie to `Principal.org_id` when real auth lands. |
 | T4 | Load DB-stored API keys at boot | `api/auth.py` | `api_keys` table (migration 003) is scaffolding; `_KEY_STORE` is in-process only. |
