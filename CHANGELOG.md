@@ -64,6 +64,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Favorites:** a star on each saved-build row pins a TAM to a Favorites
   section on the dashboard (persisted, survives the visit-history cap). Each
   star subscribes only to its own key for correct cross-row reactivity.
+- **Engineering handoff** (`docs/22-handoff.md`): current state + verification
+  gate, session gotchas, four maximum-value functions with specs, concrete
+  TODOs with file pointers, nice-to-haves, and a value-spec table.
 
 ### Changed — re-audit hardening (flip existential Risks 2 & 5)
 - **Substrate wired at runtime (Risk 5).** `set_org_scope`/`org_session_scope`/
