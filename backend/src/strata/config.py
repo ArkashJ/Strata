@@ -98,6 +98,7 @@ class Settings(BaseSettings):
     # v0.3 connectors (PR-A).
     alpha_vantage_api_key: str | None = None
     nasdaq_data_link_api_key: str | None = None
+    dune_api_key: str | None = None  # Dune Analytics on-chain query API (X-Dune-API-Key)
     reddit_client_id: str | None = None
     reddit_client_secret: str | None = None
     github_token: str | None = None
