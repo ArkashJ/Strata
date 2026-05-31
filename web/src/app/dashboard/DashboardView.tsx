@@ -14,11 +14,14 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { FavoriteStar } from "@/components/FavoriteStar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { type BuildHistoryEntry, readBuildHistory } from "@/lib/build-history";
 import { clerkEnabled } from "@/lib/clerk";
 import { auditQuery, conceptsQuery, frameworksQuery, primitivesQuery } from "@/lib/queries";
 import type { AuditEvent } from "@/lib/schemas";
+import { useHasMounted } from "@/lib/use-has-mounted";
+import { useFavoritesStore } from "@/stores/favorites-store";
 
 const nf = new Intl.NumberFormat("en-US");
 
@@ -35,6 +38,8 @@ export function DashboardView() {
       {!clerkEnabled && <AuthNotice />}
 
       <LibraryCounts />
+
+      <FavoritesList />
 
       <SavedBuilds />
 
@@ -171,25 +176,51 @@ function SavedBuildsList() {
       ) : (
         <ul className="flex flex-col gap-2">
           {entries.map((e) => (
-            <li key={e.hash}>
-              <Link
-                href={`/build/${e.hash}?s=${e.encoded}`}
-                className="canvas-card flex items-center justify-between gap-3 p-3 transition-colors hover:border-[var(--border-3)]"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] text-[var(--fg-1)]">{e.label}</span>
-                  <span className="block truncate font-mono text-[11px] text-[var(--fg-3)]">
-                    {e.conceptSlug} · {e.hash.slice(0, 10)}
-                  </span>
-                </span>
-                <span className="shrink-0 text-[11px] text-[var(--fg-3)]">
-                  {relativeTime(e.visitedAt)}
-                </span>
-              </Link>
-            </li>
+            <BuildRow key={e.hash} entry={e} />
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+// One build row: the link to re-open it + a favorite star (sibling, not nested).
+function BuildRow({ entry }: { entry: BuildHistoryEntry }) {
+  return (
+    <li className="flex items-center gap-2">
+      <Link
+        href={`/build/${entry.hash}?s=${entry.encoded}`}
+        className="canvas-card flex flex-1 items-center justify-between gap-3 p-3 transition-colors hover:border-[var(--border-3)]"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] text-[var(--fg-1)]">{entry.label}</span>
+          <span className="block truncate font-mono text-[11px] text-[var(--fg-3)]">
+            {entry.conceptSlug} · {entry.hash.slice(0, 10)}
+          </span>
+        </span>
+        <span className="shrink-0 text-[11px] text-[var(--fg-3)]">
+          {relativeTime(entry.visitedAt)}
+        </span>
+      </Link>
+      <FavoriteStar entry={entry} />
+    </li>
+  );
+}
+
+// Favorited builds — pinned across visits (independent of the visit-history cap).
+function FavoritesList() {
+  const mounted = useHasMounted();
+  const items = useFavoritesStore((s) => s.items);
+  const favorites = mounted ? Object.values(items).sort((a, b) => b.visitedAt - a.visitedAt) : [];
+  if (favorites.length === 0) return null;
+  return (
+    <section>
+      <SectionLabel>Favorites</SectionLabel>
+      <ul className="flex flex-col gap-2">
+        {favorites.map((e) => (
+          <BuildRow key={e.hash} entry={e} />
+        ))}
+      </ul>
     </section>
   );
 }
