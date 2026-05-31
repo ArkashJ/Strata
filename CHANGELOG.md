@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — full-app QA + adversarial-tournament P0 remediation
+- **Local dev unblocked:** dev/non-prod CORS now auto-allows any `localhost:*`
+  origin, so `next dev` works on whatever port it grabs (was hard-coded
+  3000/3001 → every API fetch CORS-blocked → empty UI). Prod stays locked.
+- **Citations surfaced:** the resolver now threads `source_tier`/`source_url`/
+  `snapshot_sha256` through `primitives_used`, so the build/TAM result shows a
+  tier badge + clickable source per input (composites correctly show none).
+- **Shareable permalink made durable (tournament blocker #1):** TAMs persist to
+  Postgres (`tam_outputs`, migration 005); `GET /tam/<hash>` falls back to the DB
+  and survives an API restart; homepage Featured TAMs link to `/tam/<hash>`, not
+  the old `/build?q=` workaround. Verified end-to-end across a real restart.
+- **Credibility fixes:** removed the fabricated `j.vega · verified · 27 contribs`
+  sidebar user (now real Clerk user / Sign-in / honest Guest); footer GitHub link
+  points at the real repo; the resolve hero suppresses the independence donut for
+  single-method estimates (shows a muted "single method" chip instead).
+- **Docs:** `docs/qa/TEST_PLAN.md` (audit), `docs/20-adversarial-teardown.md`
+  (108-agent tournament, 46/100), `docs/21-teardown-remediation.md` (P0/P1/P2 plan).
+
 ### Changed — re-audit hardening (flip existential Risks 2 & 5)
 - **Substrate wired at runtime (Risk 5).** `set_org_scope`/`org_session_scope`/
   `get_org_session` activate the Wave-3 Postgres RLS per request (parametrized,
