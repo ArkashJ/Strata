@@ -424,7 +424,8 @@ function ResultCard({ result }: { result: ResolverResult }) {
 // headline number is never mistaken for a fully-sourced regulator figure.
 function ModeledInputsBanner({ primitives }: { primitives: PrimitiveUsed[] }) {
   const isModeled = (p: PrimitiveUsed) =>
-    p.source_tier === "community-modeled" || (p.source_url ?? "").includes("strata.internal");
+    (p.source_tier ?? "").replace(/_/g, "-") === "community-modeled" ||
+    (p.source_url ?? "").includes("strata.internal");
   const modeled = primitives.filter(isModeled);
   if (modeled.length === 0) return null;
   return (
