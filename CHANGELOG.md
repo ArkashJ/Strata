@@ -48,6 +48,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   partner needs before forwarding. (The sensitivity tornado already ships on the
   artifact via `TornadoChart`.)
 
+### Added — client guides + simple login
+- **Guides (`/guides`):** a screenshot-driven, business-language platform
+  walkthrough behind a sidebar "Guides" link — every surface (home → build/
+  equation → sourced primitive → concept disagreement → pyramid → shareable
+  artifact → dashboard → integrations → browse), led by a "why this beats an LLM
+  answer" value table, with a live-vs-coming-soon honesty section and a page
+  sitemap. 9 screenshots captured from the live app (`web/public/guides/`).
+  Companion handbook `docs/guides/CLIENT_PLATFORM_GUIDE.md` with a regeneration
+  recipe (built via the playwright-doc-generator + playwright-cli skills).
+- **Simple login:** a zero-config local identity (name/org, persisted) so the
+  keyless deploy has a working sign-in (sidebar footer) instead of a bare
+  "Guest" — coexists with Clerk, which remains the real-auth path when keyed.
+  Not a security boundary; a single-user demo identity for attribution.
+
 ### Changed — re-audit hardening (flip existential Risks 2 & 5)
 - **Substrate wired at runtime (Risk 5).** `set_org_scope`/`org_session_scope`/
   `get_org_session` activate the Wave-3 Postgres RLS per request (parametrized,

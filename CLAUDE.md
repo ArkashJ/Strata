@@ -38,6 +38,11 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   with competing measurements (needs real sourcing — no invented figures), and
   P2 (analytic graph, sensitivity tornado, **semiconductor value-chain
   primitives**, printable report, micropayments).
+- **In flight (branch `feat/guides-logins-sections`, stacked on #72):** client
+  **`/guides`** walkthrough (screenshot-driven, sidebar link, value table,
+  handbook `docs/guides/CLIENT_PLATFORM_GUIDE.md`) and a **simple zero-config
+  local login** (name/org identity store, coexists with Clerk) so the keyless
+  deploy stops saying "Guest".
 - **Version:** `0.11.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).
