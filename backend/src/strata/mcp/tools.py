@@ -202,6 +202,29 @@ def _h_resolve_market(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
     return resolve_market(reg, query=args["query"])
 
 
+def _h_import_portfolio(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    from .portfolio_tools import import_portfolio
+
+    return import_portfolio(reg, rows=list(args.get("rows", [])))
+
+
+def _h_size_company(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    from .portfolio_tools import size_company as _size_company_tool
+
+    return _size_company_tool(reg, domain=args.get("domain"), name=args.get("name"))
+
+
+def _h_list_portfolio(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    from .portfolio_tools import list_portfolio
+
+    return list_portfolio(
+        reg,
+        status=args.get("status"),
+        vertical=args.get("vertical"),
+        limit=(int(args["limit"]) if args.get("limit") is not None else None),
+    )
+
+
 # name -> (description, inputSchema, handler). server.py iterates this for both
 # tools/list and tools/call so there is exactly one tool registry.
 TOOLS: dict[str, dict[str, Any]] = {
@@ -229,6 +252,28 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": "Resolve a free-form market query to a sourced TAM (registry-first, no LLM).",
         "inputSchema": schemas.RESOLVE_MARKET,
         "handler": _h_resolve_market,
+    },
+    "import_portfolio": {
+        "description": (
+            "[WRITE] Link a list of portfolio companies to your org (idempotent on "
+            "domain). Gated by STRATA_PORTFOLIO_ENABLED."
+        ),
+        "inputSchema": schemas.IMPORT_PORTFOLIO,
+        "handler": _h_import_portfolio,
+    },
+    "size_company": {
+        "description": (
+            "[WRITE] Size one linked company registry-first (offline-safe; never a "
+            "live LLM/Exa call). Returns the sourced TAM + provenance or an honest "
+            "unsizable reason. Gated by STRATA_PORTFOLIO_ENABLED."
+        ),
+        "inputSchema": schemas.SIZE_COMPANY,
+        "handler": _h_size_company,
+    },
+    "list_portfolio": {
+        "description": "[READ] List linked companies with TAM + progress counts.",
+        "inputSchema": schemas.LIST_PORTFOLIO,
+        "handler": _h_list_portfolio,
     },
 }
 

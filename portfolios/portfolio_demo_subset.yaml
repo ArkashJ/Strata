@@ -1,0 +1,58 @@
+# Curated portfolio demo subset (spec F5).
+#
+# ~25 real companies from "Cos list.csv" hand-picked so their verticals map onto
+# markets our frameworks + connectors actually cover. Each `market` is an
+# existing sourced Concept slug; the pre-size step (scripts/presize_demo.py)
+# sizes these OFFLINE and writes data/demo/portfolio_demo.json — the cached,
+# deterministic artifact the /portfolio page and /tam render from. NO live
+# LLM/Exa is ever on the demo path (F3).
+#
+# The ~5 `unsizable` rows are deliberate: framing the platform's REFUSAL to
+# invent a number as the product's honesty, not a gap (the Q20 thesis made
+# visible). Each carries an explicit reason that doubles as a P3 lens-gap signal.
+
+org_id: default
+
+sized:
+  - { name: "11x", domain: "11x.ai", vertical: "Agents", market: demo-ai-sales-ops-us }
+  - { name: "Actively", domain: "actively.ai", vertical: "Sales", market: demo-ai-sales-ops-us }
+  - { name: "Alltius", domain: "alltius.ai", vertical: "Sales", market: demo-ai-sales-ops-us }
+  - { name: "Apollo.io", domain: "apollo.io", vertical: "Sales", market: gtm-ops-tooling-na }
+  - { name: "Allstacks", domain: "allstacks.com", vertical: "Dev", market: software-eng-productivity }
+  - { name: "Airplane", domain: "airplane.dev", vertical: "Dev", market: demo-ai-dev-tooling-us }
+  - { name: "Abacus.AI", domain: "abacus.ai", vertical: "Data", market: demo-ai-dev-tooling-us }
+  - { name: "Adept", domain: "adept.ai", vertical: "Agents", market: demo-ai-dev-tooling-us }
+  - { name: "Advocat AI", domain: "advocat.ai", vertical: "Legal", market: ai-legal-assistants-us }
+  - { name: "Billables AI", domain: "billables.ai", vertical: "Legal", market: ai-legal-assistants-us }
+  - { name: "Briefly", domain: "briefly.legal", vertical: "Legal", market: demo-ai-legal-research-us }
+  - { name: "Abnormal Security", domain: "abnormalsecurity.com", vertical: "Security", market: wraithwatch-cyber-defense }
+  - { name: "Accuknox", domain: "accuknox.com", vertical: "Security", market: wraithwatch-cyber-defense }
+  - { name: "1Kosmos - BlockID", domain: "1kosmos.com", vertical: "Security", market: wraithwatch-cyber-defense }
+  - { name: "Aisera", domain: "aisera.com", vertical: "Customer Support", market: st-labs-ai-itsm }
+  - { name: "Atomicwork", domain: "atomicwork.com", vertical: "Workflow Automation", market: st-labs-ai-itsm }
+  - { name: "AskNicely", domain: "asknicely.com", vertical: "Customer Support", market: gather-customer-research }
+  - { name: "Alan AI", domain: "alan.app", vertical: "Voice", market: voice-ai-infra-global }
+  - { name: "Abacus Insights", domain: "abacusinsights.com", vertical: "Health Tech", market: signallabs-healthcare-decision-ai }
+  - { name: "1upHealth", domain: "1up.health", vertical: "Health Tech", market: signallabs-healthcare-decision-ai }
+
+unsizable:
+  - name: "0xPass"
+    domain: "0xpass.io"
+    vertical: "Web3 & Crypto"
+    reason: "Crypto/web3 wallet infra — token & prediction-market pricing is quarantined (Q20); we have no defensible TAM framework, so we refuse to invent one."
+  - name: "3Blocks"
+    domain: "3blocks.io"
+    vertical: "Web3 & Crypto"
+    reason: "On-chain analytics — onchain-tier signals are read-only and never feed a framework; no sourced lens yet."
+  - name: "Bebopbee"
+    domain: "bebopbee.com"
+    vertical: "Gaming"
+    reason: "Mobile gaming monetization needs a player-LTV lens we have not sourced. Proven gap → P3."
+  - name: "Drosera"
+    domain: "drosera.bio"
+    vertical: "Biotech"
+    reason: "Wet-lab biotech requires a clinical-pipeline / drug-value lens outside our six current frameworks."
+  - name: "Augrade"
+    domain: "augrade.com"
+    vertical: "AR & VR"
+    reason: "AR/VR construction tooling — no spatial-computing adoption lens sourced; refusing to fabricate one."

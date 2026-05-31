@@ -12,6 +12,7 @@ from strata.evaluator import EvaluatorError, size_concept
 from strata.loader import LoaderError
 from strata.models import TAMOutput, Unit
 from strata.registry import RegistryError
+from strata.sizing.cli import portfolio_app
 from strata.validator import Severity
 from strata.validator import validate as run_validate
 
@@ -21,6 +22,7 @@ app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
 )
+app.add_typer(portfolio_app)
 
 # Typer Argument/Option must be created at module scope (B008) — Python evaluates
 # function defaults once at definition time, which is exactly what Typer expects.

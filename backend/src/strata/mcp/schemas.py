@@ -52,3 +52,47 @@ RESOLVE_MARKET: dict[str, Any] = {
     "required": ["query"],
     "additionalProperties": False,
 }
+
+# ── Write tools (portfolio P1) — gated by STRATA_PORTFOLIO_ENABLED ──────────
+IMPORT_PORTFOLIO: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "rows": {
+            "type": "array",
+            "description": "Company pointers to link to your org.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "domain": {"type": "string"},
+                    "vertical": {"type": "string"},
+                },
+                "required": ["name"],
+                "additionalProperties": False,
+            },
+            "minItems": 1,
+        },
+    },
+    "required": ["rows"],
+    "additionalProperties": False,
+}
+
+SIZE_COMPANY: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "domain": {"type": "string", "description": "Company domain (preferred key)."},
+        "name": {"type": "string", "description": "Company name (fallback key)."},
+    },
+    "minProperties": 1,
+    "additionalProperties": False,
+}
+
+LIST_PORTFOLIO: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "status": {"type": "string", "enum": ["unsized", "sized", "unsizable"]},
+        "vertical": {"type": "string"},
+        "limit": {"type": "integer", "minimum": 1, "maximum": 500},
+    },
+    "additionalProperties": False,
+}

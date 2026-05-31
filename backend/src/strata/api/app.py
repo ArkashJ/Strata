@@ -8,6 +8,7 @@ from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -21,6 +22,7 @@ from strata.api.routes import (
     frameworks,
     healthz,
     integrations,
+    portfolio,
     primitives,
     resolve,
     signals,
@@ -28,6 +30,8 @@ from strata.api.routes import (
 )
 from strata.config import settings
 from strata.logging import configure_logging, get_logger
+
+load_dotenv()
 
 log = get_logger(__name__)
 
@@ -149,6 +153,7 @@ def create_app() -> FastAPI:
     app.include_router(integrations.router)
     app.include_router(connectors.router)
     app.include_router(contribute.router)
+    app.include_router(portfolio.router)
 
     # Mount the read-only Strata MCP server at /mcp (Wave 5A). Best-effort: a
     # failure to build it must not take down the REST API.
