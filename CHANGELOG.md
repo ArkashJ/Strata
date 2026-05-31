@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — connector explorer (answers "how do connectors come into play")
+- **`GET /connectors` + `/connectors` page (sidebar link):** the ingest catalog.
+  Lists all 22 typed connectors from the capability registry, and cross-references
+  the live data bank by source host so each shows a **real** `primitives_in_bank`
+  count + a sample primitive you can open (census 38 · bls 27 · fred 22 ·
+  worldbank 21 · edgar 16 = 124 sourced primitives). Capability-only connectors
+  are listed honestly as "wired, not yet ingested" (0, no fabricated sample). The
+  page draws the pipeline — `API → typed client → snapshot pin → atomic primitive
+  → framework → TAM` — so a partner sees why every number is defensible. Read-only,
+  no live API calls in the request path; sample is slug-sorted for determinism.
+  Kalshi is deliberately excluded (its data is the quarantined `/signals`). 5
+  backend + 3 e2e tests; pyright/ruff/typecheck/biome clean.
+
 ### Added — forwardable market-sizing report (tournament finalist · P2.4)
 - **`/tam/<hash>/report`:** a clean, print-first **one-page report** generated from
   any TAM — the document a partner forwards. Letterhead + permalink, an executive

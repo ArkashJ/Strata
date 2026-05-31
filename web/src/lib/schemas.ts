@@ -178,6 +178,26 @@ export const signalSummarySchema = z.object({
 });
 export type SignalSummary = z.infer<typeof signalSummarySchema>;
 
+// Ingest connectors (GET /connectors · connector-explorer). The typed clients
+// that manufacture sourced primitives (connector → primitive → framework → TAM).
+// `primitives_in_bank` is a LIVE count of what this connector has produced in the
+// current data bank; 0 means capability-only (honest — not yet ingested).
+export const connectorCapabilitySchema = z.object({
+  method: z.string(),
+  description: z.string(),
+  returns: z.string(),
+});
+export const connectorSchema = z.object({
+  connector: z.string(),
+  source_tier: z.string(),
+  method_count: z.number(),
+  capabilities: z.array(connectorCapabilitySchema),
+  primitives_in_bank: z.number(),
+  sample_primitive_slug: z.string().nullable(),
+  sample_source_url: z.string().nullable(),
+});
+export type Connector = z.infer<typeof connectorSchema>;
+
 export const frameworkSummarySchema = z.object({
   slug: z.string(),
   name: z.string(),
