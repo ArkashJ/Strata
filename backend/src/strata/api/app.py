@@ -79,13 +79,20 @@ def create_app() -> FastAPI:
     # misconfiguration — narrow to the explicit regex (Vercel previews) only, so
     # an unconfigured prod deploy fails closed rather than open.
     cors_origins = settings.cors_origins
+    cors_origin_regex = settings.cors_origin_regex
     if settings.env == "prod" and cors_origins == ["*"]:
         log.warning("strata.cors.wildcard_blocked_in_prod")
         cors_origins = []
+    elif settings.env != "prod" and not cors_origin_regex:
+        # Dev/test: `next dev` grabs whatever localhost port is free (3000,
+        # 3001, 3008, ...), so an exact-origin list silently breaks the app
+        # with CORS preflight failures whenever the port drifts. Allow any
+        # localhost origin in non-prod only; prod stays locked to its regex.
+        cors_origin_regex = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
-        allow_origin_regex=settings.cors_origin_regex,
+        allow_origin_regex=cors_origin_regex,
         allow_methods=["*"],
         allow_headers=["*"],
     )
