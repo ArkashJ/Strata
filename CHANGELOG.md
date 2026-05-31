@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — prod data integrity: re-seed now actually repairs stale rows
+- **Root cause of the prod `/build` failures ("no applicable framework variants")
+  and the "cannot fetch enough market data" errors:** every Postgres upsert in
+  `db/sync.py` had an **incomplete `on_conflict_do_update` set**, so an idempotent
+  re-seed silently skipped the omitted columns. Framework `variants` (the
+  concept → primitive bindings) were never updated after the first seed, stranding
+  every framework at `variants=[]` in prod and 422-ing every `/build`, `/tam`, and
+  the resolver's registry-first path. Concepts also dropped `competing_concepts`;
+  primitives dropped half their columns; sources dropped snapshot/accessed. Now
+  **every upsert updates every non-key column**, so `STRATA_SEED_ON_BOOT` repairs
+  stale prod data on the next deploy.
+- **Composite primitives were never seeded to Postgres** (`Registry.from_db` had no
+  composite path), so any concept consuming one 422'd ("neither a known atomic nor
+  composite primitive") — e.g. `ai-coding-assistants-us` via
+  `us-software-engineering-workforce`. Each same-unit `union` composite is now
+  seeded as a **resolved row** whose value is `math.fsum` of its already-sourced
+  member atomics (no invented figures; Census CBP regulator provenance preserved).
+
+  ```
+  YAML seed ──► sync_yaml_to_db ──► Postgres
+     atomics ───────────────────────►  primitives (all columns updated on conflict)
+     composites ─(union = Σ members)─►  primitives (resolved row, real value)
+     frameworks ─(variants included)─►  frameworks  ──► /build works ──► /tam persists
+  ```
+
+### Added — portfolio → sourced-market map
+- **`scripts/map_companies_to_markets.py` + `portfolios/cos-list-market-map.csv`:**
+  maps the 4,918-company portfolio onto the curated sourced markets (by industry
+  vertical + the six-lens taxonomy). 61% inherit a defensible market TAM; the
+  uncovered verticals (ESG, Web3, Marketplaces, Logistics, Edtech, …) are flagged
+  honestly as "no curated market yet" rather than fabricated.
+
 ### Added — connector explorer (answers "how do connectors come into play")
 - **`GET /connectors` + `/connectors` page (sidebar link):** the ingest catalog.
   Lists all 22 typed connectors from the capability registry, and cross-references
