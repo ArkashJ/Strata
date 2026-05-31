@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: demo-ai-sales-ops-acv-per-seat-2024
+schema_version: 1
+concept_slug: demo-ai-sales-ops-us
+name: AI sales-ops ACV per rep seat (2024)
+description: Blended annual contract value per sales-rep seat for AI revenue-intelligence
+  tooling, paraphrased from vendor list pricing.
+value: 1400
+unit:
+  kind: intensive
+  dimension: currency
+  denominator: per-seat-per-year
+  currency: USD
+  basis: nominal
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-ai-sales-ops-acv-per-seat-2024-src
+  tier: analyst-paraphrase
+  original_publisher: Gong / Clari public pricing
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'AI sales-ops ACV per rep seat (2024): ~1,400. Paraphrased from
+    Gong / Clari public pricing; verify against the full source before citing.'
+  url: https://www.gong.io/pricing/
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

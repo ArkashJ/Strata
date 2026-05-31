@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: demo-acs-sales-reps-us-2024
+schema_version: 1
+concept_slug: demo-ai-sales-ops-us
+name: US sales reps headcount (broad labor-force estimate, 2024)
+description: Broader US sales-representative population including technical and scientific
+  products sales, materially higher than the single-SOC occupational figure.
+value: 1900000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-acs-sales-reps-us-2024-src
+  tier: analyst-paraphrase
+  original_publisher: ACS labor-force estimate
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'US sales reps headcount (broad labor-force estimate, 2024): ~1,900,000.
+    Paraphrased from ACS labor-force estimate; verify against the full source before
+    citing.'
+  url: https://www.census.gov/programs-surveys/acs
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

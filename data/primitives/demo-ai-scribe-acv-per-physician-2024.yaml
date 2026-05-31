@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: demo-ai-scribe-acv-per-physician-2024
+schema_version: 1
+concept_slug: demo-ai-clinical-docs-us
+name: AI clinical-scribe ACV per physician seat (2024)
+description: Blended annual contract value per physician seat for AI ambient documentation,
+  paraphrased from vendor pricing (~$200-300/mo).
+value: 3000
+unit:
+  kind: intensive
+  dimension: currency
+  denominator: per-seat-per-year
+  currency: USD
+  basis: nominal
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-ai-scribe-acv-per-physician-2024-src
+  tier: analyst-paraphrase
+  original_publisher: Nuance DAX / Abridge pricing
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'AI clinical-scribe ACV per physician seat (2024): ~3,000. Paraphrased
+    from Nuance DAX / Abridge pricing; verify against the full source before citing.'
+  url: https://www.nuance.com/healthcare.html
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

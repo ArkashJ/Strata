@@ -56,6 +56,10 @@ class LoadedRecords:
     """Output of ``load_data_dir``. The validator consumes this directly."""
 
     atomic_primitives: list[AtomicPrimitive] = field(default_factory=list[AtomicPrimitive])
+    # Signals (e.g. prediction-market probabilities) live under ``data/signals/``.
+    # They parse as atomic_primitive YAML but are NEVER sizing-grade inputs: they
+    # load here, not into ``atomic_primitives``, and never feed a framework (Q20).
+    signals: list[AtomicPrimitive] = field(default_factory=list[AtomicPrimitive])
     composite_primitives: list[CompositePrimitive] = field(default_factory=list[CompositePrimitive])
     concepts: list[Concept] = field(default_factory=list[Concept])
     frameworks: list[Framework] = field(default_factory=list[Framework])
@@ -91,6 +95,7 @@ def load_data_dir(root: Path) -> LoadedRecords:
 
     if not root.exists():
         raise LoaderError(root, "data directory does not exist")
+    signals_root = root / "signals"
     out = LoadedRecords()
     for path in sorted(_iter_yaml_files(root)):
         raw = _read_yaml(path)
@@ -102,7 +107,7 @@ def load_data_dir(root: Path) -> LoadedRecords:
             raise LoaderError(path, "missing or non-string `kind` field")
         if kind_raw not in KNOWN_KINDS:
             raise LoaderError(path, f"unknown kind {kind_raw!r}")
-        _dispatch(out, kind_raw, raw, path)
+        _dispatch(out, kind_raw, raw, path, is_signal=path.is_relative_to(signals_root))
     return out
 
 
@@ -122,11 +127,16 @@ def _read_yaml(path: Path) -> dict[str, Any] | None:
     return cast(dict[str, Any], parsed)
 
 
-def _dispatch(out: LoadedRecords, kind: str, raw: dict[str, Any], path: Path) -> None:
+def _dispatch(
+    out: LoadedRecords, kind: str, raw: dict[str, Any], path: Path, *, is_signal: bool = False
+) -> None:
     try:
         match kind:
             case "atomic_primitive":
-                out.atomic_primitives.append(AtomicPrimitive.model_validate(raw))
+                prim = AtomicPrimitive.model_validate(raw)
+                # A file under data/signals/ is a non-sizing signal, never a
+                # framework input. Route it away from the primitive registry.
+                (out.signals if is_signal else out.atomic_primitives).append(prim)
             case "composite_primitive":
                 out.composite_primitives.append(CompositePrimitive.model_validate(raw))
             case "concept":

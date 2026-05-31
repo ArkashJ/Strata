@@ -7,7 +7,7 @@ truth for dev/test; Postgres is the source of truth in prod.
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .loader import LoadedRecords
 from .models import (
@@ -16,12 +16,19 @@ from .models import (
     CompositePrimitive,
     Concept,
     Framework,
+    SourceTier,
     TAMOutput,
 )
 
 
 class RegistryError(KeyError):
     pass
+
+
+# FIFO bound on ephemeral build/recompute TAM outputs kept in-memory so their
+# permalinks resolve within a session. Large enough for a demo, small enough to
+# bound a long-lived process.
+_TAM_CACHE_CAP = 512
 
 
 @dataclass(slots=True)
@@ -32,6 +39,9 @@ class Registry:
     frameworks: dict[str, Framework]
     annotations: dict[str, Annotation]
     tam_outputs: dict[str, TAMOutput]
+    # Read-only prediction-market / non-sizing signals (Q20). Never consumed by
+    # the evaluator or any framework — exposed for display only.
+    signals: dict[str, AtomicPrimitive] = field(default_factory=dict[str, AtomicPrimitive])
 
     @classmethod
     async def from_db(cls) -> Registry:
@@ -48,13 +58,19 @@ class Registry:
             concepts = await load_concepts_from_db(session)
             frameworks = await load_frameworks_from_db(session)
 
+        # Mirror the YAML loader's signal quarantine on the prod path: a
+        # prediction-market primitive seeded into the DB must NOT reach the
+        # evaluator (Q20). Split by source tier before indexing.
+        sizing = [p for p in primitives if p.source.tier is not SourceTier.PREDICTION_MARKET]
+        signals = [p for p in primitives if p.source.tier is SourceTier.PREDICTION_MARKET]
         return cls(
-            atomic=_index(primitives, lambda r: r.slug, "atomic_primitive"),
+            atomic=_index(sizing, lambda r: r.slug, "atomic_primitive"),
             composite={},
             concepts=_index(concepts, lambda r: r.slug, "concept"),
             frameworks=_index(frameworks, lambda r: r.slug, "framework"),
             annotations={},
             tam_outputs={},
+            signals=_index(signals, lambda r: r.slug, "signal"),
         )
 
     @classmethod
@@ -66,6 +82,7 @@ class Registry:
             frameworks=_index(records.frameworks, lambda r: r.slug, "framework"),
             annotations=_index(records.annotations, lambda r: r.slug, "annotation"),
             tam_outputs=_index(records.tam_outputs, lambda r: r.state_hash, "tam_output"),
+            signals=_index(records.signals, lambda r: r.slug, "signal"),
         )
 
     def primitive(self, slug: str) -> AtomicPrimitive | CompositePrimitive:
@@ -95,6 +112,21 @@ class Registry:
 
     def iter_frameworks(self) -> Iterator[Framework]:
         yield from self.frameworks.values()
+
+    def remember_tam(self, tam: TAMOutput, *, cap: int = _TAM_CACHE_CAP) -> None:
+        """Persist an evaluated TAM so ``GET /tam/<hash>`` resolves (AC0.1).
+
+        Curated TAMs loaded from ``data/tams/`` and freshly-minted ones share
+        the same dict; equivalent states collide on ``state_hash`` (Q38) so a
+        re-build is idempotent. The cache is FIFO-capped to bound memory on a
+        long-lived process — only ephemeral build/recompute outputs are evicted
+        (curated YAML TAMs are re-seeded from disk on registry rebuild)."""
+        if tam.state_hash in self.tam_outputs:
+            return
+        self.tam_outputs[tam.state_hash] = tam
+        while len(self.tam_outputs) > cap:
+            oldest = next(iter(self.tam_outputs))
+            del self.tam_outputs[oldest]
 
 
 def _index[T](records: Iterable[T], slug_of: Callable[[T], str], kind: str) -> dict[str, T]:

@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: demo-ai-claims-acv-per-seat-2024
+schema_version: 1
+concept_slug: demo-ai-insurance-claims-us
+name: AI claims-automation ACV per adjuster seat (2024)
+description: Blended annual contract value per claims-adjuster seat for AI claims
+  tooling, paraphrased from insurtech vendor pricing.
+value: 6500
+unit:
+  kind: intensive
+  dimension: currency
+  denominator: per-seat-per-year
+  currency: USD
+  basis: nominal
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-ai-claims-acv-per-seat-2024-src
+  tier: analyst-paraphrase
+  original_publisher: Insurtech vendor pricing
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'AI claims-automation ACV per adjuster seat (2024): ~6,500. Paraphrased
+    from Insurtech vendor pricing; verify against the full source before citing.'
+  url: https://www.guidewire.com/products
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

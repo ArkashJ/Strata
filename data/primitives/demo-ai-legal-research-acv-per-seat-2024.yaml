@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: demo-ai-legal-research-acv-per-seat-2024
+schema_version: 1
+concept_slug: demo-ai-legal-research-us
+name: AI legal-research ACV per lawyer seat (2024)
+description: Blended annual contract value per lawyer seat for AI legal-research and
+  drafting tooling, paraphrased from vendor pricing.
+value: 5000
+unit:
+  kind: intensive
+  dimension: currency
+  denominator: per-seat-per-year
+  currency: USD
+  basis: nominal
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-ai-legal-research-acv-per-seat-2024-src
+  tier: analyst-paraphrase
+  original_publisher: Harvey / Thomson Reuters pricing
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'AI legal-research ACV per lawyer seat (2024): ~5,000. Paraphrased
+    from Harvey / Thomson Reuters pricing; verify against the full source before citing.'
+  url: https://www.harvey.ai/
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

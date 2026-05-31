@@ -1,0 +1,21 @@
+kind: concept
+slug: demo-ai-insurance-claims-us
+schema_version: 1
+name: AI claims automation (US P&C insurance)
+definition: 'US property & casualty carriers'' adoption of AI claims-automation software
+  priced per claims-adjuster seat. Scope: P&C claims adjusters, examiners and investigators;
+  excludes life/health and generic CRM.'
+analysis_lens:
+  primary: cost_efficiency
+  secondary: revenue_generation
+modifiers: {}
+measurements:
+- demo-bls-pc-claims-adjusters-2024
+- demo-bls-ces-claims-adjusters-us-2024
+- demo-ai-claims-acv-per-seat-2024
+- demo-naic-pc-carriers-2024
+- demo-pc-carrier-ai-claims-spend-2024
+competing_concepts:
+- demo-ai-clinical-docs-us
+- demo-ai-dev-tooling-us
+requires_clearance: []

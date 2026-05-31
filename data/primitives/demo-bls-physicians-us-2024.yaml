@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: demo-bls-physicians-us-2024
+schema_version: 1
+concept_slug: demo-ai-clinical-docs-us
+name: US physicians & surgeons headcount (BLS OEWS 29-1210/29-1220, 2024)
+description: BLS OEWS estimate for physicians & surgeons (SOC 29-12xx), United States,
+  May 2024.
+value: 761700
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-05-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-bls-physicians-us-2024-src
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes_nat.htm
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

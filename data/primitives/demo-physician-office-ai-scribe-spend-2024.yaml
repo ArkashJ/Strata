@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: demo-physician-office-ai-scribe-spend-2024
+schema_version: 1
+concept_slug: demo-ai-clinical-docs-us
+name: AI scribe spend per physician office (2024)
+description: Estimated annual AI ambient-documentation spend per US physician office,
+  paraphrased from analyst commentary.
+value: 11000
+unit:
+  kind: intensive
+  dimension: currency
+  denominator: per-firm-per-year
+  currency: USD
+  basis: nominal
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-physician-office-ai-scribe-spend-2024-src
+  tier: analyst-paraphrase
+  original_publisher: KLAS / analyst commentary
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'AI scribe spend per physician office (2024): ~11,000. Paraphrased
+    from KLAS / analyst commentary; verify against the full source before citing.'
+  url: https://www.klasresearch.com/
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

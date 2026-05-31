@@ -23,8 +23,17 @@ import { useState } from "react";
 import { ErrorState } from "../ui/ErrorState";
 import "./tam-print.css";
 
-export function TamDetailView({ hash }: { hash: string }) {
-  const tam = useQuery(tamQuery(hash));
+export function TamDetailView({ hash, initialTam }: { hash: string; initialTam?: TAMOutput }) {
+  // `initialTam` is the server-fetched TAM (AC0.8): seeding tanstack's
+  // initialData makes the first (server) render paint the real headline into
+  // the initial HTML instead of a loading shell, then hydrate seamlessly.
+  const tam = useQuery({
+    ...tamQuery(hash),
+    initialData: initialTam,
+    // Mark the server-fetched data fresh so the immutable TAM (staleTime:∞)
+    // doesn't trigger a redundant client refetch on every SSR'd page view.
+    initialDataUpdatedAt: initialTam ? Date.now() : undefined,
+  });
 
   if (tam.isPending) return <LoadingShell />;
 

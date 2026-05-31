@@ -296,11 +296,12 @@ def stats(data_dir: Path = _DATA_DIR_OPT) -> None:
 
     reg = Registry.from_loaded(records)
     typer.echo("Data bank (YAML):")
-    typer.echo(f"  {'atomic_primitives':20} {len(reg.atomic):>6}")
-    typer.echo(f"  {'concepts':20} {len(reg.concepts):>6}")
-    typer.echo(f"  {'frameworks':20} {len(reg.frameworks):>6}")
-    typer.echo(f"  {'sources':20} {len(records.source_registries):>6}")
-    typer.echo(f"  {'annotations':20} {len(reg.annotations):>6}")
+    typer.echo(f"  {'sizing-grade primitives':24} {len(reg.atomic):>6}")
+    typer.echo(f"  {'signals (non-sizing)':24} {len(reg.signals):>6}")
+    typer.echo(f"  {'concepts':24} {len(reg.concepts):>6}")
+    typer.echo(f"  {'frameworks':24} {len(reg.frameworks):>6}")
+    typer.echo(f"  {'sources':24} {len(records.source_registries):>6}")
+    typer.echo(f"  {'annotations':24} {len(reg.annotations):>6}")
 
     by_lens: dict[str, int] = {}
     for p in reg.atomic.values():

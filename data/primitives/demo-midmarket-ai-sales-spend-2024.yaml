@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: demo-midmarket-ai-sales-spend-2024
+schema_version: 1
+concept_slug: demo-ai-sales-ops-us
+name: AI sales-ops spend per mid-market firm (2024)
+description: Estimated annual AI sales-ops spend per US mid-market firm, paraphrased
+  from analyst commentary.
+value: 260000
+unit:
+  kind: intensive
+  dimension: currency
+  denominator: per-firm-per-year
+  currency: USD
+  basis: nominal
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-midmarket-ai-sales-spend-2024-src
+  tier: analyst-paraphrase
+  original_publisher: Forrester / analyst commentary
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'AI sales-ops spend per mid-market firm (2024): ~260,000. Paraphrased
+    from Forrester / analyst commentary; verify against the full source before citing.'
+  url: https://www.forrester.com/
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3

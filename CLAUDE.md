@@ -19,9 +19,18 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-30)
 
-- **Version:** `0.4.0` (beta). `VERSION` + `pyproject` pinned; tags follow
+- **Version:** `0.5.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).
+- **In flight (PR #63 — YC remediation Wave 0, demo-blockers):** built/recomputed
+  TAMs persist so `/tam/<hash>` resolves (FIFO-capped `reg.remember_tam`); `/resolve`
+  is **registry-first** (`resolver/match.py`) and returns a multi-scenario tree
+  (`ResolverResult.scenarios[]` + `estimate_kind`: triangulated vs single_method +
+  honesty banner); the 202 Kalshi `prediction_market` primitives are quarantined to
+  `data/signals/` (read-only `registry.signals`, never feed frameworks, Q20); 5
+  triangulated demo concepts seeded (`demo-ai-*`, `independence_score=1.0`, ≥2
+  same-quantity sources ≥10% apart); `/tam/<hash>` is **server-rendered + OpenGraph**
+  (`next/og` image). 471 backend tests pass.
 - **Shipped (PR #55 + #56 "Strata Live", merged to main 2026-05-30):** the `/build`
   page is **interactive**. Clicking a primitive graph node opens an override panel to
   set a **what-if value** or **swap a sourced primitive**; the TAM recomputes live via

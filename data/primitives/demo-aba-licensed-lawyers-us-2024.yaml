@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: demo-aba-licensed-lawyers-us-2024
+schema_version: 1
+concept_slug: demo-ai-legal-research-us
+name: US licensed lawyers (bar association census, 2024)
+description: Bar-association census of licensed US lawyers (active membership), materially
+  higher than the OEWS wage-employment occupational estimate.
+value: 1330000
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: demo-aba-licensed-lawyers-us-2024-src
+  tier: analyst-paraphrase
+  original_publisher: ABA national lawyer population survey
+  paraphrase_reviewer: strata-demo-curator
+  paraphrase_text: 'US licensed lawyers (bar association census, 2024): ~1,330,000.
+    Paraphrased from ABA national lawyer population survey; verify against the full
+    source before citing.'
+  url: https://www.americanbar.org/about_the_aba/profession_statistics/
+  accessed: '2026-05-30'
+  snapshot_sha256: d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3
