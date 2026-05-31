@@ -143,6 +143,89 @@ async def build_trajectory(
         raise HTTPException(422, str(exc)) from exc
 
 
+class SensitivityRow(BaseModel):
+    primitive_slug: str
+    name: str
+    base: float
+    low: float
+    high: float
+    impact: float
+
+
+class SensitivityResponse(BaseModel):
+    concept_slug: str
+    base: float
+    pct: float
+    inputs: list[SensitivityRow]
+
+
+def _tam_midpoint(tam: TAMOutput) -> float:
+    """Mean of scenario values — the headline midpoint the UI shows."""
+    values = [s.value for s in tam.scenarios]
+    return sum(values) / len(values) if values else 0.0
+
+
+@router.get(
+    "/build/{concept_slug}/sensitivity",
+    response_model=SensitivityResponse,
+    summary="Per-input ±pct swing on the TAM (feeds the tornado chart)",
+)
+async def build_sensitivity(
+    concept_slug: str,
+    reg: Registry = _REG,
+    pct: float = 0.2,
+) -> SensitivityResponse:
+    try:
+        base_tam = size_concept(reg, concept_slug)
+    except EvaluatorError as exc:
+        raise HTTPException(404, str(exc)) from exc
+
+    base_mid = _tam_midpoint(base_tam)
+    # Unique consuming inputs across the scenario tree (slug -> name, value, unit).
+    seen: dict[str, tuple[str, float, Unit]] = {}
+    for sc in base_tam.scenarios:
+        for iu in sc.inputs_used:
+            if iu.unit is not None and iu.primitive_slug not in seen:
+                seen[iu.primitive_slug] = (iu.name or iu.primitive_slug, iu.value or 0.0, iu.unit)
+
+    rows: list[SensitivityRow] = []
+    for slug, (name, value, unit) in seen.items():
+        try:
+            low = _tam_midpoint(
+                size_concept(
+                    reg,
+                    concept_slug,
+                    overrides=EvalOverrides(
+                        primitive_overrides={slug: OverrideValue(value * (1 - pct), unit)}
+                    ),
+                )
+            )
+            high = _tam_midpoint(
+                size_concept(
+                    reg,
+                    concept_slug,
+                    overrides=EvalOverrides(
+                        primitive_overrides={slug: OverrideValue(value * (1 + pct), unit)}
+                    ),
+                )
+            )
+        except (EvaluatorError, ValueError):
+            continue
+        rows.append(
+            SensitivityRow(
+                primitive_slug=slug,
+                name=name,
+                base=base_mid,
+                low=low,
+                high=high,
+                impact=abs(high - low),
+            )
+        )
+
+    rows.sort(key=lambda r: r.impact, reverse=True)
+    return SensitivityResponse(concept_slug=concept_slug, base=base_mid, pct=pct, inputs=rows)
+
+
 @router.get(
     "/tam/{state_hash}",
     response_model=TAMOutput,

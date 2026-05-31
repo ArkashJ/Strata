@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -16,6 +16,7 @@ import {
 } from "reactflow";
 import "reactflow/dist/style.css";
 
+import { GhostCard, type MenuAnchor, NodeContextMenu } from "@/components/pyramid/PyramidOverlays";
 import {
   PILLARS,
   PILLAR_COLOR,
@@ -98,12 +99,52 @@ export function PyramidGraph({
 }) {
   const { nodes, edges } = useMemo(() => layout(pyramid, selection), [pyramid, selection]);
 
+  // AC2.2: right-click context menu + 250ms hover-intent ghost card.
+  const [menu, setMenu] = useState<MenuAnchor | null>(null);
+  const [ghost, setGhost] = useState<MenuAnchor | null>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearHover = useCallback(() => {
+    if (hoverTimer.current !== null) {
+      clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
+  }, []);
+
   const handleNodeClick = useCallback(
     (evt: React.MouseEvent, n: Node) => {
       if (n.type === "pyramid") onSelect((n.data as PyramidNodeData).node, evt.shiftKey);
     },
     [onSelect],
   );
+
+  const handleNodeContextMenu = useCallback(
+    (evt: React.MouseEvent, n: Node) => {
+      if (n.type !== "pyramid") return;
+      evt.preventDefault();
+      clearHover();
+      setGhost(null);
+      setMenu({ node: (n.data as PyramidNodeData).node, x: evt.clientX, y: evt.clientY });
+    },
+    [clearHover],
+  );
+
+  const handleNodeMouseEnter = useCallback(
+    (evt: React.MouseEvent, n: Node) => {
+      if (n.type !== "pyramid" || menu) return;
+      const { clientX, clientY } = evt;
+      const node = (n.data as PyramidNodeData).node;
+      clearHover();
+      // Ghost card only after a 250ms dwell (no flicker on pass-through).
+      hoverTimer.current = setTimeout(() => setGhost({ node, x: clientX, y: clientY }), 250);
+    },
+    [menu, clearHover],
+  );
+
+  const handleNodeMouseLeave = useCallback(() => {
+    clearHover();
+    setGhost(null);
+  }, [clearHover]);
 
   return (
     <div
@@ -121,6 +162,9 @@ export function PyramidGraph({
           fitViewOptions={FIT_VIEW_OPTIONS}
           proOptions={PRO_OPTIONS}
           onNodeClick={handleNodeClick}
+          onNodeContextMenu={handleNodeContextMenu}
+          onNodeMouseEnter={handleNodeMouseEnter}
+          onNodeMouseLeave={handleNodeMouseLeave}
           nodesDraggable={false}
           nodesConnectable={false}
           elementsSelectable={false}
@@ -140,6 +184,19 @@ export function PyramidGraph({
           />
         </ReactFlow>
       </ReactFlowProvider>
+
+      {ghost && !menu ? <GhostCard anchor={ghost} /> : null}
+      {menu ? (
+        <NodeContextMenu
+          anchor={menu}
+          onClose={() => setMenu(null)}
+          onAction={(key, node) => {
+            // Expand/annotate land with their features; "Suggest framework" and
+            // "Expand children" reuse the existing select flow as the entry point.
+            if (key === "expand" || key === "framework") onSelect(node, false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

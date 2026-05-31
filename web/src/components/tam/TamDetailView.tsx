@@ -1,15 +1,17 @@
 "use client";
 
 import { ScenarioGraph } from "@/components/ScenarioGraph";
+import { TornadoChart } from "@/components/charts/TornadoChart";
 import { NetworkGraphModal } from "@/components/network/NetworkGraphModal";
 import { TamTrajectoryChart } from "@/components/tam/TamTrajectoryChart";
 import { Button } from "@/components/ui/Button";
 import { IndependenceDonut } from "@/components/ui/IndependenceDonut";
 import { NotFoundState } from "@/components/ui/NotFoundState";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { CountUp, Pulse } from "@/components/ui/motion";
 import { ApiError } from "@/lib/api-client";
 import { formatCompact, tierLabel } from "@/lib/format";
-import { tamQuery, trajectoryQuery } from "@/lib/queries";
+import { sensitivityQuery, tamQuery, trajectoryQuery } from "@/lib/queries";
 import type { TAMOutput } from "@/lib/schemas";
 import { isDegenerate, midScenario, tamRange, tamToMarkdown } from "@/lib/tam";
 // The frozen TAM artifact page (U6, U11 · design capture 19-tam-detail). The
@@ -131,6 +133,7 @@ function TamArtifact({ tam }: { tam: TAMOutput }) {
         <section className="flex min-w-0 flex-1 flex-col gap-6">
           <MidScenarioCard tam={tam} />
           <ScenarioTree tam={tam} />
+          <SensitivitySection slug={tam.target.concept} />
           <TrajectorySection slug={tam.target.concept} />
         </section>
 
@@ -144,6 +147,24 @@ function TamArtifact({ tam }: { tam: TAMOutput }) {
         onClose={() => setNetworkOpen(false)}
       />
     </main>
+  );
+}
+
+// ── Sensitivity tornado (Wave 2 / AC2.3) ─────────────────────────────────────
+
+function SensitivitySection({ slug }: { slug: string }) {
+  const q = useQuery(sensitivityQuery(slug));
+  if (q.isPending || q.error || !q.data || q.data.inputs.length === 0) return null;
+  return (
+    <div>
+      <h2 className="display text-[24px] text-[var(--fg-1)]">Sensitivity</h2>
+      <p className="mt-1 text-[13px] text-[var(--fg-3)]">
+        Which assumption moves the TAM most — each input swung ±{Math.round(q.data.pct * 100)}%.
+      </p>
+      <div className="mt-3">
+        <TornadoChart data={q.data} />
+      </div>
+    </div>
   );
 }
 
@@ -223,9 +244,13 @@ function MidScenarioCard({ tam }: { tam: TAMOutput }) {
         <div className="text-[11px] uppercase tracking-[0.06em] text-[var(--fg-3)]">
           Triangulated midpoint
         </div>
-        <div className="tam-num mt-1 text-[44px] leading-[1] text-[var(--fg-1)]">
-          {formatCompact(range.mid, mid.unit)}
-        </div>
+        <Pulse pulseKey={tam.state_hash} className="tam-num mt-1 inline-block">
+          <CountUp
+            value={range.mid}
+            format={(n) => formatCompact(n, mid.unit)}
+            className="text-[44px] leading-[1] text-[var(--fg-1)]"
+          />
+        </Pulse>
         {degenerate ? (
           <div className="mt-2 text-[13px] text-[var(--fg-3)]">
             Single-method estimate · {leafCount} {leafCount === 1 ? "leaf" : "leaves"}

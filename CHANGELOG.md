@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — YC remediation Wave 2 (motion & visual craft)
+- **Recompute payoff + live pyramid.** New motion primitives (`CountUp` rAF
+  count-up, `Pulse`, `useHoverIntent`) wire a count-up + pulse into the TAM
+  headline. The pyramid gains a **right-click context menu** (Expand children /
+  Suggest framework / Annotate) and a **250ms hover-intent ghost card**. A new
+  **sensitivity tornado** (`GET /build/{slug}/sensitivity` → `TornadoChart`)
+  shows which assumption moves the TAM most, sorted by |impact|. All motion is
+  gated by `prefers-reduced-motion`. Tests: motion (4), tornado sort (2),
+  pyramid overlays (2), sensitivity endpoint (3); e2e specs for count-up + CLS.
+
 ### Added — YC remediation Wave 5A (Strata MCP server)
 - **Strata in Claude via MCP.** A read-only MCP server (`strata.mcp`) exposes the
   curated data bank + evaluator as five tools — `search_concepts`, `get_primitive`,
