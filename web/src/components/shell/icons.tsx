@@ -57,6 +57,15 @@ export function IntegrationsIcon(props: IconProps) {
   );
 }
 
+export function GuidesIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H12v16H5.5A1.5 1.5 0 0 0 4 20.5z" />
+      <path d="M20 4.5A1.5 1.5 0 0 0 18.5 3H12v16h6.5A1.5 1.5 0 0 1 20 20.5z" />
+    </Svg>
+  );
+}
+
 export function SearchIcon(props: IconProps) {
   return (
     <Svg {...props}>

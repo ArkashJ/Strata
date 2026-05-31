@@ -26,6 +26,7 @@ import {
   ConceptsIcon,
   DashboardIcon,
   FrameworksIcon,
+  GuidesIcon,
   HomeIcon,
   IntegrationsIcon,
   PrimitivesIcon,
@@ -67,6 +68,7 @@ export function Sidebar() {
         <NavItem icon={<DashboardIcon />} label="Dashboard" href="/dashboard" />
         <NavItem icon={<PyramidIcon />} label="Pyramid explorer" href="/graph" />
         <NavItem icon={<IntegrationsIcon />} label="Integrations" href="/integrations" />
+        <NavItem icon={<GuidesIcon />} label="Guides" href="/guides" />
         <NavItem icon={<SearchIcon />} label="Search" onClick={openPalette} />
 
         <GroupLabel collapsed={collapsed}>Library</GroupLabel>
