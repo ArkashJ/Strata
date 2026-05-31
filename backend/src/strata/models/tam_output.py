@@ -120,6 +120,9 @@ class TAMOutput(BaseModel):
     independence_score: float = Field(default=0.0, ge=0.0, le=1.0)
     uses_synthetic_primitives: bool = False
     uses_modeled_composites: bool = False
+    # Wave 4 — promoted TAMs are the public, indexable growth surface: they show
+    # in /browse and the sitemap. Separate from the auto-mint state hash (U6).
+    is_promoted: bool = False
 
 
 class TrajectoryPoint(BaseModel):

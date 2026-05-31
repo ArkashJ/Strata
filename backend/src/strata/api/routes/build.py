@@ -226,6 +226,26 @@ async def build_sensitivity(
     return SensitivityResponse(concept_slug=concept_slug, base=base_mid, pct=pct, inputs=rows)
 
 
+@router.post(
+    "/build/{concept_slug}/promote",
+    response_model=TAMOutput,
+    summary="Build + promote a concept's TAM (appears in /browse + sitemap)",
+)
+async def promote_tam(concept_slug: str, reg: Registry = _REG) -> TAMOutput:
+    try:
+        out = size_concept(reg, concept_slug)
+    except EvaluatorError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    promoted = out.model_copy(update={"is_promoted": True})
+    reg.remember_tam(promoted)
+    return promoted
+
+
+@router.get("/browse", response_model=list[TAMOutput], summary="List promoted TAMs")
+async def browse(reg: Registry = _REG) -> list[TAMOutput]:
+    return [t for t in reg.tam_outputs.values() if t.is_promoted]
+
+
 @router.get(
     "/tam/{state_hash}",
     response_model=TAMOutput,

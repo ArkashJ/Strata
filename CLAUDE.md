@@ -19,9 +19,17 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-30)
 
-- **Version:** `0.10.0` (beta). `VERSION` + `pyproject` pinned; tags follow
+- **Version:** `0.11.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).
+- **YC remediation (docs/18) — all 7 build waves shipped as a stacked PR chain
+  #63→#69 (W0, W5A, W2, W1, W3, W5B/5C, W4):** demo-blockers (persisted TAMs,
+  registry-first tree resolver, signal quarantine, triangulated demo concepts,
+  SSR/OG), Strata MCP server, motion/tornado, AI defensibility (citation
+  allowlist, unit guard, verifier, eval, integrity, staleness), substrate
+  (auth/rate-limit/metering/CORS/observability/RLS), private OAuth connectors +
+  `/integrations`, and GTM (sitemap/embed/contribute/doc-count CI). 529 backend
+  + 137 web tests.
 - **In flight (PR #68 — YC remediation Wave 5B/5C, stacked on #67):** inbound
   OAuth connectors (`connectors/saas/`) — connect SaaS (HubSpot pilot + stub)
   → Fernet-encrypted org-scoped tokens → **private, org-namespaced first-party
