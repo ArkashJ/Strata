@@ -25,6 +25,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Docs:** `docs/qa/TEST_PLAN.md` (audit), `docs/20-adversarial-teardown.md`
   (108-agent tournament, 46/100), `docs/21-teardown-remediation.md` (P0/P1/P2 plan).
 
+### Added — P1 defensibility made visible (docs/21)
+- **Show the math (P1.1):** the resolve/build result renders the explicit
+  equation — `Multiplies to 3M people × 300/per-seat-year = $900M` — plus the
+  source tier in each bar's tooltip. The receipt an LLM can't produce.
+- **Defensibility on cards (P1.2):** Featured TAM cards show a compact
+  independence ring + a method badge (green `△ N methods` when triangulated
+  across ≥2 method families, muted `single method` otherwise), so a defensible
+  TAM looks different from a one-source guess. `IndependenceDonut` gains a
+  `showLabel` ring-only mode.
+- **Audit graceful degrade (P1.4):** `GET /audit` serves a read-only capped feed
+  to anonymous callers in non-prod instead of a hard 401, so the dashboard trust
+  trail isn't a broken box in a keyless demo; prod stays auth-gated.
+- **Modeled-input honesty (P1.5):** results containing `community-modeled` /
+  `strata.internal` figures show a loud banner so the headline TAM is never
+  mistaken for a fully externally-sourced number.
+
 ### Changed — re-audit hardening (flip existential Risks 2 & 5)
 - **Substrate wired at runtime (Risk 5).** `set_org_scope`/`org_session_scope`/
   `get_org_session` activate the Wave-3 Postgres RLS per request (parametrized,
