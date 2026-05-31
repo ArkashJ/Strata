@@ -328,6 +328,19 @@ def _build_scenario(
 
 
 def _banners_for(p: AtomicPrimitive) -> list[ScenarioBanner]:
+    # Wave 5B — a private org-scoped first-party input sharpens the TAM with data
+    # only this tenant can see; flag it so the output is clearly tenant-private.
+    if p.visibility == "private":
+        return [
+            ScenarioBanner(
+                kind=BannerKind.PRIVATE,
+                message=(
+                    f"{p.name} is private first-party data"
+                    + (f" (org {p.org_id})" if p.org_id else "")
+                    + " — visible only to this tenant."
+                ),
+            )
+        ]
     if isinstance(p.source, AnalystParaphraseSource):
         return [
             ScenarioBanner(

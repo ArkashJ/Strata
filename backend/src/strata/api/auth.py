@@ -88,3 +88,13 @@ def principal_for(request: Request) -> Principal:
 def require_principal(request: Request) -> Principal:
     """FastAPI dependency for protected routes."""
     return principal_for(request)
+
+
+def require_authenticated(request: Request) -> Principal:
+    """Stricter dependency for routes that handle tenant secrets / private data
+    (Wave 5B): an anonymous ``public`` principal is rejected even in dev, so
+    unauthenticated callers can never share one tenant bucket."""
+    principal = principal_for(request)
+    if principal.is_anonymous:
+        raise HTTPException(status_code=401, detail="authentication required")
+    return principal

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — YC remediation Wave 5B/5C (private OAuth data + integrations gallery)
+- **Connect-your-data (the network-effect moat).** A generic inbound OAuth
+  connector framework (`connectors/saas/`): a fund connects its SaaS (HubSpot
+  pilot + a second stub provider proving genericity) and the data becomes
+  **private, org-scoped, first-party primitives** that sharpen only its TAMs.
+  OAuth tokens are **Fernet-encrypted** and org-scoped; private primitives are
+  org-namespaced and isolated (cross-tenant read = 0, mirrors Wave-3 RLS); they
+  feed the **same evaluator** and carry a `private` banner; disconnecting purges
+  tokens + tombstones the data. OAuth flow has single-use CSRF state + auth-only
+  routes. `AtomicPrimitive` gains `visibility`/`org_id`.
+
+```
+connect ─> OAuth (CSRF state) ─> encrypted org token ─> sync ─> private primitive
+        ─> org_scoped_registry ─> same evaluator ─> TAM (private banner)
+disconnect ─> purge token + tombstone primitives
+```
+
+- **`/integrations` gallery (Wave 5C).** `simple-icons` `BrandIcon` (monogram
+  fallback for gov/unknown, never crashes), three groups (Inbound / Outbound /
+  Public data bank), an old-vs-new comparison, and a reduced-motion-safe
+  animated pipeline flow. Linked in the sidebar nav.
+
 ### Added — YC remediation Wave 3 (architecture, trust & ops)
 - **Company substrate.** API-key auth (`api/auth.py`, hashed `X-API-Key` →
   `Principal{org_id}`; 401 when required) on the LLM/compute routes; a per-org

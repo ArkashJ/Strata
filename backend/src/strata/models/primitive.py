@@ -85,6 +85,13 @@ class AtomicPrimitive(BaseModel):
 
     derives_from: tuple[Slug, ...] = ()
 
+    # Wave 5B — visibility. "public" (default) primitives are the curated/seed
+    # bank; "private" primitives come from a tenant's connected SaaS data, are
+    # org-scoped, never appear in /browse or public seed, and surface a PRIVATE
+    # banner downstream. ``org_id`` is set only on private primitives.
+    visibility: Literal["public", "private"] = "public"
+    org_id: str | None = None
+
     @model_validator(mode="after")
     def _value_must_be_finite(self) -> Self:
         if not math.isfinite(self.value):
