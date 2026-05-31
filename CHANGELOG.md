@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — convergence cross-check + downloadable graphs (tournament champion)
+- **Bottoms-up vs tops-down convergence (MV2):** when a concept is sized by ≥2
+  independent method families, the evaluator emits a `convergence` object
+  (`engine.py` `_convergence` → `TAMOutput.convergence`) and the `/tam/<hash>`
+  page leads with an **animated agreement banner** — "lower estimate $X · higher
+  estimate $Y · spread N×", graded tight/broad/wide. This is the triangulation a
+  VC assembles by hand; pure synthesis of already-sourced scenario values, never a
+  fabricated second method. Renders **only** for multi-family concepts (single
+  method → `null`, no banner). Refuses to compare across mismatched units. Honesty
+  framing throughout: "method agreement", never "confidence". (e.g. doc-gen-pc:
+  bottoms-up $155M / top-down $470M / 3.0×.)
+- **Downloadable graphs:** every result chart (sensitivity tornado, TAM-over-time)
+  gets a **PNG / SVG** export (`lib/chart-export.ts` inlines computed styles so
+  CSS-var theming survives the detached SVG; `ChartDownload` button). Client-side
+  only, no new data — the forwardable image for a deck or memo.
+- Tests: 2 convergence backend tests (multi-family present, single-method null);
+  537 pytest pass, pyright/ruff clean on `src`, web typecheck + biome clean.
+  Verified live via Playwright against a real `/tam/<hash>`.
+
 ### Added — prediction-market signals surface (docs/22 T1)
 - **`GET /signals` + `/signals` page:** the 202 `prediction_market` primitives
   quarantined to `data/signals/` (Q20) now have a read-only surface. The backend

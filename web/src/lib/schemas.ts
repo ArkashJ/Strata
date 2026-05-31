@@ -88,6 +88,19 @@ export const tamTargetSchema = z.object({
   expansion_stage: z.string(),
 });
 
+// Bottoms-up vs tops-down agreement (MV2). Present only when ≥2 independent
+// method families sized the concept; null otherwise (the UI must not fake a
+// second method). Mirrors the backend Convergence model field-for-field.
+export const convergenceSchema = z.object({
+  low_family: methodFamilySchema,
+  high_family: methodFamilySchema,
+  low_value: z.number(),
+  high_value: z.number(),
+  ratio: z.number(),
+  unit: unitSchema,
+});
+export type Convergence = z.infer<typeof convergenceSchema>;
+
 export const tamOutputSchema = z.object({
   kind: z.literal("tam_output"),
   state_hash: z.string(),
@@ -97,6 +110,7 @@ export const tamOutputSchema = z.object({
   target: tamTargetSchema,
   scenarios: z.array(scenarioSchema).min(1),
   method_families_used: z.array(methodFamilySchema),
+  convergence: convergenceSchema.nullable().optional(),
   independence_score: z.number().min(0).max(1),
   uses_synthetic_primitives: z.boolean(),
   uses_modeled_composites: z.boolean(),

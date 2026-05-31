@@ -51,6 +51,7 @@ from .source import (
 )
 from .tam_output import (
     BannerKind,
+    Convergence,
     ExpansionStage,
     InputUsed,
     Scenario,
@@ -74,6 +75,7 @@ __all__ = [
     "AnnotationTargetType",
     "AtomicPrimitive",
     "BannerKind",
+    "Convergence",
     "CompositePrimitive",
     "Concept",
     "ConceptAnalysisLens",

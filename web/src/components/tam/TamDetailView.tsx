@@ -1,6 +1,10 @@
 "use client";
 
+import { useRef } from "react";
+
 import { ScenarioGraph } from "@/components/ScenarioGraph";
+import { ChartDownload } from "@/components/charts/ChartDownload";
+import { ConvergenceBanner } from "@/components/charts/ConvergenceBanner";
 import { TornadoChart } from "@/components/charts/TornadoChart";
 import { NetworkGraphModal } from "@/components/network/NetworkGraphModal";
 import { TamTrajectoryChart } from "@/components/tam/TamTrajectoryChart";
@@ -132,6 +136,7 @@ function TamArtifact({ tam }: { tam: TAMOutput }) {
       <div className="mt-6 flex flex-col gap-6 lg:flex-row">
         <section className="flex min-w-0 flex-1 flex-col gap-6">
           <MidScenarioCard tam={tam} />
+          {tam.convergence ? <ConvergenceBanner convergence={tam.convergence} /> : null}
           <ScenarioTree tam={tam} />
           <SensitivitySection slug={tam.target.concept} />
           <TrajectorySection slug={tam.target.concept} />
@@ -154,14 +159,20 @@ function TamArtifact({ tam }: { tam: TAMOutput }) {
 
 function SensitivitySection({ slug }: { slug: string }) {
   const q = useQuery(sensitivityQuery(slug));
+  const chartRef = useRef<HTMLDivElement>(null);
   if (q.isPending || q.error || !q.data || q.data.inputs.length === 0) return null;
   return (
     <div>
-      <h2 className="display text-[24px] text-[var(--fg-1)]">Sensitivity</h2>
-      <p className="mt-1 text-[13px] text-[var(--fg-3)]">
-        Which assumption moves the TAM most — each input swung ±{Math.round(q.data.pct * 100)}%.
-      </p>
-      <div className="mt-3">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="display text-[24px] text-[var(--fg-1)]">Sensitivity</h2>
+          <p className="mt-1 text-[13px] text-[var(--fg-3)]">
+            Which assumption moves the TAM most — each input swung ±{Math.round(q.data.pct * 100)}%.
+          </p>
+        </div>
+        <ChartDownload containerRef={chartRef} filename={`${slug}-sensitivity`} />
+      </div>
+      <div ref={chartRef} className="mt-3">
         <TornadoChart data={q.data} />
       </div>
     </div>
@@ -204,6 +215,7 @@ function cssEscape(value: string): string {
 // rest of the artifact intact, so we render nothing rather than an error card.
 function TrajectorySection({ slug }: { slug: string }) {
   const traj = useQuery(trajectoryQuery(slug));
+  const chartRef = useRef<HTMLDivElement>(null);
 
   if (traj.isPending) {
     return (
@@ -217,11 +229,16 @@ function TrajectorySection({ slug }: { slug: string }) {
 
   return (
     <div>
-      <h2 className="display text-[24px] text-[var(--fg-1)]">TAM over time</h2>
-      <p className="mt-1 text-[13px] text-[var(--fg-3)]">
-        The TAM re-evaluated at each dated source snapshot — current vs the path it travelled.
-      </p>
-      <div className="canvas-card mt-3 p-6">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <h2 className="display text-[24px] text-[var(--fg-1)]">TAM over time</h2>
+          <p className="mt-1 text-[13px] text-[var(--fg-3)]">
+            The TAM re-evaluated at each dated source snapshot — current vs the path it travelled.
+          </p>
+        </div>
+        <ChartDownload containerRef={chartRef} filename={`${slug}-tam-over-time`} />
+      </div>
+      <div ref={chartRef} className="canvas-card mt-3 p-6">
         <TamTrajectoryChart trajectory={traj.data} />
       </div>
     </div>
