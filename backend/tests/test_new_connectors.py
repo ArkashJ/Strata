@@ -155,8 +155,10 @@ def test_alpha_vantage_converters() -> None:
         sector="Technology",
         industry="Consumer Electronics",
         market_cap_usd=3_500_000_000_000.0,
+        ebitda=None,
         pe_ratio=28.5,
         dividend_yield=0.005,
+        revenue_ttm=None,
         currency="USD",
     )
     prim = market_cap_to_primitive_yaml(
@@ -175,7 +177,7 @@ def test_nasdaq_converter() -> None:
     obs = NasdaqObservation(
         dataset_code="ORB",
         series_date=date(2024, 1, 1),
-        value=82.5,
+        values=(82.5,),
     )
     meta = NasdaqDatasetMeta(
         database_code="OPEC",
@@ -183,8 +185,10 @@ def test_nasdaq_converter() -> None:
         name="OPEC Crude Oil Price",
         description="OPEC reference basket spot price",
         frequency="daily",
-        units="USD/barrel",
+        newest_available_date="2024-01-02",
+        oldest_available_date="2003-01-02",
         refreshed_at="2024-01-02T00:00:00Z",
+        column_names=("Date", "Value"),
     )
     prim = nasdaq_observation_to_primitive_yaml(
         obs,
@@ -314,8 +318,10 @@ def test_snapshot_hash_differs_for_different_values() -> None:
         sector=None,
         industry=None,
         market_cap_usd=1_000.0,
+        ebitda=None,
         pe_ratio=None,
         dividend_yield=None,
+        revenue_ttm=None,
         currency="USD",
     )
     overview_b = AlphaVantageCompanyOverview(
@@ -325,8 +331,10 @@ def test_snapshot_hash_differs_for_different_values() -> None:
         sector=None,
         industry=None,
         market_cap_usd=2_000.0,
+        ebitda=None,
         pe_ratio=None,
         dividend_yield=None,
+        revenue_ttm=None,
         currency="USD",
     )
     src_a = overview_to_source_yaml(overview_a, accessed=_accessed())

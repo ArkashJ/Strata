@@ -146,7 +146,6 @@ def test_http_error_body_raises_connector_error() -> None:
 
 
 def test_inline_error_payload_raises_connector_error() -> None:
-    # 200 OK body that nonetheless carries an ``error`` key.
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"error": "query is private"})
 

@@ -11,11 +11,16 @@ import pytest
 from strata.connectors.alpha_vantage import (
     AlphaVantageClient,
     AlphaVantageClientError,
+    AlphaVantageFunction,
     AlphaVantageInterval,
     CompanyOverview,
+    Earnings,
+    EconomicIndicator,
     EconomicSeries,
+    FinancialStatements,
     GlobalQuote,
     capabilities,
+    economic_to_primitive_yaml,
     market_cap_to_primitive_yaml,
 )
 
@@ -182,6 +187,48 @@ def test_market_cap_converter() -> None:
     assert prim["unit"]["currency"] == "USD"
     assert prim["source"]["tier"] == "aggregator"
     assert len(prim["source"]["snapshot_sha256"]) == 64
+
+
+def test_income_statement_parses(tmp_path: Path) -> None:
+    payload = {
+        "symbol": "IBM",
+        "annualReports": [
+            {"fiscalDateEnding": "2023-12-31", "reportedCurrency": "USD", "totalRevenue": "61000"}
+        ],
+        "quarterlyReports": [],
+    }
+    client = _client(tmp_path, {"INCOME_STATEMENT": payload})
+    stmts = client.get_income_statement("IBM")
+    assert isinstance(stmts, FinancialStatements)
+    assert stmts.annual[0].line_items
+
+
+def test_earnings_parses(tmp_path: Path) -> None:
+    payload = {
+        "symbol": "IBM",
+        "annualEarnings": [{"fiscalDateEnding": "2023-12-31", "reportedEPS": "9.50"}],
+        "quarterlyEarnings": [],
+    }
+    client = _client(tmp_path, {"EARNINGS": payload})
+    earnings = client.get_earnings("IBM")
+    assert isinstance(earnings, Earnings)
+    assert earnings.annual[0].reported_eps == 9.50
+
+
+def test_economic_converter() -> None:
+    series = EconomicSeries(
+        function=AlphaVantageFunction.REAL_GDP,
+        name="Real GDP",
+        interval="annual",
+        unit="b",
+        observations=(),
+    )
+    indicator = EconomicIndicator(date=date(2023, 1, 1), value=22000.0)
+    prim = economic_to_primitive_yaml(
+        series, indicator, slug="gdp-2023", concept_slug="us-gdp", accessed=date(2024, 1, 1)
+    )
+    assert prim["value"] == 22000.0
+    assert prim["source"]["tier"] == "aggregator"
 
 
 def test_capabilities_methods_exist_and_fragile() -> None:

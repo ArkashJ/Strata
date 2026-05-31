@@ -25,6 +25,7 @@ EXPECTED_CONNECTORS: frozenset[str] = frozenset(
         "census",
         "cms",
         "comtrade",
+        "dune",
         "edgar",
         "eia",
         "eurostat",

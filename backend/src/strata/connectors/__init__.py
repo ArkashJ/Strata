@@ -101,6 +101,31 @@ from .comtrade import (
 from .comtrade import (
     TradeRecord as ComtradeTradeRecord,
 )
+from .dune import (
+    DuneClient,
+    DuneClientError,
+)
+from .dune import (
+    ExecutionHandle as DuneExecutionHandle,
+)
+from .dune import (
+    ExecutionState as DuneExecutionState,
+)
+from .dune import (
+    ExecutionStatus as DuneExecutionStatus,
+)
+from .dune import (
+    QueryPerformance as DuneQueryPerformance,
+)
+from .dune import (
+    QueryResult as DuneQueryResult,
+)
+from .dune import (
+    run_query_result_to_primitive_yaml as dune_run_query_result_to_primitive_yaml,
+)
+from .dune import (
+    run_query_result_to_source_yaml as dune_run_query_result_to_source_yaml,
+)
 from .edgar import (
     CompanyConcept as EDGARCompanyConcept,
 )
@@ -439,6 +464,14 @@ __all__ = [
     "ComtradeResponse",
     "ComtradeTradeRecord",
     "DataPoint",
+    # Dune Analytics
+    "DuneClient",
+    "DuneClientError",
+    "DuneExecutionHandle",
+    "DuneExecutionState",
+    "DuneExecutionStatus",
+    "DuneQueryPerformance",
+    "DuneQueryResult",
     # EDGAR
     "EDGARClient",
     "EDGARClientError",
@@ -613,6 +646,8 @@ __all__ = [
     "concept_to_source_yaml",
     "datapoint_to_primitive_yaml",
     "datapoint_to_source_yaml",
+    "dune_run_query_result_to_primitive_yaml",
+    "dune_run_query_result_to_source_yaml",
     "enrollment_to_primitive_yaml",
     "event_count_to_primitive_yaml",
     "fda_to_source_yaml",

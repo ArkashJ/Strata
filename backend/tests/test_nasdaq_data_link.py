@@ -9,6 +9,7 @@ import httpx
 import pytest
 
 from strata.connectors.nasdaq_data_link import (
+    NasdaqCollapse,
     NasdaqDataLinkClient,
     NasdaqDataLinkClientError,
     NasdaqDatasetMeta,
@@ -16,6 +17,7 @@ from strata.connectors.nasdaq_data_link import (
     NasdaqObservation,
     NasdaqOrder,
     NasdaqResponse,
+    NasdaqTransform,
     capabilities,
     observation_to_primitive_yaml,
 )
@@ -119,6 +121,26 @@ def test_observation_converter() -> None:
     assert prim["unit"]["currency"] == "USD"
     assert prim["source"]["tier"] == "aggregator"
     assert len(prim["source"]["snapshot_sha256"]) == 64
+
+
+def test_collapse_and_transform_threaded(tmp_path: Path) -> None:
+    seen: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["query"] = str(request.url.params)
+        return httpx.Response(
+            200,
+            json={"dataset_data": {"column_names": ["Date", "V"], "data": [["2024-01-01", 1.0]]}},
+        )
+
+    client = NasdaqDataLinkClient(
+        api_key="k", transport=httpx.MockTransport(handler), cache_dir=tmp_path
+    )
+    client.get_dataset(
+        "FRED", "GDP", collapse=NasdaqCollapse.MONTHLY, transform=NasdaqTransform.RDIFF
+    )
+    assert "monthly" in seen["query"]
+    assert "rdiff" in seen["query"]
 
 
 def test_capabilities_methods_exist_and_premium_gated() -> None:
