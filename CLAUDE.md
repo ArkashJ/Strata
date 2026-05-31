@@ -19,6 +19,28 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-31)
 
+- **In flight (PR #77 — `feat/signals-surface-and-tam-suite`):** four feature
+  batches picked by a VC-vs-product / engineer-vs-user feature tournament. (1)
+  **Signals surface (T1):** read-only `GET /signals` + `/signals` page surfacing
+  the 202 quarantined Kalshi prediction-market signals (value + source + snapshot),
+  led by a "never feeds a TAM" Q20 banner; registry-level disjointness test. (2)
+  **Convergence cross-check (MV2, tournament champion):** the evaluator emits a
+  `convergence` object when ≥2 independent method families size a concept, and
+  `/tam/<hash>` leads with an animated agreement banner ("lower $X · higher $Y ·
+  spread N×", graded tight/broad/wide). Pure synthesis of sourced values — `null`
+  for single-method concepts, refuses unit-crossing comparison. (3) **Downloadable
+  graphs:** PNG/SVG export on result charts (client-side, theme-aware). (4)
+  **Forwardable report (`/tam/<hash>/report`):** a print-first one-pager — KPI
+  strip, cross-check, per-method equations, sensitivity, a Sources & provenance
+  table, honest footnotes; Print/Save-as-PDF. All verified live via Playwright;
+  539 backend tests, web typecheck/biome clean.
+
+  ```
+  connectors → sourced primitives → frameworks → TAM ──┬─→ /tam/<hash> (interactive)
+                                                        ├─→ /tam/<hash>/report (forwardable PDF)
+   prediction_market signals ──quarantined──→ /signals  └─→ convergence banner (bottoms-up vs top-down)
+  ```
+
 - **Merged to main (PRs #72 → #73 → #74):** full-app QA + a 108-agent adversarial
   tournament (teardown **46/100** in `docs/20`, waved plan in `docs/21`), then P0
   + P1 remediation + the client surface. Highlights: dev CORS allows any
