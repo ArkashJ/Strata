@@ -19,6 +19,31 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-31)
 
+- **Shipped to main — portfolio sizing + company layer (P1):** the "size my
+  portfolio via the MCP" wedge. New `strata.sizing` package productizes
+  `scripts/tam_77_pipeline.py`: a **verbatim guard** (`sizing/guard.py`, the Q20
+  wall — semantic magnitude match + clause-bounded role locality + corroboration;
+  24 adversarial tests), an **offline-safe `size_company` service** (registry-
+  first; never live on a render path, F3), analyst sourcing that persists **org-
+  private first** (F2). A `companies` table (migration 006, RLS) + `CompanyRecord`
+  behind `STRATA_PORTFOLIO_ENABLED` (F6). Surfaces: `strata portfolio
+  import|size|list|gaps` CLI, 3 **write-capable MCP tools**
+  (`import_portfolio`/`size_company`/`list_portfolio`), `GET /portfolio`, and a
+  thin read-only **`/portfolio`** page (sized rows → `/build/<market>`; "unsizable"
+  rows shown as honesty). The demo is **deterministic + cached**: a curated 25-
+  company subset (`portfolios/portfolio_demo_subset.yaml`) pre-sized OFFLINE by
+  `scripts/presize_demo.py` into a baked `portfolio_demo.json` (20 sized · 5
+  honestly unsizable) — no live LLM/Exa on any reviewer-visible surface. 582
+  backend tests, pyright/ruff/biome clean. Deployed (Railway + Vercel); all six
+  prod surfaces (`/portfolio /tam /report /build /connectors` + home) verified
+  with zero console errors. Spec §12 is the build contract; prod walkthrough in
+  `docs/walkthrough/PLATFORM_WALKTHROUGH.md`.
+
+  ```
+  portfolio companies ─► MARKET concept (shared, sourced) ─► base TAM ─► /tam/<hash>
+   (org-scoped pointer)        ▲ the sourced work + bank growth lives here
+  ```
+
 - **In flight (PR #77 — `feat/signals-surface-and-tam-suite`):** four feature
   batches picked by a VC-vs-product / engineer-vs-user feature tournament. (1)
   **Signals surface (T1):** read-only `GET /signals` + `/signals` page surfacing
