@@ -14,17 +14,21 @@ from mcp.shared.memory import create_connected_server_and_client_session
 
 from strata.mcp.server import build_server, build_streamable_http_app
 
+# The 5 read-only tools (Wave 5A) plus the 3 write tools (portfolio P1).
 _EXPECTED_TOOLS = {
     "search_concepts",
     "get_primitive",
     "list_frameworks",
     "size_tam",
     "resolve_market",
+    "import_portfolio",
+    "size_company",
+    "list_portfolio",
 }
 
 
 @pytest.mark.asyncio
-async def test_tools_list_advertises_all_five() -> None:
+async def test_tools_list_advertises_all_tools() -> None:
     server = build_server()
     async with create_connected_server_and_client_session(server) as client:
         result = await client.list_tools()
