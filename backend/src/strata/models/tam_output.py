@@ -73,6 +73,9 @@ class InputUsed(BaseModel):
     value: float | None = None
     name: str | None = None
     unit: Unit | None = None
+    # Source tier of the underlying primitive (or "mixed" for a composite) so the
+    # TAM artifact can show a per-input provenance breakdown.
+    source_tier: str | None = None
 
 
 class ScenarioBanner(BaseModel):

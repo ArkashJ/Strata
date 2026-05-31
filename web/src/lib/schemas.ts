@@ -58,6 +58,7 @@ export const inputUsedSchema = z.object({
   value: z.number().nullable().optional(),
   name: z.string().nullable().optional(),
   unit: unitSchema.nullable().optional(),
+  source_tier: z.string().nullable().optional(),
 });
 export type InputUsed = z.infer<typeof inputUsedSchema>;
 

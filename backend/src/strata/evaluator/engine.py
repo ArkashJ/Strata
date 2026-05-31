@@ -193,6 +193,10 @@ class _ResolvedInput:
     name: str
     unit: Unit
     banners: list[ScenarioBanner]
+    # Source tier of the underlying primitive, surfaced so the TAM artifact can
+    # show a per-input provenance mix. A composite reports its members' shared
+    # tier, or "mixed" when they differ (it has no single source of its own).
+    source_tier: str | None = None
 
 
 def _resolve_input(registry: Registry, slug: str) -> _ResolvedInput:
@@ -210,7 +214,9 @@ def _resolve_input(registry: Registry, slug: str) -> _ResolvedInput:
     """
     if slug in registry.atomic:
         a = registry.atomic[slug]
-        return _ResolvedInput(a.value, a.source.snapshot_sha256, a.name, a.unit, _banners_for(a))
+        return _ResolvedInput(
+            a.value, a.source.snapshot_sha256, a.name, a.unit, _banners_for(a), str(a.source.tier)
+        )
 
     if slug not in registry.composite:
         raise EvaluatorError(
@@ -242,7 +248,9 @@ def _resolve_input(registry: Registry, slug: str) -> _ResolvedInput:
     banners: list[ScenarioBanner] = []
     for m in members:
         banners.extend(_banners_for(m))
-    return _ResolvedInput(value, snapshot, comp.name, comp.unit, banners)
+    member_tiers = {str(m.source.tier) for m in members}
+    comp_tier = member_tiers.pop() if len(member_tiers) == 1 else "mixed"
+    return _ResolvedInput(value, snapshot, comp.name, comp.unit, banners, comp_tier)
 
 
 def _build_scenario(
@@ -312,6 +320,7 @@ def _build_scenario(
                 value=input_value,
                 name=resolved.name,
                 unit=resolved.unit,
+                source_tier=resolved.source_tier,
             )
         )
         banners.extend(input_banners)
@@ -457,6 +466,7 @@ def _build_scenario_as_of(
                 value=resolved.value,
                 name=resolved.name,
                 unit=resolved.unit,
+                source_tier=resolved.source_tier,
             )
         )
         banners.extend(resolved.banners)
