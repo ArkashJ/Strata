@@ -39,6 +39,7 @@ interface Datum {
   full: string;
   value: number;
   display: string;
+  tier: string | null;
 }
 
 export function ResolveResultChart({ result }: { result: ResolverResult }) {
@@ -53,8 +54,14 @@ export function ResolveResultChart({ result }: { result: ResolverResult }) {
       full,
       value: p.value,
       display: `${formatCompact(p.value)}${unitSuffix(p.unit) ? ` ${unitSuffix(p.unit)}` : ""}`,
+      tier: p.source_tier ?? null,
     };
   });
+
+  // The explicit equation is the whole differentiator over an unsourced LLM
+  // answer: show that the TAM is a *product* of these inputs, not a guess.
+  const showEquation = inputs.length >= 2 && result.tam_value != null;
+  const tamLabel = result.formatted_tam ?? (result.tam_value != null ? formatCompact(result.tam_value) : "");
 
   const config: ChartConfig = {
     value: { label: result.lens ? lensLabel(result.lens) : "Value", color: accent },
@@ -89,6 +96,11 @@ export function ResolveResultChart({ result }: { result: ResolverResult }) {
                     <div className="flex flex-col">
                       <span className="text-[12px] font-medium text-[var(--fg-1)]">{d.full}</span>
                       <span className="tam-num text-[14px] text-[var(--fg-1)]">{d.display}</span>
+                      {d.tier ? (
+                        <span className="text-[11px] uppercase tracking-[0.04em] text-[var(--fg-3)]">
+                          {d.tier.replace(/[-_]/g, " ")}
+                        </span>
+                      ) : null}
                     </div>
                   );
                 }}
@@ -105,6 +117,21 @@ export function ResolveResultChart({ result }: { result: ResolverResult }) {
           </Bar>
         </BarChart>
       </ChartContainer>
+      {showEquation ? (
+        // The product line: makes the multiplicative (not additive) relationship
+        // explicit — the math a partner can check, the receipt an LLM can't give.
+        <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-[var(--fg-3)]">
+          <span className="font-medium text-[var(--fg-2)]">Multiplies to</span>
+          {data.map((d, i) => (
+            <span key={d.full} className="font-mono">
+              {i > 0 && <span className="mx-0.5 text-[var(--fg-4)]">×</span>}
+              {d.display}
+            </span>
+          ))}
+          <span className="mx-0.5 text-[var(--fg-4)]">=</span>
+          <span className="font-mono font-medium text-[var(--fg-1)]">{tamLabel}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
