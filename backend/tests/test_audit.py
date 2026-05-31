@@ -57,10 +57,13 @@ async def test_audit_returns_rows_newest_first(client: AsyncClient) -> None:
     assert f"first-{tag}" in targets
     assert targets.index(f"second-{tag}") < targets.index(f"first-{tag}")
 
-    # Via the route — now auth-guarded (operational data, no anonymous access).
+    # Via the route — anonymous callers get a read-only capped public feed
+    # (graceful degrade, P1.4) rather than a hard 401, so the dashboard trust
+    # trail is populated in a keyless demo. Authenticated callers get the full feed.
     from strata.api.auth import _KEY_STORE, hash_key, register_key
 
-    assert (await client.get("/audit?limit=50")).status_code == 401  # anonymous rejected
+    anon = await client.get("/audit?limit=50")
+    assert anon.status_code == 200  # graceful degrade, not rejected
     register_key("audit-key", "org-ops")
     try:
         resp = await client.get("/audit?limit=50", headers={"X-API-Key": "audit-key"})

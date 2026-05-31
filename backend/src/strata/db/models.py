@@ -157,3 +157,24 @@ class ContributionRow(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class TamOutputRow(Base):
+    """Persisted TAM artifact so ``GET /tam/<hash>`` survives a restart.
+
+    The whole point of Strata is a *permanent, content-addressed* TAM you can
+    paste into a memo — an in-process FIFO cache 404s after eviction/restart,
+    which defeats the thesis. The full ``TAMOutput`` is stored as JSONB keyed by
+    its ``state_hash`` (Q38); equivalent states collide, so a re-build upserts.
+    """
+
+    __tablename__ = "tam_outputs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # unique=True already creates the lookup index — no separate index needed.
+    state_hash: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    is_promoted: Mapped[bool] = mapped_column(default=False, nullable=False, index=True)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

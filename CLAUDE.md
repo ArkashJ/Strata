@@ -19,6 +19,30 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-30)
 
+- **In flight (PR #72 — full-app QA + adversarial-tournament P0 remediation):**
+  end-to-end Playwright sweep + a 108-agent bracket tournament (teardown
+  **46/100** in `docs/20`, waved plan in `docs/21`). Shipped P0: dev CORS allows
+  any `localhost:*` origin (was 3000/3001 only → every fetch blocked); resolver
+  threads `source_tier`/`source_url`/`snapshot_sha256` through `primitives_used`
+  (citations show on the build result); **TAMs persist to Postgres** (migration
+  005 `tam_outputs`; `/tam/<hash>` survives restart — verified; Featured TAMs link
+  there, not `/build?q=`); removed the fabricated `j.vega` sidebar user, fixed the
+  footer GitHub link, and suppressed the unearned independence donut for
+  single-method estimates. Note: the **202 "missing" primitives are the
+  `prediction_market` signals quarantined to `data/signals/`** (no UI surface yet),
+  not data loss. **P1 defensibility shipped:** the resolve result shows the
+  explicit equation ("Multiplies to 3M × $300 = $900M", gated to multiplicative
+  lenses), Featured TAM cards carry an independence ring + method badge, `/audit`
+  degrades gracefully for anonymous callers, and modeled inputs get a loud
+  honesty banner. **Remaining (docs/21):** P1.3 seed triangulated hero concepts
+  with competing measurements (needs real sourcing — no invented figures), and
+  P2 (analytic graph, sensitivity tornado, **semiconductor value-chain
+  primitives**, printable report, micropayments).
+- **In flight (branch `feat/guides-logins-sections`, stacked on #72):** client
+  **`/guides`** walkthrough (screenshot-driven, sidebar link, value table,
+  handbook `docs/guides/CLIENT_PLATFORM_GUIDE.md`) and a **simple zero-config
+  local login** (name/org identity store, coexists with Clerk) so the keyless
+  deploy stops saying "Guest".
 - **Version:** `0.11.0` (beta). `VERSION` + `pyproject` pinned; tags follow
   `vX.Y.Z`. v0.4 = frontend v0.42 parity + light/dark theme + live home TAMs +
   honest resolver fallback (PR #54).

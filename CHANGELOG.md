@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — full-app QA + adversarial-tournament P0 remediation
+- **Local dev unblocked:** dev/non-prod CORS now auto-allows any `localhost:*`
+  origin, so `next dev` works on whatever port it grabs (was hard-coded
+  3000/3001 → every API fetch CORS-blocked → empty UI). Prod stays locked.
+- **Citations surfaced:** the resolver now threads `source_tier`/`source_url`/
+  `snapshot_sha256` through `primitives_used`, so the build/TAM result shows a
+  tier badge + clickable source per input (composites correctly show none).
+- **Shareable permalink made durable (tournament blocker #1):** TAMs persist to
+  Postgres (`tam_outputs`, migration 005); `GET /tam/<hash>` falls back to the DB
+  and survives an API restart; homepage Featured TAMs link to `/tam/<hash>`, not
+  the old `/build?q=` workaround. Verified end-to-end across a real restart.
+- **Credibility fixes:** removed the fabricated `j.vega · verified · 27 contribs`
+  sidebar user (now real Clerk user / Sign-in / honest Guest); footer GitHub link
+  points at the real repo; the resolve hero suppresses the independence donut for
+  single-method estimates (shows a muted "single method" chip instead).
+- **Docs:** `docs/qa/TEST_PLAN.md` (audit), `docs/20-adversarial-teardown.md`
+  (108-agent tournament, 46/100), `docs/21-teardown-remediation.md` (P0/P1/P2 plan).
+
+### Added — P1 defensibility made visible (docs/21)
+- **Show the math (P1.1):** the resolve/build result renders the explicit
+  equation — `Multiplies to 3M people × 300/per-seat-year = $900M` — plus the
+  source tier in each bar's tooltip. The receipt an LLM can't produce.
+- **Defensibility on cards (P1.2):** Featured TAM cards show a compact
+  independence ring + a method badge (green `△ N methods` when triangulated
+  across ≥2 method families, muted `single method` otherwise), so a defensible
+  TAM looks different from a one-source guess. `IndependenceDonut` gains a
+  `showLabel` ring-only mode.
+- **Audit graceful degrade (P1.4):** `GET /audit` serves a read-only capped feed
+  to anonymous callers in non-prod instead of a hard 401, so the dashboard trust
+  trail isn't a broken box in a keyless demo; prod stays auth-gated.
+- **Modeled-input honesty (P1.5):** results containing `community-modeled` /
+  `strata.internal` figures show a loud banner so the headline TAM is never
+  mistaken for a fully externally-sourced number.
+- **Per-input source-tier mix on the TAM artifact (P2.4):** the evaluator now
+  threads each input's source tier onto `InputUsed` (composite → members' shared
+  tier or `mixed`); the `/tam/<hash>` artifact renders a real provenance
+  breakdown (e.g. `analyst-paraphrase 1/2 · community-modeled 1/2`) in place of
+  the old "not yet exposed" placeholder — the "where every number came from" a
+  partner needs before forwarding. (The sensitivity tornado already ships on the
+  artifact via `TornadoChart`.)
+
+### Added — client guides + simple login
+- **Guides (`/guides`):** a screenshot-driven, business-language platform
+  walkthrough behind a sidebar "Guides" link — every surface (home → build/
+  equation → sourced primitive → concept disagreement → pyramid → shareable
+  artifact → dashboard → integrations → browse), led by a "why this beats an LLM
+  answer" value table, with a live-vs-coming-soon honesty section and a page
+  sitemap. 9 screenshots captured from the live app (`web/public/guides/`).
+  Companion handbook `docs/guides/CLIENT_PLATFORM_GUIDE.md` with a regeneration
+  recipe (built via the playwright-doc-generator + playwright-cli skills).
+- **Simple login:** a zero-config local identity (name/org, persisted) so the
+  keyless deploy has a working sign-in (sidebar footer) instead of a bare
+  "Guest" — coexists with Clerk, which remains the real-auth path when keyed.
+  Not a security boundary; a single-user demo identity for attribution.
+
 ### Changed — re-audit hardening (flip existential Risks 2 & 5)
 - **Substrate wired at runtime (Risk 5).** `set_org_scope`/`org_session_scope`/
   `get_org_session` activate the Wave-3 Postgres RLS per request (parametrized,

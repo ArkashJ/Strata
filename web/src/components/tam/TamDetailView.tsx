@@ -314,11 +314,9 @@ function ProvenanceBanner({ tam }: { tam: TAMOutput }) {
     );
   }
 
-  // Per-input source tiers are not carried on inputs_used yet, so we cannot count
-  // "N of M inputs are community-tier" as the capture does. Surface the gap
-  // honestly rather than fabricating a count.
-  // TODO(api): expose per-input source tier on inputs_used to render the
-  // "N of M inputs are community-tier" provenance count from capture 19.
+  // Per-input source tiers ARE now carried on inputs_used and rendered as the
+  // full breakdown in the "Source tier mix" rail section, so this banner stays
+  // focused on synthetic/modeled-composite caveats rather than a tier count.
 
   if (notes.length === 0) return null;
 
@@ -339,6 +337,57 @@ function ProvenanceBanner({ tam }: { tam: TAMOutput }) {
 
 // ── Right rail ────────────────────────────────────────────────────────────────
 
+// Maps any tier string (incl. compound forms like "community-modeled",
+// "analyst-paraphrase") to its base family colour token, with a neutral fallback.
+function tierColor(tier: string): string {
+  if (tier === "regulator" || tier === "first_party") return "var(--tier-regulator)";
+  if (tier.startsWith("aggregator")) return "var(--tier-aggregator)";
+  if (tier.startsWith("analyst")) return "var(--tier-analyst)";
+  if (tier.startsWith("community")) return "var(--tier-community)";
+  return "var(--fg-4)";
+}
+
+// Per-input provenance breakdown for the TAM artifact — the "where every number
+// came from" mix a partner needs before forwarding. Deduped by primitive across
+// scenarios so a primitive shared by two scenarios is counted once.
+function SourceTierMix({ tam }: { tam: TAMOutput }) {
+  const counts = new Map<string, number>();
+  const seen = new Set<string>();
+  for (const sc of tam.scenarios) {
+    for (const iu of sc.inputs_used) {
+      if (seen.has(iu.primitive_slug)) continue;
+      seen.add(iu.primitive_slug);
+      counts.set(iu.source_tier ?? "unknown", (counts.get(iu.source_tier ?? "unknown") ?? 0) + 1);
+    }
+  }
+  const entries = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((n, [, c]) => n + c, 0);
+  if (total === 0) {
+    return <p className="text-[13px] text-[var(--fg-3)]">No sourced inputs on this TAM.</p>;
+  }
+  return (
+    <div className="flex flex-col gap-1.5">
+      {entries.map(([tier, count]) => (
+        <div key={tier} className="flex items-center justify-between gap-2 text-[12px]">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="size-2 shrink-0 rounded-full"
+              style={{ backgroundColor: tierColor(tier) }}
+            />
+            <span className="truncate uppercase tracking-[0.04em] text-[var(--fg-2)]">
+              {tier.replace(/[-_]/g, " ")}
+            </span>
+          </span>
+          <span className="shrink-0 tabular-nums text-[var(--fg-3)]">
+            {count}/{total}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function RightRail({ tam }: { tam: TAMOutput }) {
   return (
     <aside className="flex w-full flex-col gap-3 lg:w-[var(--right-rail-w)] lg:shrink-0">
@@ -353,12 +402,7 @@ function RightRail({ tam }: { tam: TAMOutput }) {
       </RailSection>
 
       <RailSection title="Source tier mix">
-        {/* Per-input tiers are absent from the API response (see ProvenanceBanner
-            TODO), so the capture's stacked tier bar can't be computed yet. */}
-        <p className="text-[13px] text-[var(--fg-3)]">
-          Per-input source tiers are not yet exposed by the API.
-        </p>
-        <p className="mt-1 text-[11px] text-[var(--fg-4)]">TODO(api): per-input tier count</p>
+        <SourceTierMix tam={tam} />
       </RailSection>
 
       <RailSection title="Annotations" badge="0">

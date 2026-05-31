@@ -11,6 +11,9 @@ export interface IndependenceDonutProps {
   size?: number;
   strokeWidth?: number;
   className?: string;
+  // When false, render just the ring (no center number, no "Independence"
+  // eyebrow) — for compact inline contexts like list-row cards.
+  showLabel?: boolean;
 }
 
 function clamp01(value: number): number {
@@ -23,6 +26,7 @@ export function IndependenceDonut({
   size = 96,
   strokeWidth = 8,
   className = "",
+  showLabel = true,
 }: IndependenceDonutProps) {
   const clamped = clamp01(score);
   const radius = (size - strokeWidth) / 2;
@@ -61,13 +65,17 @@ export function IndependenceDonut({
             transform={`rotate(-90 ${center} ${center})`}
           />
         </svg>
-        <span className="-translate-x-1/2 -translate-y-1/2 tam-num absolute top-1/2 left-1/2 text-[var(--fg-1)] text-lg">
-          {clamped.toFixed(2)}
-        </span>
+        {showLabel ? (
+          <span className="-translate-x-1/2 -translate-y-1/2 tam-num absolute top-1/2 left-1/2 text-[var(--fg-1)] text-lg">
+            {clamped.toFixed(2)}
+          </span>
+        ) : null}
       </div>
-      <span className="font-medium text-[10px] text-[var(--fg-3)] uppercase tracking-wider">
-        Independence
-      </span>
+      {showLabel ? (
+        <span className="font-medium text-[10px] text-[var(--fg-3)] uppercase tracking-wider">
+          Independence
+        </span>
+      ) : null}
     </div>
   );
 }

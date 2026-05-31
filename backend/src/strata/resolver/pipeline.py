@@ -204,6 +204,7 @@ def _step2_primitives(
                     "name": p.name,
                     "value": p.value,
                     "unit": p.unit.model_dump(),
+                    **_source_fields(registry, p.slug),
                 }
             ],
             banner="single primitive, not a TAM",
@@ -216,6 +217,7 @@ def _step2_primitives(
             "name": p.name,
             "value": p.value,
             "unit": p.unit.model_dump(),
+            **_source_fields(registry, p.slug),
         }
         for p in hits
     ]
@@ -248,6 +250,30 @@ def _step2_primitives(
     )
 
 
+def _source_fields(registry: Registry, slug: str) -> dict[str, Any]:
+    """Citation fields (tier / url / snapshot) for a primitive slug.
+
+    This is the core differentiator over an unsourced chat answer: every number
+    on a resolved TAM traces to *where it came from*. Best-effort — a composite
+    or a private/auto primitive that lacks a single source yields no keys rather
+    than raising, so the row simply renders without a citation chip.
+    """
+    try:
+        prim = registry.primitive(slug)
+    except Exception:
+        return {}
+    # Only atomic primitives carry a single Source; composites are set-ops over
+    # atomics and have no citation of their own.
+    if not isinstance(prim, AtomicPrimitive):
+        return {}
+    src = prim.source
+    return {
+        "source_tier": str(src.tier),
+        "source_url": src.url,
+        "snapshot_sha256": src.snapshot_sha256,
+    }
+
+
 def _size_registered_concept(
     state: _RunState,
     registry: Registry,
@@ -276,6 +302,8 @@ def _size_registered_concept(
             "name": iu.name,
             "value": iu.value,
             "unit": iu.unit.model_dump() if iu.unit is not None else None,
+            "role": iu.role.value if hasattr(iu.role, "value") else str(iu.role),
+            **_source_fields(registry, iu.primitive_slug),
         }
         for iu in primary.inputs_used
     ]
@@ -364,12 +392,16 @@ def _step3_connector(state: _RunState, query: str, options: RunOptions) -> Resol
         slug = str(prim_yaml.get("slug", ""))
         if slug:
             state.wrote_primitives.append(slug)
+        src = prim_yaml.get("source") or {}
         primitives_used.append(
             {
                 "slug": slug,
                 "name": prim_yaml.get("name"),
                 "value": prim_yaml.get("value"),
                 "unit": prim_yaml.get("unit"),
+                "source_tier": src.get("tier"),
+                "source_url": src.get("url"),
+                "snapshot_sha256": src.get("snapshot_sha256"),
             }
         )
 

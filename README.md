@@ -48,6 +48,20 @@ A tool for VCs (and operators) to **cut through the noise**:
 
 See [`docs/00-vision.md`](docs/00-vision.md) for the full thesis.
 
+## Why this beats five minutes of an LLM chat
+
+| | LLM chat | **Strata** |
+|---|---|---|
+| Numbers | Plausible, often unsourced | Every input is a sourced primitive (URL + tier + sha256 snapshot) |
+| Reproducible | Re-run → a different answer | Hash-pinned `/tam/<id>` — frozen, citable, shareable forever |
+| The math | Black-box "≈ $X B" | Explicit equation (workforce × spend = TAM), every factor clickable |
+| Defensible | Can't defend to an IC/LP | Triangulation across ≥2 method families + independence score |
+| Honesty | Hides modeled assumptions | Loud banner when an input is modeled vs externally sourced |
+
+The output isn't an answer — it's a **defensible, reproducible artifact** you put
+in front of a partner. New here? Take the in-app tour at **`/guides`** (or read
+[`docs/guides/CLIENT_PLATFORM_GUIDE.md`](docs/guides/CLIENT_PLATFORM_GUIDE.md)).
+
 ## Connect to Claude (MCP)
 
 Strata ships a **read-only MCP server** so any agent (Claude Desktop, IDE

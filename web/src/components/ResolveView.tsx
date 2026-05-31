@@ -381,7 +381,15 @@ function ResultCard({ result }: { result: ResolverResult }) {
             {result.lens ? ` · ${lensLabel(result.lens)}` : ""}
           </div>
         </div>
-        <IndependenceDonut score={result.independence_score} size={84} />
+        {result.independence_score > 0 ? (
+          <IndependenceDonut score={result.independence_score} size={84} />
+        ) : (
+          // Don't lead with an independence ring a single-method estimate didn't
+          // earn — the "not yet triangulated" banner below tells the honest story.
+          <span className="shrink-0 self-start rounded-[var(--r-2)] bg-[var(--bg-2)] px-2 py-1 text-[11px] text-[var(--fg-3)]">
+            single method
+          </span>
+        )}
       </div>
 
       <ResolveResultChart result={result} />
@@ -397,6 +405,8 @@ function ResultCard({ result }: { result: ResolverResult }) {
         </div>
       ) : null}
 
+      <ModeledInputsBanner primitives={result.primitives_used} />
+
       {result.banner ? (
         <div
           role="note"
@@ -405,6 +415,27 @@ function ResultCard({ result }: { result: ResolverResult }) {
           <span className="font-medium text-[var(--tier-analyst)]">Provenance</span> {result.banner}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+// Honesty guard: a community-modeled / strata.internal figure is an estimate, not
+// a citable external source. If any input is modeled, say so loudly so the
+// headline number is never mistaken for a fully-sourced regulator figure.
+function ModeledInputsBanner({ primitives }: { primitives: PrimitiveUsed[] }) {
+  const isModeled = (p: PrimitiveUsed) =>
+    (p.source_tier ?? "").replace(/_/g, "-") === "community-modeled" ||
+    (p.source_url ?? "").includes("strata.internal");
+  const modeled = primitives.filter(isModeled);
+  if (modeled.length === 0) return null;
+  return (
+    <div
+      role="note"
+      className="mt-4 rounded-[var(--r-2)] bg-[var(--tier-community-tint)] px-3 py-2 text-[12px] text-[var(--fg-2)]"
+    >
+      <span className="font-medium text-[var(--tier-community)]">Modeled inputs</span>{" "}
+      {modeled.length} of {primitives.length} figures are community-modeled, not externally
+      sourced — treat this as a defensible estimate, not a citable regulator number.
     </div>
   );
 }
