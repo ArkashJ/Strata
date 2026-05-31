@@ -9,6 +9,7 @@ from strata.api.auth import Principal, require_principal
 from strata.api.deps import get_registry
 from strata.api.ratelimit import enforce_rate_limit
 from strata.db.audit import record_audit_safe
+from strata.db.tams import get_tam_from_db_safe, persist_tam_safe
 from strata.evaluator.engine import (
     EvalOverrides,
     EvaluatorError,
@@ -83,6 +84,7 @@ async def build_tam(
     except EvaluatorError as exc:
         raise HTTPException(422, str(exc)) from exc
     reg.remember_tam(out)
+    await persist_tam_safe(out)
     return out
 
 
@@ -120,6 +122,7 @@ async def recompute_tam(
         raise HTTPException(422, str(exc)) from exc
 
     reg.remember_tam(out)
+    await persist_tam_safe(out)
     await record_audit_safe(
         actor=None,
         action="recompute",
@@ -246,6 +249,7 @@ async def promote_tam(
         raise HTTPException(422, str(exc)) from exc
     promoted = out.model_copy(update={"is_promoted": True})
     reg.remember_tam(promoted)
+    await persist_tam_safe(promoted)
     return promoted
 
 
@@ -265,4 +269,10 @@ async def get_tam(
 ) -> TAMOutput:
     if state_hash in reg.tam_outputs:
         return reg.tam_outputs[state_hash]
+    # Fall back to durable storage: the in-memory cache is FIFO-capped and reset
+    # on restart, but a shared permalink must keep resolving.
+    persisted = await get_tam_from_db_safe(state_hash)
+    if persisted is not None:
+        reg.remember_tam(persisted)  # re-warm the cache
+        return persisted
     raise HTTPException(404, f"tam {state_hash!r} not found")

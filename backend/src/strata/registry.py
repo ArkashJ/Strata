@@ -52,11 +52,13 @@ class Registry:
             load_frameworks_from_db,
             load_primitives_from_db,
         )
+        from .db.tams import load_promoted_tams_from_db
 
         async with SessionLocal() as session:
             primitives = await load_primitives_from_db(session)
             concepts = await load_concepts_from_db(session)
             frameworks = await load_frameworks_from_db(session)
+            promoted_tams = await load_promoted_tams_from_db(session)
 
         # Mirror the YAML loader's signal quarantine on the prod path: a
         # prediction-market primitive seeded into the DB must NOT reach the
@@ -69,7 +71,7 @@ class Registry:
             concepts=_index(concepts, lambda r: r.slug, "concept"),
             frameworks=_index(frameworks, lambda r: r.slug, "framework"),
             annotations={},
-            tam_outputs={},
+            tam_outputs=_index(promoted_tams, lambda r: r.state_hash, "tam_output"),
             signals=_index(signals, lambda r: r.slug, "signal"),
         )
 
