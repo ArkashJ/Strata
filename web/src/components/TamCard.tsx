@@ -36,8 +36,8 @@ interface TamCardProps {
   tam: TamSummary;
   /**
    * Where the card navigates. Defaults to the frozen artifact page
-   * /tam/<hash>; callers backed by a live (unpersisted) build pass
-   * /build?q=<slug> so the row resolves instead of 404-ing.
+   * /tam/<hash>, which is now durable (TAMs persist to Postgres, P0.1), so the
+   * permalink resolves across restarts. Override only for special routing.
    */
   href?: string;
 }

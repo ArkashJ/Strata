@@ -168,8 +168,9 @@ function LandingContent() {
 
   // "Recently updated" used to be invented figures. The backend doesn't persist
   // TAMs, so instead of faking a list we size the first few real concepts live
-  // via /build and show their actual ranges. Rows link to /build?q=<slug> (the
-  // working static path), not /tam/<hash> (which can't recover an unpersisted TAM).
+  // via /build (which now persists each TAM to Postgres) and show their actual
+  // ranges. Rows link to the frozen /tam/<hash> artifact — the shareable
+  // permalink, durable across restarts (P0.1).
   const featuredSlugs = (concepts ?? []).slice(0, 3).map((c) => c.slug);
   const featuredBuilds = useQueries({
     queries: featuredSlugs.map((slug) => buildQuery(slug)),
@@ -188,7 +189,7 @@ function LandingContent() {
       created_at: b.data.created_at,
       lens: concept.primary_lens,
     };
-    return [{ tam, href: `/build?q=${encodeURIComponent(concept.slug)}` }];
+    return [{ tam, href: `/tam/${tam.state_hash}` }];
   });
   const widestTam = [...featuredTams].map((f) => f.tam).sort((a, b) => b.high - a.high)[0];
 
