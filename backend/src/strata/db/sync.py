@@ -71,16 +71,25 @@ async def _upsert_primitives(session: AsyncSession, records: list[dict[str, Any]
     if not records:
         return 0
     stmt = pg_insert(PrimitiveRow).values(records)
+    # Update EVERY non-key column on conflict. An incomplete set silently leaves
+    # stale columns untouched on re-seed — the class of bug that stranded prod
+    # framework `variants` at [] and broke every /build.
     stmt = stmt.on_conflict_do_update(
         index_elements=["slug"],
         set_={
-            "value": stmt.excluded.value,
-            "unit": stmt.excluded.unit,
-            "source": stmt.excluded.source,
+            "kind": stmt.excluded.kind,
+            "schema_version": stmt.excluded.schema_version,
+            "concept_slug": stmt.excluded.concept_slug,
             "name": stmt.excluded.name,
             "description": stmt.excluded.description,
+            "value": stmt.excluded.value,
+            "unit": stmt.excluded.unit,
             "as_of": stmt.excluded.as_of,
             "geo": stmt.excluded.geo,
+            "geo_perspective": stmt.excluded.geo_perspective,
+            "distribution_shape": stmt.excluded.distribution_shape,
+            "delivery_mode": stmt.excluded.delivery_mode,
+            "source": stmt.excluded.source,
         },
     )
     await session.execute(stmt)
@@ -96,6 +105,8 @@ async def _upsert_sources(session: AsyncSession, records: list[dict[str, Any]]) 
         set_={
             "tier": stmt.excluded.tier,
             "url": stmt.excluded.url,
+            "accessed": stmt.excluded.accessed,
+            "snapshot_sha256": stmt.excluded.snapshot_sha256,
             "description": stmt.excluded.description,
         },
     )
@@ -110,11 +121,13 @@ async def _upsert_concepts(session: AsyncSession, records: list[dict[str, Any]])
     stmt = stmt.on_conflict_do_update(
         index_elements=["slug"],
         set_={
+            "schema_version": stmt.excluded.schema_version,
             "name": stmt.excluded.name,
             "definition": stmt.excluded.definition,
             "analysis_lens": stmt.excluded.analysis_lens,
             "modifiers": stmt.excluded.modifiers,
             "measurements": stmt.excluded.measurements,
+            "competing_concepts": stmt.excluded.competing_concepts,
         },
     )
     await session.execute(stmt)
@@ -128,11 +141,15 @@ async def _upsert_frameworks(session: AsyncSession, records: list[dict[str, Any]
     stmt = stmt.on_conflict_do_update(
         index_elements=["slug"],
         set_={
+            "schema_version": stmt.excluded.schema_version,
             "name": stmt.excluded.name,
+            "method_family": stmt.excluded.method_family,
             "lens": stmt.excluded.lens,
             "inputs": stmt.excluded.inputs,
             "formula": stmt.excluded.formula,
             "output_unit": stmt.excluded.output_unit,
+            "applicable_to": stmt.excluded.applicable_to,
+            "variants": stmt.excluded.variants,
         },
     )
     await session.execute(stmt)
