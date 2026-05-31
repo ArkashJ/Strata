@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — re-audit hardening (flip existential Risks 2 & 5)
+- **Substrate wired at runtime (Risk 5).** `set_org_scope`/`org_session_scope`/
+  `get_org_session` activate the Wave-3 Postgres RLS per request (parametrized,
+  transaction-local `app.org_id`); `GET /audit` is now auth-only; rate-limiting
+  covers `/build/recompute`, `/build/{slug}/promote`, and `/contribute` (was
+  `/resolve` only).
+- **Moat intake persisted (Risk 2).** Migration 004 `contributions` table;
+  `POST /contribute` persists durably (attributed to `org_id`) and
+  `GET /contributions` is an auth-guarded review queue.
+
 ### Added — YC remediation Wave 4 (GTM, moat & narrative)
 - **Growth loop.** Promoted TAMs (`TAMOutput.is_promoted`, `POST /build/{slug}/promote`,
   `GET /browse`) feed a Next `sitemap.ts` + `robots.ts` so shareable, SSR'd

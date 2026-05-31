@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -41,6 +42,28 @@ async def session_scope() -> AsyncGenerator[AsyncSession]:
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
-    """FastAPI dependency. Sessions are scoped to a single request."""
+    """FastAPI dependency for NON-tenant DB access (no RLS scoping).
+
+    For any route reading/writing tenant-scoped rows (Wave 5B private data,
+    anything under an RLS policy), use ``api.deps.get_org_session`` instead — it
+    sets ``app.org_id`` so the Postgres RLS policies actually enforce isolation.
+    """
     async with SessionLocal() as session:
+        yield session
+
+
+async def set_org_scope(session: AsyncSession, org_id: str) -> None:
+    """Set the transaction-local ``app.org_id`` that the Wave-3 Postgres RLS
+    policies key on. ``set_config(..., is_local=true)`` is transaction-scoped, so
+    a pooled connection can't leak one request's org to the next."""
+    await session.execute(text("SELECT set_config('app.org_id', :org, true)"), {"org": org_id})
+
+
+@asynccontextmanager
+async def org_session_scope(org_id: str) -> AsyncGenerator[AsyncSession]:
+    """A transactional session with RLS scoped to ``org_id`` — every query inside
+    sees only that tenant's rows. This is the runtime activation of the Wave-3
+    RLS policies (the migration created them; this enforces them per request)."""
+    async with SessionLocal() as session, session.begin():
+        await set_org_scope(session, org_id)
         yield session

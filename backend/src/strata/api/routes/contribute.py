@@ -14,13 +14,20 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, TypeAdapter, ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from strata.api.auth import Principal, require_principal
+from strata.api.auth import Principal, require_authenticated, require_principal
+from strata.api.ratelimit import enforce_rate_limit
+from strata.db.contributions import Contribution, list_contributions, record_contribution_safe
+from strata.db.engine import get_session
 from strata.models import Annotation, AtomicPrimitive
 
 router = APIRouter(tags=["contribute"])
 
 _PRINCIPAL = Depends(require_principal)
+_SESSION = Depends(get_session)
+# The review queue is operational data — require a real key.
+_REVIEW_PRINCIPAL = Depends(require_authenticated)
 
 # Tiers trustworthy enough to auto-accept; everything else needs human review.
 _AUTO_ACCEPT_TIERS = frozenset({"regulator", "first_party"})
@@ -94,10 +101,25 @@ def _validate(req: ContributionRequest) -> tuple[ContributionStatus, list[str]]:
 async def contribute(
     req: ContributionRequest, principal: Principal = _PRINCIPAL
 ) -> ContributionResponse:
+    enforce_rate_limit(principal.org_id)
     status, reasons = _validate(req)
-    cid = (
-        get_contribution_store().add(principal.org_id, req, status)
-        if status != "rejected"
-        else None
-    )
+    cid: int | None = None
+    if status != "rejected":
+        cid = get_contribution_store().add(principal.org_id, req, status)
+        # Persist to the durable review queue (best-effort; never breaks the
+        # response). Falls back to the in-memory id when no DB is reachable.
+        db_id = await record_contribution_safe(
+            principal.org_id, req.kind, status, reasons, req.payload
+        )
+        if db_id is not None:
+            cid = db_id
     return ContributionResponse(status=status, reasons=reasons, contribution_id=cid)
+
+
+@router.get("/contributions", response_model=list[Contribution], summary="Review queue")
+async def list_contributions_route(
+    status: str | None = None,
+    session: AsyncSession = _SESSION,
+    principal: Principal = _REVIEW_PRINCIPAL,
+) -> list[Contribution]:
+    return await list_contributions(session, status=status)

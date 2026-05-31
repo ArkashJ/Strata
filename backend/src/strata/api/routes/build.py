@@ -5,7 +5,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from strata.api.auth import Principal, require_principal
 from strata.api.deps import get_registry
+from strata.api.ratelimit import enforce_rate_limit
 from strata.db.audit import record_audit_safe
 from strata.evaluator.engine import (
     EvalOverrides,
@@ -20,6 +22,7 @@ from strata.registry import Registry, RegistryError
 router = APIRouter(tags=["build"])
 
 _REG = Depends(get_registry)
+_PRINCIPAL = Depends(require_principal)
 
 
 class OverrideValueIn(BaseModel):
@@ -91,7 +94,9 @@ async def build_tam(
 async def recompute_tam(
     req: RecomputeRequest,
     reg: Registry = _REG,
+    principal: Principal = _PRINCIPAL,
 ) -> TAMOutput:
+    enforce_rate_limit(principal.org_id)
     try:
         reg.get_concept(req.concept_slug)
     except RegistryError as exc:
@@ -231,7 +236,10 @@ async def build_sensitivity(
     response_model=TAMOutput,
     summary="Build + promote a concept's TAM (appears in /browse + sitemap)",
 )
-async def promote_tam(concept_slug: str, reg: Registry = _REG) -> TAMOutput:
+async def promote_tam(
+    concept_slug: str, reg: Registry = _REG, principal: Principal = _PRINCIPAL
+) -> TAMOutput:
+    enforce_rate_limit(principal.org_id)
     try:
         out = size_concept(reg, concept_slug)
     except EvaluatorError as exc:
