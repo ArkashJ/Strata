@@ -15,6 +15,7 @@ from ._common import (
     Slug,
 )
 from .annotation import Annotation, AnnotationKindTag, AnnotationTargetType
+from .company import CompanyRecord, CompanyStatus, LensGap, normalize_domain
 from .concept import (
     Concept,
     ConceptAnalysisLens,
@@ -75,6 +76,8 @@ __all__ = [
     "AnnotationTargetType",
     "AtomicPrimitive",
     "BannerKind",
+    "CompanyRecord",
+    "CompanyStatus",
     "CompositePrimitive",
     "Concept",
     "ConceptAnalysisLens",
@@ -94,6 +97,7 @@ __all__ = [
     "HorizonClass",
     "InputRole",
     "InputUsed",
+    "LensGap",
     "MarginCaptureModifier",
     "MethodFamily",
     "OpexConversionModifier",
@@ -116,4 +120,5 @@ __all__ = [
     "UnitBasis",
     "UnitDimension",
     "UnitKind",
+    "normalize_domain",
 ]

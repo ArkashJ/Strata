@@ -178,3 +178,34 @@ class TamOutputRow(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class CompanyRow(Base):
+    """Org-scoped portfolio company — a cheap pointer at a shared MARKET concept.
+
+    A company does not have a TAM; the market it competes in does (spec §3). So
+    the expensive sourced work lives at the concept level and this row just links
+    to it (``market_concept_slug``) plus caches the resolved ``tam_value``.
+    Idempotent import is enforced by ``UNIQUE (org_id, domain)``. RLS mirrors
+    migration 003 ``tenant_data`` — a session sees only its ``app.org_id``.
+    """
+
+    __tablename__ = "companies"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    org_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    domain: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    vertical: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    market_concept_slug: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="unsized", index=True)
+    overrides: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    tam_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    has_analyst_input: Mapped[bool] = mapped_column(default=False, nullable=False)
+    sized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (Index("uq_companies_org_domain", "org_id", "domain", unique=True),)

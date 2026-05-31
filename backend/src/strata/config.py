@@ -60,6 +60,13 @@ class Settings(BaseSettings):
 
     data_dir: str = "data"
 
+    # ── Portfolio sizing surface (P1) — ships dark (F6) ──────────────────
+    # When off (default), the migration still creates the ``companies`` table,
+    # but the CLI / MCP / HTTP WRITE surfaces refuse with a "disabled" error.
+    # GET /portfolio still serves the cached demo subset so the page renders
+    # (read path stays F3-safe — no live LLM/Exa ever). Local dev sets =1.
+    portfolio_enabled: bool = False
+
     # ── SQLAlchemy async engine pool (prod-tuned defaults) ──────────────
     # Wired into create_async_engine via ``engine_pool_kwargs()``. Defaults
     # are sized for a single Railway service container fronting a managed
