@@ -141,6 +141,29 @@ export const primitiveSummarySchema = z.object({
 });
 export type PrimitiveSummary = z.infer<typeof primitiveSummarySchema>;
 
+// ── Prediction-market signals (GET /signals · T1) ─────────────────────────────
+// The `prediction_market` primitives quarantined to data/signals/ (Q20). They
+// never feed a TAM — a separate, honestly-labelled surface of live Kalshi event
+// probabilities + contract volumes, each with a source URL + SHA256 snapshot pin.
+// Mirrors the backend SignalSummary field-for-field.
+export const signalSummarySchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  concept_slug: z.string(),
+  value: z.number(),
+  unit_dimension: z.string(),
+  as_of: z.string(),
+  source_url: z.string(),
+  // Locked to the literal: a signal is by definition prediction-market tier, so
+  // the page never silently renders a non-signal row if the backend regresses.
+  source_tier: z.literal("prediction_market"),
+  snapshot_sha256: z.string(),
+  uncertainty_low: z.number().nullable().optional(),
+  uncertainty_high: z.number().nullable().optional(),
+  uncertainty_basis: z.string().nullable().optional(),
+});
+export type SignalSummary = z.infer<typeof signalSummarySchema>;
+
 export const frameworkSummarySchema = z.object({
   slug: z.string(),
   name: z.string(),

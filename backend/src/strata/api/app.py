@@ -22,6 +22,7 @@ from strata.api.routes import (
     integrations,
     primitives,
     resolve,
+    signals,
     usage,
 )
 from strata.config import settings
@@ -138,6 +139,7 @@ def create_app() -> FastAPI:
     app.include_router(healthz.router)
     app.include_router(concepts.router)
     app.include_router(primitives.router)
+    app.include_router(signals.router)
     app.include_router(frameworks.router)
     app.include_router(build.router)
     app.include_router(resolve.router)
