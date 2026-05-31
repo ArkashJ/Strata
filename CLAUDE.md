@@ -32,8 +32,15 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   graphs:** PNG/SVG export on result charts (client-side, theme-aware). (4)
   **Forwardable report (`/tam/<hash>/report`):** a print-first one-pager — KPI
   strip, cross-check, per-method equations, sensitivity, a Sources & provenance
-  table, honest footnotes; Print/Save-as-PDF. All verified live via Playwright;
-  539 backend tests, web typecheck/biome clean.
+  table, honest footnotes; Print/Save-as-PDF. (5) **Connector explorer
+  (`/connectors`):** `GET /connectors` lists all 22 typed connectors cross-
+  referenced with the live data bank by source host (census 38 · bls 27 · fred 22
+  · worldbank 21 · edgar 16 = 124 primitives), drawing the connector → primitive →
+  framework → TAM pipeline; capability-only connectors shown honestly as 0.
+  Business-value record + the two FAQs ("how do connectors come into play",
+  "can users make primitives/macros") in [`docs/23-feature-value-notes.md`](docs/23-feature-value-notes.md).
+  All verified live via Playwright; **542 backend tests**, pyright/ruff clean on
+  `src`, web typecheck/biome clean on new files.
 
   ```
   connectors → sourced primitives → frameworks → TAM ──┬─→ /tam/<hash> (interactive)
