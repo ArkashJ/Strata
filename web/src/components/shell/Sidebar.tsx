@@ -13,6 +13,7 @@ import { Show, SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { useQueries } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
+import { SimpleSignInControl } from "@/components/auth/SimpleSignIn";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { clerkEnabled } from "@/lib/clerk";
 import { conceptsQuery, frameworksQuery, primitivesQuery } from "@/lib/queries";
@@ -120,7 +121,7 @@ function SidebarFooter({ collapsed }: { collapsed: boolean }) {
   const hide = hideLabelClass(collapsed);
   return (
     <div className="shrink-0 flex items-center gap-2.5 px-3 py-3 border-t border-[var(--border-1)]">
-      {clerkEnabled ? <ClerkIdentity hide={hide} /> : <GuestIdentity hide={hide} />}
+      {clerkEnabled ? <ClerkIdentity hide={hide} /> : <SimpleSignInControl hide={hide} />}
       <ThemeToggle
         className={`shrink-0 ml-auto grid place-items-center w-7 h-7 rounded-[var(--r-2)] text-[var(--fg-3)] hover:bg-[var(--bg-2)] hover:text-[var(--fg-1)] transition-colors ${hideDecorClass(
           collapsed,
@@ -135,18 +136,6 @@ function Avatar({ children }: { children: ReactNode }) {
     <span className="shrink-0 grid place-items-center w-7 h-7 rounded-full bg-[var(--bg-3)] text-[var(--fg-3)] text-[11px] font-medium">
       {children}
     </span>
-  );
-}
-
-function GuestIdentity({ hide }: { hide: string }) {
-  return (
-    <div className="flex min-w-0 flex-1 items-center gap-2.5">
-      <Avatar>·</Avatar>
-      <div className={`min-w-0 leading-tight ${hide}`}>
-        <div className="text-[13px] text-[var(--fg-2)] truncate">Guest</div>
-        <div className="text-[11px] text-[var(--fg-4)] truncate">local session</div>
-      </div>
-    </div>
   );
 }
 
