@@ -61,6 +61,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keyless deploy has a working sign-in (sidebar footer) instead of a bare
   "Guest" — coexists with Clerk, which remains the real-auth path when keyed.
   Not a security boundary; a single-user demo identity for attribution.
+- **Favorites:** a star on each saved-build row pins a TAM to a Favorites
+  section on the dashboard (persisted, survives the visit-history cap). Each
+  star subscribes only to its own key for correct cross-row reactivity.
 
 ### Changed — re-audit hardening (flip existential Risks 2 & 5)
 - **Substrate wired at runtime (Risk 5).** `set_org_scope`/`org_session_scope`/
