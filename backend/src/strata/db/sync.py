@@ -6,6 +6,8 @@ data directory into the database. Idempotent — safe to run repeatedly.
 
 from __future__ import annotations
 
+import hashlib
+import math
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -43,6 +45,57 @@ def _primitive_to_row(raw: dict[str, Any]) -> dict[str, Any]:
         "delivery_mode": raw.get("delivery_mode", "n/a"),
         "source": raw.get("source", {}),
     }
+
+
+def _composite_to_rows(loaded: Any) -> list[dict[str, Any]]:
+    """Seed composite primitives as *resolved* primitive rows.
+
+    The Postgres registry (``Registry.from_db``) reconstructs every primitive row
+    as an ``AtomicPrimitive`` and has no composite path, so a composite that only
+    lives in YAML is absent in prod — and any concept that consumes it 422s
+    ("neither a known atomic nor composite primitive"). A same-unit ``union``
+    composite is exactly the sum of its members (Q3), so we precompute that real
+    value from the already-loaded member atomics and store it as a resolvable
+    row. No figure is invented — the value is the arithmetic union of sourced
+    member primitives, and provenance is carried forward from the members.
+    """
+    atomics = {p.slug: p for p in loaded.atomic_primitives}
+    rows: list[dict[str, Any]] = []
+    for comp in loaded.composite_primitives:
+        members = [atomics[s] for s in comp.inputs if s in atomics]
+        if len(members) != len(comp.inputs):
+            continue  # missing members — leave unseeded so the gap stays visible
+        if comp.set_operation.value != "union":
+            continue  # evaluator only resolves union today; don't fake the rest
+        # math.fsum (not sum) to bit-match the evaluator's union path
+        # (evaluator/engine.py) — a plain sum would drift and trip the integrity
+        # verifier comparing seeded vs freshly-derived values.
+        value = math.fsum(m.value for m in members)
+        snapshot = hashlib.sha256(
+            "".join(sorted(m.source.snapshot_sha256 for m in members)).encode()
+        ).hexdigest()
+        src = members[0].source.model_dump(mode="json")
+        src["snapshot_sha256"] = snapshot
+        d = comp.model_dump(mode="json")
+        rows.append(
+            _primitive_to_row(
+                {
+                    "slug": d["slug"],
+                    "kind": "atomic_primitive",
+                    "schema_version": d.get("schema_version", 1),
+                    "concept_slug": d.get("concept_slug", ""),
+                    "name": d["name"],
+                    "description": d["description"],
+                    "value": float(value),
+                    "unit": d["unit"],
+                    "as_of": d.get("as_of", ""),
+                    "geo": d.get("geo", {}),
+                    "geo_perspective": d.get("geo_perspective", "supply"),
+                    "source": src,
+                }
+            )
+        )
+    return rows
 
 
 def _source_to_row(raw: dict[str, Any]) -> dict[str, Any]:
@@ -161,6 +214,7 @@ async def sync_yaml_to_db(data_dir: Path) -> dict[str, int]:
     loaded = load_data_dir(data_dir)
 
     prim_rows = [_primitive_to_row(p.model_dump(mode="json")) for p in loaded.atomic_primitives]
+    prim_rows.extend(_composite_to_rows(loaded))
     src_rows = [_source_to_row(raw) for _, raw in loaded.source_registries]
 
     concept_rows = []
