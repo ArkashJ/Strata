@@ -15,6 +15,15 @@ geo:
   codes:
   - US
 geo_perspective: supply
+scope:
+  segment:
+    min_emp: 100
+    max_emp: 999
+    label: Mid-market (100-999 employees)
+  geo_supply:
+  - US
+  geo_demand:
+  - US
 distribution_shape: normal
 delivery_mode: n/a
 source:

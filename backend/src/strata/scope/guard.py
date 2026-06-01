@@ -178,12 +178,11 @@ def _band_bounds(band: FirmSizeBand) -> tuple[float, float]:
 def _classify_segment(declared: FirmSizeBand | None, actual: FirmSizeBand | None) -> Relationship:
     if declared is None:
         return Relationship.EXACT  # unconstrained on the declared side
-    if actual is None:
-        # No firm-size restriction on the primitive → covers all firm sizes,
-        # which is broader than a declared band.
-        return Relationship.BROADER
     dlo, dhi = _band_bounds(declared)
-    alo, ahi = _band_bounds(actual)
+    # A primitive with no firm-size restriction covers every firm size → an open
+    # band. So it reads EXACT against an explicit "all employer firms" declaration
+    # but BROADER against a narrower declared band (the mid-market overcount).
+    alo, ahi = _band_bounds(actual) if actual is not None else (0.0, float("inf"))
     if (alo, ahi) == (dlo, dhi):
         return Relationship.EXACT
     if alo >= dlo and ahi <= dhi:

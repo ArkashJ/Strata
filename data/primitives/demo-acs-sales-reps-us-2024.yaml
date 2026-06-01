@@ -15,6 +15,18 @@ geo:
   codes:
   - US
 geo_perspective: supply
+scope:
+  persona:
+  - system: SOC
+    code: "41-3000"
+    label: Sales representatives, services
+  - system: SOC
+    code: "41-4000"
+    label: Sales representatives, wholesale & manufacturing
+  geo_supply:
+  - US
+  geo_demand:
+  - US
 distribution_shape: normal
 delivery_mode: n/a
 source:

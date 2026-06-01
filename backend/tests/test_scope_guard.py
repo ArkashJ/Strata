@@ -181,6 +181,29 @@ def test_midmarket_inside_all_smb_to_enterprise_is_narrower():
     assert seg and seg[0].relationship is Relationship.NARROWER
 
 
+def test_explicit_all_firms_vs_unrestricted_headcount_is_exact():
+    """An explicit 'all employer firms' declaration matches an unrestricted
+    (segment=None) headcount — both cover every firm size, so no overcount."""
+    declared = MarketScope(
+        segment=FirmSizeBand(min_emp=None, max_emp=None, label="All employer firms")
+    )
+    actual = MarketScope(segment=None)
+    match = classify_scope(declared, actual)
+    assert not [w for w in match.warnings if w.dimension is ScopeDimension.SEGMENT]
+
+
+def test_midmarket_firm_count_under_all_firms_is_narrower():
+    """The silent mid-market: a concept declaring all employer firms, sized off a
+    mid-market-only firm count, reads NARROWER."""
+    declared = MarketScope(
+        segment=FirmSizeBand(min_emp=None, max_emp=None, label="All employer firms")
+    )
+    actual = MarketScope(segment=FirmSizeBand(min_emp=100, max_emp=999, label="Mid-market"))
+    match = classify_scope(declared, actual)
+    seg = [w for w in match.warnings if w.dimension is ScopeDimension.SEGMENT]
+    assert seg and seg[0].relationship is Relationship.NARROWER
+
+
 def test_exact_segment_band_is_clean():
     band = FirmSizeBand(min_emp=100, max_emp=999, label="Mid-market")
     match = classify_scope(MarketScope(segment=band), MarketScope(segment=band))
