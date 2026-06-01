@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — rigorous market definition, sub-project 1 (foundation)
+- **`MarketScope` value object** (`strata.models.scope`) — the structured,
+  checkable definition of *which* market a number sizes: `vertical` (NAICS),
+  `persona` (SOC), `segment` (firm-size band), `geo_supply`/`geo_demand` (ISO,
+  the Q8 two-geo shape), plus free-text `product`/`include`/`exclude`. Added as
+  an optional `scope:` field on both `Concept` (declared/canonical) and
+  `AtomicPrimitive` (the primitive's *true* scope), defaulting empty so existing
+  YAML loads unchanged.
+- **The scope guard** (`strata.scope.guard.classify_scope`) — pure,
+  deterministic (no network/LLM, mirrors the verbatim guard). Compares declared
+  vs actual scope per dimension into a `Relationship`
+  (exact/narrower/broader/partial/disjoint/unknown) and returns a `ScopeMatch`
+  whose `displayed` scope is **always the primitive's actual scope**
+  (snap-to-truth) plus mismatch warnings. NAICS/SOC compared by significant-
+  prefix hierarchy (a minor group like SOC 41-4000 correctly contains detailed
+  41-4012); geo by ISO-set with `global` wildcard; segment by employee-range
+  containment. Catches the reviewed failures: a wholesale/mfg-only headcount
+  (SOC 41-4012) under an "all B2B reps" market reads as NARROWER and names the
+  services group (41-3000) it excludes entirely; an unrestricted occupation
+  count under a mid-market band reads as BROADER. 22 adversarial tests
+  (`tests/test_scope_guard.py`). Inert to existing sizing until later commits.
+  Spec: `docs/superpowers/specs/2026-05-31-rigorous-market-definition-design.md`.
+
 ### Changed — honest sourced-gap upgrade for unsizable crypto companies
 - **Corrected two wrong `unsizable` reasons.** 0xPass and 3Blocks were labelled
   unsizable due to the Q20 quarantine — but that conflates two different things:

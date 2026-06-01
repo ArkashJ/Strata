@@ -14,6 +14,7 @@ from typing import Literal, Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ._common import AnalysisLens, Slug
+from .scope import MarketScope
 
 
 class ConceptKind(StrEnum):
@@ -98,6 +99,10 @@ class Concept(BaseModel):
 
     analysis_lens: ConceptAnalysisLens
     modifiers: ConceptModifiers = ConceptModifiers()
+
+    # The market's canonical scope (sub-project 1). Defaults empty so existing
+    # records load unchanged; the scope guard reads this as the "declared" side.
+    scope: MarketScope = MarketScope()
 
     measurements: tuple[Slug, ...] = ()
     competing_concepts: tuple[Slug, ...] = ()
