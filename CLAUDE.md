@@ -19,6 +19,35 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ## Repo state (as of 2026-05-31)
 
+- **In flight (PR #80 — `feat/rigorous-market-definition`, sub-project 1 of 3):**
+  makes a market's **scope** a first-class, checkable object so a number can't
+  misrepresent which market it sizes. A `MarketScope` value object
+  (`models/scope.py`: vertical→NAICS · persona→SOC · segment→firm-size band ·
+  geo_supply/geo_demand→ISO · free-text product/include/exclude) sits on
+  `Concept` (declared) and `AtomicPrimitive` (true scope), optional + empty by
+  default so existing YAML loads unchanged. A pure **scope guard**
+  (`strata.scope.guard`, mirrors the verbatim guard, 24 tests) classifies declared
+  vs actual per dimension (exact/narrower/broader/partial/disjoint/unknown) by
+  significant-prefix NAICS/SOC hierarchy; the **displayed scope is always the
+  primitive's truth** (snap-to-truth). A `ScopeReport` is attached to every
+  `TAMOutput` (derived, NOT in the state hash; `UNKNOWN` suppressed) and flows
+  through `/build /recompute /tam`. `/tam` gains a read-only **Market** chip strip
+  + a **Scope check** section. Persisted via migration 007 (scope JSONB on
+  primitives + concepts; `Registry.from_db` round-trips it). 642 backend tests.
+
+  ```
+  declared scope (Concept) ─┐
+                            ├─► scope guard ─► ScopeReport (snap-to-truth + warnings)
+  primitive true scope ─────┘                    └─► /tam: "why the methods disagree"
+  ```
+
+  On `demo-ai-sales-ops-us` this explains the $2.0B-vs-$31.2B spread: the
+  bottoms-up headcount is wholesale-only (SOC 41-4012, NARROWER — excludes
+  services reps), both top-down inputs are mid-market-only (NARROWER on segment).
+  Follow-ups: live-editable tags + "widen →" on `/build`; sub-project 2 (always
+  top-down ∧ bottoms-up); sub-project 3 (number-level provenance). Spec:
+  `docs/superpowers/specs/2026-05-31-rigorous-market-definition-design.md`.
+
 - **Shipped to main — portfolio sizing + company layer (P1):** the "size my
   portfolio via the MCP" wedge. New `strata.sizing` package productizes
   `scripts/tam_77_pipeline.py`: a **verbatim guard** (`sizing/guard.py`, the Q20

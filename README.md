@@ -148,6 +148,13 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
 ```
 
 **What works today:**
+- **Defined-before-sized markets** — every market carries a structured scope
+  (industry, role, company-size band, geography). A guard checks the scope of the
+  source behind each number against the market you asked for, and labels each
+  number with the scope it actually represents. So a "sales reps" number built
+  from a wholesale-only headcount is flagged as **narrower than the market** — and
+  a scary range stops being a mystery: the TAM page shows *why* two methods
+  disagree (they were quietly sizing two different markets).
 - **Bottoms-up vs top-down cross-check** — when a market is sized by two
   independent methods, the TAM page leads with an agreement banner ("lower $X ·
   higher $Y · spread N×"). The triangulation a VC builds by hand, shown automatically.
