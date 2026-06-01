@@ -40,6 +40,13 @@ class RedditResponse:
     items: tuple[SubredditStats, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class SubredditMatch:
+    name: str
+    subscribers: int
+    over_18: bool
+
+
 class _DiskCache:
     def __init__(self, directory: Path, ttl_seconds: int = 3600) -> None:
         self.directory = directory
@@ -165,6 +172,31 @@ class RedditClient:
             over_18=bool(data.get("over18", False)),
         )
 
+    def get_subreddits_about(self, subreddits: list[str]) -> RedditResponse:
+        """Fetch about-stats for several subreddits (one call each, cached)."""
+        items = tuple(self.get_subreddit_about(s) for s in subreddits)
+        return RedditResponse(items=items)
+
+    def search_subreddits(self, query: str, *, limit: int = 25) -> tuple[SubredditMatch, ...]:
+        """Subreddits matching a free-text query (name + subscriber count)."""
+        clamped = max(1, min(limit, 100))
+        raw = self._request(f"/subreddits/search?q={query}&limit={clamped}")
+        children = raw.get("data", {}).get("children", []) or []
+        matches: list[SubredditMatch] = []
+        for child in children:
+            data = child.get("data", {}) or {}
+            name = data.get("display_name")
+            if not name:
+                continue
+            matches.append(
+                SubredditMatch(
+                    name=str(name),
+                    subscribers=int(data.get("subscribers", 0) or 0),
+                    over_18=bool(data.get("over18", False)),
+                )
+            )
+        return tuple(matches)
+
     def clear_cache(self) -> int:
         return self.cache.clear()
 
@@ -190,6 +222,46 @@ def subreddit_to_primitive_yaml(
         "distribution_shape": "power_law",
         "delivery_mode": "n/a",
         "source": subreddit_to_source_yaml(stats, accessed=accessed),
+    }
+
+
+def active_users_to_primitive_yaml(
+    stats: SubredditStats, *, slug: str, concept_slug: str, accessed: date
+) -> dict[str, Any]:
+    """Active-user count primitive from the same /about fetch (no new HTTP call)."""
+    if stats.active_user_count is None:
+        raise RedditClientError(f"r/{stats.name} has no active_user_count")
+    return {
+        "kind": "atomic_primitive",
+        "slug": slug,
+        "schema_version": 1,
+        "concept_slug": concept_slug,
+        "name": f"r/{stats.name} active users (Reddit)",
+        "description": (
+            f"Currently-active user count on r/{stats.name}. Community engagement "
+            "signal — instantaneous, more volatile than the subscriber stock."
+        ),
+        "value": float(stats.active_user_count),
+        "unit": {"kind": "stock", "dimension": "people"},
+        "as_of": accessed.isoformat(),
+        "geo": {"level": "country", "codes": ["US"]},
+        "geo_perspective": "demand",
+        "distribution_shape": "power_law",
+        "delivery_mode": "n/a",
+        "source": active_users_to_source_yaml(stats, accessed=accessed),
+    }
+
+
+def active_users_to_source_yaml(stats: SubredditStats, *, accessed: date) -> dict[str, Any]:
+    payload = json.dumps(
+        {"subreddit": stats.name, "active_user_count": stats.active_user_count}, sort_keys=True
+    )
+    return {
+        "slug": f"reddit-{stats.name.lower()}-active-{accessed.isoformat()}",
+        "tier": "community",
+        "url": f"https://www.reddit.com/r/{stats.name}/about.json",
+        "accessed": accessed.isoformat(),
+        "snapshot_sha256": hashlib.sha256(payload.encode()).hexdigest(),
     }
 
 
@@ -222,6 +294,49 @@ def capabilities() -> list[CapabilitySpec]:
                     type="str",
                     description="Subreddit name without /r/ prefix",
                     example="MachineLearning",
+                ),
+            ],
+            source_tier="community",
+        ),
+        CapabilitySpec(
+            connector="reddit",
+            method="get_subreddits_about",
+            description=(
+                "Batch subscriber + active-user counts for several subreddits. "
+                "Community signal — latent-demand proxy across related communities."
+            ),
+            returns="RedditResponse of subreddit stats, tier=community",
+            args=[
+                CapabilityArg(
+                    name="subreddits",
+                    type="str",
+                    description="Comma-separated subreddit names without /r/ prefix",
+                    example="MachineLearning,LocalLLaMA",
+                ),
+            ],
+            source_tier="community",
+        ),
+        CapabilitySpec(
+            connector="reddit",
+            method="search_subreddits",
+            description=(
+                "Subreddits matching a free-text query, with subscriber counts. "
+                "Use to discover the community surface for a topic."
+            ),
+            returns="tuple of subreddit matches (name + subscribers), tier=community",
+            args=[
+                CapabilityArg(
+                    name="query",
+                    type="str",
+                    description="Free-text search query",
+                    example="machine learning",
+                ),
+                CapabilityArg(
+                    name="limit",
+                    type="int",
+                    description="Max results (1..100)",
+                    example="25",
+                    required=False,
                 ),
             ],
             source_tier="community",

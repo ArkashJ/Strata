@@ -36,6 +36,8 @@ class CensusDataset(StrEnum):
     SUSB = "susb"
     ABS = "abscs"
     ECONOMIC_CENSUS = "ecnbasic"
+    BDS = "bds"
+    PEP = "pep/population"
 
 
 class CensusGeoLevel(StrEnum):
@@ -141,12 +143,27 @@ class FirmRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class EconomicCensusRecord:
+    """A single industry row from the Economic Census (receipts / revenue)."""
+
+    naics_code: str
+    naics_label: str
+    receipts: int
+    establishments: int
+    employees: int
+    annual_payroll: int
+    year: int
+    geo_level: str
+    geo_code: str
+
+
+@dataclass(frozen=True, slots=True)
 class CensusResponse:
     """Standard return type for every Census client call."""
 
     dataset: str
     year: int
-    records: tuple[IndustryRecord, ...] | tuple[FirmRecord, ...]
+    records: tuple[IndustryRecord, ...] | tuple[FirmRecord, ...] | tuple[EconomicCensusRecord, ...]
     raw_headers: tuple[str, ...]
     cached: bool = False
     cache_age_seconds: float = 0.0
@@ -237,6 +254,33 @@ def _parse_firm_rows(
                 employees=_safe_int(row.get("EMP", "0")),
                 annual_payroll=_safe_int(row.get("PAYANN", "0")),
                 year=year,
+            )
+        )
+    return tuple(records)
+
+
+def _parse_economic_rows(
+    rows: list[dict[str, str]],
+    year: int,
+) -> tuple[EconomicCensusRecord, ...]:
+    """Parse dicts into EconomicCensusRecord tuples, skipping empty rows."""
+    records: list[EconomicCensusRecord] = []
+    for row in rows:
+        naics = row.get("NAICS2017", "")
+        if not naics:
+            continue
+        geo_level, geo_code = _geo_from_row(row)
+        records.append(
+            EconomicCensusRecord(
+                naics_code=naics,
+                naics_label=row.get("NAICS2017_LABEL", ""),
+                receipts=_safe_int(row.get("RCPTOT", "0")),
+                establishments=_safe_int(row.get("ESTAB", "0")),
+                employees=_safe_int(row.get("EMP", "0")),
+                annual_payroll=_safe_int(row.get("PAYANN", "0")),
+                year=year,
+                geo_level=geo_level,
+                geo_code=geo_code,
             )
         )
     return tuple(records)
@@ -535,6 +579,267 @@ class CensusClient:
             cache_age_seconds=round(age, 1),
         )
 
+    def get_susb_by_size(
+        self,
+        year: int,
+        naics: str | None = None,
+        empszfi: str = "001",
+    ) -> CensusResponse:
+        """Query SUSB broken out by enterprise employment-size band.
+
+        Args:
+            year: Survey year (SUSB is published for 2017+ annually).
+            naics: NAICS industry code (None = all sectors).
+            empszfi: Enterprise employment-size code ("001"=all,
+                "211"=<20 employees, "270"=500+ employees).
+        """
+        variables = (
+            "NAICS2017",
+            "NAICS2017_LABEL",
+            "FIRM",
+            "ESTAB",
+            "EMP",
+            "PAYANN",
+        )
+        predicates: dict[str, str] = {"EMPSZFI": empszfi}
+        if naics is not None:
+            predicates["NAICS2017"] = naics
+
+        url = self._build_url(CensusDataset.SUSB, year)
+        params = self._build_params(variables, CensusGeoLevel.US, predicates=predicates)
+        raw, is_cached, age = self._request_cached(url, params)
+
+        headers, rows = _rows_to_dicts(raw)
+        records = _parse_firm_rows(rows, year)
+
+        return CensusResponse(
+            dataset=CensusDataset.SUSB,
+            year=year,
+            records=records,
+            raw_headers=headers,
+            cached=is_cached,
+            cache_age_seconds=round(age, 1),
+        )
+
+    # ── Economic Census (industry revenue) ───────────────────────
+
+    def get_economic_census(
+        self,
+        naics: str,
+        geo: str = "us:*",
+        year: int = 2017,
+    ) -> CensusResponse:
+        """Query the Economic Census for industry receipts / revenue.
+
+        The Economic Census (``ecnbasic``) is published for years ending
+        in 2 or 7 (e.g. 2017, 2022). Returns total receipts (RCPTOT),
+        annual payroll, establishments, and employment by NAICS.
+
+        Args:
+            naics: NAICS industry code (e.g. "5415").
+            geo: ``for`` geography clause ("us:*", "state:*").
+            year: Census year (default 2017).
+        """
+        variables = (
+            "NAICS2017",
+            "NAICS2017_LABEL",
+            "RCPTOT",
+            "PAYANN",
+            "ESTAB",
+            "EMP",
+        )
+        url = self._build_url(CensusDataset.ECONOMIC_CENSUS, year)
+        params = self._build_params(variables, geo, predicates={"NAICS2017": naics})
+        raw, is_cached, age = self._request_cached(url, params)
+
+        headers, rows = _rows_to_dicts(raw)
+        records = _parse_economic_rows(rows, year)
+
+        return CensusResponse(
+            dataset=CensusDataset.ECONOMIC_CENSUS,
+            year=year,
+            records=records,
+            raw_headers=headers,
+            cached=is_cached,
+            cache_age_seconds=round(age, 1),
+        )
+
+    # ── Annual Business Survey (owner demographics / receipts) ────
+
+    def get_abs(
+        self,
+        naics: str,
+        geo: str = "us:*",
+        characteristic: str = "0001",
+        year: int = 2021,
+    ) -> CensusResponse:
+        """Query the Annual Business Survey company-summary dataset.
+
+        Returns firm counts, receipts, employment, and payroll by NAICS
+        and an owner-demographic characteristic (sex / ethnicity / race /
+        veteran status).
+
+        Args:
+            naics: NAICS industry code.
+            geo: ``for`` geography clause.
+            characteristic: QDESC characteristic value code
+                ("0001"=all firms classifiable).
+            year: ABS reference year (default 2021).
+        """
+        variables = (
+            "NAICS2017",
+            "NAICS2017_LABEL",
+            "FIRMPDEMP",
+            "RCPPDEMP",
+            "EMP",
+            "PAYANN",
+        )
+        url = self._build_url(CensusDataset.ABS, year)
+        params = self._build_params(
+            variables,
+            geo,
+            predicates={"NAICS2017": naics, "SEX": characteristic},
+        )
+        raw, is_cached, age = self._request_cached(url, params)
+
+        headers, rows = _rows_to_dicts(raw)
+        records = _parse_industry_rows(rows, year)
+
+        return CensusResponse(
+            dataset=CensusDataset.ABS,
+            year=year,
+            records=records,
+            raw_headers=headers,
+            cached=is_cached,
+            cache_age_seconds=round(age, 1),
+        )
+
+    # ── Business Dynamics Statistics (firm births / deaths) ───────
+
+    def get_bds(
+        self,
+        naics: str = "00",
+        year: int = 2021,
+        geo: str = "us:*",
+    ) -> CensusResponse:
+        """Query Business Dynamics Statistics for firm dynamics.
+
+        Returns establishment counts, employment, job creation, and job
+        destruction by NAICS sector and year.
+
+        Args:
+            naics: NAICS sector code ("00"=all sectors).
+            year: BDS reference year.
+            geo: ``for`` geography clause.
+        """
+        variables = (
+            "NAICS2017",
+            "NAICS2017_LABEL",
+            "ESTAB",
+            "EMP",
+            "JOB_CREATION",
+            "JOB_DESTRUCTION",
+        )
+        url = self._build_url(CensusDataset.BDS, year)
+        params = self._build_params(
+            variables,
+            geo,
+            predicates={"NAICS2017": naics},
+        )
+        raw, is_cached, age = self._request_cached(url, params)
+
+        headers, rows = _rows_to_dicts(raw)
+        records = _parse_industry_rows(rows, year)
+
+        return CensusResponse(
+            dataset=CensusDataset.BDS,
+            year=year,
+            records=records,
+            raw_headers=headers,
+            cached=is_cached,
+            cache_age_seconds=round(age, 1),
+        )
+
+    # ── CBP by metro area ─────────────────────────────────────────
+
+    def get_cbp_by_msa(
+        self,
+        year: int,
+        naics: str | None = None,
+    ) -> CensusResponse:
+        """Query CBP at the metropolitan/micropolitan statistical area level."""
+        predicates: dict[str, str] | None = None
+        if naics is not None:
+            predicates = {"NAICS2017": naics}
+
+        url = self._build_url(CensusDataset.CBP, year)
+        params = self._build_params(
+            ("NAICS2017", "NAICS2017_LABEL", "ESTAB", "EMP", "PAYANN"),
+            CensusGeoLevel.MSA,
+            predicates=predicates,
+        )
+        raw, is_cached, age = self._request_cached(url, params)
+
+        headers, rows = _rows_to_dicts(raw)
+        records = _parse_industry_rows(rows, year)
+
+        return CensusResponse(
+            dataset=CensusDataset.CBP,
+            year=year,
+            records=records,
+            raw_headers=headers,
+            cached=is_cached,
+            cache_age_seconds=round(age, 1),
+        )
+
+    # ── Population Estimates Program ──────────────────────────────
+
+    def get_pep_population(
+        self,
+        year: int,
+        geo: str = "us:*",
+    ) -> CensusResponse:
+        """Query the Population Estimates Program for resident population.
+
+        Returns a single population total per geography. Populates the
+        ``employees`` field of IndustryRecord with the population value so
+        it threads through the standard converter; ``naics_code`` is set to
+        a sentinel ``POP``.
+
+        Args:
+            year: Vintage year.
+            geo: ``for`` geography clause.
+        """
+        url = self._build_url(CensusDataset.PEP, year)
+        params = self._build_params(("NAME", "POP"), geo)
+        raw, is_cached, age = self._request_cached(url, params)
+
+        headers, rows = _rows_to_dicts(raw)
+        records: list[IndustryRecord] = []
+        for row in rows:
+            geo_level, geo_code = _geo_from_row(row)
+            records.append(
+                IndustryRecord(
+                    naics_code="POP",
+                    naics_label=row.get("NAME", ""),
+                    establishments=0,
+                    employees=_safe_int(row.get("POP", "0")),
+                    annual_payroll=0,
+                    year=year,
+                    geo_level=geo_level,
+                    geo_code=geo_code,
+                )
+            )
+
+        return CensusResponse(
+            dataset=CensusDataset.PEP,
+            year=year,
+            records=tuple(records),
+            raw_headers=headers,
+            cached=is_cached,
+            cache_age_seconds=round(age, 1),
+        )
+
     # ── Generic query (power users) ─────────────────────────────
 
     def query(
@@ -789,6 +1094,102 @@ def firm_to_source_yaml(
     }
 
 
+def economic_to_primitive_yaml(
+    record: EconomicCensusRecord,
+    *,
+    concept_slug: str,
+    primitive_slug: str,
+    name: str,
+    description: str,
+    source_url: str,
+    value_field: str = "receipts",
+    geo_codes: tuple[str, ...] = ("US",),
+    geo_level: str = "country",
+    geo_perspective: str = "supply",
+    distribution_shape: str = "normal",
+    delivery_mode: str = "n/a",
+) -> dict[str, Any]:
+    """Convert a Census EconomicCensusRecord to a Strata AtomicPrimitive YAML dict.
+
+    ``receipts`` and ``annual_payroll`` are currency flows; the other
+    fields are counts.
+    """
+    field_map: dict[str, int] = {
+        "receipts": record.receipts,
+        "establishments": record.establishments,
+        "employees": record.employees,
+        "annual_payroll": record.annual_payroll,
+    }
+    if value_field not in field_map:
+        valid = ", ".join(sorted(field_map))
+        raise CensusClientError(f"Unknown value_field {value_field!r}; expected one of: {valid}")
+    value = field_map[value_field]
+
+    source_slug = f"census-ecn-{record.naics_code.lower()}-{record.year}"
+    sha = _snapshot_hash(
+        "ecnbasic", record.year, record.naics_code, record.geo_level, value_field, value
+    )
+
+    if value_field in ("receipts", "annual_payroll"):
+        unit: dict[str, str] = {"kind": "flow", "dimension": "currency"}
+        unit["currency"] = "USD"
+        unit["denominator"] = "year"
+    elif value_field == "employees":
+        unit = {"kind": "stock", "dimension": "people"}
+    else:
+        unit = {"kind": "stock", "dimension": "organizations"}
+
+    return {
+        "kind": "atomic_primitive",
+        "slug": primitive_slug,
+        "schema_version": 1,
+        "concept_slug": concept_slug,
+        "name": name,
+        "description": description,
+        "value": value,
+        "unit": unit,
+        "as_of": date(record.year, 12, 31).isoformat(),
+        "geo": {"level": geo_level, "codes": list(geo_codes)},
+        "geo_perspective": geo_perspective,
+        "distribution_shape": distribution_shape,
+        "delivery_mode": delivery_mode,
+        "source": {
+            "slug": source_slug,
+            "tier": "regulator",
+            "url": source_url,
+            "accessed": date.today().isoformat(),
+            "snapshot_sha256": sha,
+        },
+    }
+
+
+def economic_to_source_yaml(
+    record: EconomicCensusRecord,
+    *,
+    source_url: str,
+    description: str = "",
+) -> dict[str, Any]:
+    """Convert a Census EconomicCensusRecord to a Strata source_registry YAML dict."""
+    source_slug = f"census-ecn-{record.naics_code.lower()}-{record.year}"
+    sha = _snapshot_hash(
+        "ecnbasic", record.year, record.naics_code, record.geo_level, "receipts", record.receipts
+    )
+
+    return {
+        "kind": "source_registry",
+        "slug": source_slug,
+        "tier": "regulator",
+        "url": source_url,
+        "accessed": date.today().isoformat(),
+        "snapshot_sha256": sha,
+        "description": (
+            description
+            or f"Census Economic Census NAICS {record.naics_code} "
+            f"({record.naics_label}), {record.year} receipts."
+        ),
+    }
+
+
 def capabilities() -> list[CapabilitySpec]:
     """Methods exposed to the LLM router (spec §5)."""
     from ._capability import CapabilityArg, CapabilitySpec
@@ -823,6 +1224,129 @@ def capabilities() -> list[CapabilitySpec]:
             args=[
                 CapabilityArg(name="naics", type="str", description="NAICS code", example="5415"),
                 CapabilityArg(name="year", type="int", description="Survey year", example="2021"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="census",
+            method="get_economic_census",
+            description=(
+                "Economic Census industry receipts/revenue (RCPTOT), payroll, establishments "
+                "and employment by NAICS. Highest-value top-down revenue anchor."
+            ),
+            returns="atomic primitive, unit=USD/year or count, tier=regulator",
+            args=[
+                CapabilityArg(name="naics", type="str", description="NAICS code", example="5415"),
+                CapabilityArg(
+                    name="year",
+                    type="int",
+                    description="Census year (ends in 2 or 7)",
+                    example="2017",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="census",
+            method="get_susb_by_size",
+            description="SUSB firm/establishment counts by enterprise employment-size band.",
+            returns="atomic primitive, unit=organizations/people/USD, tier=regulator",
+            args=[
+                CapabilityArg(name="year", type="int", description="Survey year", example="2021"),
+                CapabilityArg(
+                    name="naics",
+                    type="str",
+                    description="NAICS code (None=all)",
+                    example="5415",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="empszfi",
+                    type="str",
+                    description="Enterprise size code ('001'=all, '270'=500+)",
+                    example="001",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="census",
+            method="get_abs",
+            description=(
+                "Annual Business Survey firm counts and receipts by NAICS and owner demographics."
+            ),
+            returns="atomic primitive, unit=organizations/USD, tier=regulator",
+            args=[
+                CapabilityArg(name="naics", type="str", description="NAICS code", example="5415"),
+                CapabilityArg(
+                    name="characteristic",
+                    type="str",
+                    description="Owner-demographic code ('0001'=all)",
+                    example="0001",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="census",
+            method="get_bds",
+            description=(
+                "Business Dynamics Statistics: firm births/deaths, job creation/destruction "
+                "by NAICS sector."
+            ),
+            returns="atomic primitive, unit=organizations/jobs, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="naics",
+                    type="str",
+                    description="NAICS sector ('00'=all)",
+                    example="00",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="year",
+                    type="int",
+                    description="Reference year",
+                    example="2021",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="census",
+            method="get_cbp_by_msa",
+            description="County Business Patterns at metro/micropolitan statistical-area level.",
+            returns="atomic primitive, unit=organizations/people/USD, tier=regulator",
+            args=[
+                CapabilityArg(name="year", type="int", description="Survey year", example="2022"),
+                CapabilityArg(
+                    name="naics",
+                    type="str",
+                    description="NAICS code (None=all)",
+                    example="5415",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="census",
+            method="get_pep_population",
+            description="Population Estimates Program resident population total by geography.",
+            returns="atomic primitive, unit=people, tier=regulator",
+            args=[
+                CapabilityArg(name="year", type="int", description="Vintage year", example="2023"),
+                CapabilityArg(
+                    name="geo",
+                    type="str",
+                    description="Geography clause",
+                    example="us:*",
+                    required=False,
+                ),
             ],
             source_tier="regulator",
         ),

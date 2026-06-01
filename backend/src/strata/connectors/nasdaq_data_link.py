@@ -371,6 +371,47 @@ class NasdaqDataLinkClient:
         cursor = meta.get("next_cursor_id")
         return _parse_datatable(datatable_code, table_raw, str(cursor) if cursor else None)
 
+    def get_treasury_yield_curve(
+        self,
+        *,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        limit: int | None = None,
+    ) -> NasdaqResponse:
+        """Fetch the US Treasury daily yield curve (free dataset USTREASURY/YIELD).
+
+        Columns are the maturities (1 MO … 30 YR). Convenience wrapper over
+        :meth:`get_dataset`.
+        """
+        return self.get_dataset(
+            "USTREASURY",
+            "YIELD",
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit,
+            order=NasdaqOrder.DESC,
+        )
+
+    def get_lbma_gold(
+        self,
+        *,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        limit: int | None = None,
+    ) -> NasdaqResponse:
+        """Fetch the LBMA daily gold fixing in USD/EUR/GBP (free dataset LBMA/GOLD).
+
+        Convenience wrapper over :meth:`get_dataset`.
+        """
+        return self.get_dataset(
+            "LBMA",
+            "GOLD",
+            start_date=start_date,
+            end_date=end_date,
+            limit=limit,
+            order=NasdaqOrder.DESC,
+        )
+
     def clear_cache(self) -> int:
         return self.cache.clear()
 
@@ -495,5 +536,24 @@ def capabilities() -> list[CapabilitySpec]:
             ],
             source_tier="aggregator",
             requires_paid_tier=True,
+        ),
+        CapabilitySpec(
+            connector="nasdaq_data_link",
+            method="get_treasury_yield_curve",
+            description=(
+                "US Treasury daily yield curve (free USTREASURY/YIELD dataset); "
+                "columns are maturities 1 MO through 30 YR."
+            ),
+            returns="atomic primitive observations, unit=percent yield, tier=aggregator",
+            args=[],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="nasdaq_data_link",
+            method="get_lbma_gold",
+            description=("LBMA daily gold fixing price in USD/EUR/GBP (free LBMA/GOLD dataset)."),
+            returns="atomic primitive observations, unit=currency per troy oz, tier=aggregator",
+            args=[],
+            source_tier="aggregator",
         ),
     ]

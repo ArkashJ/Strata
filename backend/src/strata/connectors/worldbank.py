@@ -49,11 +49,14 @@ class WBIndicatorGroup(StrEnum):
     GDP_GROWTH = "NY.GDP.MKTP.KD.ZG"
     GDP_PER_CAPITA = "NY.GDP.PCAP.CD"
     POPULATION = "SP.POP.TOTL"
+    WORKING_AGE_POP = "SP.POP.1564.TO"
     LABOR_FORCE = "SL.TLF.TOTL.IN"
     UNEMPLOYMENT = "SL.UEM.TOTL.ZS"
     INTERNET_USERS_PCT = "IT.NET.USER.ZS"
+    BROADBAND_SUBS = "IT.NET.BBND.P2"
     MOBILE_SUBSCRIPTIONS = "IT.CEL.SETS.P2"
     HOUSEHOLD_CONSUMPTION = "NE.CON.PRVT.CD"
+    SERVICES_VALUE_ADDED = "NV.SRV.TOTL.CD"
     FDI_INFLOWS = "BX.KLT.DINV.CD.WD"
     INFLATION = "FP.CPI.TOTL.ZG"
     LENDING_RATE = "FR.INR.LEND"
@@ -315,8 +318,9 @@ class WorldBankClient:
         cache_dir: Path | None = None,
         cache_ttl: int = 604800,
         timeout: float = 30.0,
+        transport: httpx.BaseTransport | None = None,
     ) -> None:
-        self._http = httpx.Client(timeout=timeout)
+        self._http = httpx.Client(timeout=timeout, transport=transport)
         default_cache = Path.home() / ".strata" / "cache" / "worldbank"
         self._cache = _DiskCache(cache_dir or default_cache, cache_ttl)
 
@@ -437,6 +441,48 @@ class WorldBankClient:
         if date_range is not None:
             params["date"] = date_range
         return self._request_all_pages(url, params, kind="indicator", per_page=per_page)
+
+    # ── curated convenience wrappers (one indicator each) ────────
+
+    def get_gdp(self, country: str = "US", date_range: str | None = None) -> WBResponse:
+        """GDP, current US$ (NY.GDP.MKTP.CD)."""
+        return self.get_indicator(WBIndicatorGroup.GDP, country, date_range)
+
+    def get_population(self, country: str = "US", date_range: str | None = None) -> WBResponse:
+        """Total population (SP.POP.TOTL)."""
+        return self.get_indicator(WBIndicatorGroup.POPULATION, country, date_range)
+
+    def get_working_age_pop(self, country: str = "US", date_range: str | None = None) -> WBResponse:
+        """Population ages 15-64, total (SP.POP.1564.TO)."""
+        return self.get_indicator(WBIndicatorGroup.WORKING_AGE_POP, country, date_range)
+
+    def get_household_consumption(
+        self, country: str = "US", date_range: str | None = None
+    ) -> WBResponse:
+        """Households final consumption expenditure, current US$ (NE.CON.PRVT.CD)."""
+        return self.get_indicator(WBIndicatorGroup.HOUSEHOLD_CONSUMPTION, country, date_range)
+
+    def get_services_value_added(
+        self, country: str = "US", date_range: str | None = None
+    ) -> WBResponse:
+        """Services value added, current US$ (NV.SRV.TOTL.CD)."""
+        return self.get_indicator(WBIndicatorGroup.SERVICES_VALUE_ADDED, country, date_range)
+
+    def get_internet_adoption(
+        self, country: str = "US", date_range: str | None = None
+    ) -> WBResponse:
+        """Individuals using the Internet, % of population (IT.NET.USER.ZS)."""
+        return self.get_indicator(WBIndicatorGroup.INTERNET_USERS_PCT, country, date_range)
+
+    def get_broadband_subs(self, country: str = "US", date_range: str | None = None) -> WBResponse:
+        """Fixed broadband subscriptions per 100 people (IT.NET.BBND.P2)."""
+        return self.get_indicator(WBIndicatorGroup.BROADBAND_SUBS, country, date_range)
+
+    def get_mobile_subscriptions(
+        self, country: str = "US", date_range: str | None = None
+    ) -> WBResponse:
+        """Mobile cellular subscriptions per 100 people (IT.CEL.SETS.P2)."""
+        return self.get_indicator(WBIndicatorGroup.MOBILE_SUBSCRIPTIONS, country, date_range)
 
     # ── indicator metadata ───────────────────────────────────────
 
@@ -610,8 +656,30 @@ def indicator_to_source_yaml(
 
 
 def capabilities() -> list[CapabilitySpec]:
-    """Methods exposed to the LLM router (spec §5)."""
+    """Methods exposed to the LLM router (spec §5).
+
+    World Bank previously surfaced only ``get_indicator``; the curated
+    convenience wrappers below give the router named, self-describing slots
+    over the 8 most-used indicator codes.
+    """
     from ._capability import CapabilityArg, CapabilitySpec
+
+    country = CapabilityArg(
+        name="country",
+        type="str",
+        description="ISO-2/ISO-3 country code or 'WLD'",
+        example="US",
+    )
+
+    def _spec(method: str, description: str, returns: str) -> CapabilitySpec:
+        return CapabilitySpec(
+            connector="worldbank",
+            method=method,
+            description=description,
+            returns=returns,
+            args=[country],
+            source_tier="aggregator",
+        )
 
     return [
         CapabilitySpec(
@@ -622,12 +690,7 @@ def capabilities() -> list[CapabilitySpec]:
             ),
             returns="atomic primitive, unit varies, tier=aggregator",
             args=[
-                CapabilityArg(
-                    name="country",
-                    type="str",
-                    description="ISO-3 country code or 'WLD'",
-                    example="USA",
-                ),
+                country,
                 CapabilityArg(
                     name="indicator",
                     type="str",
@@ -643,6 +706,46 @@ def capabilities() -> list[CapabilitySpec]:
                 ),
             ],
             source_tier="aggregator",
+        ),
+        _spec(
+            "get_gdp",
+            "World Bank GDP (current US$) for a country.",
+            "atomic primitive, unit=currency USD, tier=aggregator",
+        ),
+        _spec(
+            "get_population",
+            "World Bank total population for a country.",
+            "atomic primitive, unit=count people, tier=aggregator",
+        ),
+        _spec(
+            "get_working_age_pop",
+            "World Bank working-age population (ages 15-64) for a country.",
+            "atomic primitive, unit=count people, tier=aggregator",
+        ),
+        _spec(
+            "get_household_consumption",
+            "World Bank household final consumption expenditure (current US$).",
+            "atomic primitive, unit=currency USD, tier=aggregator",
+        ),
+        _spec(
+            "get_services_value_added",
+            "World Bank services value added (current US$) for a country.",
+            "atomic primitive, unit=currency USD, tier=aggregator",
+        ),
+        _spec(
+            "get_internet_adoption",
+            "World Bank internet adoption (% of population) for a country.",
+            "atomic primitive, unit=dimensionless percent, tier=aggregator",
+        ),
+        _spec(
+            "get_broadband_subs",
+            "World Bank fixed broadband subscriptions per 100 people.",
+            "atomic primitive, unit=ratio per-100, tier=aggregator",
+        ),
+        _spec(
+            "get_mobile_subscriptions",
+            "World Bank mobile cellular subscriptions per 100 people.",
+            "atomic primitive, unit=ratio per-100, tier=aggregator",
         ),
     ]
 

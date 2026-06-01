@@ -41,6 +41,7 @@ class FDAEndpoint(StrEnum):
     DEVICE_RECALL = "device/recall"
     DEVICE_EVENT = "device/event"
     DEVICE_CLASSIFICATION = "device/classification"
+    DEVICE_UDI = "device/udi"
     FOOD_ENFORCEMENT = "food/enforcement"
     FOOD_EVENT = "food/event"
     OTHER_NSDE = "other/nsde"
@@ -161,6 +162,26 @@ class DeviceClassificationRaw(TypedDict, total=False):
     openfda: dict[str, Any]
 
 
+class DeviceEventRaw(TypedDict, total=False):
+    report_number: str
+    event_type: str
+    date_received: str
+    date_of_event: str
+    manufacturer_name: str
+    device: list[dict[str, Any]]
+    patient: list[dict[str, Any]]
+    product_problems: list[str]
+
+
+class DeviceUDIRaw(TypedDict, total=False):
+    public_device_record_key: str
+    brand_name: str
+    company_name: str
+    device_description: str
+    version_or_model_number: str
+    identifiers: list[dict[str, Any]]
+
+
 class CountResultRaw(TypedDict, total=False):
     term: str | int
     count: int
@@ -241,6 +262,25 @@ class DeviceClassification:
 
 
 @dataclass(frozen=True, slots=True)
+class DeviceEvent:
+    report_number: str
+    event_type: str
+    date_received: str
+    manufacturer_name: str
+    device_names: tuple[str, ...]
+    product_problems: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class DeviceUDI:
+    public_device_record_key: str
+    brand_name: str
+    company_name: str
+    device_description: str
+    version_or_model_number: str
+
+
+@dataclass(frozen=True, slots=True)
 class CountResult:
     term: str
     count: int
@@ -258,6 +298,8 @@ class FDAResponse:
     enforcements: tuple[Enforcement, ...] = ()
     count_results: tuple[CountResult, ...] = ()
     classifications: tuple[DeviceClassification, ...] = ()
+    device_events: tuple[DeviceEvent, ...] = ()
+    device_udis: tuple[DeviceUDI, ...] = ()
     total: int = 0
     cached: bool = False
     cache_age_seconds: float = 0.0
@@ -383,6 +425,44 @@ def _parse_count_result(raw: dict[str, Any]) -> CountResult:
     )
 
 
+def _parse_device_event(raw: dict[str, Any]) -> DeviceEvent:
+    devices_raw: list[dict[str, Any]] = raw.get("device", [])
+    device_names: list[str] = []
+    for d in devices_raw:
+        openfda: dict[str, Any] = d.get("openfda", {})
+        brand: list[str] = openfda.get("device_name", []) or openfda.get("brand_name", [])
+        if brand:
+            device_names.append(str(brand[0]))
+        else:
+            generic = d.get("generic_name") or d.get("brand_name")
+            if generic:
+                device_names.append(str(generic))
+
+    problems_raw: object = raw.get("product_problems", [])
+    problems: list[str] = (
+        [str(p) for p in cast(list[Any], problems_raw)] if isinstance(problems_raw, list) else []
+    )
+
+    return DeviceEvent(
+        report_number=str(raw.get("report_number", "")),
+        event_type=str(raw.get("event_type", "")),
+        date_received=str(raw.get("date_received", "")),
+        manufacturer_name=str(raw.get("manufacturer_name", "")),
+        device_names=tuple(device_names),
+        product_problems=tuple(problems),
+    )
+
+
+def _parse_device_udi(raw: dict[str, Any]) -> DeviceUDI:
+    return DeviceUDI(
+        public_device_record_key=str(raw.get("public_device_record_key", "")),
+        brand_name=str(raw.get("brand_name", "")),
+        company_name=str(raw.get("company_name", "")),
+        device_description=str(raw.get("device_description", "")),
+        version_or_model_number=str(raw.get("version_or_model_number", "")),
+    )
+
+
 def _parse_response(
     data: list[dict[str, Any]],
     total: int,
@@ -397,6 +477,8 @@ def _parse_response(
     enforcements: tuple[Enforcement, ...] = ()
     count_results: tuple[CountResult, ...] = ()
     classifications: tuple[DeviceClassification, ...] = ()
+    device_events: tuple[DeviceEvent, ...] = ()
+    device_udis: tuple[DeviceUDI, ...] = ()
 
     if kind == "drug_event":
         drug_events = tuple(_parse_drug_event(r) for r in data)
@@ -410,6 +492,10 @@ def _parse_response(
         enforcements = tuple(_parse_enforcement(r) for r in data)
     elif kind == "device_classification":
         classifications = tuple(_parse_device_classification(r) for r in data)
+    elif kind == "device_event":
+        device_events = tuple(_parse_device_event(r) for r in data)
+    elif kind == "device_udi":
+        device_udis = tuple(_parse_device_udi(r) for r in data)
     elif kind == "count":
         count_results = tuple(_parse_count_result(r) for r in data)
 
@@ -422,6 +508,8 @@ def _parse_response(
         enforcements=enforcements,
         count_results=count_results,
         classifications=classifications,
+        device_events=device_events,
+        device_udis=device_udis,
         total=total,
     )
 
@@ -496,7 +584,8 @@ def _endpoint_kind(endpoint: FDAEndpoint) -> str:
         FDAEndpoint.DEVICE_510K: "device_510k",
         FDAEndpoint.DEVICE_PMA: "device_pma",
         FDAEndpoint.DEVICE_RECALL: "device_recall",
-        FDAEndpoint.DEVICE_EVENT: "drug_event",
+        FDAEndpoint.DEVICE_EVENT: "device_event",
+        FDAEndpoint.DEVICE_UDI: "device_udi",
         FDAEndpoint.DEVICE_CLASSIFICATION: "device_classification",
         FDAEndpoint.FOOD_ENFORCEMENT: "food_enforcement",
         FDAEndpoint.FOOD_EVENT: "drug_event",
@@ -890,7 +979,10 @@ class OpenFDAClient:
         end_date: str | None = None,
         limit: int = 10,
     ) -> FDAResponse:
-        """Search for medical device adverse event reports.
+        """Search for medical device adverse event (MAUDE) reports.
+
+        Results populate ``FDAResponse.device_events`` with the correct
+        device-event schema (NOT drug_event — that was a prior mis-parse).
 
         Args:
             device_name: Device brand name or generic name.
@@ -911,7 +1003,33 @@ class OpenFDAClient:
         params: dict[str, str] = {"limit": str(min(limit, 1000))}
         if query:
             params["search"] = query
-        return self._request(FDAEndpoint.DEVICE_EVENT, params, kind="drug_event")
+        return self._request(FDAEndpoint.DEVICE_EVENT, params, kind="device_event")
+
+    def get_device_events_typed(
+        self,
+        device_name: str | None = None,
+        manufacturer: str | None = None,
+        limit: int = 10,
+    ) -> FDAResponse:
+        """Search device adverse events, optionally by manufacturer.
+
+        A thin convenience wrapper over the corrected device/event parse.
+
+        Args:
+            device_name: Device brand name search term.
+            manufacturer: Manufacturer name search term.
+            limit: Max results.
+        """
+        parts: list[str] = []
+        if device_name:
+            parts.append(f'device.brand_name:"{quote(device_name)}"')
+        if manufacturer:
+            parts.append(f'manufacturer_name:"{quote(manufacturer)}"')
+        query = "+AND+".join(parts) if parts else None
+        params: dict[str, str] = {"limit": str(min(limit, 1000))}
+        if query:
+            params["search"] = query
+        return self._request(FDAEndpoint.DEVICE_EVENT, params, kind="device_event")
 
     # ── device classifications ───────────────────────────────────
 
@@ -940,6 +1058,100 @@ class OpenFDAClient:
         return self._request(
             FDAEndpoint.DEVICE_CLASSIFICATION, params, kind="device_classification"
         )
+
+    # ── device UDI (GUDID) ───────────────────────────────────────
+
+    def get_device_udi(
+        self,
+        brand_name: str | None = None,
+        company_name: str | None = None,
+        limit: int = 10,
+    ) -> FDAResponse:
+        """Search the Global UDI Database (GUDID) for device records.
+
+        Args:
+            brand_name: Device brand name search term.
+            company_name: Labeler/company name search term.
+            limit: Max results.
+        """
+        parts: list[str] = []
+        if brand_name:
+            parts.append(f'brand_name:"{quote(brand_name)}"')
+        if company_name:
+            parts.append(f'company_name:"{quote(company_name)}"')
+        query = "+AND+".join(parts) if parts else None
+        params: dict[str, str] = {"limit": str(min(limit, 1000))}
+        if query:
+            params["search"] = query
+        return self._request(FDAEndpoint.DEVICE_UDI, params, kind="device_udi")
+
+    def get_udi_count(self, company_name: str | None = None) -> FDAResponse:
+        """Count GUDID device records by company (market supply of devices).
+
+        Args:
+            company_name: Optional labeler/company filter.
+        """
+        params: dict[str, str] = {"count": "company_name.exact"}
+        if company_name:
+            params["search"] = f'company_name:"{quote(company_name)}"'
+        return self._request(FDAEndpoint.DEVICE_UDI, params, kind="count")
+
+    # ── aggregate count helpers ──────────────────────────────────
+
+    def get_clearance_count_by_year(self) -> FDAResponse:
+        """Count 510(k) clearances grouped by decision year (device throughput)."""
+        params: dict[str, str] = {"count": "decision_date"}
+        return self._request(FDAEndpoint.DEVICE_510K, params, kind="count")
+
+    def get_approval_count_by_year(self) -> FDAResponse:
+        """Count PMA approvals grouped by decision year."""
+        params: dict[str, str] = {"count": "decision_date"}
+        return self._request(FDAEndpoint.DEVICE_PMA, params, kind="count")
+
+    def get_ndc_count(self) -> FDAResponse:
+        """Count NDC drug products by route (size of the US drug catalog)."""
+        params: dict[str, str] = {"count": "route.exact"}
+        return self._request(FDAEndpoint.DRUG_NDC, params, kind="count")
+
+    def get_clearances_by_applicant(self, limit: int = 100) -> FDAResponse:
+        """Count 510(k) clearances grouped by applicant (vendor concentration).
+
+        Args:
+            limit: Number of top applicants to return.
+        """
+        params: dict[str, str] = {"count": "applicant.exact"}
+        resp = self._request(FDAEndpoint.DEVICE_510K, params, kind="count")
+        return replace(resp, count_results=resp.count_results[:limit])
+
+    def get_510k_count_by_product_code(self, limit: int = 100) -> FDAResponse:
+        """Count 510(k) clearances grouped by product code (device category mix).
+
+        Args:
+            limit: Number of top product codes to return.
+        """
+        params: dict[str, str] = {"count": "product_code.exact"}
+        resp = self._request(FDAEndpoint.DEVICE_510K, params, kind="count")
+        return replace(resp, count_results=resp.count_results[:limit])
+
+    def get_events_by_manufacturer(self, limit: int = 100) -> FDAResponse:
+        """Count device adverse events grouped by manufacturer.
+
+        Args:
+            limit: Number of top manufacturers to return.
+        """
+        params: dict[str, str] = {"count": "manufacturer_name.exact"}
+        resp = self._request(FDAEndpoint.DEVICE_EVENT, params, kind="count")
+        return replace(resp, count_results=resp.count_results[:limit])
+
+    def get_drug_recall_count_by_class(self) -> FDAResponse:
+        """Count drug recalls grouped by recall classification severity."""
+        params: dict[str, str] = {"count": "classification.exact"}
+        return self._request(FDAEndpoint.DRUG_ENFORCEMENT, params, kind="count")
+
+    def get_label_count_by_route(self) -> FDAResponse:
+        """Count drug labels grouped by administration route."""
+        params: dict[str, str] = {"count": "openfda.route.exact"}
+        return self._request(FDAEndpoint.DRUG_LABEL, params, kind="count")
 
     # ── food recalls / events ────────────────────────────────────
 
@@ -1244,6 +1456,78 @@ def capabilities() -> list[CapabilitySpec]:
             args=[
                 CapabilityArg(name="year", type="int", description="Calendar year", example="2023"),
             ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="openfda",
+            method="get_clearance_count_by_year",
+            description="510(k) device clearances counted by decision year (device throughput).",
+            returns="atomic primitive list, unit=count clearances, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="openfda",
+            method="get_approval_count_by_year",
+            description="PMA device approvals counted by decision year.",
+            returns="atomic primitive list, unit=count approvals, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="openfda",
+            method="get_ndc_count",
+            description="Count of NDC drug products by route (size of the US drug catalog).",
+            returns="atomic primitive list, unit=count products, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="openfda",
+            method="get_udi_count",
+            description="Count of GUDID device records by company (device market supply).",
+            returns="atomic primitive list, unit=count devices, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="openfda",
+            method="get_clearances_by_applicant",
+            description="510(k) clearances grouped by applicant (vendor concentration).",
+            returns="atomic primitive list, unit=count clearances, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="openfda",
+            method="get_510k_count_by_product_code",
+            description="510(k) clearances grouped by product code (device category mix).",
+            returns="atomic primitive list, unit=count clearances, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="openfda",
+            method="get_events_by_manufacturer",
+            description="Device adverse events grouped by manufacturer.",
+            returns="atomic primitive list, unit=count events, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="openfda",
+            method="get_drug_recall_count_by_class",
+            description="Drug recalls grouped by recall-classification severity.",
+            returns="atomic primitive list, unit=count recalls, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="openfda",
+            method="get_label_count_by_route",
+            description="Drug labels grouped by administration route.",
+            returns="atomic primitive list, unit=count labels, tier=regulator",
+            args=[],
             source_tier="regulator",
         ),
     ]

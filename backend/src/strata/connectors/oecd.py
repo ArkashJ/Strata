@@ -95,6 +95,19 @@ class OECDDataflow(StrEnum):
     FDI = "OECD.SDD.TPS,DSD_FDI@DF_FDI_MAIN"
     UNEMPLOYMENT = "OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_RATES"
     POPULATION = "OECD.ELS.SAE,DSD_POPULATION@DF_POP_HIST"
+    # Gross value added by NACE activity (National Accounts, NAMAIN10 family).
+    VALUE_ADDED = "OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE6"
+    # Household final consumption by COICOP purpose (NAMAIN1, table 5).
+    HOUSEHOLD_CONSUMPTION = "OECD.SDD.NAD,DSD_NAMAIN1@DF_TABLE5"
+    # Employment by NACE activity (National Accounts, NAMAIN10 employment table).
+    EMPLOYMENT_BY_SECTOR = "OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE3"
+    # ICT access & use by businesses / households (Going Digital, ICT_HH_IND).
+    ICT_BUSINESS = "OECD.STI.DEP,DSD_ICT_BUS@DF_BUS_ICT"
+    ICT_HOUSEHOLD = "OECD.STI.DEP,DSD_ICT_HH@DF_HH_ICT"
+    # Structural business statistics — business demography (TIMELY_BDS family).
+    BUSINESS_DEMOGRAPHY = "OECD.SDD.TPS,DSD_BDS@DF_BDS"
+    # Patents (Intellectual Property statistics, PATS_IPC family).
+    PATENTS = "OECD.STI.PIE,DSD_PATS_IPC@DF_PATS_IPC"
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -177,6 +190,19 @@ class OECDSeriesInfo:
     name: str
     description: str
     agency: str
+
+
+@dataclass(frozen=True, slots=True)
+class OECDBusinessStat:
+    """A business-demography / structural-business statistic data point."""
+
+    country: str
+    activity: str
+    indicator: str
+    time_period: str
+    value: float | None
+    unit_measure: str
+    dataflow_id: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -529,9 +555,11 @@ class OECDClient:
         cache_dir: Path | None = None,
         cache_ttl: int = 604800,
         timeout: float = 60.0,
+        transport: httpx.BaseTransport | None = None,
     ) -> None:
         self._http = httpx.Client(
             timeout=timeout,
+            transport=transport,
             headers={
                 "Accept": "application/json",
                 "User-Agent": "strata-connector/0.2",
@@ -947,6 +975,184 @@ class OECDClient:
             end_period=end_period,
         )
 
+    # ── national accounts: value added / consumption / employment ─
+
+    def get_value_added_by_sector(
+        self,
+        ref_area: str | OECDCountry = OECDCountry.USA,
+        activity: str = "_T",
+        year: int | None = None,
+        frequency: str | OECDFrequency = OECDFrequency.ANNUAL,
+    ) -> OECDResponse:
+        """Gross value added by NACE activity (NAMAIN10).
+
+        Args:
+            ref_area: ISO-3 country code.
+            activity: NACE Rev.2 activity code (``_T`` = total economy,
+                ``D`` = manufacturing, ``J`` = information & communication).
+            year: Single year to filter (sets start/end period).
+            frequency: A / Q.
+
+        Note: NAMAIN10 is a wide National-Accounts cube. The key below
+            pins REF_AREA + FREQ + ACTIVITY and wildcards the remaining
+            dimensions; callers needing a specific transaction/measure
+            should use ``get_indicator_raw`` with a fully-specified key.
+        """
+        # TODO(dataflow-key): NAMAIN10 dimension order/measure codes not
+        # verified against list_dataflows(); wildcard tail covers them.
+        key = f"{ref_area}.{frequency}..{activity}"
+        period = str(year) if year is not None else None
+        return self._request_data(
+            str(OECDDataflow.VALUE_ADDED), key, start_period=period, end_period=period
+        )
+
+    def get_household_consumption(
+        self,
+        ref_area: str | OECDCountry = OECDCountry.USA,
+        coicop: str = "_T",
+        year: int | None = None,
+        frequency: str | OECDFrequency = OECDFrequency.ANNUAL,
+    ) -> OECDResponse:
+        """Household final consumption by COICOP purpose (NAMAIN1, table 5).
+
+        Args:
+            ref_area: ISO-3 country code.
+            coicop: COICOP purpose code (``_T`` = total).
+            year: Single year filter.
+            frequency: A / Q.
+        """
+        # TODO(dataflow-key): NAMAIN1 table-5 COICOP dimension position not
+        # verified; wildcard tail covers any extra dimensions.
+        key = f"{ref_area}.{frequency}..{coicop}"
+        period = str(year) if year is not None else None
+        return self._request_data(
+            str(OECDDataflow.HOUSEHOLD_CONSUMPTION), key, start_period=period, end_period=period
+        )
+
+    def get_employment_by_sector(
+        self,
+        activity: str = "_T",
+        ref_area: str | OECDCountry = OECDCountry.USA,
+        year: int | None = None,
+        frequency: str | OECDFrequency = OECDFrequency.ANNUAL,
+    ) -> OECDResponse:
+        """Employment by NACE activity (NAMAIN10 employment table).
+
+        Args:
+            activity: NACE Rev.2 activity code (``_T`` = total economy).
+            ref_area: ISO-3 country code.
+            year: Single year filter.
+            frequency: A / Q.
+        """
+        # TODO(dataflow-key): NAMAIN10 employment-table measure code not
+        # verified against list_dataflows().
+        key = f"{ref_area}.{frequency}..{activity}"
+        period = str(year) if year is not None else None
+        return self._request_data(
+            str(OECDDataflow.EMPLOYMENT_BY_SECTOR), key, start_period=period, end_period=period
+        )
+
+    # ── digital economy: ICT adoption ─────────────────────────────
+
+    def get_ict_business_adoption(
+        self,
+        indicator: str = "_T",
+        ref_area: str | OECDCountry = OECDCountry.USA,
+        year: int | None = None,
+    ) -> OECDResponse:
+        """ICT access and use by businesses (Going Digital, ICT_BUS).
+
+        Args:
+            indicator: ICT indicator code (e.g. cloud/e-commerce use).
+            ref_area: ISO-3 country code.
+            year: Single year filter.
+        """
+        # TODO(dataflow-key): ICT_BUS indicator dimension codes not verified.
+        key = f"{ref_area}.{OECDFrequency.ANNUAL}.{indicator}"
+        period = str(year) if year is not None else None
+        return self._request_data(
+            str(OECDDataflow.ICT_BUSINESS), key, start_period=period, end_period=period
+        )
+
+    def get_ict_household_adoption(
+        self,
+        indicator: str = "_T",
+        ref_area: str | OECDCountry = OECDCountry.USA,
+        year: int | None = None,
+    ) -> OECDResponse:
+        """ICT access and use by households / individuals (ICT_HH).
+
+        Args:
+            indicator: ICT indicator code (e.g. internet use, online purchases).
+            ref_area: ISO-3 country code.
+            year: Single year filter.
+        """
+        # TODO(dataflow-key): ICT_HH indicator dimension codes not verified.
+        key = f"{ref_area}.{OECDFrequency.ANNUAL}.{indicator}"
+        period = str(year) if year is not None else None
+        return self._request_data(
+            str(OECDDataflow.ICT_HOUSEHOLD), key, start_period=period, end_period=period
+        )
+
+    # ── structural business statistics ────────────────────────────
+
+    def get_business_demography(
+        self,
+        ref_area: str | OECDCountry = OECDCountry.USA,
+        activity: str = "_T",
+        indicator: str = "_T",
+        year: int | None = None,
+    ) -> tuple[OECDBusinessStat, ...]:
+        """Business demography (births / deaths / active enterprises).
+
+        Returns ``OECDBusinessStat`` tuples (richer than plain observations
+        — carries activity + indicator). Underlying dataflow: BDS.
+
+        Args:
+            ref_area: ISO-3 country code.
+            activity: NACE Rev.2 activity code.
+            indicator: Business-demography indicator code.
+            year: Single year filter.
+        """
+        # TODO(dataflow-key): BDS dimension order not verified.
+        key = f"{ref_area}.{OECDFrequency.ANNUAL}.{indicator}.{activity}"
+        period = str(year) if year is not None else None
+        resp = self._request_data(
+            str(OECDDataflow.BUSINESS_DEMOGRAPHY), key, start_period=period, end_period=period
+        )
+        return tuple(
+            OECDBusinessStat(
+                country=o.country,
+                activity=activity,
+                indicator=indicator,
+                time_period=o.time_period,
+                value=o.value,
+                unit_measure=o.unit_measure,
+                dataflow_id=o.dataflow_id,
+            )
+            for o in resp.observations
+        )
+
+    def get_patents(
+        self,
+        ref_area: str | OECDCountry = OECDCountry.USA,
+        ipc_class: str = "_T",
+        year: int | None = None,
+    ) -> OECDResponse:
+        """Patent counts by IPC technology class (PATS_IPC).
+
+        Args:
+            ref_area: ISO-3 country code.
+            ipc_class: IPC technology class code (``_T`` = all classes).
+            year: Single year filter.
+        """
+        # TODO(dataflow-key): PATS_IPC dimension order not verified.
+        key = f"{ref_area}.{OECDFrequency.ANNUAL}.{ipc_class}"
+        period = str(year) if year is not None else None
+        return self._request_data(
+            str(OECDDataflow.PATENTS), key, start_period=period, end_period=period
+        )
+
     # ── multi-country ────────────────────────────────────────────
 
     def get_multi_country(
@@ -1237,6 +1443,127 @@ def capabilities() -> list[CapabilitySpec]:
                     example="USA",
                 ),
                 CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="oecd",
+            method="get_value_added_by_sector",
+            description="OECD gross value added by NACE sector (NAMAIN10).",
+            returns="atomic primitive, unit=currency, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="ref_area", type="str", description="ISO-3 country code", example="USA"
+                ),
+                CapabilityArg(
+                    name="activity",
+                    type="str",
+                    description="NACE Rev.2 activity code",
+                    example="D",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="oecd",
+            method="get_household_consumption",
+            description="OECD household final consumption by COICOP purpose (NAMAIN1).",
+            returns="atomic primitive, unit=currency, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="ref_area", type="str", description="ISO-3 country code", example="USA"
+                ),
+                CapabilityArg(
+                    name="coicop", type="str", description="COICOP purpose code", example="_T"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="oecd",
+            method="get_employment_by_sector",
+            description="OECD employment by NACE sector (NAMAIN10).",
+            returns="atomic primitive, unit=count people, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="activity",
+                    type="str",
+                    description="NACE Rev.2 activity code",
+                    example="J",
+                ),
+                CapabilityArg(
+                    name="ref_area", type="str", description="ISO-3 country code", example="USA"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="oecd",
+            method="get_ict_business_adoption",
+            description="OECD ICT access and use by businesses (Going Digital).",
+            returns="atomic primitive, unit=dimensionless percent, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="indicator", type="str", description="ICT indicator code", example="_T"
+                ),
+                CapabilityArg(
+                    name="ref_area", type="str", description="ISO-3 country code", example="USA"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="oecd",
+            method="get_ict_household_adoption",
+            description="OECD ICT access and use by households / individuals.",
+            returns="atomic primitive, unit=dimensionless percent, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="indicator", type="str", description="ICT indicator code", example="_T"
+                ),
+                CapabilityArg(
+                    name="ref_area", type="str", description="ISO-3 country code", example="USA"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="oecd",
+            method="get_business_demography",
+            description="OECD business demography (enterprise births/deaths/active).",
+            returns="OECDBusinessStat tuples, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="ref_area", type="str", description="ISO-3 country code", example="USA"
+                ),
+                CapabilityArg(
+                    name="activity",
+                    type="str",
+                    description="NACE Rev.2 activity code",
+                    example="_T",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2021"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="oecd",
+            method="get_patents",
+            description="OECD patent counts by IPC technology class.",
+            returns="atomic primitive, unit=count, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="ref_area", type="str", description="ISO-3 country code", example="USA"
+                ),
+                CapabilityArg(
+                    name="ipc_class", type="str", description="IPC class code", example="_T"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2021"),
             ],
             source_tier="aggregator",
         ),

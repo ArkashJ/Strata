@@ -593,6 +593,195 @@ class BLSClient:
             raise BLSClientError("No series IDs provided")
         return replace(last_resp, series=tuple(all_series))
 
+    # ── Typed series-ID builders ─────────────────────────────────
+    #
+    # Each helper assembles a cryptic BLS series ID from its components
+    # and delegates to the existing get_series path. Series-ID layouts
+    # follow the per-survey format docs on bls.gov.
+
+    def get_oes_employment(
+        self,
+        occ_code: str,
+        area: str = "0000000",
+        *,
+        datatype: str = "01",
+    ) -> BLSResponse:
+        """OES (OEWS) occupational employment & wages by SOC / area.
+
+        Series layout ``OE`` + seasonal ``U`` + area (7) + industry (6,
+        ``000000`` = cross-industry) + occupation (6) + datatype (2).
+
+        Args:
+            occ_code: 6-digit SOC code without the hyphen (e.g. "151252").
+            area: 7-digit OES area code ("0000000" = national).
+            datatype: "01"=employment, "04"=annual mean wage, "13"=median.
+        """
+        occ = occ_code.replace("-", "").zfill(6)
+        series_id = f"OEU{area.zfill(7)}000000{occ}{datatype.zfill(2)}"
+        return self.get_series(series_id)
+
+    def get_qcew_by_naics(
+        self,
+        naics: str,
+        area: str = "US000",
+        owner: str = "0",
+        *,
+        datatype: str = "1",
+        size: str = "0",
+    ) -> BLSResponse:
+        """QCEW establishments / employment / wages by NAICS & area.
+
+        Series layout ``EN`` + seasonal ``U`` + area (5) + datatype (1) +
+        size (1) + ownership (1) + industry (NAICS, variable).
+
+        Args:
+            naics: NAICS industry code (e.g. "5415").
+            area: 5-char QCEW area code ("US000" = national).
+            owner: ownership code ("0"=total, "5"=private).
+            datatype: "1"=establishments, "4"=employment, "5"=total wages.
+            size: establishment-size code ("0"=all sizes).
+        """
+        series_id = f"ENU{area}{datatype}{size}{owner}{naics}"
+        return self.get_series(series_id)
+
+    def get_jolts(
+        self,
+        element: str,
+        industry: str = "000000",
+        region: str = "00",
+        *,
+        ratelevel: str = "L",
+        seasonal: str = "S",
+    ) -> BLSResponse:
+        """JOLTS job openings / hires / separations.
+
+        Series layout ``JT`` + seasonal + industry (6) + state (2) +
+        area (5) + sizeclass (2) + dataelement (2) + ratelevel (1).
+
+        Args:
+            element: data element ("JO"=openings, "HI"=hires, "TS"=total
+                separations, "QU"=quits, "LD"=layoffs & discharges).
+            industry: 6-digit JOLTS industry code ("000000" = total).
+            region: 2-digit region/state code ("00" = total US).
+            ratelevel: "L"=level, "R"=rate.
+            seasonal: "S"=seasonally adjusted, "U"=not adjusted.
+        """
+        series_id = f"JT{seasonal}{industry}{region}0000000{element}{ratelevel}"
+        return self.get_series(series_id)
+
+    def get_cpi(
+        self,
+        item: str = "SA0",
+        area: str = "0000",
+        *,
+        seasonal: str = "U",
+        periodicity: str = "R",
+        base: str = "CU",
+    ) -> BLSResponse:
+        """CPI price index for an item & area.
+
+        Series layout survey (``CU``/``CW``) + seasonal + periodicity +
+        area (4) + item.
+
+        Args:
+            item: CPI item code ("SA0"=all items, "SAF1"=food, "SETB01"=gasoline).
+            area: 4-digit CPI area code ("0000" = US city average).
+            seasonal: "U"=not adjusted, "S"=seasonally adjusted.
+            periodicity: "R"=monthly, "S"=semiannual.
+            base: "CU"=all urban (CPI-U), "CW"=urban wage earners (CPI-W).
+        """
+        series_id = f"{base}{seasonal}{periodicity}{area}{item}"
+        return self.get_series(series_id)
+
+    def get_ces_employment(
+        self,
+        industry: str = "00000000",
+        datatype: str = "01",
+        *,
+        seasonal: str = "S",
+    ) -> BLSResponse:
+        """CES (Current Employment Statistics) national employment / earnings.
+
+        Series layout ``CE`` + seasonal + supersector+industry (8) + datatype (2).
+
+        Args:
+            industry: 8-digit CES industry code ("00000000" = total nonfarm).
+            datatype: "01"=all employees (thousands), "03"=avg hourly earnings,
+                "11"=avg weekly hours.
+            seasonal: "S"=seasonally adjusted, "U"=not adjusted.
+        """
+        series_id = f"CE{seasonal}{industry.zfill(8)}{datatype.zfill(2)}"
+        return self.get_series(series_id)
+
+    def get_laus(
+        self,
+        area: str,
+        measure: str = "03",
+        *,
+        seasonal: str = "S",
+    ) -> BLSResponse:
+        """LAUS (Local Area Unemployment Statistics) for an area.
+
+        Series layout ``LA`` + seasonal + area (15) + measure (2).
+
+        Args:
+            area: 15-char LAUS area code (e.g. "ST0600000000000" = California).
+            measure: "03"=unemployment rate, "04"=unemployment, "05"=employment,
+                "06"=labor force.
+            seasonal: "S"=seasonally adjusted, "U"=not adjusted.
+        """
+        series_id = f"LA{seasonal}{area}{measure.zfill(2)}"
+        return self.get_series(series_id)
+
+    def get_eci(
+        self,
+        occupation: str = "000000",
+        ownership: str = "1",
+        *,
+        seasonal: str = "S",
+        periodicity: str = "I",
+        estimate: str = "000000",
+        subcell: str = "00",
+    ) -> BLSResponse:
+        """ECI (Employment Cost Index) compensation cost trends.
+
+        Series layout ``CI`` + seasonal + periodicity + ownership (1) +
+        industry/occupation (6) + estimate (6) + subcell (2).
+
+        Args:
+            occupation: 6-digit ECI group code ("000000" = all workers).
+            ownership: "1"=civilian, "2"=private, "3"=state & local gov.
+            seasonal: "S"=seasonally adjusted, "U"=not adjusted.
+            periodicity: "I"=index, "Q"=3-month pct change, "P"=12-month pct.
+            estimate: 6-digit estimate code ("000000" = total compensation).
+            subcell: 2-digit subcell ("00" = all).
+        """
+        series_id = (
+            f"CI{seasonal}{periodicity}{ownership}{occupation.zfill(6)}"
+            f"{estimate.zfill(6)}{subcell.zfill(2)}"
+        )
+        return self.get_series(series_id)
+
+    def get_ppi(
+        self,
+        industry: str,
+        product: str = "",
+        *,
+        seasonal: str = "S",
+    ) -> BLSResponse:
+        """PPI (Producer Price Index) by industry / product.
+
+        Series layout ``PC`` + seasonal + industry (NAICS-based) + product.
+
+        Args:
+            industry: PPI industry code (e.g. "5112" software publishers).
+            product: product code appended after the industry (often the
+                industry code itself for the index, e.g. "5112").
+            seasonal: "S"=seasonally adjusted, "U"=not adjusted.
+        """
+        series_id = f"PC{seasonal}{industry}{product or industry}"
+        return self.get_series(series_id)
+
     # ── Cache management ─────────────────────────────────────────
 
     def clear_cache(self) -> int:
@@ -769,6 +958,201 @@ def capabilities() -> list[CapabilitySpec]:
                     type="str",
                     description="BLS series ID",
                     example="CUUR0000SA0",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="bls",
+            method="get_oes_employment",
+            description=(
+                "OEWS occupational employment and wages by SOC occupation and area. "
+                "Use for headcount/wage-per-persona sizing inputs."
+            ),
+            returns="atomic primitive, unit=people or USD wage, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="occ_code",
+                    type="str",
+                    description="6-digit SOC occupation code",
+                    example="151252",
+                ),
+                CapabilityArg(
+                    name="area",
+                    type="str",
+                    description="7-digit OEWS area code ('0000000'=national)",
+                    example="0000000",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="bls",
+            method="get_qcew_by_naics",
+            description=(
+                "QCEW establishments, employment, and total wages by NAICS industry and area."
+            ),
+            returns="atomic primitive, unit=organizations/people/USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="naics", type="str", description="NAICS industry code", example="5415"
+                ),
+                CapabilityArg(
+                    name="area",
+                    type="str",
+                    description="5-char QCEW area code ('US000'=national)",
+                    example="US000",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="owner",
+                    type="str",
+                    description="Ownership code ('0'=total, '5'=private)",
+                    example="0",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="bls",
+            method="get_jolts",
+            description="JOLTS job openings, hires, and separations by industry and region.",
+            returns="atomic primitive, unit=jobs (level) or rate, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="element",
+                    type="str",
+                    description="Data element (JO=openings, HI=hires, TS=separations)",
+                    example="JO",
+                ),
+                CapabilityArg(
+                    name="industry",
+                    type="str",
+                    description="6-digit JOLTS industry code ('000000'=total)",
+                    example="000000",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="region",
+                    type="str",
+                    description="2-digit region code ('00'=total US)",
+                    example="00",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="bls",
+            method="get_cpi",
+            description="CPI price index for a consumption item and area (CPI-U / CPI-W).",
+            returns="atomic primitive, unit=index, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="item",
+                    type="str",
+                    description="CPI item code ('SA0'=all items)",
+                    example="SA0",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="area",
+                    type="str",
+                    description="4-digit CPI area code ('0000'=US city avg)",
+                    example="0000",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="bls",
+            method="get_ces_employment",
+            description="CES national employment, hours, and earnings by industry.",
+            returns="atomic primitive, unit=people/USD/hours, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="industry",
+                    type="str",
+                    description="8-digit CES industry code ('00000000'=total nonfarm)",
+                    example="00000000",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="datatype",
+                    type="str",
+                    description="Data type ('01'=all employees, '03'=avg hourly earnings)",
+                    example="01",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="bls",
+            method="get_laus",
+            description="Local Area Unemployment Statistics (rate, level, labor force) for an area.",
+            returns="atomic primitive, unit=people or rate, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="area",
+                    type="str",
+                    description="15-char LAUS area code",
+                    example="ST0600000000000",
+                ),
+                CapabilityArg(
+                    name="measure",
+                    type="str",
+                    description="Measure code ('03'=unemployment rate, '06'=labor force)",
+                    example="03",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="bls",
+            method="get_eci",
+            description="Employment Cost Index — compensation cost trends by occupation/ownership.",
+            returns="atomic primitive, unit=index, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="occupation",
+                    type="str",
+                    description="6-digit ECI group code ('000000'=all workers)",
+                    example="000000",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="ownership",
+                    type="str",
+                    description="Ownership ('1'=civilian, '2'=private)",
+                    example="1",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="bls",
+            method="get_ppi",
+            description="Producer Price Index by industry/product.",
+            returns="atomic primitive, unit=index, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="industry",
+                    type="str",
+                    description="PPI industry code",
+                    example="5112",
+                ),
+                CapabilityArg(
+                    name="product",
+                    type="str",
+                    description="Product code (defaults to industry code)",
+                    example="5112",
+                    required=False,
                 ),
             ],
             source_tier="regulator",

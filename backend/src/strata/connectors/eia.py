@@ -61,6 +61,10 @@ class EIARoute(StrEnum):
     INTERNATIONAL = "international"
     NUCLEAR = "nuclear-outages/us-nuclear-outages"
     RENEWABLE = "electricity/electric-power-operational-data"
+    GENERATOR_CAPACITY = "electricity/operating-generator-capacity"
+    CO2_EMISSIONS = "co2-emissions/co2-emissions-aggregates"
+    PETROLEUM_CONSUMPTION = "petroleum/cons/psup"
+    NATURAL_GAS_CONSUMPTION = "natural-gas/cons/sum"
 
 
 class EIAState(StrEnum):
@@ -1034,6 +1038,259 @@ class EIAClient:
             sort=[{"column": "period", "direction": "desc"}],
         )
 
+    # ── capacity / capital-stock endpoints ───────────────────────
+
+    def get_generator_capacity(
+        self,
+        fuel: str | None = None,
+        state: str | None = None,
+        status: str | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        frequency: str = "monthly",
+    ) -> EIAResponse:
+        """Operating generator nameplate capacity (megawatts).
+
+        Args:
+            fuel: Energy-source code (e.g. "SUN", "WND", "NG").
+            state: State (plant) code.
+            status: Plant status code (e.g. "OP"=operating, "P"=planned).
+            start: Start period (YYYY-MM).
+            end: End period.
+            frequency: Observation frequency.
+        """
+        facets: dict[str, str | list[str]] = {}
+        if fuel:
+            facets["energy_source_code"] = fuel
+        if state:
+            facets["stateid"] = state
+        if status:
+            facets["status"] = status
+        return self.get_data(
+            EIARoute.GENERATOR_CAPACITY,
+            data_fields=["nameplate-capacity-mw", "net-summer-capacity-mw"],
+            facets=facets if facets else None,
+            frequency=frequency,
+            start=start,
+            end=end,
+            sort=[{"column": "period", "direction": "desc"}],
+        )
+
+    def get_electricity_capacity_factor(
+        self,
+        plant_type: str | None = None,
+        state: str = "US",
+        start: str | None = None,
+        end: str | None = None,
+        frequency: str = "monthly",
+    ) -> EIAResponse:
+        """Electricity capacity factor by plant/fuel type.
+
+        Derived from the electric-power-operational-data route's
+        ``capacity-factor`` field.
+
+        Args:
+            plant_type: Fuel-type ID (e.g. "SUN", "WND", "NG", "NUC").
+            state: State code.
+            start: Start period.
+            end: End period.
+            frequency: Observation frequency.
+        """
+        facets: dict[str, str | list[str]] = {"location": state}
+        if plant_type:
+            facets["fueltypeid"] = plant_type
+        return self.get_data(
+            EIARoute.ELECTRICITY_GENERATION,
+            data_fields=["capacity-factor"],
+            facets=facets,
+            frequency=frequency,
+            start=start,
+            end=end,
+            sort=[{"column": "period", "direction": "desc"}],
+        )
+
+    # ── transportation / EV endpoints ────────────────────────────
+
+    def get_ev_sales_stock(
+        self,
+        metric: str = "stock",
+        region: str | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        frequency: str = "annual",
+    ) -> EIAResponse:
+        """Electric-vehicle sales or stock from the International route.
+
+        EV adoption data is published under the international energy route
+        with EV-specific product/activity facets.
+
+        Args:
+            metric: "stock" (vehicles on the road) or "sales" (new units).
+            region: Country/region code (e.g. "USA", "WORL").
+            start: Start period.
+            end: End period.
+            frequency: Observation frequency.
+        """
+        facets: dict[str, str | list[str]] = {"productId": "33"}
+        if region:
+            facets["countryRegionId"] = region
+        if metric.lower() == "sales":
+            facets["activityId"] = "10"
+        else:
+            facets["activityId"] = "33"
+        return self.get_data(
+            EIARoute.INTERNATIONAL,
+            data_fields=["value"],
+            facets=facets,
+            frequency=frequency,
+            start=start,
+            end=end,
+            sort=[{"column": "period", "direction": "desc"}],
+        )
+
+    # ── emissions endpoints ───────────────────────────────────────
+
+    def get_co2_emissions(
+        self,
+        sector: str | None = None,
+        fuel: str | None = None,
+        state: str | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        frequency: str = "annual",
+    ) -> EIAResponse:
+        """Energy-related CO2 emissions (million metric tons).
+
+        Args:
+            sector: Sector ID (e.g. "TT"=total, "EC"=electric power).
+            fuel: Fuel ID (e.g. "TO"=all fuels, "CO"=coal, "NG"=natural gas).
+            state: State code.
+            start: Start period.
+            end: End period.
+            frequency: Observation frequency.
+        """
+        facets: dict[str, str | list[str]] = {}
+        if sector:
+            facets["sectorId"] = sector
+        if fuel:
+            facets["fuelId"] = fuel
+        if state:
+            facets["stateId"] = state
+        return self.get_data(
+            EIARoute.CO2_EMISSIONS,
+            data_fields=["value"],
+            facets=facets if facets else None,
+            frequency=frequency,
+            start=start,
+            end=end,
+            sort=[{"column": "period", "direction": "desc"}],
+        )
+
+    # ── consumption endpoints ─────────────────────────────────────
+
+    def get_petroleum_consumption(
+        self,
+        product: str | None = None,
+        region: str | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        frequency: str = "monthly",
+    ) -> EIAResponse:
+        """Petroleum product supplied / consumption (thousand barrels per day).
+
+        Args:
+            product: Product code (e.g. "EPM0"=motor gasoline, "EPD2D"=diesel).
+            region: Region/PADD code (duoarea).
+            start: Start period.
+            end: End period.
+            frequency: Observation frequency.
+        """
+        facets: dict[str, str | list[str]] = {}
+        if product:
+            facets["product"] = product
+        if region:
+            facets["duoarea"] = region
+        return self.get_data(
+            EIARoute.PETROLEUM_CONSUMPTION,
+            data_fields=["value"],
+            facets=facets if facets else None,
+            frequency=frequency,
+            start=start,
+            end=end,
+            sort=[{"column": "period", "direction": "desc"}],
+        )
+
+    def get_natural_gas_consumption(
+        self,
+        end_use: str | None = None,
+        state: str | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        frequency: str = "monthly",
+    ) -> EIAResponse:
+        """Natural gas consumption by end use (million cubic feet).
+
+        Args:
+            end_use: Process/end-use code (e.g. "VRS"=residential,
+                "VCS"=commercial, "VIN"=industrial, "VEU"=electric power).
+            state: State code (duoarea).
+            start: Start period.
+            end: End period.
+            frequency: Observation frequency.
+        """
+        facets: dict[str, str | list[str]] = {}
+        if end_use:
+            facets["process"] = end_use
+        if state:
+            facets["duoarea"] = state
+        return self.get_data(
+            EIARoute.NATURAL_GAS_CONSUMPTION,
+            data_fields=["value"],
+            facets=facets if facets else None,
+            frequency=frequency,
+            start=start,
+            end=end,
+            sort=[{"column": "period", "direction": "desc"}],
+        )
+
+    # ── projection endpoints ──────────────────────────────────────
+
+    def get_aeo_projection(
+        self,
+        series_id: str | None = None,
+        scenario: str = "ref2023",
+        aeo_year: str = "2023",
+        start: str | None = None,
+        end: str | None = None,
+    ) -> EIAResponse:
+        """Annual Energy Outlook (AEO) long-term projection.
+
+        The AEO route is versioned by release year
+        (``aeo/{year}/data``) and filtered by a scenario case.
+
+        Args:
+            series_id: AEO series ID to filter on.
+            scenario: Case ID (e.g. "ref2023"=reference case).
+            aeo_year: AEO release year.
+            start: Start period.
+            end: End period.
+        """
+        facets: dict[str, str | list[str]] = {"scenario": scenario}
+        if series_id:
+            facets["seriesId"] = series_id
+        params: dict[str, str] = {
+            "length": "5000",
+            "data[]": "value",
+            "sort[0][column]": "period",
+            "sort[0][direction]": "desc",
+        }
+        params.update(self._build_facets(facets))
+        if start:
+            params["start"] = start
+        if end:
+            params["end"] = end
+        return self._request_data(f"aeo/{aeo_year}", params, kind="forecast")
+
     # ── cache management ─────────────────────────────────────────
 
     def clear_cache(self) -> int:
@@ -1233,6 +1490,233 @@ def capabilities() -> list[CapabilitySpec]:
                 ),
             ],
             source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_electricity_generation",
+            description="Electricity generation by fuel type (thousand MWh).",
+            returns="atomic primitive, unit=count MWh, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="state", type="str", description="US state code or 'US'", example="US"
+                ),
+                CapabilityArg(
+                    name="fuel_type",
+                    type="str",
+                    description="Fuel ID (SUN/WND/NG/COL)",
+                    example="SUN",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_generator_capacity",
+            description=(
+                "Operating generator nameplate / net-summer capacity in MW by fuel and state. "
+                "Energy capital-stock anchor."
+            ),
+            returns="atomic primitive, unit=power MW, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="fuel",
+                    type="str",
+                    description="Energy-source code (SUN/WND/NG)",
+                    example="SUN",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="state",
+                    type="str",
+                    description="Plant state code",
+                    example="CA",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_electricity_capacity_factor",
+            description="Electricity capacity factor by plant/fuel type.",
+            returns="atomic primitive, unit=ratio, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="plant_type",
+                    type="str",
+                    description="Fuel type ID (SUN/WND/NUC)",
+                    example="SUN",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="state",
+                    type="str",
+                    description="State code or 'US'",
+                    example="US",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_petroleum_prices",
+            description="Petroleum spot prices (USD per barrel).",
+            returns="atomic primitive, unit=USD per barrel, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="product",
+                    type="str",
+                    description="Product code (EPCBRENT/EPCWTI)",
+                    example="EPCWTI",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_petroleum_consumption",
+            description="Petroleum product supplied / consumption (thousand barrels/day).",
+            returns="atomic primitive, unit=barrels per day, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="product",
+                    type="str",
+                    description="Product code (EPM0=gasoline)",
+                    example="EPM0",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_natural_gas_prices",
+            description="Natural gas prices (USD per thousand cubic feet).",
+            returns="atomic primitive, unit=USD per mcf, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_natural_gas_consumption",
+            description="Natural gas consumption by end use (million cubic feet).",
+            returns="atomic primitive, unit=cubic feet, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="end_use",
+                    type="str",
+                    description="End-use code (VRS/VCS/VIN/VEU)",
+                    example="VEU",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_co2_emissions",
+            description="Energy-related CO2 emissions (million metric tons) by sector/fuel/state.",
+            returns="atomic primitive, unit=metric tons CO2, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="sector",
+                    type="str",
+                    description="Sector ID (TT=total, EC=electric)",
+                    example="TT",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="fuel",
+                    type="str",
+                    description="Fuel ID (TO=all, CO=coal)",
+                    example="TO",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_ev_sales_stock",
+            description="Electric-vehicle stock or sales by region (international route).",
+            returns="atomic primitive, unit=vehicles, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="metric",
+                    type="str",
+                    description="stock|sales",
+                    example="stock",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="region",
+                    type="str",
+                    description="Country/region code",
+                    example="USA",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_total_energy",
+            description="Monthly Energy Review series (total primary energy aggregates).",
+            returns="atomic primitive, unit varies (trillion Btu), tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="series_id",
+                    type="str",
+                    description="MSN code (ELETPUS)",
+                    example="ELETPUS",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_steo_forecast",
+            description="Short-Term Energy Outlook forecast series.",
+            returns="forecast point, unit varies, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="series_id",
+                    type="str",
+                    description="STEO series ID",
+                    example="PAPR_WORLD",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+            is_fragile=True,
+        ),
+        CapabilitySpec(
+            connector="eia",
+            method="get_aeo_projection",
+            description="Annual Energy Outlook long-term projection by scenario.",
+            returns="forecast point, unit varies, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="series_id",
+                    type="str",
+                    description="AEO series ID",
+                    example="cons_NA_elep",
+                    required=False,
+                ),
+                CapabilityArg(
+                    name="scenario",
+                    type="str",
+                    description="Case ID (ref2023)",
+                    example="ref2023",
+                    required=False,
+                ),
+            ],
+            source_tier="regulator",
+            is_fragile=True,
         ),
     ]
 

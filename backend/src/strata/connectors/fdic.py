@@ -258,6 +258,17 @@ class HistoryRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class DepositShareRecord:
+    cert: int
+    name: str
+    state: str
+    county: str
+    deposits: float | None
+    branch_count: int | None
+    year: int
+
+
+@dataclass(frozen=True, slots=True)
 class FDICResponse:
     """Standard return type for every FDIC client call."""
 
@@ -268,6 +279,7 @@ class FDICResponse:
     summaries: tuple[BankSummary, ...] = ()
     locations: tuple[LocationRecord, ...] = ()
     history: tuple[HistoryRecord, ...] = ()
+    deposit_shares: tuple[DepositShareRecord, ...] = ()
     total: int = 0
     cached: bool = False
     cache_age_seconds: float = 0.0
@@ -353,6 +365,19 @@ def _parse_history(raw: dict[str, Any]) -> HistoryRecord:
     )
 
 
+def _parse_deposit_share(raw: dict[str, Any]) -> DepositShareRecord:
+    data: dict[str, Any] = raw.get("data", raw)
+    return DepositShareRecord(
+        cert=_safe_int(data.get("CERT")) or 0,
+        name=str(data.get("NAMEFULL", data.get("INSTNAME", ""))),
+        state=str(data.get("STALPBR", data.get("STNAME", ""))),
+        county=str(data.get("CNTYNAMB", data.get("COUNTY", ""))),
+        deposits=_safe_float(data.get("DEPSUMBR", data.get("DEPDOM"))),
+        branch_count=_safe_int(data.get("BRNUM", data.get("BKMO"))),
+        year=_safe_int(data.get("YEAR")) or 0,
+    )
+
+
 def _extract_items(body: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
     """Extract data items and total count from an FDIC API response."""
     data_list: list[dict[str, Any]] = body.get("data", [])
@@ -371,6 +396,7 @@ def _parse_response(body: dict[str, Any], *, kind: str) -> FDICResponse:
     failures: tuple[FailureRecord, ...] = ()
     locations: tuple[LocationRecord, ...] = ()
     history: tuple[HistoryRecord, ...] = ()
+    deposit_shares: tuple[DepositShareRecord, ...] = ()
 
     if kind == "financials":
         financials = tuple(_parse_financial(i) for i in items)
@@ -382,6 +408,8 @@ def _parse_response(body: dict[str, Any], *, kind: str) -> FDICResponse:
         locations = tuple(_parse_location(i) for i in items)
     elif kind == "history":
         history = tuple(_parse_history(i) for i in items)
+    elif kind == "sod":
+        deposit_shares = tuple(_parse_deposit_share(i) for i in items)
 
     return FDICResponse(
         kind=kind,
@@ -390,6 +418,7 @@ def _parse_response(body: dict[str, Any], *, kind: str) -> FDICResponse:
         failures=failures,
         locations=locations,
         history=history,
+        deposit_shares=deposit_shares,
         total=total_count,
     )
 
@@ -471,7 +500,7 @@ class FDICClient:
         cache_ttl: int = 86400,
         timeout: float = 30.0,
     ) -> None:
-        self._http = httpx.Client(timeout=timeout)
+        self._http = httpx.Client(timeout=timeout, follow_redirects=True)
         default_cache = Path.home() / ".strata" / "cache" / "fdic"
         self._cache = _DiskCache(cache_dir or default_cache, cache_ttl)
 
@@ -544,6 +573,7 @@ class FDICClient:
         all_failures = list(first.failures)
         all_locations = list(first.locations)
         all_history = list(first.history)
+        all_deposit_shares = list(first.deposit_shares)
 
         fetched = limit
         while fetched < first.total:
@@ -554,6 +584,7 @@ class FDICClient:
             all_failures.extend(resp.failures)
             all_locations.extend(resp.locations)
             all_history.extend(resp.history)
+            all_deposit_shares.extend(resp.deposit_shares)
 
             fetched += limit
             # Break if we got fewer items than expected (API truncation)
@@ -563,6 +594,7 @@ class FDICClient:
                 + len(resp.failures)
                 + len(resp.locations)
                 + len(resp.history)
+                + len(resp.deposit_shares)
             )
             if total_items == 0:
                 break
@@ -574,6 +606,7 @@ class FDICClient:
             failures=tuple(all_failures),
             locations=tuple(all_locations),
             history=tuple(all_history),
+            deposit_shares=tuple(all_deposit_shares),
         )
 
     # ── financials ──────────────────────────────────────────────
@@ -1013,6 +1046,189 @@ class FDICClient:
         }
         return self._request_all_pages("history", params, kind="history", limit=100)
 
+    # ── aggregate sums ──────────────────────────────────────────
+
+    def get_total_loans(self, report_date: str) -> float | None:
+        """Return total net loans & leases (LNLSNET) across the industry.
+
+        Args:
+            report_date: Quarter-end YYYYMMDD.
+        """
+        params: dict[str, str] = {
+            "filters": f"REPDTE:{report_date}",
+            "fields": "LNLSNET",
+            "agg_by": "REPDTE",
+            "agg_sum_fields": "LNLSNET",
+            "limit": "1",
+        }
+        resp = self._request("financials", params, kind="financials")
+        return resp.financials[0].assets if resp.financials else None
+
+    def get_total_securities(self, report_date: str) -> float | None:
+        """Return total securities held (SC) across the industry.
+
+        Args:
+            report_date: Quarter-end YYYYMMDD.
+        """
+        params: dict[str, str] = {
+            "filters": f"REPDTE:{report_date}",
+            "fields": "SC",
+            "agg_by": "REPDTE",
+            "agg_sum_fields": "SC",
+            "limit": "1",
+        }
+        resp = self._request("financials", params, kind="financials")
+        return resp.financials[0].assets if resp.financials else None
+
+    def get_total_interest_income(self, report_date: str) -> float | None:
+        """Return total interest income (INTINC) across the industry.
+
+        Args:
+            report_date: Quarter-end YYYYMMDD.
+        """
+        params: dict[str, str] = {
+            "filters": f"REPDTE:{report_date}",
+            "fields": "INTINC",
+            "agg_by": "REPDTE",
+            "agg_sum_fields": "INTINC",
+            "limit": "1",
+        }
+        resp = self._request("financials", params, kind="financials")
+        return resp.financials[0].interest_income if resp.financials else None
+
+    # ── institution counts ──────────────────────────────────────
+
+    def get_institution_count(self, active_only: bool = True) -> int:
+        """Return the total count of FDIC-insured institutions.
+
+        Args:
+            active_only: Count only currently active institutions.
+        """
+        params: dict[str, str] = {
+            "fields": "CERTNUM",
+            "limit": "1",
+        }
+        if active_only:
+            params["filters"] = "ACTIVE:1"
+        resp = self._request("institutions", params, kind="institutions")
+        return resp.total
+
+    def get_state_count(self, state: str, active_only: bool = True) -> int:
+        """Return the count of institutions headquartered in a state.
+
+        Args:
+            state: State name (e.g. "California").
+            active_only: Count only active institutions.
+        """
+        filters = f"STNAME:{state}"
+        if active_only:
+            filters = f"ACTIVE:1 AND {filters}"
+        params: dict[str, str] = {
+            "filters": filters,
+            "fields": "CERTNUM",
+            "limit": "1",
+        }
+        resp = self._request("institutions", params, kind="institutions")
+        return resp.total
+
+    def get_new_charters(self, year: int) -> FDICResponse:
+        """Retrieve institutions newly chartered in a given year.
+
+        Args:
+            year: Charter year (e.g. 2023).
+        """
+        params: dict[str, str] = {
+            "filters": f"ESTYMD:['{year}0101' TO '{year}1231']",
+            "fields": ",".join(
+                [
+                    "CERTNUM",
+                    "INSTNAME",
+                    "CITY",
+                    "STNAME",
+                    "ZIP",
+                    "ASSET",
+                    "DEP",
+                    "ACTIVE",
+                    "SPECGRP",
+                    "CHARTER_CLASS",
+                ]
+            ),
+            "limit": "250",
+            "sort_by": "ESTYMD",
+            "sort_order": "ASC",
+        }
+        return self._request_all_pages("institutions", params, kind="institutions", limit=250)
+
+    def get_count_by_specialization(self, report_date: str | None = None) -> FDICResponse:
+        """Return institution counts grouped by specialization group.
+
+        Args:
+            report_date: Optional report-date filter (YYYYMMDD).
+        """
+        params: dict[str, str] = {
+            "filters": "ACTIVE:1",
+            "fields": "SPECGRP",
+            "agg_by": "SPECGRP",
+            "agg_term_fields": "SPECGRP",
+            "limit": "50",
+        }
+        if report_date is not None:
+            params["filters"] = f"ACTIVE:1 AND REPDTE:{report_date}"
+        return self._request("institutions", params, kind="institutions")
+
+    # ── summary endpoint ────────────────────────────────────────
+
+    def get_summary(self, agg_by: str = "YEAR", years: int = 5) -> FDICResponse:
+        """Retrieve aggregate industry data via the /summary endpoint.
+
+        Args:
+            agg_by: Field to aggregate by (e.g. "YEAR", "STNAME").
+            years: Number of recent year-end periods to include.
+        """
+        end_year = date.today().year
+        dates = [f"{y}1231" for y in range(end_year - years, end_year)]
+        date_filter = " OR ".join(f"REPDTE:{d}" for d in dates)
+        params: dict[str, str] = {
+            "filters": date_filter,
+            "fields": f"{agg_by},DEP,ASSET,NETINC",
+            "agg_by": agg_by,
+            "agg_term_fields": agg_by,
+            "agg_sum_fields": "ASSET,DEP,NETINC",
+            "limit": str(max(len(dates), 1)),
+        }
+        return self._request("summary", params, kind="financials")
+
+    # ── summary of deposits ─────────────────────────────────────
+
+    def get_deposit_market_share(
+        self,
+        state: str,
+        county: str | None = None,
+        year: int | None = None,
+        limit: int = 100,
+    ) -> FDICResponse:
+        """Retrieve branch-level deposit market share (Summary of Deposits).
+
+        Args:
+            state: Two-letter state postal code (e.g. "CA").
+            county: Optional county name filter.
+            year: Optional SOD survey year (June 30 snapshot).
+            limit: Max records per page.
+        """
+        filters = [f"STALPBR:{state}"]
+        if county is not None:
+            filters.append(f"CNTYNAMB:{county}")
+        if year is not None:
+            filters.append(f"YEAR:{year}")
+        params: dict[str, str] = {
+            "filters": " AND ".join(filters),
+            "fields": "CERT,NAMEFULL,STALPBR,CNTYNAMB,DEPSUMBR,BRNUM,YEAR",
+            "sort_by": "DEPSUMBR",
+            "sort_order": "DESC",
+            "limit": str(limit),
+        }
+        return self._request_all_pages("sod", params, kind="sod", limit=limit)
+
     # ── cache management ────────────────────────────────────────
 
     def clear_cache(self) -> int:
@@ -1212,20 +1428,19 @@ def capabilities() -> list[CapabilitySpec]:
     """Methods exposed to the LLM router (spec §5)."""
     from ._capability import CapabilityArg, CapabilitySpec
 
+    _report_date = CapabilityArg(
+        name="report_date",
+        type="str",
+        description="Quarter end YYYYMMDD",
+        example="20241231",
+    )
     return [
         CapabilitySpec(
             connector="fdic",
             method="get_total_assets",
             description="Total US banking system assets for a report period.",
             returns="atomic primitive, unit=currency USD, tier=regulator",
-            args=[
-                CapabilityArg(
-                    name="report_date",
-                    type="str",
-                    description="Quarter end YYYYMMDD",
-                    example="20241231",
-                ),
-            ],
+            args=[_report_date],
             source_tier="regulator",
         ),
         CapabilitySpec(
@@ -1233,14 +1448,7 @@ def capabilities() -> list[CapabilitySpec]:
             method="get_total_deposits",
             description="Total US banking system deposits for a report period.",
             returns="atomic primitive, unit=currency USD, tier=regulator",
-            args=[
-                CapabilityArg(
-                    name="report_date",
-                    type="str",
-                    description="Quarter end YYYYMMDD",
-                    example="20241231",
-                ),
-            ],
+            args=[_report_date],
             source_tier="regulator",
         ),
         CapabilitySpec(
@@ -1248,12 +1456,87 @@ def capabilities() -> list[CapabilitySpec]:
             method="get_industry_summary",
             description=("Bank count, total assets, total deposits, total income for a quarter."),
             returns="atomic primitive bundle, tier=regulator",
+            args=[_report_date],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
+            method="get_total_loans",
+            description="Total US banking net loans & leases (LNLSNET) for a quarter.",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[_report_date],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
+            method="get_total_securities",
+            description="Total US banking securities held (SC) for a quarter.",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[_report_date],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
+            method="get_total_interest_income",
+            description="Total US banking interest income (INTINC) for a quarter.",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[_report_date],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
+            method="get_institution_count",
+            description="Count of FDIC-insured institutions (active banking supply).",
+            returns="atomic primitive, unit=count institutions, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
+            method="get_state_count",
+            description="Count of FDIC-insured institutions headquartered in a state.",
+            returns="atomic primitive, unit=count institutions, tier=regulator",
             args=[
                 CapabilityArg(
-                    name="report_date",
-                    type="str",
-                    description="Quarter end YYYYMMDD",
-                    example="20241231",
+                    name="state", type="str", description="State name", example="California"
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
+            method="get_new_charters",
+            description="Institutions newly chartered in a given year (market entry rate).",
+            returns="atomic primitive list, tier=regulator",
+            args=[
+                CapabilityArg(name="year", type="int", description="Charter year", example="2023"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
+            method="get_count_by_specialization",
+            description="Institution counts grouped by bank specialization group.",
+            returns="atomic primitive list, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
+            method="get_summary",
+            description="Aggregate industry assets/deposits/income over recent years.",
+            returns="atomic primitive list, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
+            method="get_deposit_market_share",
+            description="Branch-level deposit market share by state/county (Summary of Deposits).",
+            returns="atomic primitive list, unit=currency USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="state", type="str", description="State postal code", example="CA"
                 ),
             ],
             source_tier="regulator",

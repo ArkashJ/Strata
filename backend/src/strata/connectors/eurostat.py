@@ -93,6 +93,20 @@ class EurostatDataset(StrEnum):
     ENERGY = "nrg_bal_c"
     INDUSTRIAL_PRODUCTION = "sts_inpr_m"
     BUSINESS_DEMOGRAPHY = "bd_9bd_sz_cl_r2"
+    # Value added by NACE Rev.2 activity (national accounts, 64-branch).
+    VALUE_ADDED_BY_SECTOR = "nama_10_a64"
+    # Structural business statistics by NACE Rev.2 (turnover, employees, ...).
+    SBS_SECTOR = "sbs_na_sca_r2"
+    # Final consumption of households by COICOP purpose.
+    HOUSEHOLD_CONSUMPTION = "nama_10_co3_p3"
+    # E-commerce — enterprises selling online.
+    ECOMMERCE = "isoc_ec_eseln2"
+    # Cloud computing services use by enterprises.
+    CLOUD_ADOPTION = "isoc_cicce_use"
+    # PRODCOM — sold production of manufactured goods.
+    PRODCOM = "ds-056120"
+    # Labour cost index by NACE Rev.2.
+    LABOUR_COST = "lc_lci_r2"
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -136,6 +150,18 @@ class EurostatObservation:
     unit: str
     freq: str
     status_flag: str
+
+
+@dataclass(frozen=True, slots=True)
+class EurostatProductSales:
+    """A PRODCOM sold-production data point for a manufactured product."""
+
+    prccode: str
+    geo: str
+    time_period: str
+    value: float | None
+    unit: str
+    indicators: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -359,8 +385,9 @@ class EurostatClient:
         cache_dir: Path | None = None,
         cache_ttl: int = 604800,
         timeout: float = 30.0,
+        transport: httpx.BaseTransport | None = None,
     ) -> None:
-        self._http = httpx.Client(timeout=timeout)
+        self._http = httpx.Client(timeout=timeout, transport=transport)
         default_cache = Path.home() / ".strata" / "cache" / "eurostat"
         self._cache = _DiskCache(cache_dir or default_cache, cache_ttl)
 
@@ -758,6 +785,200 @@ class EurostatClient:
         )
         return self._request(EurostatDataset.BUSINESS_DEMOGRAPHY, params)
 
+    # ── Value added by sector ────────────────────────────────────
+
+    def get_value_added_by_sector(
+        self,
+        geo: str = "EU27_2020",
+        nace_r2: str = "TOTAL",
+        start_year: int | None = None,
+        end_year: int | None = None,
+    ) -> EurostatResponse:
+        """Gross value added by NACE Rev.2 activity (nama_10_a64).
+
+        Default na_item: B1G (gross value added), unit: CP_MEUR.
+
+        Args:
+            geo: Country/aggregate code.
+            nace_r2: NACE Rev.2 activity code (e.g. ``C`` manufacturing,
+                ``J`` information & communication, ``TOTAL`` total economy).
+            start_year: Inclusive start year.
+            end_year: Inclusive end year.
+        """
+        filters: dict[str, str] = {"na_item": "B1G", "unit": "CP_MEUR", "nace_r2": nace_r2}
+        params = self._build_params(
+            geo, start_year, end_year, frequency=EurostatFrequency.ANNUAL, filters=filters
+        )
+        return self._request(EurostatDataset.VALUE_ADDED_BY_SECTOR, params)
+
+    # ── Structural business statistics ───────────────────────────
+
+    def get_sbs_sector(
+        self,
+        nace_r2: str = "B-N_STS",
+        indic_sb: str = "V12110",
+        geo: str = "EU27_2020",
+        start_year: int | None = None,
+        end_year: int | None = None,
+    ) -> EurostatResponse:
+        """Structural business statistics by NACE Rev.2 (sbs_na_sca_r2).
+
+        Args:
+            nace_r2: NACE Rev.2 activity code.
+            indic_sb: Indicator code — ``V12110`` turnover, ``V16110``
+                persons employed.
+            geo: Country/aggregate code.
+            start_year: Inclusive start year.
+            end_year: Inclusive end year.
+        """
+        filters: dict[str, str] = {"nace_r2": nace_r2, "indic_sb": indic_sb}
+        params = self._build_params(
+            geo, start_year, end_year, frequency=EurostatFrequency.ANNUAL, filters=filters
+        )
+        return self._request(EurostatDataset.SBS_SECTOR, params)
+
+    # ── Household consumption ─────────────────────────────────────
+
+    def get_household_consumption(
+        self,
+        coicop: str = "TOTAL",
+        geo: str = "EU27_2020",
+        start_year: int | None = None,
+        end_year: int | None = None,
+    ) -> EurostatResponse:
+        """Final consumption of households by COICOP purpose (nama_10_co3_p3).
+
+        Default unit: CP_MEUR.
+
+        Args:
+            coicop: COICOP purpose code (``TOTAL`` = all purposes).
+            geo: Country/aggregate code.
+            start_year: Inclusive start year.
+            end_year: Inclusive end year.
+        """
+        filters: dict[str, str] = {"unit": "CP_MEUR", "coicop": coicop}
+        params = self._build_params(
+            geo, start_year, end_year, frequency=EurostatFrequency.ANNUAL, filters=filters
+        )
+        return self._request(EurostatDataset.HOUSEHOLD_CONSUMPTION, params)
+
+    # ── Digital economy ──────────────────────────────────────────
+
+    def get_ecommerce(
+        self,
+        indic_is: str = "E_AESELL",
+        geo: str = "EU27_2020",
+        start_year: int | None = None,
+        end_year: int | None = None,
+    ) -> EurostatResponse:
+        """E-commerce — enterprises selling online (isoc_ec_eseln2).
+
+        Default unit: PC_ENT (percent of enterprises).
+
+        Args:
+            indic_is: ICT indicator code (``E_AESELL`` enterprises that sold
+                online).
+            geo: Country/aggregate code.
+            start_year: Inclusive start year.
+            end_year: Inclusive end year.
+        """
+        filters: dict[str, str] = {"indic_is": indic_is, "unit": "PC_ENT"}
+        params = self._build_params(
+            geo, start_year, end_year, frequency=EurostatFrequency.ANNUAL, filters=filters
+        )
+        return self._request(EurostatDataset.ECOMMERCE, params)
+
+    def get_cloud_adoption(
+        self,
+        indic_is: str = "E_CC",
+        geo: str = "EU27_2020",
+        start_year: int | None = None,
+        end_year: int | None = None,
+    ) -> EurostatResponse:
+        """Cloud computing services use by enterprises (isoc_cicce_use).
+
+        Default unit: PC_ENT (percent of enterprises).
+
+        Args:
+            indic_is: ICT indicator code (``E_CC`` enterprises buying cloud).
+            geo: Country/aggregate code.
+            start_year: Inclusive start year.
+            end_year: Inclusive end year.
+        """
+        filters: dict[str, str] = {"indic_is": indic_is, "unit": "PC_ENT"}
+        params = self._build_params(
+            geo, start_year, end_year, frequency=EurostatFrequency.ANNUAL, filters=filters
+        )
+        return self._request(EurostatDataset.CLOUD_ADOPTION, params)
+
+    # ── PRODCOM (manufactured product sales) ──────────────────────
+
+    def get_prodcom(
+        self,
+        prccode: str,
+        geo: str = "EU27_2020",
+        start_year: int | None = None,
+        end_year: int | None = None,
+    ) -> tuple[EurostatProductSales, ...]:
+        """Sold production of a manufactured product (PRODCOM, ds-056120).
+
+        Returns ``EurostatProductSales`` tuples carrying the PRODCOM code.
+
+        Args:
+            prccode: 8-digit PRODCOM product code.
+            geo: Country/aggregate code.
+            start_year: Inclusive start year.
+            end_year: Inclusive end year.
+        """
+        # PRODCOM indicators: PRODVAL = value of sold production (EUR).
+        filters: dict[str, str] = {"prccode": prccode, "indicators": "PRODVAL"}
+        params = self._build_params(
+            geo, start_year, end_year, frequency=EurostatFrequency.ANNUAL, filters=filters
+        )
+        resp = self._request(EurostatDataset.PRODCOM, params)
+        return tuple(
+            EurostatProductSales(
+                prccode=prccode,
+                geo=o.geo,
+                time_period=o.time_period,
+                value=o.value,
+                unit=o.unit,
+                indicators="PRODVAL",
+            )
+            for o in resp.observations
+        )
+
+    # ── Labour cost ──────────────────────────────────────────────
+
+    def get_labour_cost(
+        self,
+        nace_r2: str = "B-S",
+        geo: str = "EU27_2020",
+        start_year: int | None = None,
+        end_year: int | None = None,
+    ) -> EurostatResponse:
+        """Labour cost index by NACE Rev.2 (lc_lci_r2).
+
+        Default lcstruct: D1_D4_MD5 (total labour cost), s_adj: NSA,
+        unit: I20 (index, 2020=100). Returns quarterly data.
+
+        Args:
+            nace_r2: NACE Rev.2 activity code.
+            geo: Country/aggregate code.
+            start_year: Inclusive start year.
+            end_year: Inclusive end year.
+        """
+        filters: dict[str, str] = {
+            "nace_r2": nace_r2,
+            "lcstruct": "D1_D4_MD5",
+            "s_adj": "NSA",
+            "unit": "I20",
+        }
+        params = self._build_params(
+            geo, start_year, end_year, frequency=EurostatFrequency.QUARTERLY, filters=filters
+        )
+        return self._request(EurostatDataset.LABOUR_COST, params)
+
     # ── Multi-country convenience ────────────────────────────────
 
     def get_multi_country(
@@ -1005,6 +1226,127 @@ def capabilities() -> list[CapabilitySpec]:
                     type="str",
                     description="EU ISO-2 country code",
                     example="DE",
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eurostat",
+            method="get_value_added_by_sector",
+            description="Eurostat gross value added by NACE Rev.2 sector.",
+            returns="atomic primitive, unit=currency EUR, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="geo", type="str", description="EU ISO-2 country code", example="DE"
+                ),
+                CapabilityArg(
+                    name="nace_r2", type="str", description="NACE Rev.2 code", example="C"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eurostat",
+            method="get_sbs_sector",
+            description="Eurostat structural business statistics by NACE Rev.2 (turnover/employees).",
+            returns="atomic primitive, unit varies, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="nace_r2", type="str", description="NACE Rev.2 code", example="J"
+                ),
+                CapabilityArg(
+                    name="indic_sb",
+                    type="str",
+                    description="SBS indicator (V12110 turnover)",
+                    example="V12110",
+                ),
+                CapabilityArg(
+                    name="geo", type="str", description="EU ISO-2 country code", example="DE"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2021"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eurostat",
+            method="get_household_consumption",
+            description="Eurostat household final consumption by COICOP purpose.",
+            returns="atomic primitive, unit=currency EUR, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="coicop", type="str", description="COICOP purpose code", example="TOTAL"
+                ),
+                CapabilityArg(
+                    name="geo", type="str", description="EU ISO-2 country code", example="FR"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eurostat",
+            method="get_ecommerce",
+            description="Eurostat e-commerce — enterprises selling online (% of enterprises).",
+            returns="atomic primitive, unit=dimensionless percent, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="indic_is", type="str", description="ICT indicator", example="E_AESELL"
+                ),
+                CapabilityArg(
+                    name="geo", type="str", description="EU ISO-2 country code", example="DE"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eurostat",
+            method="get_cloud_adoption",
+            description="Eurostat cloud computing use by enterprises (% of enterprises).",
+            returns="atomic primitive, unit=dimensionless percent, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="indic_is", type="str", description="ICT indicator", example="E_CC"
+                ),
+                CapabilityArg(
+                    name="geo", type="str", description="EU ISO-2 country code", example="DE"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eurostat",
+            method="get_prodcom",
+            description="Eurostat PRODCOM sold production value of a manufactured product.",
+            returns="EurostatProductSales tuples, unit=currency EUR, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="prccode",
+                    type="str",
+                    description="8-digit PRODCOM product code",
+                    example="26201100",
+                ),
+                CapabilityArg(
+                    name="geo", type="str", description="EU ISO-2 country code", example="DE"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2021"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="eurostat",
+            method="get_labour_cost",
+            description="Eurostat labour cost index by NACE Rev.2.",
+            returns="atomic primitive, unit=index, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="nace_r2", type="str", description="NACE Rev.2 code", example="B-S"
+                ),
+                CapabilityArg(
+                    name="geo", type="str", description="EU ISO-2 country code", example="DE"
                 ),
                 CapabilityArg(name="year", type="int", description="Year", example="2022"),
             ],

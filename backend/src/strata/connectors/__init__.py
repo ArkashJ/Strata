@@ -48,12 +48,19 @@ from .census import (
     CensusGeoLevel,
     CensusNAICS,
     CensusResponse,
+    EconomicCensusRecord,
     FirmRecord,
     IndustryRecord,
     firm_to_primitive_yaml,
     firm_to_source_yaml,
     industry_to_primitive_yaml,
     industry_to_source_yaml,
+)
+from .census import (
+    economic_to_primitive_yaml as census_economic_to_primitive_yaml,
+)
+from .census import (
+    economic_to_source_yaml as census_economic_to_source_yaml,
 )
 from .cms import (
     CMSClient,
@@ -62,6 +69,8 @@ from .cms import (
     CMSMetric,
     CMSResponse,
     CMSState,
+    CountRecord,
+    ServiceRecord,
     cms_to_source_yaml,
     enrollment_to_primitive_yaml,
     spending_to_primitive_yaml,
@@ -94,6 +103,9 @@ from .comtrade import (
     ComtradeResponse,
     trade_to_primitive_yaml,
     trade_to_source_yaml,
+)
+from .comtrade import (
+    ServiceTradeRecord as ComtradeServiceTradeRecord,
 )
 from .comtrade import (
     TradePartnerSummary as ComtradePartnerSummary,
@@ -161,6 +173,9 @@ from .edgar import (
 from .edgar import (
     FrameEntry as EDGARFrameEntry,
 )
+from .edgar import (
+    Statements as EDGARStatements,
+)
 from .eia import (
     EIAClient,
     EIAClientError,
@@ -191,6 +206,9 @@ from .eurostat import (
 from .eurostat import (
     EurostatObservation as EurostatObservation,
 )
+from .eurostat import (
+    EurostatProductSales as EurostatProductSales,
+)
 from .faa import (
     Airport as FAAairport,
 )
@@ -214,6 +232,9 @@ from .faa import (
 )
 from .fdic import (
     BankSummary as FDICBankSummary,
+)
+from .fdic import (
+    DepositShareRecord as FDICDepositShareRecord,
 )
 from .fdic import (
     FailureRecord as FDICFailureRecord,
@@ -256,12 +277,21 @@ from .fred import (
     observations_to_source_yaml,
 )
 from .github import (
+    ContributorCount,
     GitHubClient,
     GitHubClientError,
     GitHubRepo,
     GitHubResponse,
+    ReleaseDownloads,
+    RepoSearchCount,
+    forks_to_primitive_yaml,
+    open_issues_to_primitive_yaml,
     repo_to_primitive_yaml,
     repo_to_source_yaml,
+    watchers_to_primitive_yaml,
+)
+from .kalshi import (
+    Candlestick as KalshiCandlestick,
 )
 from .kalshi import (
     Event as KalshiEvent,
@@ -281,7 +311,13 @@ from .kalshi import (
     Market as KalshiMarket,
 )
 from .kalshi import (
+    MarketStats as KalshiMarketStats,
+)
+from .kalshi import (
     Orderbook as KalshiOrderbook,
+)
+from .kalshi import (
+    Series as KalshiSeries,
 )
 from .kalshi import (
     Trade as KalshiTrade,
@@ -301,6 +337,7 @@ from .nasdaq_data_link import (
     observation_to_source_yaml as nasdaq_observation_to_source_yaml,
 )
 from .oecd import (
+    OECDBusinessStat,
     OECDClient,
     OECDClientError,
     OECDCountry,
@@ -323,7 +360,13 @@ from .openfda import (
     DeviceClassification as FDADeviceClassification,
 )
 from .openfda import (
+    DeviceEvent as FDADeviceEvent,
+)
+from .openfda import (
     DevicePMA as FDADevicePMA,
+)
+from .openfda import (
+    DeviceUDI as FDADeviceUDI,
 )
 from .openfda import (
     DrugEvent as FDADrugEvent,
@@ -350,17 +393,24 @@ from .reddit import (
     RedditClient,
     RedditClientError,
     RedditResponse,
+    SubredditMatch,
     SubredditStats,
+    active_users_to_primitive_yaml,
+    active_users_to_source_yaml,
     subreddit_to_primitive_yaml,
     subreddit_to_source_yaml,
 )
 from .stack_exchange import (
+    RelatedTag,
     StackExchangeClient,
     StackExchangeClientError,
     StackExchangeResponse,
     TagInfo,
+    TagWindowCount,
     tag_to_primitive_yaml,
     tag_to_source_yaml,
+    tag_window_to_primitive_yaml,
+    tag_window_to_source_yaml,
 )
 from .twitter import (
     TwitterClient,
@@ -368,6 +418,9 @@ from .twitter import (
     TwitterResponse,
     TwitterTweet,
     TwitterUser,
+    avg_engagement_to_primitive_yaml,
+    following_count_to_primitive_yaml,
+    tweet_count_to_primitive_yaml,
     user_to_primitive_yaml,
     user_to_source_yaml,
 )
@@ -471,7 +524,10 @@ __all__ = [
     "ComtradePartnerSummary",
     "ComtradeReporter",
     "ComtradeResponse",
+    "ComtradeServiceTradeRecord",
     "ComtradeTradeRecord",
+    "ContributorCount",
+    "CountRecord",
     "DataPoint",
     # Dune Analytics
     "DuneClient",
@@ -492,6 +548,7 @@ __all__ = [
     "EDGARFrameEntry",
     "EDGARPeriodType",
     "EDGARResponse",
+    "EDGARStatements",
     "EDGARTaxonomy",
     # EIA
     "EIAClient",
@@ -504,6 +561,7 @@ __all__ = [
     "EIASector",
     "EIASeriesMetadata",
     "EIAState",
+    "EconomicCensusRecord",
     # Eurostat
     "EurostatClient",
     "EurostatClientError",
@@ -512,6 +570,7 @@ __all__ = [
     "EurostatDatasetInfo",
     "EurostatFrequency",
     "EurostatObservation",
+    "EurostatProductSales",
     "EurostatResponse",
     "ExecutionHandle",
     "ExecutionState",
@@ -532,7 +591,9 @@ __all__ = [
     "FDADevice510k",
     "FDADeviceClass",
     "FDADeviceClassification",
+    "FDADeviceEvent",
     "FDADevicePMA",
+    "FDADeviceUDI",
     "FDADrugEvent",
     "FDADrugLabel",
     "FDAEndpoint",
@@ -544,6 +605,7 @@ __all__ = [
     "FDICBankSummary",
     "FDICClient",
     "FDICClientError",
+    "FDICDepositShareRecord",
     "FDICFailureRecord",
     "FDICFinancialField",
     "FDICFinancialRecord",
@@ -572,15 +634,18 @@ __all__ = [
     "GitHubResponse",
     "IndustryRecord",
     # Kalshi
+    "KalshiCandlestick",
     "KalshiClient",
     "KalshiClientError",
     "KalshiEvent",
     "KalshiEventCategory",
     "KalshiMarket",
     "KalshiMarketResult",
+    "KalshiMarketStats",
     "KalshiMarketStatus",
     "KalshiOrderbook",
     "KalshiResponse",
+    "KalshiSeries",
     "KalshiTrade",
     # USDA NASS
     "NASSAggLevel",
@@ -602,6 +667,7 @@ __all__ = [
     "NasdaqResponse",
     "NasdaqTier",
     # OECD
+    "OECDBusinessStat",
     "OECDClient",
     "OECDClientError",
     "OECDCountry",
@@ -620,16 +686,22 @@ __all__ = [
     "RedditClient",
     "RedditClientError",
     "RedditResponse",
+    "RelatedTag",
     "Release",
+    "ReleaseDownloads",
+    "RepoSearchCount",
     "Series",
     "SeriesInfo",
+    "ServiceRecord",
     # Stack Exchange
     "StackExchangeClient",
     "StackExchangeClientError",
     "StackExchangeResponse",
+    "SubredditMatch",
     "SubredditStats",
     "SurveyInfo",
     "TagInfo",
+    "TagWindowCount",
     # Twitter / X
     "TwitterClient",
     "TwitterClientError",
@@ -651,10 +723,15 @@ __all__ = [
     "YFinanceClientError",
     "YahooQuote",
     "YahooResponse",
+    "active_users_to_primitive_yaml",
+    "active_users_to_source_yaml",
     "airport_to_primitive_yaml",
     "airport_to_source_yaml",
     "all_capabilities",
+    "avg_engagement_to_primitive_yaml",
     "capabilities",
+    "census_economic_to_primitive_yaml",
+    "census_economic_to_source_yaml",
     "clearance_count_to_primitive_yaml",
     "cms_to_source_yaml",
     "concept_to_primitive_yaml",
@@ -671,6 +748,8 @@ __all__ = [
     "financial_to_source_yaml",
     "firm_to_primitive_yaml",
     "firm_to_source_yaml",
+    "following_count_to_primitive_yaml",
+    "forks_to_primitive_yaml",
     "frame_to_primitive_yaml",
     "indicator_to_primitive_yaml",
     "indicator_to_source_yaml",
@@ -691,6 +770,7 @@ __all__ = [
     "observations_to_source_yaml",
     "oecd_observation_to_primitive_yaml",
     "oecd_observation_to_source_yaml",
+    "open_issues_to_primitive_yaml",
     "overview_to_source_yaml",
     "passenger_count_to_primitive_yaml",
     "quote_to_primitive_yaml",
@@ -706,8 +786,12 @@ __all__ = [
     "subreddit_to_source_yaml",
     "tag_to_primitive_yaml",
     "tag_to_source_yaml",
+    "tag_window_to_primitive_yaml",
+    "tag_window_to_source_yaml",
     "trade_to_primitive_yaml",
     "trade_to_source_yaml",
+    "tweet_count_to_primitive_yaml",
     "user_to_primitive_yaml",
     "user_to_source_yaml",
+    "watchers_to_primitive_yaml",
 ]

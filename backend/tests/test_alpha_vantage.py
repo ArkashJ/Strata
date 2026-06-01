@@ -232,6 +232,59 @@ def test_economic_converter() -> None:
     assert prim["source"]["tier"] == "aggregator"
 
 
+def test_fx_daily_parses(tmp_path: Path) -> None:
+    payload = {
+        "Time Series FX (Daily)": {
+            "2024-01-02": {
+                "1. open": "1.10",
+                "2. high": "1.12",
+                "3. low": "1.09",
+                "4. close": "1.11",
+            },
+        }
+    }
+    client = _client(tmp_path, {"FX_DAILY": payload})
+    bars = client.get_fx_daily("EUR", "USD")
+    assert len(bars) == 1
+    assert bars[0].close == 1.11
+    assert bars[0].volume == 0
+
+
+def test_treasury_yield_parses(tmp_path: Path) -> None:
+    payload = {
+        "name": "10-Year Treasury Constant Maturity Rate",
+        "interval": "monthly",
+        "unit": "percent",
+        "data": [{"date": "2024-01-01", "value": "4.05"}],
+    }
+    client = _client(tmp_path, {"TREASURY_YIELD": payload})
+    series = client.get_treasury_yield()
+    assert series.observations[0].value == 4.05
+    assert series.unit == "percent"
+
+
+def test_high_value_economic_methods_present_and_fragile() -> None:
+    """Task gap check — all high-value economic/FX/crypto methods exist + fragile."""
+    methods = {s.method for s in capabilities()}
+    expected = {
+        "get_weekly",
+        "get_monthly",
+        "get_fx_daily",
+        "get_digital_currency_daily",
+        "get_treasury_yield",
+        "get_federal_funds_rate",
+        "get_unemployment",
+        "get_retail_sales",
+        "get_nonfarm_payroll",
+        "get_cpi",
+        "get_inflation",
+    }
+    assert expected <= methods, f"missing: {expected - methods}"
+    for spec in capabilities():
+        if spec.method in expected:
+            assert spec.is_fragile is True
+
+
 def test_capabilities_methods_exist_and_fragile() -> None:
     specs = capabilities()
     assert specs
