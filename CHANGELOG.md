@@ -42,6 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   no persona isn't nagged). Derived — not part of the state hash, JSONB-stored,
   `None` on TAMs persisted before scope landed. Flows through `GET /build/{slug}`,
   `POST /build/recompute`, and `GET /tam/{hash}`. 6 tests (`tests/test_scope_report.py`).
+- **Scope on the `/tam` artifact** (`web/.../tam/ScopeCheck.tsx`). A read-only
+  **Market** chip strip under the headline shows the declared scope; a **Scope
+  check** section (after the convergence banner) lists each off-scope input with
+  its snap-to-truth scope and the narrower/broader reason — the legible "why the
+  methods disagree"; a right-rail summary gives the at-a-glance ok/off-scope
+  count. `scope` added to the web `tamOutputSchema` (zod). 5 component tests;
+  typecheck + biome clean on changed files.
 
 ### Changed — honest sourced-gap upgrade for unsizable crypto companies
 - **Corrected two wrong `unsizable` reasons.** 0xPass and 3Blocks were labelled
