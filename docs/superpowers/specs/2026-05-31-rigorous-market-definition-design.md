@@ -177,3 +177,56 @@ Each commit keeps the full verification suite green
 - **Sub-project 3 — number-level provenance:** the number *is* the hyperlink;
   deep-link + page/section anchor; show each number's derivation; reconcile
   stale base years; plain-language "community-modeled".
+
+---
+
+## Addendum — sub-project 1.5: scope-driven re-selection (approved 2026-05-31)
+
+**Decision:** "tags drive the number." Today a framework *variant* hard-binds each
+input role to one fixed primitive slug, so the TAM value is fixed regardless of
+scope. This makes the editable `/build` scope tags actually change the number:
+when the user sets a **scope override** (edits the declared market), the evaluator
+picks each role's primitive from a **candidate pool** by scope-match instead of
+the fixed binding. Re-selection engages **only on an explicit override** — the
+concept's baseline scope leaves the authored variant binding untouched, so the
+default `/tam` view still surfaces mismatches honestly (and no merged sub-project-1
+behavior, tests, or state hashes change).
+
+```
+role: persona_pool (unit = people-stock)        declared persona = {41-3000, 41-4000}
+candidates (concept measurements w/ that unit):          │
+  • demo-bls-sales-reps  scope 41-4012 ─ NARROWER ───────┤  guard ranks:
+  • demo-acs-sales-reps  scope 41-3000+41-4000 ─ EXACT ──┘  EXACT ▸ wins → pick acs
+        ▼
+  bottoms-up recomputes 1.9M × $1,400 = $2.66B   (was 1.46M × $1,400 = $2.0B)
+  widen → re-pick broader source → number moves. No candidate fits → keep the
+  default + honest "no sourced primitive at this scope" (never fabricate).
+```
+
+**Locked decisions:**
+
+1. **Candidate pool per role** — primitives whose `unit` matches the input's
+   `unit_signature` **and** that belong to the concept (`concept_slug == concept`
+   OR slug ∈ `concept.measurements`). Re-selection only engages when a role's pool
+   has **≥2** members; otherwise the fixed variant binding is used unchanged — so
+   every existing concept behaves exactly as today, and nothing is ever invented
+   or silently swapped when there's only the one bound primitive.
+
+2. **Selection rule** — for each candidate, run `classify_scope(declared, candidate.scope)`;
+   rank by the most-benign relationship `EXACT ▸ NARROWER ▸ BROADER ▸ PARTIAL`,
+   excluding `DISJOINT`. Tie-break: the variant default first, then slug order
+   (deterministic → stable state hash). If every candidate is DISJOINT/UNKNOWN,
+   keep the variant default.
+
+3. **How scope is edited** — extend `EvalOverrides` with
+   `scope_override: MarketScope | None`; thread it through `POST /build/recompute`;
+   fold it into the hashed payload so every tag edit mints a fresh `/build/<hash>`
+   (Q38). When set, the override is the declared market for **both** re-selection
+   and the scope report; when unset, re-selection is off and the report falls back
+   to `concept.scope` (the honest-baseline view). Frontend: editable chips on
+   `/build` → recompute → navigate to the new hash.
+
+**Precedence in `_build_scenario`:** `framework_assumptions` (explicit user swap)
+> scope re-selection > `variant.default_inputs`. An explicit swap always wins.
+
+Implementation plan: `docs/superpowers/plans/2026-05-31-scope-driven-reselection.md`.
