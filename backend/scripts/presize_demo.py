@@ -64,6 +64,7 @@ def main() -> None:
             name=entry["name"],
             domain=entry["domain"],
             vertical=entry.get("vertical"),
+            market_concept_slug=entry.get("market"),
             status="unsizable",
             reason=entry["reason"],
         )

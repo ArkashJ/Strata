@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — honest sourced-gap upgrade for unsizable crypto companies
+- **Corrected two wrong `unsizable` reasons.** 0xPass and 3Blocks were labelled
+  unsizable due to the Q20 quarantine — but that conflates two different things:
+  the quarantine forbids feeding `prediction_market`/onchain signal *values* into
+  a framework, not sizing a crypto *company*. Onchain-tier values are in fact
+  framework-legal (`registry.py` quarantines only `prediction_market`). The real
+  gap is sourcing: the demand-side count is sourceable, the spend-per-unit is not.
+- **Seeded the real, pinnable demand-side primitive** `web3-monthly-active-developers-2024`
+  (23,613 monthly-active OSS devs, Electric Capital Developer Report 2024,
+  `tier: aggregator`, snapshot-pinned) + two intentionally framework-less concepts
+  (`web3-wallet-infrastructure`, `onchain-analytics-software`) that carry it as a
+  measurement — the navigable, honest shape of "unsizable".
+- **Rewrote the two reasons** to state the true sourced-gap (count sourced; no
+  primary source for spend-per-developer / seat price; refusing to reproduce the
+  analyst ~$2B / ~$3.4B market reports as a TAM, Q26) and linked each demo card to
+  its concept. No framework, no TAM, nothing community-modeled dressed as sourced.
+  Spec: `docs/superpowers/specs/2026-05-31-honest-sourced-gap-upgrade-design.md`.
+
 ### Added — portfolio sizing + company layer (P1)
 - **The verbatim guard (`strata.sizing.guard`)** — the Q20 wall, productized. Two
   gates in series: a *semantic magnitude match* ($4.2B ≡ 4.2 billion ≡

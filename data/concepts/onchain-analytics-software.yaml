@@ -1,0 +1,20 @@
+kind: concept
+slug: onchain-analytics-software
+schema_version: 1
+name: On-chain analytics software
+definition: >-
+  Blockchain / on-chain analytics SaaS sold per-seat to crypto funds, protocols,
+  and compliance teams (Nansen, Dune, Chainalysis peers). Note this is the
+  analytics *software* market, not on-chain signal values — onchain-tier values
+  are framework-legal (only prediction_market is quarantined, Q20). The
+  demand-side developer count is sourced, but there is no primary source for the
+  analytics seat price or seat count, and we refuse to reproduce analyst market
+  reports as a TAM (Q26). No framework is bound: intentionally unsizable until a
+  first-party billing/seat-count source lands.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+- web3-monthly-active-developers-2024
+competing_concepts: []
+requires_clearance: []

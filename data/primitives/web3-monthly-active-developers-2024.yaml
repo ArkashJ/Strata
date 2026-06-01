@@ -1,0 +1,30 @@
+kind: atomic_primitive
+slug: web3-monthly-active-developers-2024
+schema_version: 1
+concept_slug: web3-wallet-infrastructure
+name: Web3 monthly active open-source developers (2024)
+description: >-
+  Monthly active open-source crypto/web3 developers in 2024, from the Electric
+  Capital Developer Report 2024 (902M commits across 1.7M repos, de-duplicated).
+  Used as the demand-side population count for web3 developer-infrastructure
+  markets (wallet-as-a-service, on-chain analytics). A demand-side count only —
+  it does not by itself size any market; the spend-per-developer leg has no
+  primary source, so no framework consumes it yet.
+value: 23613.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - GLOBAL
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: electric-capital-developer-report-2024
+  tier: aggregator
+  url: https://www.developerreport.com/reports/devs/2024
+  accessed: '2026-05-31'
+  snapshot_sha256: c0aa56bcd1e5c44666e60a0bbcf5e101943b8f938db4c8c5d87f288f578c524c

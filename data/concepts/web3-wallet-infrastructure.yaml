@@ -1,0 +1,19 @@
+kind: concept
+slug: web3-wallet-infrastructure
+schema_version: 1
+name: Web3 wallet infrastructure (wallet-as-a-service)
+definition: >-
+  Embedded wallet / key-management infrastructure sold to web3 application
+  builders (wallet-as-a-service, MPC/passkey signing, account abstraction). The
+  demand-side population is sourced — web3 developers — but there is no
+  primary/first-party source for infrastructure spend-per-developer, and we
+  refuse to reproduce analyst "market size" reports as a TAM (Q26). No framework
+  is bound, so this concept is intentionally unsizable: the missing spend leg is
+  the proven gap a future revenue-capture lens must close.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+- web3-monthly-active-developers-2024
+competing_concepts: []
+requires_clearance: []
