@@ -7,6 +7,7 @@ import { ChartDownload } from "@/components/charts/ChartDownload";
 import { ConvergenceBanner } from "@/components/charts/ConvergenceBanner";
 import { TornadoChart } from "@/components/charts/TornadoChart";
 import { NetworkGraphModal } from "@/components/network/NetworkGraphModal";
+import { ScopeRailSummary, ScopeStrip, ScopeWarnings } from "@/components/tam/ScopeCheck";
 import { TamTrajectoryChart } from "@/components/tam/TamTrajectoryChart";
 import { Button } from "@/components/ui/Button";
 import { IndependenceDonut } from "@/components/ui/IndependenceDonut";
@@ -115,6 +116,14 @@ function TamArtifact({ tam }: { tam: TAMOutput }) {
         <Chip value="USD NOMINAL" />
       </div>
 
+      {/* Declared market scope (sub-project 1) — what this number is the TAM *of*.
+          Read-only here; editing forks to a /build state. */}
+      {tam.scope ? (
+        <div className="mt-3">
+          <ScopeStrip scope={tam.scope.declared} />
+        </div>
+      ) : null}
+
       <p className="mt-3 text-[13px] text-[var(--fg-3)]">
         by <span className="text-[var(--fg-2)]">{tam.created_by}</span>
         <span className="mx-2 text-[var(--fg-4)]">·</span>
@@ -137,6 +146,7 @@ function TamArtifact({ tam }: { tam: TAMOutput }) {
         <section className="flex min-w-0 flex-1 flex-col gap-6">
           <MidScenarioCard tam={tam} />
           {tam.convergence ? <ConvergenceBanner convergence={tam.convergence} /> : null}
+          {tam.scope ? <ScopeWarnings report={tam.scope} /> : null}
           <ScenarioTree tam={tam} />
           <SensitivitySection slug={tam.target.concept} />
           <TrajectorySection slug={tam.target.concept} />
@@ -421,6 +431,12 @@ function RightRail({ tam }: { tam: TAMOutput }) {
       <RailSection title="Source tier mix">
         <SourceTierMix tam={tam} />
       </RailSection>
+
+      {tam.scope ? (
+        <RailSection title="Scope check">
+          <ScopeRailSummary report={tam.scope} />
+        </RailSection>
+      ) : null}
 
       <RailSection title="Annotations" badge="0">
         <p className="text-[13px] text-[var(--fg-3)]">No expert annotations on this TAM yet.</p>

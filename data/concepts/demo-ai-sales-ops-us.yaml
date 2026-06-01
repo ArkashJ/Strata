@@ -9,6 +9,29 @@ analysis_lens:
   primary: cost_efficiency
   secondary: revenue_generation
 modifiers: {}
+# Declared market scope (sub-project 1). Sales reps span every industry, so no
+# vertical is declared. Persona is ALL B2B sales reps (services + wholesale/mfg);
+# segment is explicitly all employer firms so any mid-market-only primitive reads
+# as narrowing the market. Retail floor staff are excluded.
+scope:
+  persona:
+  - system: SOC
+    code: "41-3000"
+    label: Sales representatives, services
+  - system: SOC
+    code: "41-4000"
+    label: Sales representatives, wholesale & manufacturing
+  segment:
+    label: All employer firms
+  geo_supply:
+  - US
+  geo_demand:
+  - US
+  product:
+  - ai-sales-ops-tooling
+  - revenue-intelligence
+  exclude:
+  - Retail floor staff (SOC 41-2031)
 measurements:
 - demo-bls-sales-reps-us-2024
 - demo-acs-sales-reps-us-2024

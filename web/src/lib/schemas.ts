@@ -101,6 +101,62 @@ export const convergenceSchema = z.object({
 });
 export type Convergence = z.infer<typeof convergenceSchema>;
 
+// Market scope (sub-project 1). A scope tag is code-anchored (NAICS/SOC) or
+// free-text; the guard compares a concept's declared scope against each
+// primitive's true scope. Mirrors backend strata.models.scope field-for-field.
+export const codedTagSchema = z.object({
+  system: z.string(),
+  code: z.string(),
+  label: z.string(),
+});
+export type CodedTag = z.infer<typeof codedTagSchema>;
+
+export const firmSizeBandSchema = z.object({
+  min_emp: z.number().nullable().optional(),
+  max_emp: z.number().nullable().optional(),
+  label: z.string(),
+});
+
+// All array fields are always present in the JSON (the backend serializes every
+// MarketScope field, empty tuples included), so they are required here — no
+// `.default([])`, which would split the zod input/output types and clash with
+// the TAMOutput type used across queries.
+export const marketScopeSchema = z.object({
+  vertical: z.array(codedTagSchema),
+  persona: z.array(codedTagSchema),
+  segment: firmSizeBandSchema.nullable().optional(),
+  geo_supply: z.array(z.string()),
+  geo_demand: z.array(z.string()),
+  product: z.array(z.string()),
+  include: z.array(z.string()),
+  exclude: z.array(z.string()),
+});
+export type MarketScope = z.infer<typeof marketScopeSchema>;
+
+export const scopeWarningSchema = z.object({
+  dimension: z.string(),
+  // narrower | broader | partial | disjoint
+  relationship: z.string(),
+  message: z.string(),
+});
+export type ScopeWarning = z.infer<typeof scopeWarningSchema>;
+
+export const inputScopeSchema = z.object({
+  primitive_slug: z.string(),
+  role_name: z.string(),
+  // The primitive's actual scope — the displayed tag binds to this truth.
+  displayed: marketScopeSchema,
+  warnings: z.array(scopeWarningSchema),
+});
+export type InputScope = z.infer<typeof inputScopeSchema>;
+
+export const scopeReportSchema = z.object({
+  declared: marketScopeSchema,
+  inputs: z.array(inputScopeSchema),
+  ok: z.boolean(),
+});
+export type ScopeReport = z.infer<typeof scopeReportSchema>;
+
 export const tamOutputSchema = z.object({
   kind: z.literal("tam_output"),
   state_hash: z.string(),
@@ -114,6 +170,7 @@ export const tamOutputSchema = z.object({
   independence_score: z.number().min(0).max(1),
   uses_synthetic_primitives: z.boolean(),
   uses_modeled_composites: z.boolean(),
+  scope: scopeReportSchema.nullable().optional(),
 });
 export type TAMOutput = z.infer<typeof tamOutputSchema>;
 

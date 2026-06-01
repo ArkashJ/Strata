@@ -44,6 +44,7 @@ def _primitive_to_row(raw: dict[str, Any]) -> dict[str, Any]:
         "distribution_shape": raw.get("distribution_shape", "normal"),
         "delivery_mode": raw.get("delivery_mode", "n/a"),
         "source": raw.get("source", {}),
+        "scope": raw.get("scope"),
     }
 
 
@@ -143,6 +144,7 @@ async def _upsert_primitives(session: AsyncSession, records: list[dict[str, Any]
             "distribution_shape": stmt.excluded.distribution_shape,
             "delivery_mode": stmt.excluded.delivery_mode,
             "source": stmt.excluded.source,
+            "scope": stmt.excluded.scope,
         },
     )
     await session.execute(stmt)
@@ -181,6 +183,7 @@ async def _upsert_concepts(session: AsyncSession, records: list[dict[str, Any]])
             "modifiers": stmt.excluded.modifiers,
             "measurements": stmt.excluded.measurements,
             "competing_concepts": stmt.excluded.competing_concepts,
+            "scope": stmt.excluded.scope,
         },
     )
     await session.execute(stmt)
@@ -230,6 +233,7 @@ async def sync_yaml_to_db(data_dir: Path) -> dict[str, int]:
                 "modifiers": d.get("modifiers", {}),
                 "measurements": list(d.get("measurements", [])),
                 "competing_concepts": list(d.get("competing_concepts", [])),
+                "scope": d.get("scope"),
             }
         )
 

@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — rigorous market definition, sub-project 1
+- **`MarketScope` value object** (`strata.models.scope`) — the structured,
+  checkable definition of *which* market a number sizes: `vertical` (NAICS),
+  `persona` (SOC), `segment` (firm-size band), `geo_supply`/`geo_demand` (ISO,
+  the Q8 two-geo shape), plus free-text `product`/`include`/`exclude`. Added as
+  an optional `scope:` field on both `Concept` (declared/canonical) and
+  `AtomicPrimitive` (the primitive's *true* scope), defaulting empty so existing
+  YAML loads unchanged.
+- **The scope guard** (`strata.scope.guard.classify_scope`) — pure,
+  deterministic (no network/LLM, mirrors the verbatim guard). Compares declared
+  vs actual scope per dimension into a `Relationship`
+  (exact/narrower/broader/partial/disjoint/unknown) and returns a `ScopeMatch`
+  whose `displayed` scope is **always the primitive's actual scope**
+  (snap-to-truth) plus mismatch warnings. NAICS/SOC compared by significant-
+  prefix hierarchy (a minor group like SOC 41-4000 correctly contains detailed
+  41-4012); geo by ISO-set with `global` wildcard; segment by employee-range
+  containment. Catches the reviewed failures: a wholesale/mfg-only headcount
+  (SOC 41-4012) under an "all B2B reps" market reads as NARROWER and names the
+  services group (41-3000) it excludes entirely; an unrestricted occupation
+  count under a mid-market band reads as BROADER. 24 adversarial tests
+  (`tests/test_scope_guard.py`).
+  Spec: `docs/superpowers/specs/2026-05-31-rigorous-market-definition-design.md`.
+- **Showcase data backfilled.** `demo-ai-sales-ops-us` + its 5 primitives now
+  declare real scope, so the guard reproduces the reviewed failures on live data:
+  the concept's two methods (bottoms-up $2.0B via the wholesale-only SOC 41-4012
+  headcount, top-down $31.2B via mid-market-only firms) diverge *because* of the
+  scope mismatches — the headcount reads NARROWER (excludes services reps), both
+  mid-market inputs read NARROWER on segment.
+- **Scope report on every sized TAM** (`strata.scope.build_scope_report`). The
+  evaluator attaches an optional `ScopeReport` to `TAMOutput`: the declared
+  market scope plus, per consumed primitive, its snap-to-truth `displayed` scope
+  and definite mismatch warnings (`UNKNOWN` suppressed, so a per-seat price with
+  no persona isn't nagged). Derived — not part of the state hash, JSONB-stored,
+  `None` on TAMs persisted before scope landed. Flows through `GET /build/{slug}`,
+  `POST /build/recompute`, and `GET /tam/{hash}`. 6 tests (`tests/test_scope_report.py`).
+- **Scope on the `/tam` artifact** (`web/.../tam/ScopeCheck.tsx`). A read-only
+  **Market** chip strip under the headline shows the declared scope; a **Scope
+  check** section (after the convergence banner) lists each off-scope input with
+  its snap-to-truth scope and the narrower/broader reason — the legible "why the
+  methods disagree"; a right-rail summary gives the at-a-glance ok/off-scope
+  count. `scope` added to the web `tamOutputSchema` (zod). 5 component tests;
+  typecheck + biome clean on changed files.
+- **Scope persisted through Postgres** (migration `007`). `scope` JSONB columns
+  on `primitives` + `concepts` (nullable); `Registry.from_db` round-trips it
+  (NULL → empty scope for rows seeded before scope landed), and the seed upsert
+  writes/updates it (complete on-conflict set, per the prior re-seed bug). Without
+  this the guard worked on the YAML/in-memory path but scope was dropped on the
+  PG-backed deploy path. Verified end-to-end against live Postgres.
+
 ### Changed — honest sourced-gap upgrade for unsizable crypto companies
 - **Corrected two wrong `unsizable` reasons.** 0xPass and 3Blocks were labelled
   unsizable due to the Q20 quarantine — but that conflates two different things:

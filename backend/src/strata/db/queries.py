@@ -39,6 +39,10 @@ async def load_primitives_from_db(session: AsyncSession) -> list[AtomicPrimitive
             "delivery_mode": row.delivery_mode,
             "source": row.source,
         }
+        # NULL for rows seeded before scope landed → omit so the model default
+        # (empty MarketScope) applies; passing None would fail validation.
+        if row.scope is not None:
+            raw["scope"] = row.scope
         primitives.append(AtomicPrimitive.model_validate(raw))
     return primitives
 
@@ -60,6 +64,8 @@ async def load_concepts_from_db(session: AsyncSession) -> list[Concept]:
             "measurements": row.measurements,
             "competing_concepts": row.competing_concepts,
         }
+        if row.scope is not None:
+            raw["scope"] = row.scope
         concepts.append(Concept.model_validate(raw))
     return concepts
 

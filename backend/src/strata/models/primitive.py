@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ._common import Slug
 from .geo import Geo, GeoPerspective
+from .scope import MarketScope
 from .source import Source
 from .unit import Unit, UnitDimension
 
@@ -75,6 +76,11 @@ class AtomicPrimitive(BaseModel):
 
     geo: Geo
     geo_perspective: GeoPerspective
+
+    # The primitive's own true scope (sub-project 1). Defaults empty so existing
+    # records load unchanged; the scope guard reads this as the "actual" side and
+    # the UI snaps the displayed tag to it.
+    scope: MarketScope = MarketScope()
 
     distribution_shape: DistributionShape = DistributionShape.UNIFORM
     delivery_mode: DeliveryMode = DeliveryMode.NOT_APPLICABLE

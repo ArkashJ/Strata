@@ -18,6 +18,14 @@ geo:
   codes:
   - US
 geo_perspective: supply
+scope:
+  product:
+  - ai-sales-ops-tooling
+  - revenue-intelligence
+  geo_supply:
+  - US
+  geo_demand:
+  - US
 distribution_shape: normal
 delivery_mode: n/a
 source:
