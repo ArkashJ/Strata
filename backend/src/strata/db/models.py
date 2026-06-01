@@ -51,6 +51,9 @@ class PrimitiveRow(Base):
     distribution_shape: Mapped[str] = mapped_column(String(32), nullable=False, default="normal")
     delivery_mode: Mapped[str] = mapped_column(String(32), nullable=False, default="n/a")
     source: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    # Sub-project 1 — the primitive's MarketScope (nullable: rows seeded before
+    # scope landed carry NULL → reconstructed as an empty scope).
+    scope: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -97,6 +100,9 @@ class ConceptRow(Base):
     modifiers: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     measurements: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     competing_concepts: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    # Sub-project 1 — the concept's declared MarketScope (nullable: rows seeded
+    # before scope landed carry NULL → reconstructed as an empty scope).
+    scope: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

@@ -49,6 +49,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   methods disagree"; a right-rail summary gives the at-a-glance ok/off-scope
   count. `scope` added to the web `tamOutputSchema` (zod). 5 component tests;
   typecheck + biome clean on changed files.
+- **Scope persisted through Postgres** (migration `007`). `scope` JSONB columns
+  on `primitives` + `concepts` (nullable); `Registry.from_db` round-trips it
+  (NULL → empty scope for rows seeded before scope landed), and the seed upsert
+  writes/updates it (complete on-conflict set, per the prior re-seed bug). Without
+  this the guard worked on the YAML/in-memory path but scope was dropped on the
+  PG-backed deploy path. Verified end-to-end against live Postgres.
 
 ### Changed — honest sourced-gap upgrade for unsizable crypto companies
 - **Corrected two wrong `unsizable` reasons.** 0xPass and 3Blocks were labelled
