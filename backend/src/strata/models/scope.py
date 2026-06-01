@@ -125,3 +125,45 @@ class MarketScope(BaseModel):
             or self.include
             or self.exclude
         )
+
+
+# ── serializable scope-check report (attached to a TAM output / build response) ──
+#
+# The guard (``strata.scope.guard``) returns plain dataclasses; these Pydantic
+# mirrors are what the API serializes. Kept here (no guard/registry import) so
+# ``TAMOutput`` can reference ``ScopeReport`` without an import cycle.
+
+
+class ScopeWarningOut(BaseModel):
+    """One surfaced scope divergence on a consumed primitive."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    dimension: ScopeDimension
+    relationship: str  # Relationship value: narrower | broader | partial | disjoint
+    message: str
+
+
+class InputScope(BaseModel):
+    """The snap-to-truth scope of one consumed primitive, plus any divergences
+    from the concept's declared scope."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    primitive_slug: str
+    role_name: str
+    # Always the primitive's actual scope — the UI binds the tag to this truth.
+    displayed: MarketScope
+    warnings: tuple[ScopeWarningOut, ...] = ()
+
+
+class ScopeReport(BaseModel):
+    """Per-build scope check: the declared market scope plus, for each consumed
+    primitive, its true (displayed) scope and any mismatch warnings. ``ok`` is
+    True when no input diverged from the declared market."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    declared: MarketScope
+    inputs: tuple[InputScope, ...] = ()
+    ok: bool = True

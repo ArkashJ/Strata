@@ -43,6 +43,7 @@ from ..models import (
     UnitKind,
 )
 from ..registry import Registry, RegistryError
+from ..scope import build_scope_report
 
 
 class EvaluatorError(RuntimeError):
@@ -164,6 +165,7 @@ def size_concept(
         independence_score=_independence(builds),
         uses_synthetic_primitives=uses_synthetic,
         uses_modeled_composites=False,
+        scope=build_scope_report(registry, concept.scope, scenarios),
     )
 
 

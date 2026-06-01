@@ -15,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ._common import AnalysisLens, Sha256Hex, Slug
 from .framework import InputRole, MethodFamily
+from .scope import ScopeReport
 from .unit import Unit
 
 
@@ -150,6 +151,10 @@ class TAMOutput(BaseModel):
     # Wave 4 — promoted TAMs are the public, indexable growth surface: they show
     # in /browse and the sitemap. Separate from the auto-mint state hash (U6).
     is_promoted: bool = False
+    # Sub-project 1 — per-input scope check (declared vs each primitive's true
+    # scope, snap-to-truth). Populated by the evaluator; None on TAMs persisted
+    # before scope landed. Derived, not part of the state hash.
+    scope: ScopeReport | None = None
 
 
 class TrajectoryPoint(BaseModel):

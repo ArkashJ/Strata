@@ -269,7 +269,10 @@ def _segment_warning(
 ) -> ScopeWarning | None:
     if declared is None:
         return None  # nothing declared → nothing to violate (self-consistent with _coded_warning)
-    if rel is Relationship.EXACT:
+    if rel in (Relationship.EXACT, Relationship.UNKNOWN):
+        # _classify_segment never returns UNKNOWN today (actual=None opens the
+        # band rather than going unverified); guard it anyway so a future change
+        # can't fall through to the DISJOINT message below.
         return None
     dlabel = declared.label if declared else "all firms"
     alabel = actual.label if actual else "all firm sizes (no restriction)"

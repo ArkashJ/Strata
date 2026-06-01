@@ -14,10 +14,12 @@ from .guard import (
     ScopeWarning,
     classify_scope,
 )
+from .report import build_scope_report
 
 __all__ = [
     "Relationship",
     "ScopeMatch",
     "ScopeWarning",
+    "build_scope_report",
     "classify_scope",
 ]

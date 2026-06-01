@@ -47,8 +47,11 @@ from .scope import (
     CodedTag,
     CodeSystem,
     FirmSizeBand,
+    InputScope,
     MarketScope,
     ScopeDimension,
+    ScopeReport,
+    ScopeWarningOut,
 )
 from .source import (
     PARAPHRASE_MAX_CHARS,
@@ -106,6 +109,7 @@ __all__ = [
     "GeoPerspective",
     "HorizonClass",
     "InputRole",
+    "InputScope",
     "InputUsed",
     "LensGap",
     "MarginCaptureModifier",
@@ -117,6 +121,8 @@ __all__ = [
     "Scenario",
     "ScenarioBanner",
     "ScopeDimension",
+    "ScopeReport",
+    "ScopeWarningOut",
     "SetOperation",
     "Sha256Hex",
     "Slug",

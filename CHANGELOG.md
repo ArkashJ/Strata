@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added — rigorous market definition, sub-project 1 (foundation)
+### Added — rigorous market definition, sub-project 1
 - **`MarketScope` value object** (`strata.models.scope`) — the structured,
   checkable definition of *which* market a number sizes: `vertical` (NAICS),
   `persona` (SOC), `segment` (firm-size band), `geo_supply`/`geo_demand` (ISO,
@@ -26,9 +26,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   containment. Catches the reviewed failures: a wholesale/mfg-only headcount
   (SOC 41-4012) under an "all B2B reps" market reads as NARROWER and names the
   services group (41-3000) it excludes entirely; an unrestricted occupation
-  count under a mid-market band reads as BROADER. 22 adversarial tests
-  (`tests/test_scope_guard.py`). Inert to existing sizing until later commits.
+  count under a mid-market band reads as BROADER. 24 adversarial tests
+  (`tests/test_scope_guard.py`).
   Spec: `docs/superpowers/specs/2026-05-31-rigorous-market-definition-design.md`.
+- **Showcase data backfilled.** `demo-ai-sales-ops-us` + its 5 primitives now
+  declare real scope, so the guard reproduces the reviewed failures on live data:
+  the concept's two methods (bottoms-up $2.0B via the wholesale-only SOC 41-4012
+  headcount, top-down $31.2B via mid-market-only firms) diverge *because* of the
+  scope mismatches — the headcount reads NARROWER (excludes services reps), both
+  mid-market inputs read NARROWER on segment.
+- **Scope report on every sized TAM** (`strata.scope.build_scope_report`). The
+  evaluator attaches an optional `ScopeReport` to `TAMOutput`: the declared
+  market scope plus, per consumed primitive, its snap-to-truth `displayed` scope
+  and definite mismatch warnings (`UNKNOWN` suppressed, so a per-seat price with
+  no persona isn't nagged). Derived — not part of the state hash, JSONB-stored,
+  `None` on TAMs persisted before scope landed. Flows through `GET /build/{slug}`,
+  `POST /build/recompute`, and `GET /tam/{hash}`. 6 tests (`tests/test_scope_report.py`).
 
 ### Changed — honest sourced-gap upgrade for unsizable crypto companies
 - **Corrected two wrong `unsizable` reasons.** 0xPass and 3Blocks were labelled
