@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import time
 from dataclasses import dataclass, replace
 from datetime import date
@@ -20,6 +19,8 @@ from pathlib import Path
 from typing import Any, TypedDict, cast
 
 import httpx
+
+from strata.config import settings
 
 # ═══════════════════════════════════════════════════════════════════
 # Enums
@@ -257,6 +258,22 @@ class TradeRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class ServiceTradeRecord:
+    """A single services-trade data point (EBOPS classification)."""
+
+    reporter_code: int
+    reporter_iso: str
+    reporter_name: str
+    partner_code: int
+    flow_code: str
+    flow_desc: str
+    period: int
+    service_code: str
+    service_desc: str
+    primary_value: float | None
+
+
+@dataclass(frozen=True, slots=True)
 class TradePartnerSummary:
     """Aggregated trade summary for a single partner."""
 
@@ -405,8 +422,11 @@ class _DiskCache:
 # Client
 # ═══════════════════════════════════════════════════════════════════
 
-_BASE_PUBLIC = "https://comtradeapi.un.org/public/v1/preview/C/A/HS"
-_BASE_DATA = "https://comtradeapi.un.org/data/v1/get/C/A/HS"
+_ROOT_PUBLIC = "https://comtradeapi.un.org/public/v1/preview"
+_ROOT_DATA = "https://comtradeapi.un.org/data/v1/get"
+# Back-compat: default commodities · annual · HS path used by older callers.
+_BASE_PUBLIC = f"{_ROOT_PUBLIC}/C/A/HS"
+_BASE_DATA = f"{_ROOT_DATA}/C/A/HS"
 
 
 class ComtradeClientError(RuntimeError):
@@ -439,12 +459,13 @@ class ComtradeClient:
         cache_dir: Path | None = None,
         cache_ttl: int = 604800,
         timeout: float = 60.0,
+        transport: httpx.BaseTransport | None = None,
     ) -> None:
-        self._key = subscription_key or os.environ.get("STRATA_COMTRADE_API_KEY", None)
+        self._key = subscription_key or settings.comtrade_api_key
         headers: dict[str, str] = {}
         if self._key:
             headers["Ocp-Apim-Subscription-Key"] = self._key
-        self._http = httpx.Client(timeout=timeout, headers=headers)
+        self._http = httpx.Client(timeout=timeout, headers=headers, transport=transport)
         default_cache = Path.home() / ".strata" / "cache" / "comtrade"
         self._cache = _DiskCache(cache_dir or default_cache, cache_ttl)
 
@@ -459,9 +480,21 @@ class ComtradeClient:
 
     # ── internal helpers ─────────────────────────────────────────
 
-    def _base_url(self) -> str:
-        """Return the appropriate base URL based on whether a key is set."""
-        return _BASE_DATA if self._key else _BASE_PUBLIC
+    def _base_url(
+        self,
+        *,
+        type_code: str = "C",
+        freq: str = "A",
+        classification: str = "HS",
+    ) -> str:
+        """Build the base URL for a given type/frequency/classification.
+
+        ``type_code``: ``C`` commodities, ``S`` services.
+        ``freq``: ``A`` annual, ``M`` monthly.
+        ``classification``: ``HS`` (goods) or ``EB`` (services, EBOPS).
+        """
+        root = _ROOT_DATA if self._key else _ROOT_PUBLIC
+        return f"{root}/{type_code}/{freq}/{classification}"
 
     def _cache_key(self, url: str, params: dict[str, str]) -> str:
         parts = [url, json.dumps(params, sort_keys=True)]
@@ -472,8 +505,11 @@ class ComtradeClient:
         params: dict[str, str],
         *,
         kind: str,
+        type_code: str = "C",
+        freq: str = "A",
+        classification: str = "HS",
     ) -> ComtradeResponse:
-        url = self._base_url()
+        url = self._base_url(type_code=type_code, freq=freq, classification=classification)
         ck = self._cache_key(url, params)
         cached = self._cache.get(ck)
         if cached is not None:
@@ -871,6 +907,222 @@ class ComtradeClient:
             commodity=ComtradeHSChapter.PHARMA,
         )
 
+    # ── HS6 granularity ──────────────────────────────────────────
+
+    def get_hs6_trade(
+        self,
+        cmd_code_hs6: str,
+        reporter: str,
+        period: int,
+        *,
+        flow: str = ComtradeFlowCode.IMPORTS,
+        partner: str = "0",
+    ) -> ComtradeResponse:
+        """Fetch trade for a specific 6-digit HS commodity code.
+
+        Args:
+            cmd_code_hs6: 6-digit HS commodity code (e.g. "854231").
+            reporter: ISO numeric reporter code.
+            period: Year.
+            flow: Flow direction (default imports).
+            partner: Partner country code ("0" = World).
+        """
+        return self.get_trade(
+            reporter,
+            period,
+            partner=partner,
+            flow=flow,
+            commodity=cmd_code_hs6,
+        )
+
+    def get_world_imports(
+        self,
+        cmd_code: str,
+        period: int,
+        *,
+        reporter: str = "0",
+    ) -> ComtradeResponse:
+        """Fetch world-aggregate imports for a commodity.
+
+        Uses the World reporter (``reporterCode=0``) and World partner so the
+        result is the global import value for the commodity.
+
+        Args:
+            cmd_code: HS commodity code (TOTAL, chapter, or HS6).
+            period: Year.
+            reporter: Reporter code; ``"0"`` (World) by default.
+        """
+        return self.get_trade(
+            reporter,
+            period,
+            partner="0",
+            flow=ComtradeFlowCode.IMPORTS,
+            commodity=cmd_code,
+        )
+
+    def get_world_exports(
+        self,
+        cmd_code: str,
+        period: int,
+        *,
+        reporter: str = "0",
+    ) -> ComtradeResponse:
+        """Fetch world-aggregate exports for a commodity (mirror of imports)."""
+        return self.get_trade(
+            reporter,
+            period,
+            partner="0",
+            flow=ComtradeFlowCode.EXPORTS,
+            commodity=cmd_code,
+        )
+
+    # ── monthly frequency ────────────────────────────────────────
+
+    def get_monthly_trade(
+        self,
+        reporter: str,
+        period_range: list[str],
+        *,
+        partner: str = "0",
+        flow: str = ComtradeFlowCode.BOTH,
+        commodity: str = ComtradeHSChapter.TOTAL,
+    ) -> ComtradeResponse:
+        """Fetch monthly trade data for one or more YYYYMM periods.
+
+        Threads the monthly frequency (``ComtradeFrequency.MONTHLY``) into the
+        request path.
+
+        Args:
+            reporter: ISO numeric reporter code.
+            period_range: List of ``YYYYMM`` strings (e.g. ["202301", "202302"]).
+            partner: Partner country code.
+            flow: Flow direction.
+            commodity: HS commodity code.
+        """
+        params: dict[str, str] = {
+            "reporterCode": reporter,
+            "partnerCode": partner,
+            "period": ",".join(period_range),
+            "flowCode": flow,
+            "cmdCode": commodity,
+            "customsCode": "C00",
+            "motCode": "0",
+        }
+        return self._request(
+            params, kind="trade_monthly", freq=ComtradeFrequency.MONTHLY, classification="HS"
+        )
+
+    # ── services trade (EBOPS) ────────────────────────────────────
+
+    def get_services_trade(
+        self,
+        eb_code: str,
+        reporter: str,
+        period: int,
+        *,
+        partner: str = "0",
+        flow: str = ComtradeFlowCode.BOTH,
+    ) -> tuple[ServiceTradeRecord, ...]:
+        """Fetch services trade by EBOPS service code (/S/A/EB endpoint).
+
+        Returns ``ServiceTradeRecord`` tuples.
+
+        Args:
+            eb_code: EBOPS service classification code (e.g. "SOX" computer
+                services). ``TOTAL`` for all services.
+            reporter: ISO numeric reporter code.
+            period: Year.
+            partner: Partner country code.
+            flow: Flow direction.
+        """
+        params: dict[str, str] = {
+            "reporterCode": reporter,
+            "partnerCode": partner,
+            "period": str(period),
+            "flowCode": flow,
+            "cmdCode": eb_code,
+        }
+        resp = self._request(params, kind="services", type_code="S", freq="A", classification="EB")
+        # Re-parse the cached/fresh body would lose service-specific fields; the
+        # generic TradeRecord already captured the shared columns, so map across.
+        return tuple(
+            ServiceTradeRecord(
+                reporter_code=r.reporter_code,
+                reporter_iso=r.reporter_iso,
+                reporter_name=r.reporter_name,
+                partner_code=r.partner_code,
+                flow_code=r.flow_code,
+                flow_desc=r.flow_desc,
+                period=r.period,
+                service_code=r.commodity_code,
+                service_desc=r.commodity_desc,
+                primary_value=r.primary_value,
+            )
+            for r in resp.records
+        )
+
+    # ── derived metrics ──────────────────────────────────────────
+
+    def get_unit_price(
+        self,
+        reporter: str,
+        period: int,
+        commodity: str,
+        *,
+        flow: str = ComtradeFlowCode.IMPORTS,
+        partner: str = "0",
+    ) -> float | None:
+        """Compute implied unit price (value ÷ net weight) for a commodity.
+
+        Returns ``None`` when value or quantity is missing/zero.
+
+        Args:
+            reporter: ISO numeric reporter code.
+            period: Year.
+            commodity: HS commodity code.
+            flow: Flow direction.
+            partner: Partner country code.
+        """
+        resp = self.get_trade(reporter, period, partner=partner, flow=flow, commodity=commodity)
+        record = _pick_record(resp.records, flow=flow, year=period)
+        value = record.primary_value
+        qty = record.net_weight
+        if value is None or qty is None or qty == 0.0:
+            return None
+        return value / qty
+
+    def get_reexports(
+        self,
+        reporter: str,
+        period: int,
+        *,
+        flow: str = ComtradeFlowCode.EXPORTS,
+        commodity: str = ComtradeHSChapter.TOTAL,
+        partner: str = "0",
+    ) -> ComtradeResponse:
+        """Fetch re-export / re-import flows via a non-standard customs code.
+
+        Re-exports use customs procedure code ``C02`` (vs ``C00`` for normal
+        domestic trade). Pass ``flow=ComtradeFlowCode.IMPORTS`` for re-imports.
+
+        Args:
+            reporter: ISO numeric reporter code.
+            period: Year.
+            flow: Flow direction (exports → re-exports).
+            commodity: HS commodity code.
+            partner: Partner country code.
+        """
+        params: dict[str, str] = {
+            "reporterCode": reporter,
+            "partnerCode": partner,
+            "period": str(period),
+            "flowCode": flow,
+            "cmdCode": commodity,
+            "customsCode": "C02",
+            "motCode": "0",
+        }
+        return self._request(params, kind="trade_reexports")
+
     # ── cache management ─────────────────────────────────────────
 
     def clear_cache(self) -> int:
@@ -1098,6 +1350,70 @@ def capabilities() -> list[CapabilitySpec]:
                     example="USA",
                 ),
                 CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="comtrade",
+            method="get_hs6_trade",
+            description="UN Comtrade trade value for a 6-digit HS commodity code.",
+            returns="atomic primitive, unit=currency USD, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="cmd_code_hs6",
+                    type="str",
+                    description="6-digit HS code",
+                    example="854231",
+                ),
+                CapabilityArg(
+                    name="reporter", type="str", description="Reporter code", example="842"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="comtrade",
+            method="get_world_imports",
+            description="UN Comtrade world-aggregate import value for a commodity.",
+            returns="atomic primitive, unit=currency USD, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="cmd_code", type="str", description="HS commodity code", example="85"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="comtrade",
+            method="get_services_trade",
+            description="UN Comtrade services trade by EBOPS service code.",
+            returns="ServiceTradeRecord tuples, unit=currency USD, tier=aggregator",
+            args=[
+                CapabilityArg(
+                    name="eb_code", type="str", description="EBOPS service code", example="SOX"
+                ),
+                CapabilityArg(
+                    name="reporter", type="str", description="Reporter code", example="842"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2022"),
+            ],
+            source_tier="aggregator",
+        ),
+        CapabilitySpec(
+            connector="comtrade",
+            method="get_unit_price",
+            description="UN Comtrade implied unit price (trade value ÷ net weight).",
+            returns="float (USD per kg) or None",
+            args=[
+                CapabilityArg(
+                    name="reporter", type="str", description="Reporter code", example="842"
+                ),
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+                CapabilityArg(
+                    name="commodity", type="str", description="HS commodity code", example="2709"
+                ),
             ],
             source_tier="aggregator",
         ),

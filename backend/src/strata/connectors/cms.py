@@ -43,6 +43,11 @@ class CMSDataset(StrEnum):
     HOME_HEALTH = "home-health-care-agencies"
     HOSPICE = "hospice-providers"
     DIALYSIS = "dialysis-facility-compare"
+    MEDICARE_ADVANTAGE = "8e989bc0-2260-49a7-9c6d-8e9e10af7cea"
+    PART_D_PRESCRIBER = "medicare-part-d-prescribers-by-provider-and-drug"
+    NHE_PROJECTIONS = "national-health-expenditure-projections"
+    PHYSICIAN_UTILIZATION = "medicare-physician-other-practitioners-by-provider-and-service"
+    MARKETPLACE_ENROLLMENT = "marketplace-open-enrollment-period-public-use-files"
 
 
 class CMSState(StrEnum):
@@ -210,6 +215,26 @@ class HospitalRecordRaw(TypedDict, total=False):
     meets_criteria_for_promoting_interoperability: str
 
 
+class CountRecordRaw(TypedDict, total=False):
+    """Raw fields for provider/facility count datasets."""
+
+    state: str
+    year: str
+    count: str
+    provider_type: str
+
+
+class ServiceRecordRaw(TypedDict, total=False):
+    """Raw fields from physician service-utilization datasets."""
+
+    hcpcs_code: str
+    hcpcs_description: str
+    total_services: str
+    total_beneficiaries: str
+    avg_submitted_charge: str
+    avg_medicare_payment: str
+
+
 # ═══════════════════════════════════════════════════════════════════
 # Dataclasses — validated internal models
 # ═══════════════════════════════════════════════════════════════════
@@ -320,6 +345,28 @@ class HospitalRecord:
 
 
 @dataclass(frozen=True, slots=True)
+class CountRecord:
+    """Provider/facility count for a state and year."""
+
+    state: str
+    year: int
+    count: int
+    provider_type: str
+
+
+@dataclass(frozen=True, slots=True)
+class ServiceRecord:
+    """Physician service utilization for a single HCPCS code."""
+
+    hcpcs_code: str
+    hcpcs_description: str
+    total_services: int | None
+    total_beneficiaries: int | None
+    avg_submitted_charge: float | None
+    avg_medicare_payment: float | None
+
+
+@dataclass(frozen=True, slots=True)
 class CMSResponse:
     """Standard return type for every CMS client call."""
 
@@ -330,6 +377,8 @@ class CMSResponse:
     drug_spending: tuple[DrugSpendingRecord, ...] = ()
     nhe: tuple[NationalHealthExpenditure, ...] = ()
     hospitals: tuple[HospitalRecord, ...] = ()
+    counts: tuple[CountRecord, ...] = ()
+    services: tuple[ServiceRecord, ...] = ()
     total: int = 0
     cached: bool = False
     cache_age_seconds: float = 0.0
@@ -357,6 +406,7 @@ def _parse_enrollment(raw: dict[str, Any]) -> EnrollmentRecord:
             raw.get("medicare_advantage_enrollment")
             or raw.get("Medicare_Advantage_Enrollment")
             or raw.get("ma_enrollment")
+            or raw.get("BENES_MA_CNT")
         ),
         original_medicare=_safe_int(
             raw.get("original_medicare_enrollment") or raw.get("Original_Medicare_Enrollment")
@@ -488,6 +538,43 @@ def _parse_hospital(raw: dict[str, Any]) -> HospitalRecord:
         ),
         overall_rating=str(raw.get("overall_rating") or raw.get("Overall_Rating") or ""),
         emergency_services=emergency_raw.lower() in ("yes", "true", "1", "y"),
+    )
+
+
+def _parse_count(raw: dict[str, Any]) -> CountRecord:
+    year_val = _safe_int(raw.get("year") or raw.get("Year") or raw.get("YEAR"))
+    return CountRecord(
+        state=str(raw.get("state") or raw.get("State") or raw.get("STATE") or ""),
+        year=year_val or 0,
+        count=_safe_int(raw.get("count") or raw.get("Count") or raw.get("total") or len(raw)) or 0,
+        provider_type=str(
+            raw.get("provider_type") or raw.get("Provider_Type") or raw.get("type") or ""
+        ),
+    )
+
+
+def _parse_service(raw: dict[str, Any]) -> ServiceRecord:
+    return ServiceRecord(
+        hcpcs_code=str(raw.get("hcpcs_code") or raw.get("HCPCS_Cd") or raw.get("hcpcs_cd") or ""),
+        hcpcs_description=str(
+            raw.get("hcpcs_description") or raw.get("HCPCS_Desc") or raw.get("hcpcs_desc") or ""
+        ),
+        total_services=_safe_int(
+            raw.get("total_services") or raw.get("Tot_Srvcs") or raw.get("tot_srvcs")
+        ),
+        total_beneficiaries=_safe_int(
+            raw.get("total_beneficiaries") or raw.get("Tot_Benes") or raw.get("tot_benes")
+        ),
+        avg_submitted_charge=_safe_float(
+            raw.get("avg_submitted_charge")
+            or raw.get("Avg_Sbmtd_Chrg")
+            or raw.get("avg_sbmtd_chrg")
+        ),
+        avg_medicare_payment=_safe_float(
+            raw.get("avg_medicare_payment")
+            or raw.get("Avg_Mdcr_Pymt_Amt")
+            or raw.get("avg_mdcr_pymt_amt")
+        ),
     )
 
 
@@ -648,6 +735,8 @@ class CMSClient:
         drug_spending_records: tuple[DrugSpendingRecord, ...] = ()
         nhe_records: tuple[NationalHealthExpenditure, ...] = ()
         hospitals: tuple[HospitalRecord, ...] = ()
+        counts: tuple[CountRecord, ...] = ()
+        services: tuple[ServiceRecord, ...] = ()
 
         records: list[dict[str, Any]] = [
             cast(dict[str, Any], r) for r in data if isinstance(r, dict)
@@ -665,6 +754,10 @@ class CMSClient:
             nhe_records = tuple(_parse_nhe(r) for r in records)
         elif kind == "hospital":
             hospitals = tuple(_parse_hospital(r) for r in records)
+        elif kind == "count":
+            counts = tuple(_parse_count(r) for r in records)
+        elif kind == "service":
+            services = tuple(_parse_service(r) for r in records)
 
         return CMSResponse(
             kind=kind,
@@ -674,6 +767,8 @@ class CMSClient:
             drug_spending=drug_spending_records,
             nhe=nhe_records,
             hospitals=hospitals,
+            counts=counts,
+            services=services,
             total=len(records),
             cached=cached,
             cache_age_seconds=round(age, 1),
@@ -1002,6 +1097,207 @@ class CMSClient:
         params["size"] = str(limit)
         return self._request(url, params, kind="enrollment")
 
+    # ── medicare advantage ──────────────────────────────────────
+
+    def get_ma_enrollment(
+        self,
+        year: int | None = None,
+        state: str | CMSState | None = None,
+        limit: int = 500,
+    ) -> CMSResponse:
+        """Retrieve Medicare Advantage (Part C) enrollment data.
+
+        Args:
+            year: Filter by year.
+            state: Filter by state code.
+            limit: Maximum records to return.
+        """
+        url = self._dataset_url(CMSDataset.MEDICARE_ADVANTAGE)
+        params = self._build_filters(year=year, state=state)
+        params["size"] = str(limit)
+        return self._request(url, params, kind="enrollment")
+
+    # ── provider / facility counts ──────────────────────────────
+
+    def get_provider_count(
+        self,
+        dataset: str | CMSDataset = CMSDataset.PHYSICIAN_COMPARE,
+        state: str | CMSState | None = None,
+        year: int | None = None,
+    ) -> CMSResponse:
+        """Return the number of providers/facilities in a dataset.
+
+        Uses the dataset's stats endpoint to populate a CountRecord with
+        the total row count (national or per-state).
+
+        Args:
+            dataset: CMS dataset to count.
+            state: Optional state filter.
+            year: Optional year filter.
+        """
+        url = self._dataset_url(dataset)
+        params = self._build_filters(year=year, state=state)
+        params["size"] = "1"
+        resp = self._request(url, params, kind="count")
+        record = CountRecord(
+            state=str(state) if state else "US",
+            year=year or 0,
+            count=resp.total,
+            provider_type=str(dataset),
+        )
+        return CMSResponse(
+            kind="count",
+            counts=(record,),
+            total=resp.total,
+            cached=resp.cached,
+            cache_age_seconds=resp.cache_age_seconds,
+        )
+
+    def get_nursing_homes(
+        self,
+        state: str | CMSState | None = None,
+        limit: int = 500,
+    ) -> CMSResponse:
+        """Retrieve nursing-home / rehab facility records.
+
+        Args:
+            state: Filter by state code.
+            limit: Maximum records to return.
+        """
+        url = self._dataset_url(CMSDataset.NURSING_HOMES)
+        params: dict[str, str] = {"size": str(limit)}
+        if state is not None:
+            params["filter[state]"] = str(state)
+        return self._request(url, params, kind="provider")
+
+    def get_home_health_agencies(
+        self,
+        state: str | CMSState | None = None,
+        limit: int = 500,
+    ) -> CMSResponse:
+        """Retrieve home-health-care agency records.
+
+        Args:
+            state: Filter by state code.
+            limit: Maximum records to return.
+        """
+        url = self._dataset_url(CMSDataset.HOME_HEALTH)
+        params: dict[str, str] = {"size": str(limit)}
+        if state is not None:
+            params["filter[state]"] = str(state)
+        return self._request(url, params, kind="provider")
+
+    def get_hospice_providers(
+        self,
+        state: str | CMSState | None = None,
+        limit: int = 500,
+    ) -> CMSResponse:
+        """Retrieve hospice provider records.
+
+        Args:
+            state: Filter by state code.
+            limit: Maximum records to return.
+        """
+        url = self._dataset_url(CMSDataset.HOSPICE)
+        params: dict[str, str] = {"size": str(limit)}
+        if state is not None:
+            params["filter[state]"] = str(state)
+        return self._request(url, params, kind="provider")
+
+    def get_dialysis_facilities(
+        self,
+        state: str | CMSState | None = None,
+        limit: int = 500,
+    ) -> CMSResponse:
+        """Retrieve dialysis facility records.
+
+        Args:
+            state: Filter by state code.
+            limit: Maximum records to return.
+        """
+        url = self._dataset_url(CMSDataset.DIALYSIS)
+        params: dict[str, str] = {"size": str(limit)}
+        if state is not None:
+            params["filter[state]"] = str(state)
+        return self._request(url, params, kind="provider")
+
+    # ── prescribers / utilization ───────────────────────────────
+
+    def get_part_d_drug_by_prescriber(
+        self,
+        state: str | CMSState | None = None,
+        year: int | None = None,
+        limit: int = 100,
+    ) -> CMSResponse:
+        """Retrieve Part D prescriber-by-drug utilization records.
+
+        Args:
+            state: Filter by state code.
+            year: Filter by year.
+            limit: Maximum records to return.
+        """
+        url = self._dataset_url(CMSDataset.PART_D_PRESCRIBER)
+        params = self._build_filters(year=year, state=state)
+        params["size"] = str(limit)
+        return self._request(url, params, kind="provider")
+
+    def get_physician_service_utilization(
+        self,
+        hcpcs: str,
+        limit: int = 100,
+    ) -> CMSResponse:
+        """Retrieve physician service utilization for an HCPCS code.
+
+        Args:
+            hcpcs: HCPCS procedure/service code (e.g. "99213").
+            limit: Maximum records to return.
+        """
+        url = self._dataset_url(CMSDataset.PHYSICIAN_UTILIZATION)
+        params: dict[str, str] = {
+            "filter[hcpcs_cd]": hcpcs,
+            "size": str(limit),
+        }
+        return self._request(url, params, kind="service")
+
+    # ── marketplace ─────────────────────────────────────────────
+
+    def get_marketplace_enrollment(
+        self,
+        state: str | CMSState | None = None,
+        year: int | None = None,
+        limit: int = 500,
+    ) -> CMSResponse:
+        """Retrieve ACA Marketplace open-enrollment data.
+
+        Args:
+            state: Filter by state code.
+            year: Filter by year.
+            limit: Maximum records to return.
+        """
+        url = self._dataset_url(CMSDataset.MARKETPLACE_ENROLLMENT)
+        params = self._build_filters(year=year, state=state)
+        params["size"] = str(limit)
+        return self._request(url, params, kind="enrollment")
+
+    # ── NHE projections ─────────────────────────────────────────
+
+    def get_nhe_projections(
+        self,
+        year: int | None = None,
+        limit: int = 500,
+    ) -> CMSResponse:
+        """Retrieve projected National Health Expenditure data.
+
+        Args:
+            year: Filter by (future) projection year.
+            limit: Maximum records to return.
+        """
+        url = self._dataset_url(CMSDataset.NHE_PROJECTIONS)
+        params: dict[str, str] = {"size": str(limit)}
+        if year is not None:
+            params["filter[year]"] = str(year)
+        return self._request(url, params, kind="nhe")
+
     # ── dataset catalog ─────────────────────────────────────────
 
     def get_dataset_catalog(self) -> CMSResponse:
@@ -1233,15 +1529,15 @@ def capabilities() -> list[CapabilitySpec]:
     """Methods exposed to the LLM router (spec §5)."""
     from ._capability import CapabilityArg, CapabilitySpec
 
+    _year = CapabilityArg(name="year", type="int", description="Calendar year", example="2023")
+    _state = CapabilityArg(name="state", type="str", description="State postal code", example="CA")
     return [
         CapabilitySpec(
             connector="cms",
             method="get_enrollment",
             description="Medicare enrollment counts (national or by state).",
             returns="atomic primitive, unit=count people, tier=regulator",
-            args=[
-                CapabilityArg(name="year", type="int", description="Calendar year", example="2023"),
-            ],
+            args=[_year],
             source_tier="regulator",
         ),
         CapabilitySpec(
@@ -1249,9 +1545,7 @@ def capabilities() -> list[CapabilitySpec]:
             method="get_spending",
             description="Medicare / Medicaid spending by category.",
             returns="atomic primitive, unit=currency USD, tier=regulator",
-            args=[
-                CapabilityArg(name="year", type="int", description="Calendar year", example="2023"),
-            ],
+            args=[_year],
             source_tier="regulator",
         ),
         CapabilitySpec(
@@ -1262,6 +1556,106 @@ def capabilities() -> list[CapabilitySpec]:
             args=[
                 CapabilityArg(name="year", type="int", description="Calendar year", example="2022"),
             ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_medicaid_enrollment",
+            description="Medicaid enrollment counts (national or by state).",
+            returns="atomic primitive, unit=count people, tier=regulator",
+            args=[_year],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_drug_spending",
+            description="Medicare Part D spending by drug.",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[_year],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_ma_enrollment",
+            description="Medicare Advantage (Part C) enrollment counts.",
+            returns="atomic primitive, unit=count people, tier=regulator",
+            args=[_year],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_nhe_projections",
+            description="Projected National Health Expenditures (future US health spending).",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[_year],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_provider_count",
+            description="Count of providers/facilities in a CMS dataset (market supply).",
+            returns="atomic primitive, unit=count providers, tier=regulator",
+            args=[_state],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_nursing_homes",
+            description="Nursing-home / rehab facility records (national or by state).",
+            returns="atomic primitive list, unit=count facilities, tier=regulator",
+            args=[_state],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_home_health_agencies",
+            description="Home-health-care agency records (national or by state).",
+            returns="atomic primitive list, unit=count facilities, tier=regulator",
+            args=[_state],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_hospice_providers",
+            description="Hospice provider records (national or by state).",
+            returns="atomic primitive list, unit=count facilities, tier=regulator",
+            args=[_state],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_dialysis_facilities",
+            description="Dialysis facility records (national or by state).",
+            returns="atomic primitive list, unit=count facilities, tier=regulator",
+            args=[_state],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_part_d_drug_by_prescriber",
+            description="Part D prescriber-by-drug utilization records.",
+            returns="atomic primitive list, tier=regulator",
+            args=[_state],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_physician_service_utilization",
+            description="Physician service utilization (volume + payment) for an HCPCS code.",
+            returns="atomic primitive, unit=count services, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="hcpcs", type="str", description="HCPCS service code", example="99213"
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="cms",
+            method="get_marketplace_enrollment",
+            description="ACA Marketplace open-enrollment counts (national or by state).",
+            returns="atomic primitive, unit=count people, tier=regulator",
+            args=[_state],
             source_tier="regulator",
         ),
     ]

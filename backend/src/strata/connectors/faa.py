@@ -24,6 +24,8 @@ from typing import Any, TypedDict, cast
 
 import httpx
 
+from ._capability import CapabilityArg, CapabilitySpec
+
 # ═══════════════════════════════════════════════════════════════════
 # Enums
 # ═══════════════════════════════════════════════════════════════════
@@ -194,6 +196,7 @@ class Airport:
     passengers: int
     operations: int
     region: str
+    based_aircraft: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -254,6 +257,7 @@ def _parse_airport(attrs: dict[str, Any]) -> Airport:
         passengers=int(attrs.get("PASSENGERS", 0) or 0),
         operations=int(attrs.get("OPERATIONS", 0) or 0),
         region=str(attrs.get("REGION", "")),
+        based_aircraft=int(attrs.get("BASED_ACFT", attrs.get("TOT_BASED", 0)) or 0),
     )
 
 
@@ -377,8 +381,9 @@ class FAAClient:
         cache_dir: Path | None = None,
         cache_ttl: int = 604800,
         timeout: float = 30.0,
+        transport: httpx.BaseTransport | None = None,
     ) -> None:
-        self._http = httpx.Client(timeout=timeout)
+        self._http = httpx.Client(timeout=timeout, transport=transport)
         default_cache = Path.home() / ".strata" / "cache" / "faa"
         self._cache = _DiskCache(cache_dir or default_cache, cache_ttl)
 
@@ -811,6 +816,185 @@ class FAAClient:
         where = f"UPPER(FAC_NAME) LIKE '%{name_query.upper()}%'"
         return self._arcgis_query(where=where, limit=limit, order_by="PASSENGERS DESC")
 
+    def get_operations_total(self, state: str | None = None) -> FAAResponse:
+        """Sum annual aircraft operations (takeoffs+landings) for a state or all US.
+
+        Returns an FAAResponse with the total in ``total`` and a single
+        AirportSummary in ``summaries``.
+
+        Args:
+            state: Two-letter state code; ``None`` for the national total.
+        """
+        if state is not None:
+            resp = self._arcgis_query_all(where=f"STATE='{state.upper()}'")
+            label = state.upper()
+        else:
+            resp = self._arcgis_query_all(where="OPERATIONS>0")
+            label = "US"
+        total_ops = sum(a.operations for a in resp.airports)
+        summary = AirportSummary(
+            state=label,
+            count=len(resp.airports),
+            total_passengers=sum(a.passengers for a in resp.airports),
+            total_operations=total_ops,
+        )
+        return FAAResponse(
+            kind="summary",
+            summaries=(summary,),
+            total=total_ops,
+            cached=resp.cached,
+            cache_age_seconds=resp.cache_age_seconds,
+        )
+
+    def get_enplanements_ranked(self, limit: int = 25) -> FAAResponse:
+        """Return airports ranked by annual passenger enplanements (descending).
+
+        Alias-style convenience over the busiest-airports query, surfaced for
+        the router as the canonical "rank by enplanements" call.
+
+        Args:
+            limit: Number of airports to return.
+        """
+        return self._arcgis_query(
+            where="PASSENGERS>0",
+            limit=limit,
+            order_by="PASSENGERS DESC",
+        )
+
+    def get_based_aircraft(self, state: str | None = None) -> FAAResponse:
+        """Sum based-aircraft counts for a state or all US.
+
+        Based aircraft are general-aviation craft permanently stationed at a
+        field — a proxy for GA fleet size and hangar/FBO demand. The field is
+        absent on some layers, in which case the total is 0.
+
+        Args:
+            state: Two-letter state code; ``None`` for the national total.
+        """
+        out_fields = _DEFAULT_OUT_FIELDS + ",BASED_ACFT"
+        where = f"STATE='{state.upper()}'" if state is not None else "1=1"
+        resp = self._arcgis_query_all(where=where, out_fields=out_fields)
+        total_aircraft = sum(a.based_aircraft for a in resp.airports)
+        summary = AirportSummary(
+            state=state.upper() if state is not None else "US",
+            count=len(resp.airports),
+            total_passengers=total_aircraft,
+            total_operations=sum(a.operations for a in resp.airports),
+        )
+        return FAAResponse(
+            kind="summary",
+            summaries=(summary,),
+            airports=resp.airports,
+            total=total_aircraft,
+            cached=resp.cached,
+            cache_age_seconds=resp.cache_age_seconds,
+        )
+
+    def get_national_totals(self) -> FAAResponse:
+        """Return one national-rollup AirportSummary across all US airports.
+
+        Aggregates airport count, total passengers, and total operations for
+        the whole country in a single summary row.
+        """
+        resp = self._arcgis_query_all(where="1=1")
+        summary = AirportSummary(
+            state="US",
+            count=len(resp.airports),
+            total_passengers=sum(a.passengers for a in resp.airports),
+            total_operations=sum(a.operations for a in resp.airports),
+        )
+        return FAAResponse(
+            kind="summary",
+            summaries=(summary,),
+            total=len(resp.airports),
+            cached=resp.cached,
+            cache_age_seconds=resp.cache_age_seconds,
+        )
+
+    def get_airports_by_owner_type(self, owner: str) -> FAAResponse:
+        """Return all airports with a given ownership type.
+
+        Args:
+            owner: OWNER_TYPE code (e.g. "PU" public, "PR" private, "MA"/"MR"/"MN"
+                military). See :class:`FAAOwnerType`.
+        """
+        where = f"OWNER_TYPE='{owner.upper()}'"
+        return self._arcgis_query_all(where=where)
+
+    def get_hub_size_breakdown(self) -> FAAResponse:
+        """Bucket commercial airports into FAA hub-size tiers by enplanements.
+
+        Buckets follow the FAA primary-hub definition (share of national
+        enplanements): large (>=1%), medium (0.25-1%), small (0.05-0.25%),
+        non-hub (>10k & <0.05%), and non-primary (≤10k). Each bucket becomes
+        one AirportSummary (count + total passengers).
+        """
+        resp = self._arcgis_query_all(where="PASSENGERS>0", order_by="PASSENGERS DESC")
+        national = sum(a.passengers for a in resp.airports) or 1
+        buckets: dict[str, list[Airport]] = {
+            "large_hub": [],
+            "medium_hub": [],
+            "small_hub": [],
+            "non_hub": [],
+            "non_primary": [],
+        }
+        for a in resp.airports:
+            share = a.passengers / national
+            if share >= 0.01:
+                buckets["large_hub"].append(a)
+            elif share >= 0.0025:
+                buckets["medium_hub"].append(a)
+            elif share >= 0.0005:
+                buckets["small_hub"].append(a)
+            elif a.passengers > 10_000:
+                buckets["non_hub"].append(a)
+            else:
+                buckets["non_primary"].append(a)
+
+        summaries = tuple(
+            AirportSummary(
+                state=tier,
+                count=len(airports),
+                total_passengers=sum(a.passengers for a in airports),
+                total_operations=sum(a.operations for a in airports),
+            )
+            for tier, airports in buckets.items()
+        )
+        return FAAResponse(
+            kind="summary",
+            summaries=summaries,
+            total=len(summaries),
+            cached=resp.cached,
+            cache_age_seconds=resp.cache_age_seconds,
+        )
+
+    def count_by_facility_type(self) -> FAAResponse:
+        """Count US facilities grouped by FAC_TYPE (airport, heliport, …).
+
+        Each facility type becomes one AirportSummary whose ``count`` is the
+        number of facilities of that type and ``state`` holds the type label.
+        """
+        resp = self._arcgis_query_all(where="1=1")
+        by_type: dict[str, list[Airport]] = {}
+        for a in resp.airports:
+            by_type.setdefault(a.airport_type or "UNKNOWN", []).append(a)
+        summaries = tuple(
+            AirportSummary(
+                state=ftype,
+                count=len(airports),
+                total_passengers=sum(a.passengers for a in airports),
+                total_operations=sum(a.operations for a in airports),
+            )
+            for ftype, airports in sorted(by_type.items())
+        )
+        return FAAResponse(
+            kind="summary",
+            summaries=summaries,
+            total=len(summaries),
+            cached=resp.cached,
+            cache_age_seconds=resp.cache_age_seconds,
+        )
+
     # ── cache management ─────────────────────────────────────────
 
     def clear_cache(self) -> int:
@@ -994,37 +1178,146 @@ def passenger_count_to_primitive_yaml(
     }
 
 
-def capabilities() -> list[CapabilitySpec]:
-    """Methods exposed to the LLM router (spec §5)."""
-    from ._capability import CapabilityArg, CapabilitySpec
+_STATE_ARG = CapabilityArg(
+    name="state",
+    type="str",
+    description="Two-letter state code (omit for national total)",
+    example="CA",
+)
 
+
+def _faa_spec(
+    method: str,
+    description: str,
+    returns: str,
+    args: list[CapabilityArg],
+) -> CapabilitySpec:
+    return CapabilitySpec(
+        connector="faa",
+        method=method,
+        description=description,
+        returns=returns,
+        args=args,
+        source_tier="regulator",
+    )
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5).
+
+    Covers every TAM-relevant query method on ``FAAClient``. Single-record
+    lookups and real-time status (``get_airport_by_code``/``get_airport_status``)
+    plus geo-search helpers are omitted — the router sizes markets from
+    aggregates, not point lookups.
+    """
     return [
-        CapabilitySpec(
-            connector="faa",
-            method="get_total_passengers",
-            description="Total enplaned passengers across US commercial airports.",
-            returns="atomic primitive, unit=count people, tier=regulator",
-            args=[
-                CapabilityArg(name="year", type="int", description="Calendar year", example="2023"),
-            ],
-            source_tier="regulator",
+        _faa_spec(
+            "get_total_passengers",
+            "Total enplaned passengers across US (or one state's) airports.",
+            "atomic primitive, unit=count people, tier=regulator",
+            [_STATE_ARG],
         ),
-        CapabilitySpec(
-            connector="faa",
-            method="get_airport_count",
-            description="Total count of US airports of a given type.",
-            returns="atomic primitive, unit=count, tier=regulator",
-            args=[
+        _faa_spec(
+            "get_operations_total",
+            "Total annual aircraft operations (takeoffs+landings) for a state or US.",
+            "atomic primitive, unit=count operations, tier=regulator",
+            [_STATE_ARG],
+        ),
+        _faa_spec(
+            "get_based_aircraft",
+            "Total based (permanently stationed) aircraft for a state or US.",
+            "atomic primitive, unit=count aircraft, tier=regulator",
+            [_STATE_ARG],
+        ),
+        _faa_spec(
+            "get_national_totals",
+            "National rollup: airport count, total passengers, total operations.",
+            "atomic primitive summary, unit=count, tier=regulator",
+            [],
+        ),
+        _faa_spec(
+            "get_airport_count",
+            "Count of US airports matching a type/state filter.",
+            "atomic primitive, unit=count, tier=regulator",
+            [
                 CapabilityArg(
                     name="airport_type",
                     type="str",
-                    description="Airport type (commercial/general_aviation/heliport)",
-                    example="commercial",
+                    description="FAC_TYPE (AIRPORT, HELIPORT, SEAPLANE BASE)",
+                    example="AIRPORT",
                 ),
             ],
-            source_tier="regulator",
+        ),
+        _faa_spec(
+            "get_enplanements_ranked",
+            "US airports ranked by annual passenger enplanements (descending).",
+            "atomic primitive rows per airport, tier=regulator",
+            [
+                CapabilityArg(
+                    name="limit", type="int", description="Number of airports", example="25"
+                ),
+            ],
+        ),
+        _faa_spec(
+            "get_airports_by_owner_type",
+            "All airports with a given ownership type (public/private/military).",
+            "atomic primitive rows per airport, tier=regulator",
+            [
+                CapabilityArg(
+                    name="owner",
+                    type="str",
+                    description="OWNER_TYPE code (PU/PR/MA/MR/MN)",
+                    example="PU",
+                ),
+            ],
+        ),
+        _faa_spec(
+            "get_hub_size_breakdown",
+            "Commercial airports bucketed into FAA hub-size tiers by enplanements.",
+            "atomic primitive rows per hub tier, tier=regulator",
+            [],
+        ),
+        _faa_spec(
+            "count_by_facility_type",
+            "US facility counts grouped by FAC_TYPE.",
+            "atomic primitive rows per facility type, tier=regulator",
+            [],
+        ),
+        _faa_spec(
+            "get_state_summary",
+            "Per-state airport count + passenger + operations rollup.",
+            "atomic primitive summary, unit=count, tier=regulator",
+            [_STATE_ARG],
+        ),
+        _faa_spec(
+            "get_commercial_airports",
+            "Airports with scheduled commercial passenger service.",
+            "atomic primitive rows per airport, tier=regulator",
+            [_STATE_ARG],
+        ),
+        _faa_spec(
+            "get_general_aviation_airports",
+            "Public general-aviation airports (no scheduled service).",
+            "atomic primitive rows per airport, tier=regulator",
+            [_STATE_ARG],
+        ),
+        _faa_spec(
+            "get_heliports",
+            "Heliports, optionally filtered by state.",
+            "atomic primitive rows per heliport, tier=regulator",
+            [_STATE_ARG],
+        ),
+        _faa_spec(
+            "get_airports_by_region",
+            "All airports in an FAA region.",
+            "atomic primitive rows per airport, tier=regulator",
+            [
+                CapabilityArg(
+                    name="region",
+                    type="str",
+                    description="FAA region code (AWP, AEA, …)",
+                    example="AWP",
+                ),
+            ],
         ),
     ]
-
-
-from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

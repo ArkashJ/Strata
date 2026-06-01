@@ -385,6 +385,39 @@ class _DiskCache:
 
 _BASE = "https://api.stlouisfed.org/fred"
 
+# Friendly-name → canonical FRED series ID maps for the typed builders.
+_GDP_COMPONENTS: dict[str, str] = {
+    "GDP": "GDP",
+    "GDPC1": "GDPC1",
+    "PCE": "PCEC",
+    "PCEC": "PCEC",
+    "GPDI": "GPDI",
+    "GCE": "GCE",
+    "NETEXP": "NETEXP",
+}
+_PCE_CATEGORIES: dict[str, str] = {
+    "total": "PCE",
+    "goods": "DGDSRC1",
+    "durable": "PCEDG",
+    "nondurable": "PCEND",
+    "services": "PCES",
+    "healthcare": "DHLCRC1",
+}
+_INVESTMENT: dict[str, str] = {
+    "total": "GPDI",
+    "fixed": "FPI",
+    "nonresidential": "PNFI",
+    "residential": "PRFI",
+    "ip": "Y033RC1Q027SBEA",
+    "equipment": "Y033RC1Q027SBEA",
+}
+_MONEY_SUPPLY: dict[str, str] = {
+    "M1": "M1SL",
+    "M2": "M2SL",
+    "MZM": "MZMSL",
+    "BASE": "BOGMBASE",
+}
+
 
 class FREDClientError(RuntimeError):
     """Raised on FRED API errors or client-side validation failures."""
@@ -486,6 +519,7 @@ class FREDClient:
         observation_end: str | None = None,
         units: str = "lin",
         frequency: str | None = None,
+        aggregation_method: str | None = None,
         sort_order: str = "asc",
         limit: int = 100000,
         offset: int = 0,
@@ -496,8 +530,11 @@ class FREDClient:
             series_id: FRED series ID (e.g. "GDPC1", "PAYEMS").
             observation_start: Start date "YYYY-MM-DD" (default: 1776-07-04).
             observation_end: End date "YYYY-MM-DD" (default: 9999-12-31).
-            units: Data value transformation (see FREDUnits).
+            units: Data value transformation (see FREDUnits — "lin"=levels,
+                "pc1"=YoY pct change, "pch"=period pct change).
             frequency: Aggregation frequency (see FREDFrequency).
+            aggregation_method: How to aggregate when ``frequency`` is set —
+                "avg" (default), "sum", or "eop" (end of period).
             sort_order: "asc" or "desc".
             limit: Max observations (FRED max is 100000).
             offset: Pagination offset.
@@ -515,6 +552,46 @@ class FREDClient:
             params["observation_end"] = observation_end
         if frequency:
             params["frequency"] = frequency
+        if aggregation_method:
+            params["aggregation_method"] = aggregation_method
+        return self._request("series/observations", params, kind="observations")
+
+    def get_observations_vintage(
+        self,
+        series_id: str,
+        realtime_start: str,
+        realtime_end: str,
+        observation_start: str | None = None,
+        observation_end: str | None = None,
+        sort_order: str = "asc",
+        limit: int = 100000,
+    ) -> FREDResponse:
+        """Retrieve point-in-time (ALFRED vintage) observations for a series.
+
+        ``realtime_start``/``realtime_end`` select the data as it existed on
+        those dates, so revisions are visible. Use for as-published TAM
+        anchoring that must not silently change under revision.
+
+        Args:
+            series_id: FRED series ID.
+            realtime_start: Vintage window start "YYYY-MM-DD".
+            realtime_end: Vintage window end "YYYY-MM-DD".
+            observation_start: Observation window start.
+            observation_end: Observation window end.
+            sort_order: "asc" or "desc".
+            limit: Max observations.
+        """
+        params: dict[str, str] = {
+            "series_id": series_id,
+            "realtime_start": realtime_start,
+            "realtime_end": realtime_end,
+            "sort_order": sort_order,
+            "limit": str(limit),
+        }
+        if observation_start:
+            params["observation_start"] = observation_start
+        if observation_end:
+            params["observation_end"] = observation_end
         return self._request("series/observations", params, kind="observations")
 
     # ── Endpoint 3: search series ───────────────────────────────
@@ -618,6 +695,135 @@ class FREDClient:
             },
             kind="search",
         )
+
+    # ── Typed macro-aggregate builders ───────────────────────────
+    #
+    # Each helper maps a friendly name to a canonical FRED series ID and
+    # delegates to get_observations. IDs are the published national-
+    # accounts series on fred.stlouisfed.org.
+
+    def get_gdp_component(
+        self,
+        component: str = "GDP",
+        observation_start: str | None = None,
+        observation_end: str | None = None,
+        units: str = "lin",
+    ) -> FREDResponse:
+        """National-accounts GDP component as observations.
+
+        Args:
+            component: One of GDP, GDPC1 (real), PCE, GPDI (investment),
+                GCE (gov), NETEXP (net exports).
+            observation_start: Start date "YYYY-MM-DD".
+            observation_end: End date "YYYY-MM-DD".
+            units: Value transformation (see FREDUnits).
+        """
+        series_id = _GDP_COMPONENTS.get(component.upper(), component)
+        return self.get_observations(
+            series_id,
+            observation_start=observation_start,
+            observation_end=observation_end,
+            units=units,
+        )
+
+    def get_pce_by_category(
+        self,
+        category: str = "total",
+        observation_start: str | None = None,
+        observation_end: str | None = None,
+        units: str = "lin",
+    ) -> FREDResponse:
+        """Personal Consumption Expenditures by spend category.
+
+        Args:
+            category: total, goods, durable, nondurable, services, healthcare.
+            observation_start: Start date.
+            observation_end: End date.
+            units: Value transformation.
+        """
+        series_id = _PCE_CATEGORIES.get(category.lower(), category)
+        return self.get_observations(
+            series_id,
+            observation_start=observation_start,
+            observation_end=observation_end,
+            units=units,
+        )
+
+    def get_business_investment(
+        self,
+        measure: str = "nonresidential",
+        observation_start: str | None = None,
+        observation_end: str | None = None,
+        units: str = "lin",
+    ) -> FREDResponse:
+        """Private (business) investment measure.
+
+        Args:
+            measure: total, fixed, nonresidential, residential, equipment.
+            observation_start: Start date.
+            observation_end: End date.
+            units: Value transformation.
+        """
+        series_id = _INVESTMENT.get(measure.lower(), measure)
+        return self.get_observations(
+            series_id,
+            observation_start=observation_start,
+            observation_end=observation_end,
+            units=units,
+        )
+
+    def get_household_income(
+        self,
+        observation_start: str | None = None,
+        observation_end: str | None = None,
+        units: str = "lin",
+    ) -> FREDResponse:
+        """Real median household income (MEHOINUSA672N, annual)."""
+        return self.get_observations(
+            "MEHOINUSA672N",
+            observation_start=observation_start,
+            observation_end=observation_end,
+            units=units,
+        )
+
+    def get_money_supply(
+        self,
+        measure: str = "M2",
+        observation_start: str | None = None,
+        observation_end: str | None = None,
+        units: str = "lin",
+    ) -> FREDResponse:
+        """Monetary aggregate (M1, M2, MZM, BASE).
+
+        Args:
+            measure: M1, M2, MZM, or BASE (monetary base).
+            observation_start: Start date.
+            observation_end: End date.
+            units: Value transformation.
+        """
+        series_id = _MONEY_SUPPLY.get(measure.upper(), measure)
+        return self.get_observations(
+            series_id,
+            observation_start=observation_start,
+            observation_end=observation_end,
+            units=units,
+        )
+
+    def get_series_updates(
+        self,
+        limit: int = 100,
+        filter_value: str | None = None,
+    ) -> FREDResponse:
+        """List FRED series sorted by most recently updated.
+
+        Args:
+            limit: Max series to return (FRED max 1000).
+            filter_value: "macro", "regional", or "all" (default all).
+        """
+        params: dict[str, str] = {"limit": str(limit)}
+        if filter_value:
+            params["filter_value"] = filter_value
+        return self._request("series/updates", params, kind="search")
 
     # ── Cache management ─────────────────────────────────────────
 
@@ -785,6 +991,104 @@ def capabilities() -> list[CapabilitySpec]:
                     type="str",
                     description="FRED series ID",
                     example="GDPC1",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fred",
+            method="get_gdp_component",
+            description=(
+                "National-accounts GDP component (GDP, real GDP, PCE, investment, gov, net "
+                "exports). Top-down macro anchor for TAM ceilings."
+            ),
+            returns="atomic primitive observations, unit=USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="component",
+                    type="str",
+                    description="GDP|GDPC1|PCE|GPDI|GCE|NETEXP",
+                    example="GDP",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fred",
+            method="get_pce_by_category",
+            description="Personal Consumption Expenditures by category (goods/services/etc).",
+            returns="atomic primitive observations, unit=USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="category",
+                    type="str",
+                    description="total|goods|durable|nondurable|services|healthcare",
+                    example="services",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fred",
+            method="get_business_investment",
+            description="Private/business fixed investment measures.",
+            returns="atomic primitive observations, unit=USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="measure",
+                    type="str",
+                    description="total|fixed|nonresidential|residential|equipment",
+                    example="nonresidential",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fred",
+            method="get_household_income",
+            description="Real median US household income (annual).",
+            returns="atomic primitive observations, unit=USD, tier=regulator",
+            args=[],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fred",
+            method="get_money_supply",
+            description="Monetary aggregate (M1, M2, MZM, monetary base).",
+            returns="atomic primitive observations, unit=USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="measure",
+                    type="str",
+                    description="M1|M2|MZM|BASE",
+                    example="M2",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fred",
+            method="get_observations_vintage",
+            description=(
+                "Point-in-time (ALFRED) observations as published on a vintage date — "
+                "revision-stable TAM anchoring."
+            ),
+            returns="atomic primitive observations, unit varies, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="series_id", type="str", description="FRED series ID", example="GDP"
+                ),
+                CapabilityArg(
+                    name="realtime_start",
+                    type="date",
+                    description="Vintage window start YYYY-MM-DD",
+                    example="2020-01-01",
+                ),
+                CapabilityArg(
+                    name="realtime_end",
+                    type="date",
+                    description="Vintage window end YYYY-MM-DD",
+                    example="2020-12-31",
                 ),
             ],
             source_tier="regulator",

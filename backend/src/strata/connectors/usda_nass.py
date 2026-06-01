@@ -95,6 +95,9 @@ class NASSStatistic(StrEnum):
     HEAD = "HEAD"
     INVENTORY = "INVENTORY"
     SALES = "SALES"
+    STOCKS = "STOCKS"
+    OPERATIONS = "OPERATIONS"
+    AREA_BEARING = "AREA BEARING"
     INCOME = "INCOME"
     EXPENSE = "EXPENSE"
     VALUE_OF_PRODUCTION = "VALUE OF PRODUCTION"
@@ -384,6 +387,7 @@ class NASSClient:
         cache_dir: Path | None = None,
         cache_ttl: int = 604800,
         timeout: float = 30.0,
+        transport: httpx.BaseTransport | None = None,
     ) -> None:
         self._key = api_key or os.environ.get("STRATA_USDA_NASS_API_KEY", "")
         if not self._key:
@@ -391,7 +395,7 @@ class NASSClient:
                 "NASS API key required. Pass api_key= or set "
                 "STRATA_USDA_NASS_API_KEY environment variable."
             )
-        self._http = httpx.Client(timeout=timeout)
+        self._http = httpx.Client(timeout=timeout, transport=transport)
         default_cache = Path.home() / ".strata" / "cache" / "nass"
         self._cache = _DiskCache(cache_dir or default_cache, cache_ttl)
 
@@ -935,6 +939,199 @@ class NASSClient:
             reference_period="YEAR",
         )
 
+    def get_sales_value(
+        self,
+        commodity: str | NASSCommodity,
+        *,
+        year: int | None = None,
+        state: str | None = None,
+        agg_level: str | NASSAggLevel = NASSAggLevel.NATIONAL,
+    ) -> NASSResponse:
+        """Fetch the dollar value of commodity sales (statisticcat_desc=SALES).
+
+        Returns commodity revenue (sales receipts), the most TAM-relevant
+        agricultural number — a currency-denominated market size.
+
+        Args:
+            commodity: Commodity name.
+            year: Filter to a specific year.
+            state: Two-letter state code.
+            agg_level: Geographic aggregation level.
+        """
+        return self.get_data(
+            commodity=commodity,
+            statistic=NASSStatistic.SALES,
+            agg_level=agg_level,
+            year=year,
+            state_alpha=state,
+        )
+
+    def get_operations_count(
+        self,
+        commodity: str | NASSCommodity,
+        *,
+        year: int | None = None,
+        state: str | None = None,
+        agg_level: str | NASSAggLevel = NASSAggLevel.STATE,
+    ) -> NASSResponse:
+        """Fetch the count of operations (farms) producing a commodity.
+
+        Uses statisticcat_desc=OPERATIONS — a count of producers, useful for
+        sizing supplier/buyer populations.
+
+        Args:
+            commodity: Commodity name.
+            year: Filter to a specific year.
+            state: Two-letter state code.
+            agg_level: Geographic aggregation level (defaults to STATE).
+        """
+        return self.get_data(
+            commodity=commodity,
+            statistic=NASSStatistic.OPERATIONS,
+            agg_level=agg_level,
+            year=year,
+            state_alpha=state,
+        )
+
+    def get_stocks(
+        self,
+        commodity: str | NASSCommodity,
+        *,
+        year: int | None = None,
+        state: str | None = None,
+        agg_level: str | NASSAggLevel = NASSAggLevel.NATIONAL,
+    ) -> NASSResponse:
+        """Fetch ending stocks (inventory on hand) for a commodity.
+
+        Uses statisticcat_desc=STOCKS — physical supply held in storage.
+
+        Args:
+            commodity: Commodity name.
+            year: Filter to a specific year.
+            state: Two-letter state code.
+            agg_level: Geographic aggregation level.
+        """
+        return self.get_data(
+            commodity=commodity,
+            statistic=NASSStatistic.STOCKS,
+            agg_level=agg_level,
+            year=year,
+            state_alpha=state,
+        )
+
+    def get_area_bearing(
+        self,
+        commodity: str | NASSCommodity,
+        *,
+        year: int | None = None,
+        state: str | None = None,
+        agg_level: str | NASSAggLevel = NASSAggLevel.NATIONAL,
+    ) -> NASSResponse:
+        """Fetch bearing acreage (mature, productive area) for a commodity.
+
+        Uses statisticcat_desc=AREA BEARING — relevant for perennial crops
+        (orchards, vineyards) where bearing area differs from planted area.
+
+        Args:
+            commodity: Commodity name.
+            year: Filter to a specific year.
+            state: Two-letter state code.
+            agg_level: Geographic aggregation level.
+        """
+        return self.get_data(
+            commodity=commodity,
+            statistic=NASSStatistic.AREA_BEARING,
+            agg_level=agg_level,
+            year=year,
+            state_alpha=state,
+        )
+
+    def get_by_county(
+        self,
+        commodity: str | NASSCommodity,
+        state: str,
+        *,
+        statistic: str | NASSStatistic = NASSStatistic.PRODUCTION,
+        year: int | None = None,
+    ) -> NASSResponse:
+        """Fetch county-level data for a commodity within a state.
+
+        Args:
+            commodity: Commodity name.
+            state: Two-letter state code (required for county queries).
+            statistic: Statistic category (defaults to PRODUCTION).
+            year: Filter to a specific year.
+        """
+        return self.get_data(
+            commodity=commodity,
+            statistic=statistic,
+            agg_level=NASSAggLevel.COUNTY,
+            state_alpha=state,
+            year=year,
+        )
+
+    def get_economic_class(
+        self,
+        commodity: str | NASSCommodity,
+        *,
+        statistic: str | NASSStatistic = NASSStatistic.OPERATIONS,
+        year: int | None = None,
+        state: str | None = None,
+        agg_level: str | NASSAggLevel = NASSAggLevel.STATE,
+    ) -> NASSResponse:
+        """Fetch data broken out by farm economic class (sales-size band).
+
+        Uses domain_desc=ECONOMIC CLASS to segment producers by sales size —
+        a Census-of-Agriculture domain useful for revenue-band analysis.
+
+        Args:
+            commodity: Commodity name.
+            statistic: Statistic category (defaults to OPERATIONS).
+            year: Filter to a specific year.
+            state: Two-letter state code.
+            agg_level: Geographic aggregation level.
+        """
+        return self.get_data(
+            source=NASSSource.CENSUS,
+            commodity=commodity,
+            statistic=statistic,
+            domain="ECONOMIC CLASS",
+            agg_level=agg_level,
+            year=year,
+            state_alpha=state,
+        )
+
+    def get_organic(
+        self,
+        commodity: str | NASSCommodity,
+        *,
+        statistic: str | NASSStatistic = NASSStatistic.SALES,
+        year: int | None = None,
+        state: str | None = None,
+        agg_level: str | NASSAggLevel = NASSAggLevel.STATE,
+    ) -> NASSResponse:
+        """Fetch organic-production data for a commodity.
+
+        Uses domain_desc=ORGANIC STATUS to isolate certified-organic figures —
+        a fast-growing, premium sub-segment.
+
+        Args:
+            commodity: Commodity name.
+            statistic: Statistic category (defaults to SALES).
+            year: Filter to a specific year.
+            state: Two-letter state code.
+            agg_level: Geographic aggregation level.
+        """
+        return self.get_data(
+            source=NASSSource.CENSUS,
+            commodity=commodity,
+            statistic=statistic,
+            domain="ORGANIC STATUS",
+            agg_level=agg_level,
+            year=year,
+            state_alpha=state,
+        )
+
     # ── cache management ─────────────────────────────────────────
 
     def clear_cache(self) -> int:
@@ -1145,44 +1342,183 @@ def record_to_source_yaml(
     }
 
 
-def capabilities() -> list[CapabilitySpec]:
-    """Methods exposed to the LLM router (spec §5)."""
+def _commodity_year_spec(
+    method: str,
+    description: str,
+    returns: str,
+) -> CapabilitySpec:
+    """Build a regulator spec taking the common (commodity, year) arg pair."""
     from ._capability import CapabilityArg, CapabilitySpec
 
-    return [
+    return CapabilitySpec(
+        connector="usda_nass",
+        method=method,
+        description=description,
+        returns=returns,
+        args=[
+            CapabilityArg(
+                name="commodity",
+                type="str",
+                description="Commodity (CORN, WHEAT, SOYBEANS, CATTLE)",
+                example="CORN",
+            ),
+            CapabilityArg(name="year", type="int", description="Year", example="2023"),
+        ],
+        source_tier="regulator",
+    )
+
+
+def capabilities() -> list[CapabilitySpec]:
+    """Methods exposed to the LLM router (spec §5).
+
+    Covers every TAM-relevant query method on ``NASSClient``. Pure-navigation
+    helpers (``get_data``/``get_counts``/``get_param_values``) are intentionally
+    not surfaced — the router calls the typed wrappers, not the raw endpoints.
+    """
+    from ._capability import CapabilityArg, CapabilitySpec
+
+    specs = [
+        _commodity_year_spec(
+            "get_production",
+            "USDA crop or livestock production (volume).",
+            "atomic primitive, unit=count or weight, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_prices",
+            "USDA prices received by farmers for a commodity.",
+            "atomic primitive, unit=currency per bushel/cwt, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_sales_value",
+            "USDA dollar value of commodity sales (market revenue).",
+            "atomic primitive, unit=currency USD, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_operations_count",
+            "Count of farm operations producing a commodity (producer population).",
+            "atomic primitive, unit=count operations, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_stocks",
+            "USDA ending stocks (inventory in storage) for a commodity.",
+            "atomic primitive, unit=weight or volume, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_area_bearing",
+            "Bearing acreage (mature productive area) for perennial commodities.",
+            "atomic primitive, unit=area acres, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_acreage",
+            "USDA area planted or harvested for a commodity.",
+            "atomic primitive, unit=area acres, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_yield",
+            "USDA crop yield per acre for a commodity.",
+            "atomic primitive, unit=rate volume/area, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_livestock_inventory",
+            "USDA livestock inventory (head count) for an animal commodity.",
+            "atomic primitive, unit=count head, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_census_data",
+            "Census-of-Agriculture data for a commodity (5-yearly).",
+            "atomic primitive, unit varies, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_crop_progress",
+            "Weekly crop-progress / condition report for a commodity.",
+            "atomic primitive, unit=percent, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_national_totals",
+            "National-level total for a commodity statistic.",
+            "atomic primitive, unit varies, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_economic_class",
+            "Producers segmented by farm economic (sales-size) class.",
+            "atomic primitive, unit=count operations, tier=regulator",
+        ),
+        _commodity_year_spec(
+            "get_organic",
+            "Certified-organic production/sales for a commodity.",
+            "atomic primitive, unit=currency or count, tier=regulator",
+        ),
         CapabilitySpec(
             connector="usda_nass",
-            method="get_production",
-            description="USDA crop or livestock production (volume).",
-            returns="atomic primitive, unit=count or weight, tier=regulator",
+            method="get_farm_income",
+            description="USDA aggregate farm income.",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
             args=[
-                CapabilityArg(
-                    name="commodity",
-                    type="str",
-                    description="Commodity (CORN, WHEAT, SOYBEANS, CATTLE)",
-                    example="CORN",
-                ),
                 CapabilityArg(name="year", type="int", description="Year", example="2023"),
             ],
             source_tier="regulator",
         ),
         CapabilitySpec(
             connector="usda_nass",
-            method="get_prices",
-            description="USDA commodity prices.",
-            returns="atomic primitive, unit=currency per bushel/cwt, tier=regulator",
+            method="get_farm_expenses",
+            description="USDA aggregate farm production expenses.",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[
+                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="usda_nass",
+            method="get_state_rankings",
+            description="State-by-state values for ranking a commodity statistic.",
+            returns="atomic primitive rows per state, tier=regulator",
             args=[
                 CapabilityArg(
-                    name="commodity",
-                    type="str",
-                    description="Commodity",
-                    example="CORN",
+                    name="commodity", type="str", description="Commodity", example="CORN"
                 ),
-                CapabilityArg(name="year", type="int", description="Year", example="2023"),
+                CapabilityArg(
+                    name="statistic",
+                    type="str",
+                    description="Statistic category",
+                    example="PRODUCTION",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="usda_nass",
+            method="get_by_county",
+            description="County-level data for a commodity within a state.",
+            returns="atomic primitive rows per county, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="commodity", type="str", description="Commodity", example="CORN"
+                ),
+                CapabilityArg(
+                    name="state", type="str", description="Two-letter state code", example="IA"
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="usda_nass",
+            method="get_commodity_trends",
+            description="Multi-year trend series for a commodity statistic.",
+            returns="atomic primitive rows per year, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="commodity", type="str", description="Commodity", example="CORN"
+                ),
+                CapabilityArg(
+                    name="start_year", type="int", description="First year", example="2018"
+                ),
+                CapabilityArg(name="end_year", type="int", description="Last year", example="2023"),
             ],
             source_tier="regulator",
         ),
     ]
+    return specs
 
 
 from ._capability import CapabilitySpec as CapabilitySpec  # noqa: E402

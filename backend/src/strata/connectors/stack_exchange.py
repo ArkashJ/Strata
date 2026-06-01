@@ -36,6 +36,22 @@ class StackExchangeResponse:
     quota_remaining: int
 
 
+@dataclass(frozen=True, slots=True)
+class TagWindowCount:
+    tag: str
+    site: str
+    fromdate: int
+    todate: int
+    question_count: int
+
+
+@dataclass(frozen=True, slots=True)
+class RelatedTag:
+    name: str
+    site: str
+    question_count: int
+
+
 class _DiskCache:
     def __init__(self, directory: Path, ttl_seconds: int = 86400) -> None:
         self.directory = directory
@@ -132,6 +148,72 @@ class StackExchangeClient:
             is_moderator_only=bool(item.get("is_moderator_only", False)),
         )
 
+    def get_tags_info(
+        self, tags: list[str], *, site: str = "stackoverflow"
+    ) -> StackExchangeResponse:
+        """Batch tag info for several tags in one /tags/{tags}/info call."""
+        if not tags:
+            raise StackExchangeClientError("get_tags_info requires at least one tag")
+        joined = ";".join(tags)
+        raw = self._request(f"/tags/{joined}/info", {"site": site, "filter": "default"})
+        items = raw.get("items", []) or []
+        infos = tuple(
+            TagInfo(
+                name=str(item.get("name", "")),
+                site=site,
+                question_count=int(item.get("count", 0)),
+                is_required=bool(item.get("is_required", False)),
+                is_moderator_only=bool(item.get("is_moderator_only", False)),
+            )
+            for item in items
+        )
+        return StackExchangeResponse(
+            items=infos,
+            has_more=bool(raw.get("has_more", False)),
+            quota_remaining=int(raw.get("quota_remaining", 0)),
+        )
+
+    def get_tag_questions_in_window(
+        self, tag: str, fromdate: int, todate: int, *, site: str = "stackoverflow"
+    ) -> TagWindowCount:
+        """Question count for a tag in a [fromdate, todate] unix-second window.
+
+        Uses ``filter=total`` so the response carries only the aggregate count —
+        this is the real adoption-trend signal (questions per period).
+        """
+        if fromdate > todate:
+            raise StackExchangeClientError("fromdate must be <= todate")
+        raw = self._request(
+            "/questions",
+            {
+                "site": site,
+                "tagged": tag,
+                "fromdate": str(fromdate),
+                "todate": str(todate),
+                "filter": "total",
+            },
+        )
+        return TagWindowCount(
+            tag=tag,
+            site=site,
+            fromdate=fromdate,
+            todate=todate,
+            question_count=int(raw.get("total", 0)),
+        )
+
+    def get_related_tags(self, tag: str, *, site: str = "stackoverflow") -> tuple[RelatedTag, ...]:
+        """Tags frequently co-occurring with a tag (co-mention graph)."""
+        raw = self._request(f"/tags/{tag}/related", {"site": site, "filter": "default"})
+        items = raw.get("items", []) or []
+        return tuple(
+            RelatedTag(
+                name=str(item.get("name", "")),
+                site=site,
+                question_count=int(item.get("count", 0)),
+            )
+            for item in items
+        )
+
     def clear_cache(self) -> int:
         return self.cache.clear()
 
@@ -156,6 +238,54 @@ def tag_to_primitive_yaml(
         "distribution_shape": "power_law",
         "delivery_mode": "n/a",
         "source": tag_to_source_yaml(tag, accessed=accessed),
+    }
+
+
+def tag_window_to_primitive_yaml(
+    window: TagWindowCount, *, slug: str, concept_slug: str, accessed: date
+) -> dict[str, Any]:
+    """Questions-per-window primitive — the adoption-trend signal (flow, not stock)."""
+    return {
+        "kind": "atomic_primitive",
+        "slug": slug,
+        "schema_version": 1,
+        "concept_slug": concept_slug,
+        "name": f"Stack Overflow questions tagged [{window.tag}] in window",
+        "description": (
+            f"Question count on {window.site} for tag '{window.tag}' between "
+            f"{window.fromdate} and {window.todate} (unix seconds). Adoption-trend proxy."
+        ),
+        "value": float(window.question_count),
+        "unit": {"kind": "flow", "dimension": "events"},
+        "as_of": accessed.isoformat(),
+        "geo": {"level": "country", "codes": ["US"]},
+        "geo_perspective": "demand",
+        "distribution_shape": "power_law",
+        "delivery_mode": "n/a",
+        "source": tag_window_to_source_yaml(window, accessed=accessed),
+    }
+
+
+def tag_window_to_source_yaml(window: TagWindowCount, *, accessed: date) -> dict[str, Any]:
+    payload = json.dumps(
+        {
+            "tag": window.tag,
+            "site": window.site,
+            "fromdate": window.fromdate,
+            "todate": window.todate,
+            "count": window.question_count,
+        },
+        sort_keys=True,
+    )
+    return {
+        "slug": (
+            f"stackexchange-{window.site}-{window.tag}-"
+            f"{window.fromdate}-{window.todate}-{accessed.isoformat()}"
+        ),
+        "tier": "community",
+        "url": f"https://{window.site}.com/questions/tagged/{window.tag}",
+        "accessed": accessed.isoformat(),
+        "snapshot_sha256": hashlib.sha256(payload.encode()).hexdigest(),
     }
 
 
@@ -190,6 +320,83 @@ def capabilities() -> list[CapabilitySpec]:
                     description="Tag slug, e.g. 'python', 'react'",
                     example="rust",
                 ),
+                CapabilityArg(
+                    name="site",
+                    type="str",
+                    description="Stack Exchange site (default stackoverflow)",
+                    example="stackoverflow",
+                    required=False,
+                ),
+            ],
+            source_tier="community",
+        ),
+        CapabilitySpec(
+            connector="stack_exchange",
+            method="get_tag_questions_in_window",
+            description=(
+                "Question count for a tag within a [fromdate, todate] unix-second "
+                "window. The real adoption-trend signal (questions per period)."
+            ),
+            returns="windowed question count, tier=community",
+            args=[
+                CapabilityArg(name="tag", type="str", description="Tag slug", example="rust"),
+                CapabilityArg(
+                    name="fromdate",
+                    type="int",
+                    description="Window start (unix seconds)",
+                    example="1704067200",
+                ),
+                CapabilityArg(
+                    name="todate",
+                    type="int",
+                    description="Window end (unix seconds)",
+                    example="1706745600",
+                ),
+                CapabilityArg(
+                    name="site",
+                    type="str",
+                    description="Stack Exchange site (default stackoverflow)",
+                    example="stackoverflow",
+                    required=False,
+                ),
+            ],
+            source_tier="community",
+        ),
+        CapabilitySpec(
+            connector="stack_exchange",
+            method="get_tags_info",
+            description=(
+                "Batch total question counts for several tags in one call. "
+                "Cross-technology attention comparison."
+            ),
+            returns="StackExchangeResponse of tag infos, tier=community",
+            args=[
+                CapabilityArg(
+                    name="tags",
+                    type="str",
+                    description="Semicolon-separated tag slugs",
+                    example="rust;go;zig",
+                ),
+                CapabilityArg(
+                    name="site",
+                    type="str",
+                    description="Stack Exchange site (default stackoverflow)",
+                    example="stackoverflow",
+                    required=False,
+                ),
+            ],
+            source_tier="community",
+        ),
+        CapabilitySpec(
+            connector="stack_exchange",
+            method="get_related_tags",
+            description=(
+                "Tags frequently co-occurring with a tag, with their question "
+                "counts. Maps the technology-adjacency graph for a topic."
+            ),
+            returns="tuple of related tags, tier=community",
+            args=[
+                CapabilityArg(name="tag", type="str", description="Tag slug", example="react"),
                 CapabilityArg(
                     name="site",
                     type="str",

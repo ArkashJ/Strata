@@ -144,9 +144,43 @@ def test_collapse_and_transform_threaded(tmp_path: Path) -> None:
     assert "rdiff" in seen["query"]
 
 
+def test_get_treasury_yield_curve_wrapper(tmp_path: Path) -> None:
+    payload = {
+        "dataset_data": {
+            "column_names": ["Date", "10 YR"],
+            "data": [["2024-01-02", 4.05], ["2024-01-01", 4.01]],
+        }
+    }
+    client, seen = _client(tmp_path, payload)
+    resp = client.get_treasury_yield_curve(limit=2)
+    assert resp.database_code == "USTREASURY"
+    assert resp.dataset_code == "YIELD"
+    assert seen["path"].endswith("datasets/USTREASURY/YIELD/data.json")
+    assert seen["order"] == "desc"
+    assert resp.latest().value == 4.05
+
+
+def test_get_lbma_gold_wrapper(tmp_path: Path) -> None:
+    payload = {
+        "dataset_data": {
+            "column_names": ["Date", "USD (AM)"],
+            "data": [["2024-01-02", 2050.0]],
+        }
+    }
+    client, seen = _client(tmp_path, payload)
+    resp = client.get_lbma_gold()
+    assert resp.database_code == "LBMA"
+    assert resp.dataset_code == "GOLD"
+    assert seen["path"].endswith("datasets/LBMA/GOLD/data.json")
+    assert resp.observations[0].value == 2050.0
+
+
 def test_capabilities_methods_exist_and_premium_gated() -> None:
     specs = capabilities()
     assert specs
     for spec in specs:
         assert hasattr(NasdaqDataLinkClient, spec.method)
     assert any(s.requires_paid_tier for s in specs)
+    methods = {s.method for s in specs}
+    assert {"get_treasury_yield_curve", "get_lbma_gold"} <= methods
+    assert {"get_dataset_metadata", "get_datatable"} <= methods

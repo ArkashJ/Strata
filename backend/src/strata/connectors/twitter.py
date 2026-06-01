@@ -212,6 +212,118 @@ def user_to_primitive_yaml(
     }
 
 
+def tweet_count_to_primitive_yaml(
+    user: TwitterUser, *, slug: str, concept_slug: str, accessed: date
+) -> dict[str, Any]:
+    """Lifetime tweet-count primitive from the same user-lookup (no new HTTP call)."""
+    return {
+        "kind": "atomic_primitive",
+        "slug": slug,
+        "schema_version": 1,
+        "concept_slug": concept_slug,
+        "name": f"@{user.username} tweet count (X)",
+        "description": (
+            f"Lifetime public post count for @{user.username}. "
+            "Output-volume proxy; fragile (free X tier)."
+        ),
+        "value": float(user.tweet_count),
+        "unit": {"kind": "stock", "dimension": "events"},
+        "as_of": accessed.isoformat(),
+        "geo": {"level": "country", "codes": ["US"]},
+        "geo_perspective": "demand",
+        "distribution_shape": "power_law",
+        "delivery_mode": "n/a",
+        "source": _user_metric_source_yaml(
+            user, metric="tweet_count", value=user.tweet_count, accessed=accessed
+        ),
+    }
+
+
+def following_count_to_primitive_yaml(
+    user: TwitterUser, *, slug: str, concept_slug: str, accessed: date
+) -> dict[str, Any]:
+    """Following-count primitive from the same user-lookup (no new HTTP call)."""
+    return {
+        "kind": "atomic_primitive",
+        "slug": slug,
+        "schema_version": 1,
+        "concept_slug": concept_slug,
+        "name": f"@{user.username} following count (X)",
+        "description": (
+            f"Accounts followed by @{user.username}. Network-reach proxy; fragile (free X tier)."
+        ),
+        "value": float(user.following_count),
+        "unit": {"kind": "stock", "dimension": "people"},
+        "as_of": accessed.isoformat(),
+        "geo": {"level": "country", "codes": ["US"]},
+        "geo_perspective": "demand",
+        "distribution_shape": "power_law",
+        "delivery_mode": "n/a",
+        "source": _user_metric_source_yaml(
+            user, metric="following_count", value=user.following_count, accessed=accessed
+        ),
+    }
+
+
+def avg_engagement_to_primitive_yaml(
+    tweets: tuple[TwitterTweet, ...],
+    *,
+    username: str,
+    slug: str,
+    concept_slug: str,
+    accessed: date,
+) -> dict[str, Any]:
+    """Mean (likes + retweets) per tweet derived from an existing timeline fetch.
+
+    Pure synthesis of the already-fetched ``user_timeline`` payload — no new call.
+    """
+    if not tweets:
+        raise TwitterClientError("avg_engagement requires a non-empty timeline")
+    total = sum(t.like_count + t.retweet_count for t in tweets)
+    avg = total / len(tweets)
+    payload = json.dumps(
+        {"username": username, "n": len(tweets), "avg_engagement": avg}, sort_keys=True
+    )
+    return {
+        "kind": "atomic_primitive",
+        "slug": slug,
+        "schema_version": 1,
+        "concept_slug": concept_slug,
+        "name": f"@{username} avg engagement / tweet (X)",
+        "description": (
+            f"Mean likes+retweets over the last {len(tweets)} tweets for @{username}. "
+            "Audience-engagement proxy; fragile (free X tier, small sample)."
+        ),
+        "value": float(avg),
+        "unit": {"kind": "intensive", "dimension": "events", "denominator": "per-tweet"},
+        "as_of": accessed.isoformat(),
+        "geo": {"level": "country", "codes": ["US"]},
+        "geo_perspective": "demand",
+        "distribution_shape": "power_law",
+        "delivery_mode": "n/a",
+        "source": {
+            "slug": f"twitter-{username.lower()}-engagement-{accessed.isoformat()}",
+            "tier": "analyst",
+            "url": f"https://x.com/{username}",
+            "accessed": accessed.isoformat(),
+            "snapshot_sha256": hashlib.sha256(payload.encode()).hexdigest(),
+        },
+    }
+
+
+def _user_metric_source_yaml(
+    user: TwitterUser, *, metric: str, value: int, accessed: date
+) -> dict[str, Any]:
+    payload = json.dumps({"username": user.username, metric: value}, sort_keys=True)
+    return {
+        "slug": f"twitter-{user.username.lower()}-{metric}-{accessed.isoformat()}",
+        "tier": "analyst",
+        "url": f"https://x.com/{user.username}",
+        "accessed": accessed.isoformat(),
+        "snapshot_sha256": hashlib.sha256(payload.encode()).hexdigest(),
+    }
+
+
 def user_to_source_yaml(user: TwitterUser, *, accessed: date) -> dict[str, Any]:
     payload = json.dumps(
         {"username": user.username, "followers": user.followers_count}, sort_keys=True

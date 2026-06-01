@@ -14,7 +14,7 @@ import hashlib
 import json
 import time
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, NotRequired, TypedDict
@@ -128,6 +128,23 @@ class OrderbookRaw(TypedDict, total=False):
     no: list[OrderbookEntryRaw]
 
 
+class CandlestickRaw(TypedDict, total=False):
+    end_period_ts: int
+    yes_bid: dict[str, Any]
+    yes_ask: dict[str, Any]
+    price: dict[str, Any]
+    volume: int
+    open_interest: int
+
+
+class SeriesRaw(TypedDict, total=False):
+    ticker: str
+    title: str
+    category: str
+    frequency: str
+    contract_url: str
+
+
 # ═══════════════════════════════════════════════════════════════════
 # Frozen dataclasses — validated internal models
 # ═══════════════════════════════════════════════════════════════════
@@ -208,6 +225,50 @@ class Trade:
 
 
 @dataclass(frozen=True, slots=True)
+class Candlestick:
+    """One time-bucketed OHLC + volume bar for a market (signal history only)."""
+
+    ticker: str
+    end_period_ts: int
+    yes_bid_close: float
+    yes_ask_close: float
+    price_close: float
+    volume: int
+    open_interest: int
+
+    @property
+    def end_time(self) -> datetime | None:
+        if self.end_period_ts <= 0:
+            return None
+        return datetime.fromtimestamp(self.end_period_ts, tz=UTC)
+
+
+@dataclass(frozen=True, slots=True)
+class Series:
+    """A Kalshi series — the contract template events are minted from."""
+
+    ticker: str
+    title: str
+    category: str
+    frequency: str
+    contract_url: str
+
+
+@dataclass(frozen=True, slots=True)
+class MarketStats:
+    """Derived liquidity/attention stats for a single market (signal only)."""
+
+    ticker: str
+    midpoint: float
+    spread: float
+    volume: float
+    volume_24h: float
+    open_interest: float
+    liquidity: float
+    is_active: bool
+
+
+@dataclass(frozen=True, slots=True)
 class OrderbookLevel:
     price: int
     quantity: int
@@ -241,6 +302,9 @@ class KalshiResponse:
     events: tuple[Event, ...] = ()
     trades: tuple[Trade, ...] = ()
     orderbook: Orderbook | None = None
+    candlesticks: tuple[Candlestick, ...] = ()
+    series: tuple[Series, ...] = ()
+    stats: MarketStats | None = None
     cursor: str = ""
     cached: bool = False
     cache_age_seconds: float = 0.0
@@ -321,6 +385,39 @@ def _parse_trade(raw: dict[str, Any]) -> Trade:
         no_price=int(raw.get("no_price", 0)),
         created_time=_parse_ts(raw.get("created_time")),
         taker_side=str(raw.get("taker_side", "")),
+    )
+
+
+def _candle_close(block: Any) -> float:
+    """Extract the close value from a Kalshi candlestick price sub-block.
+
+    Each price field is a dict like ``{"open":.., "close":.., "high":.., "low":..}``
+    (cents). Falls back to a bare numeric if the API returns a scalar.
+    """
+    if isinstance(block, dict):
+        return _safe_float(block.get("close", block.get("mean", 0)))
+    return _safe_float(block)
+
+
+def _parse_candlestick(ticker: str, raw: dict[str, Any]) -> Candlestick:
+    return Candlestick(
+        ticker=ticker,
+        end_period_ts=int(raw.get("end_period_ts", 0) or 0),
+        yes_bid_close=_candle_close(raw.get("yes_bid")),
+        yes_ask_close=_candle_close(raw.get("yes_ask")),
+        price_close=_candle_close(raw.get("price")),
+        volume=int(raw.get("volume", 0) or 0),
+        open_interest=int(raw.get("open_interest", 0) or 0),
+    )
+
+
+def _parse_series(raw: dict[str, Any]) -> Series:
+    return Series(
+        ticker=str(raw.get("ticker", "")),
+        title=str(raw.get("title", "")),
+        category=str(raw.get("category", "")),
+        frequency=str(raw.get("frequency", "")),
+        contract_url=str(raw.get("contract_url", "")),
     )
 
 
@@ -545,6 +642,7 @@ class KalshiClient:
         cache_dir: Path | None = None,
         cache_ttl: int = 3600,
         timeout: float = 30.0,
+        transport: httpx.BaseTransport | None = None,
     ) -> None:
         self._api_key = api_key
         self._base = _BASE_DEMO if demo else _BASE_PROD
@@ -562,6 +660,7 @@ class KalshiClient:
         self._http = httpx.Client(
             timeout=timeout,
             headers={"Content-Type": "application/json", "Accept": "application/json"},
+            transport=transport,
         )
         default_cache = Path.home() / ".strata" / "cache" / "kalshi"
         self._cache = _DiskCache(cache_dir or default_cache, cache_ttl)
@@ -836,6 +935,148 @@ class KalshiClient:
             orderbook=orderbook,
             cached=cached,
             cache_age_seconds=round(cache_age, 1) if cached else 0.0,
+        )
+
+    # ── Candlesticks / history ───────────────────────────────────
+
+    def get_market_history(
+        self,
+        ticker: str,
+        *,
+        series_ticker: str | None = None,
+        start_ts: int | None = None,
+        end_ts: int | None = None,
+        period_interval: int = 60,
+    ) -> KalshiResponse:
+        """Fetch candlestick price/volume history for a market (SIGNAL ONLY).
+
+        History enriches the /signals surface (how the crowd's belief moved over
+        time); it never becomes a TAM primitive. ``series_ticker`` defaults to
+        the market ticker's series prefix when not supplied.
+
+        Args:
+            ticker: Market ticker.
+            series_ticker: Parent series ticker (Kalshi nests candlesticks under
+                /series/{series}/markets/{ticker}/candlesticks).
+            start_ts / end_ts: Unix-second bounds.
+            period_interval: Candle width in minutes (1, 60, or 1440).
+        """
+        series = series_ticker or ticker.split("-")[0]
+        params: dict[str, Any] = {"period_interval": period_interval}
+        if start_ts is not None:
+            params["start_ts"] = start_ts
+        if end_ts is not None:
+            params["end_ts"] = end_ts
+
+        path = f"/series/{series}/markets/{ticker}/candlesticks"
+        data = self._request("GET", path, params)
+        cached = bool(data.get("_cached", False))
+        cache_age = float(data.get("_cache_age", 0.0))
+        elapsed = int(data.get("_elapsed_ms", 0))
+
+        candles_raw: list[dict[str, Any]] = data.get("candlesticks", [])
+        candles = tuple(_parse_candlestick(ticker, c) for c in candles_raw)
+
+        return KalshiResponse(
+            status="ok",
+            response_time_ms=elapsed,
+            candlesticks=candles,
+            cached=cached,
+            cache_age_seconds=round(cache_age, 1) if cached else 0.0,
+        )
+
+    # ── Events by category ───────────────────────────────────────
+
+    def get_events_by_category(
+        self,
+        category: str,
+        *,
+        limit: int = 200,
+        status: str | None = None,
+        with_nested_markets: bool = True,
+    ) -> KalshiResponse:
+        """List events filtered to a single category (SIGNAL ONLY).
+
+        Kalshi's /events endpoint has no server-side category filter, so this
+        fetches events and filters client-side by ``category`` (case-insensitive).
+
+        Args:
+            category: Category label (see :class:`KalshiEventCategory`).
+            limit: Max events to fetch before filtering.
+            status: Optional market/event status filter.
+            with_nested_markets: Include nested markets in each event.
+        """
+        resp = self.get_events(
+            limit=limit,
+            status=status,
+            with_nested_markets=with_nested_markets,
+        )
+        wanted = category.strip().lower()
+        filtered = tuple(e for e in resp.events if e.category.strip().lower() == wanted)
+        return KalshiResponse(
+            status="ok",
+            response_time_ms=resp.response_time_ms,
+            events=filtered,
+            cursor=resp.cursor,
+            cached=resp.cached,
+            cache_age_seconds=resp.cache_age_seconds,
+        )
+
+    # ── Series ───────────────────────────────────────────────────
+
+    def get_series(self, series_ticker: str) -> KalshiResponse:
+        """Fetch a single series (contract template) by ticker (SIGNAL ONLY).
+
+        Args:
+            series_ticker: Series ticker (e.g. "KXRECSSNBER").
+        """
+        data = self._request("GET", f"/series/{series_ticker}")
+        cached = bool(data.get("_cached", False))
+        cache_age = float(data.get("_cache_age", 0.0))
+        elapsed = int(data.get("_elapsed_ms", 0))
+
+        series_raw: dict[str, Any] = data.get("series", data)
+        return KalshiResponse(
+            status="ok",
+            response_time_ms=elapsed,
+            series=(_parse_series(series_raw),),
+            cached=cached,
+            cache_age_seconds=round(cache_age, 1) if cached else 0.0,
+        )
+
+    # ── Market stats (derived) ───────────────────────────────────
+
+    def get_market_stats(self, ticker: str) -> KalshiResponse:
+        """Fetch a market and derive its liquidity/attention stats (SIGNAL ONLY).
+
+        A thin synthesis over :meth:`get_market` exposing midpoint, spread,
+        volume, and open interest as a single :class:`MarketStats` record for
+        the /signals surface. Never feeds a TAM.
+
+        Args:
+            ticker: Market ticker.
+        """
+        resp = self.get_market(ticker)
+        if not resp.markets:
+            raise KalshiClientError(f"No market found for ticker {ticker!r}")
+        m = resp.markets[0]
+        stats = MarketStats(
+            ticker=m.ticker,
+            midpoint=round(m.midpoint, 4),
+            spread=round(m.spread, 4),
+            volume=m.volume,
+            volume_24h=m.volume_24h,
+            open_interest=m.open_interest,
+            liquidity=m.liquidity,
+            is_active=m.is_active,
+        )
+        return KalshiResponse(
+            status="ok",
+            response_time_ms=resp.response_time_ms,
+            markets=resp.markets,
+            stats=stats,
+            cached=resp.cached,
+            cache_age_seconds=resp.cache_age_seconds,
         )
 
     # ── Cache management ─────────────────────────────────────────

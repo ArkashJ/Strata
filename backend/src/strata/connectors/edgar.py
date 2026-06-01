@@ -203,6 +203,25 @@ class FrameEntry:
 
 
 @dataclass(frozen=True, slots=True)
+class Statements:
+    """A small set of headline financial-statement figures for one company.
+
+    Each value is the latest annual (10-K) figure available for the concept,
+    or None when the company does not report that tag.
+    """
+
+    cik: str
+    entity_name: str
+    fiscal_year: int | None
+    revenue: float | None
+    net_income: float | None
+    assets: float | None
+    liabilities: float | None
+    stockholders_equity: float | None
+    shares_outstanding: float | None
+
+
+@dataclass(frozen=True, slots=True)
 class EDGARResponse:
     """Standard return type for every EDGAR client call."""
 
@@ -212,6 +231,8 @@ class EDGARResponse:
     concept: CompanyConcept | None = None
     frame_entries: tuple[FrameEntry, ...] = ()
     tickers: tuple[tuple[int, str, str], ...] = ()
+    concepts: dict[str, CompanyConcept] | None = None
+    statements: Statements | None = None
     cached: bool = False
     cache_age_seconds: float = 0.0
 
@@ -563,6 +584,130 @@ class EDGARClient:
             cache_age_seconds=age,
         )
 
+    # ── Derived: batch concepts ─────────────────────────────────
+
+    def get_concepts(
+        self,
+        cik: str | int,
+        tags: tuple[str, ...],
+        taxonomy: str = "us-gaap",
+    ) -> EDGARResponse:
+        """Fetch several XBRL concepts for one company in a single call.
+
+        Missing tags (404) are skipped rather than raising.
+
+        Args:
+            cik: Company CIK.
+            tags: XBRL concept tags to fetch.
+            taxonomy: Taxonomy namespace.
+        """
+        out: dict[str, CompanyConcept] = {}
+        for tag in tags:
+            try:
+                resp = self.get_company_concept(cik, taxonomy=taxonomy, concept=tag)
+            except EDGARClientError:
+                continue
+            if resp.concept is not None:
+                out[tag] = resp.concept
+        return EDGARResponse(kind="concepts", concepts=out)
+
+    def get_facts_by_concept(
+        self,
+        cik: str | int,
+        tag: str,
+        taxonomy: str = "us-gaap",
+    ) -> EDGARResponse:
+        """Alias for :meth:`get_company_concept` keyed by tag name.
+
+        Args:
+            cik: Company CIK.
+            tag: XBRL concept tag (e.g. "Assets").
+            taxonomy: Taxonomy namespace.
+        """
+        return self.get_company_concept(cik, taxonomy=taxonomy, concept=tag)
+
+    def get_shares_outstanding(self, cik: str | int) -> EDGARResponse:
+        """Retrieve common shares outstanding (dei taxonomy).
+
+        Args:
+            cik: Company CIK.
+        """
+        return self.get_company_concept(
+            cik,
+            taxonomy="dei",
+            concept="EntityCommonStockSharesOutstanding",
+        )
+
+    def get_segment_revenue(self, cik: str | int) -> EDGARResponse:
+        """Retrieve revenue-from-contracts facts (a proxy for segment revenue).
+
+        Args:
+            cik: Company CIK.
+        """
+        return self.get_company_concept(
+            cik,
+            taxonomy="us-gaap",
+            concept="RevenueFromContractWithCustomerExcludingAssessedTax",
+        )
+
+    def get_financial_statements(
+        self,
+        cik: str | int,
+        year: int | None = None,
+    ) -> EDGARResponse:
+        """Assemble a small set of headline financials for a company.
+
+        Pulls revenue, net income, assets, liabilities, equity and shares
+        outstanding and packs them into a :class:`Statements` object.
+
+        Args:
+            cik: Company CIK.
+            year: Optional fiscal year to pin each figure to.
+        """
+        tag_map: dict[str, tuple[str, str]] = {
+            "revenue": ("us-gaap", "Revenues"),
+            "net_income": ("us-gaap", "NetIncomeLoss"),
+            "assets": ("us-gaap", "Assets"),
+            "liabilities": ("us-gaap", "Liabilities"),
+            "stockholders_equity": ("us-gaap", "StockholdersEquity"),
+            "shares_outstanding": ("dei", "EntityCommonStockSharesOutstanding"),
+        }
+        values: dict[str, float | None] = {}
+        entity_name = ""
+        fiscal_year: int | None = year
+        for field, (taxonomy, tag) in tag_map.items():
+            try:
+                resp = self.get_company_concept(cik, taxonomy=taxonomy, concept=tag)
+            except EDGARClientError:
+                values[field] = None
+                continue
+            concept = resp.concept
+            if concept is None:
+                values[field] = None
+                continue
+            entity_name = entity_name or concept.entity_name
+            unit = "shares" if field == "shares_outstanding" else "USD"
+            try:
+                fact = _pick_fact(concept, year=year, unit_filter=unit)
+                values[field] = fact.value
+                if fiscal_year is None and fact.fiscal_year is not None:
+                    fiscal_year = fact.fiscal_year
+            except EDGARClientError:
+                values[field] = None
+
+        statements = Statements(
+            cik=self._pad_cik(cik),
+            entity_name=entity_name,
+            fiscal_year=fiscal_year,
+            revenue=values.get("revenue"),
+            net_income=values.get("net_income"),
+            assets=values.get("assets"),
+            liabilities=values.get("liabilities"),
+            stockholders_equity=values.get("stockholders_equity"),
+            shares_outstanding=values.get("shares_outstanding"),
+        )
+        return EDGARResponse(kind="statements", statements=statements)
+
     # ── Endpoint 4: XBRL Frames ────────────────────────────────
 
     def get_frames(
@@ -584,6 +729,56 @@ class EDGARClient:
             cached=was_cached,
             cache_age_seconds=age,
         )
+
+    # ── Derived: SIC industry rollups ───────────────────────────
+
+    def peers_by_sic(
+        self,
+        sic: str,
+        period: str = "CY2023",
+        concept: str = "Revenues",
+        max_lookups: int = 50,
+    ) -> EDGARResponse:
+        """Return frame entries restricted to filers in one SIC code.
+
+        Pulls the cross-company frame for ``concept`` then filters to CIKs
+        whose submissions report the requested SIC. Bounded by ``max_lookups``
+        submission fetches (rate-limited at 10 req/s by the client).
+
+        Args:
+            sic: Standard Industrial Classification code (e.g. "2834").
+            period: Frame period code (e.g. "CY2023").
+            concept: XBRL concept tag to roll up.
+            max_lookups: Cap on submission lookups (newest-frame-first).
+        """
+        frame_resp = self.get_frames(concept=concept, period=period)
+        matched: list[FrameEntry] = []
+        for entry in frame_resp.frame_entries[:max_lookups]:
+            try:
+                sub = self.get_submissions(entry.cik)
+            except EDGARClientError:
+                continue
+            if sub.company_info is not None and sub.company_info.sic == str(sic):
+                matched.append(entry)
+        return EDGARResponse(kind="frames", frame_entries=tuple(matched))
+
+    def get_industry_revenue(
+        self,
+        sic: str,
+        period: str = "CY2023",
+        max_lookups: int = 50,
+    ) -> EDGARResponse:
+        """Sum reported Revenues across filers in one SIC code for a period.
+
+        Returns an EDGARResponse whose ``frame_entries`` are the SIC-matched
+        filers; callers aggregate via :func:`frame_to_primitive_yaml`.
+
+        Args:
+            sic: SIC industry code.
+            period: Frame period code.
+            max_lookups: Cap on submission lookups.
+        """
+        return self.peers_by_sic(sic, period=period, concept="Revenues", max_lookups=max_lookups)
 
     # ── Endpoint 5: Company Tickers ─────────────────────────────
 
@@ -911,6 +1106,78 @@ def capabilities() -> list[CapabilitySpec]:
                     type="str",
                     description="Period code, e.g. CY2023Q4I",
                     example="CY2023",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="edgar",
+            method="get_shares_outstanding",
+            description="Common shares outstanding for a US-listed company (dei taxonomy).",
+            returns="atomic primitive, unit=count shares, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="cik",
+                    type="str",
+                    description="Company CIK (with leading zeros)",
+                    example="0000320193",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="edgar",
+            method="get_segment_revenue",
+            description="Revenue-from-contracts facts (segment-revenue proxy) for a company.",
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="cik",
+                    type="str",
+                    description="Company CIK (with leading zeros)",
+                    example="0000320193",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="edgar",
+            method="get_financial_statements",
+            description="Headline financials (revenue/income/assets/equity/shares) for a company.",
+            returns="atomic primitive bundle, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="cik",
+                    type="str",
+                    description="Company CIK (with leading zeros)",
+                    example="0000320193",
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="edgar",
+            method="get_industry_revenue",
+            description="Sum of reported Revenues across filers in one SIC code (industry TAM).",
+            returns="atomic primitive list, unit=currency USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="sic", type="str", description="SIC industry code", example="2834"
+                ),
+                CapabilityArg(
+                    name="period", type="str", description="Frame period", example="CY2023"
+                ),
+            ],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="edgar",
+            method="peers_by_sic",
+            description="Filers' values for a concept restricted to one SIC code (peer set).",
+            returns="atomic primitive list, unit=currency USD, tier=regulator",
+            args=[
+                CapabilityArg(
+                    name="sic", type="str", description="SIC industry code", example="2834"
                 ),
             ],
             source_tier="regulator",
