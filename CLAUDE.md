@@ -17,9 +17,46 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ---
 
-## Repo state (as of 2026-05-31)
+## Repo state (as of 2026-06-02)
 
-- **In flight (PR #80 — `feat/rigorous-market-definition`, sub-project 1 of 3):**
+- **In flight (PR #82 — `feat/clerk-auth-and-landing`):** four workstreams.
+  (1) **Auth gate + landing:** sign-in required on every route except a public
+  allowlist (`web/src/middleware.ts`; keyless graceful-degradation preserved);
+  signed-out `/` is a night-canvas marketing page with no app chrome
+  (`components/landing/`); themed `/sign-in` `/sign-up`; Storybook 10 (Vite);
+  Playwright authenticates via a Clerk Testing Token → `storageState`.
+  (2) **Market-spec step (sub-project 1.5):** `/build?q=` no longer auto-sizes —
+  the user pins the market first, and the Size button is the gate.
+
+  ```
+  query ─▶ /build?q= ─▶ PIN THE MARKET (MarketSpecStep, prefilled from the
+                        concept's declared scope; segment presets, geo, rules)
+                  └─▶ Size ─▶ POST /build/recompute {scope} ─▶ /build/<hash>
+                              (a non-empty pinned market folds into the hash —
+                               a different market IS a different build; the
+                               workhorse now shows Market chips + Scope check)
+  ```
+
+  `BuildState.scope` rides `?s=` (empty scope = byte-identical pre-scope flow);
+  `needsRecompute()` routes any pinned market through recompute.
+  (3) **Methodology v1 (sub-projects 2 & 3):** the evaluator enriches every
+  atomic input with its real `source_url` (`InputUsed.source_url`; composites
+  honestly `None`; display-only, never in the state hash) and `SourcedNumber`
+  makes the displayed figure itself the link (report equations + provenance
+  table + composition line). `MethodDirections` names top-down ∧ bottoms-up
+  presence on every TAM and states a missing direction plainly — never
+  fabricates it. Deferred for real sourcing: page/section locators, seeding
+  counterpart methods.
+  (4) **e2e suite green:** every stale pre-v0.42 spec refreshed; harness
+  de-flaked (runtime-derived hashes, local-only `E2E_API_URL`, fail-fast LLM
+  env so `/resolve` settles to its honest error instead of a dev machine's
+  real `claude` CLI call, Clerk dev-JWT refresh before raw SSR fetches,
+  3 local workers). 785 backend tests · 153 web unit tests · 95+ e2e.
+  **Deploy note:** Railway + the local Docker image run STALE backends — they
+  silently ignore the pinned scope and `source_url` until redeployed. Prod
+  still uses Clerk dev keys; swap to a production instance before launch.
+
+- **Merged (PR #80 — `feat/rigorous-market-definition`, sub-project 1 of 3):**
   makes a market's **scope** a first-class, checkable object so a number can't
   misrepresent which market it sizes. A `MarketScope` value object
   (`models/scope.py`: vertical→NAICS · persona→SOC · segment→firm-size band ·
