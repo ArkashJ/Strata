@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — MCP agent harness (PR B, Phase 2)
+- Four new MCP tools on the read-only Strata server (`mcp/tools.py`, now 12 total),
+  every payload keeping the `source_url`+`tier`+`snapshot_sha256` contract:
+  - **`list_primitives`** — paginated, filterable (tier/dimension/query) inventory of
+    the sourced data bank.
+  - **`build_tam`** — what-if sizing: swap a primitive's value (the unit is inherited
+    from the primitive it replaces, so the framework signature still validates) or
+    re-point a framework input; never persisted (`user_override` banner).
+  - **`list_connectors`** — the typed-connector supply side (connector · tier · methods).
+  - **`get_connector_data`** — `[LIVE]` run one connector method → validated, hash-pinned
+    primitive; gated by `STRATA_MCP_LIVE_CONNECTORS=1` so the default surface is offline-safe.
+  +9 MCP tests. This is the "research harness for agents" wedge.
+- **Ingest orchestrator** now treats `cms`/`fdic`/`openfda` as keyless (their ctors take
+  no key) so they run offline instead of being wrongly skipped.
+
 ### Fixed — connector ingest correctness (PR A)
 - **FRED ingest was broken** — its default converter required a `SeriesInfo`
   object that `get_observations` never returns (and a `series_id` converter param

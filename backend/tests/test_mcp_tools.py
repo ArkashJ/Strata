@@ -135,3 +135,45 @@ def test_mcp_readonly(reg: Registry) -> None:
         sorted(reg.atomic),
     )
     assert before == after
+
+
+# ── data-bank-expansion harness tools ───────────────────────────────────────
+
+
+def test_list_primitives_filters_and_cites(reg: Registry) -> None:
+    out = call_tool(reg, "list_primitives", {"tier": "regulator", "limit": 5})
+    assert out["count"] <= 5
+    assert out["primitives"], "expected at least one regulator primitive"
+    for p in out["primitives"]:
+        assert p["snapshot_sha256"] and p["source_tier"] == "regulator"
+
+
+def test_build_tam_what_if_does_not_mutate_registry(reg: Registry) -> None:
+    before = sorted(reg.atomic)
+    out = call_tool(reg, "build_tam", {"concept_slug": _CONCEPT})
+    assert out["scenarios"], "build_tam must return a scenario tree"
+    assert out["state_hash"]
+    # what-if sizing never persists a primitive
+    assert sorted(reg.atomic) == before
+
+
+def test_build_tam_unknown_concept_errors(reg: Registry) -> None:
+    with pytest.raises(ToolError):
+        call_tool(reg, "build_tam", {"concept_slug": "no-such-concept-xyz"})
+
+
+def test_list_connectors_inventory(reg: Registry) -> None:
+    out = call_tool(reg, "list_connectors", {})
+    assert out["count"] >= 20, "expected the full typed-connector inventory"
+    sample = out["connectors"][0]
+    assert sample["connector"] and sample["source_tier"] and sample["methods"]
+
+
+def test_get_connector_data_gated_off_by_default(reg: Registry) -> None:
+    # Without STRATA_MCP_LIVE_CONNECTORS=1 the live path must refuse, not call out.
+    with pytest.raises(ToolError):
+        call_tool(
+            reg,
+            "get_connector_data",
+            {"connector": "fred", "method": "get_observations", "args": {}},
+        )

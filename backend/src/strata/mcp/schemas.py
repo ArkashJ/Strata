@@ -53,6 +53,70 @@ RESOLVE_MARKET: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+LIST_PRIMITIVES: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "tier": {
+            "type": "string",
+            "description": "Filter by source tier (e.g. regulator, aggregator, community-modeled).",
+        },
+        "dimension": {
+            "type": "string",
+            "description": "Filter by unit dimension (e.g. people, currency, organizations).",
+        },
+        "query": {"type": "string", "description": "Substring match on slug / name."},
+        "limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 50},
+    },
+    "additionalProperties": False,
+}
+
+BUILD_TAM: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "concept_slug": {"type": "string", "description": "Exact curated concept slug."},
+        "primitive_overrides": {
+            "type": "object",
+            "description": (
+                "What-if: map a primitive slug → a scalar value. Never persisted; "
+                "the result carries a user_override banner."
+            ),
+            "additionalProperties": {"type": "number"},
+        },
+        "framework_assumptions": {
+            "type": "object",
+            "description": (
+                "Re-point a framework input to a different EXISTING primitive slug: "
+                "{framework_slug: {input_name: primitive_slug}}."
+            ),
+        },
+    },
+    "required": ["concept_slug"],
+    "additionalProperties": False,
+}
+
+LIST_CONNECTORS: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "tier": {"type": "string", "description": "Filter by source tier."},
+    },
+    "additionalProperties": False,
+}
+
+GET_CONNECTOR_DATA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "connector": {"type": "string", "description": "Connector name (e.g. fred, worldbank)."},
+        "method": {"type": "string", "description": "Connector method (e.g. get_indicator)."},
+        "args": {
+            "type": "object",
+            "description": "Method args + converter metadata (primitive_slug, concept_slug, name, "
+            "description, source_url, unit_*). Same shape as one ingest-manifest arg_set.",
+        },
+    },
+    "required": ["connector", "method", "args"],
+    "additionalProperties": False,
+}
+
 # ── Write tools (portfolio P1) — gated by STRATA_PORTFOLIO_ENABLED ──────────
 IMPORT_PORTFOLIO: dict[str, Any] = {
     "type": "object",
