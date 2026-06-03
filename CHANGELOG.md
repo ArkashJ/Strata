@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — /simplify pass (behavior-preserving)
+- One source of truth for: the e2e local-backend policy (`web/e2e/helpers.ts` —
+  `API` + `buildHash`, replacing eight per-file copies so `E2E_API_URL` works
+  suite-wide), the method-family labels (`familyLabel` in `lib/format.ts`,
+  shared by ConvergenceBanner + MethodDirections), the coded-tag chip label
+  (`codedTagLabel`, shared by ScopeStrip + MarketSpecStep), and the
+  sign-in/sign-up night-canvas shell (`AuthCanvas`). Full e2e suite 96/0 after.
+
 ### Added — methodology honesty: number→source links + named directions (sub-projects 2 & 3, v1)
 - **The number itself is now the link.** The evaluator enriches every consumed
   atomic input with its primitive's real `source_url`
