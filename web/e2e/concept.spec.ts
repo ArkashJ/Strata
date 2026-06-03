@@ -12,8 +12,10 @@ test.describe("Concept detail", () => {
     await expect(page.getByText("Disagreement view")).toBeVisible({
       timeout: 15_000,
     });
-    // Metadata strip surfaces the measurement count.
-    await expect(page.getByText("Measurements")).toBeVisible();
+    // Metadata strip surfaces the measurement count. Exact match: the
+    // disagreement-view subtitle ("N measurements · …") would otherwise also
+    // match the case-insensitive substring and trip strict mode.
+    await expect(page.getByText("Measurements", { exact: true })).toBeVisible();
   });
 
   test("disagreement toggle switches to the table view", async ({ page }) => {

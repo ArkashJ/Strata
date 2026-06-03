@@ -1,10 +1,19 @@
 import { expect, test } from "@playwright/test";
 
-// TAM-over-time chart (PR13) on the frozen artifact page. Reuses the seed state
-// hash from tam.spec.ts. Seed primitives currently share one as_of date, so the
-// honest single-snapshot state is the expected default — the chart must NOT
-// fabricate a multi-point curve. The lead runs Playwright.
-const KNOWN_HASH = "fb1bab3e782196427c750cbc8a49124f7dbd1236e949014fd74a2f6681060541";
+// TAM-over-time chart (PR13) on the frozen artifact page. Seed primitives
+// currently share one as_of date, so the honest single-snapshot state is the
+// expected default — the chart must NOT fabricate a multi-point curve.
+// The hash is derived at runtime (build-first) — hardcoding strands the file
+// the moment the seed data re-mints, and never resolves on a cold backend.
+const API = process.env.E2E_API_URL ?? "http://localhost:8000";
+let KNOWN_HASH = "";
+
+test.beforeEach(async ({ request }) => {
+  if (KNOWN_HASH) return; // deterministic per backend — derive once, reuse
+  const built = await request.get(`${API}/build/doc-gen-pc-insurance`);
+  expect(built.ok()).toBeTruthy();
+  KNOWN_HASH = (await built.json()).state_hash as string;
+});
 
 test.describe("TAM over time", () => {
   test("renders the TAM-over-time section on the artifact page", async ({ page }) => {

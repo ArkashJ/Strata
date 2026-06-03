@@ -20,7 +20,9 @@ test.describe("Connector explorer", () => {
 
   test("page shows the pipeline, producing connectors, and a sample link", async ({ page }) => {
     await page.goto("/connectors");
-    await expect(page.getByRole("heading", { name: "Connectors" })).toBeVisible({
+    // "Connectors" appears as both the TopBar route title and the page heading —
+    // .first() avoids the strict-mode collision; visibility is what matters.
+    await expect(page.getByRole("heading", { name: "Connectors" }).first()).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByText("How a number gets here")).toBeVisible();

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — authenticated e2e suite fully green (94/94)
+- **Refreshed every stale spec to the current UI** (they predated the v0.42
+  rebuild and asserted removed surfaces): `build.spec` drives the new market-spec
+  gate via a `sizeThroughGate` helper (and asserts reload — not Back — restores a
+  minted state, matching the deliberate `router.replace` auto-mint model);
+  landing/interpretation/palette use the current nav (Home/Dashboard/Concepts/
+  Frameworks), "Featured TAMs", and the `/c` route for deterministic ⌘K; `tam.spec`
+  follows the "Triangulated midpoint" rename; resolver/concept/framework specs fix
+  drifted copy + strict-mode collisions; `contribute.spec` deleted (surface
+  removed until the v0.5 expert layer).
+- **De-flaked the harness:** `tam.spec`/`trajectory.spec` derive the artifact hash
+  at runtime by building the seeded concept first (hardcoded hashes strand the
+  file when seed data re-mints); `tam-share-og`/`wave2-motion` target the LOCAL
+  e2e backend via `E2E_API_URL` (never `NEXT_PUBLIC_API_URL`, which `.env.local`
+  points at prod); the e2e backend forces a fail-fast LLM (`STRATA_LLM_BACKEND=
+  anthropic` + invalid key) so `/resolve` settles to its honest error in ~1s
+  everywhere instead of shelling out to a dev machine's real `claude` CLI; local
+  workers capped at 3 (the single-process backend's sync evaluator saturates
+  beyond that); Featured-TAMs asserts the TamCard buttons that actually exist
+  (rows navigate via router.push, not `<a>`).
+
 ### Added — market-spec step before sizing (sub-project 1.5, frontend)
 - **Pin the market before any number.** `/build?q=` no longer auto-sizes; it
   renders a new **`MarketSpecStep`** (`web/src/components/build/MarketSpecStep.tsx`)

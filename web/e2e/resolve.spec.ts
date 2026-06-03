@@ -41,14 +41,22 @@ test.describe("Resolve flow", () => {
 
   test("surfaces nearest registry concepts on a dead-end query", async ({ page }) => {
     await page.goto(`/build?q=${encodeURIComponent(NOVEL)}`);
-    // On failure (no LLM key locally) the fallback rail appears with /build links.
-    const fallback = page.getByText(/closest concepts in the registry/i);
+    // On failure (no LLM key locally) the fallback rail appears. Its heading is
+    // ranking-dependent ("Closest concepts in the registry" when the query
+    // lexically overlaps a concept, otherwise "Start from the curated library"),
+    // so assert against the always-present rail copy + the /build?q= links it
+    // always renders — a dead-end query is never left without a path forward.
+    const fallback = page.getByText(/build a TAM on sourced/i);
     await expect(fallback).toBeVisible({ timeout: 25_000 });
     const conceptLink = page.locator("a[href^='/build?q=']").first();
     await expect(conceptLink).toBeVisible();
   });
 
   test("back button returns to the landing page", async ({ page }) => {
+    // The build view mounts ResolveView without an onBack handler, so the
+    // "Back to search" control falls back to window.history.back(). Seed the
+    // landing page into history first so Back has somewhere to return to.
+    await page.goto("/");
     await page.goto(`/build?q=${encodeURIComponent(NOVEL)}`);
     await expect(page.getByText(/dynamic tam resolution/i)).toBeVisible({
       timeout: 20_000,

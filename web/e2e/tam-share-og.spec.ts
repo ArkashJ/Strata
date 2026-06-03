@@ -10,7 +10,11 @@
 
 import { expect, test } from "@playwright/test";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Always the LOCAL e2e backend — never NEXT_PUBLIC_API_URL: the playwright
+// config loads web/.env.local into the TEST process, where that var points at
+// the PRODUCTION backend. Building the TAM there yields a hash the local app
+// can never resolve (the /tam/<hash> SSR fetch hits the local backend → 404).
+const API = process.env.E2E_API_URL ?? "http://localhost:8000";
 // A concept seeded in every backend build, so this spec doesn't depend on
 // freshly-added demo data being present in the running backend.
 const CONCEPT = "doc-gen-pc-insurance";
@@ -24,6 +28,8 @@ function distinctiveWord(conceptName: string): string {
 
 test.describe("AC0.8 — shareable, SSR'd, OG-tagged TAM permalink", () => {
   test("share link is server-rendered with the value and OG tags", async ({ page, request }) => {
+    // Patient budget: the retry loop below can spend ~45s under full-suite load.
+    test.setTimeout(120_000);
     // 1. Build a TAM so the permalink exists (persisted in the backend process).
     const built = await request.get(`${API}/build/${CONCEPT}`);
     expect(built.ok()).toBeTruthy();
@@ -33,7 +39,20 @@ test.describe("AC0.8 — shareable, SSR'd, OG-tagged TAM permalink", () => {
     const word = distinctiveWord(body.target.concept_name ?? CONCEPT);
 
     // 2. Raw HTML must already contain the TAM value (proves SSR, not CSR-only).
-    const raw = await request.get(`/tam/${hash}`);
+    // Use page.request (not the standalone `request` fixture): it shares the
+    // browser context's Clerk session cookies, so the auth gate lets the server
+    // render the real /tam page instead of redirecting to /sign-in. The
+    // standalone fixture carries no session and would 1) bounce to the sign-in
+    // HTML and 2) drop the OG meta tags this test asserts.
+    // Under full-suite parallel load the SSR of this route can transiently fail:
+    // the single-process e2e backend's sync size_concept blocks its event loop
+    // (sensitivity tornado calls from sibling tests), starving the Next server's
+    // backend fetch. Keep retrying for up to ~45s before judging.
+    let raw = await page.request.get(`/tam/${hash}`);
+    for (let attempt = 0; attempt < 9 && !raw.ok(); attempt++) {
+      await page.waitForTimeout(5_000);
+      raw = await page.request.get(`/tam/${hash}`);
+    }
     expect(raw.ok()).toBeTruthy();
     const html = await raw.text();
     expect(html).toMatch(VALUE_RE);

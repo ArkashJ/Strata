@@ -5,7 +5,8 @@
  */
 import { expect, test } from "@playwright/test";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// Local e2e backend — not NEXT_PUBLIC_API_URL, which web/.env.local points at prod.
+const API = process.env.E2E_API_URL ?? "http://localhost:8000";
 const CONCEPT = "doc-gen-pc-insurance";
 
 test.describe("AC2.1 — recompute count-up payoff", () => {

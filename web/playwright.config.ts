@@ -37,7 +37,11 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Local cap, not cores/2: the e2e backend is ONE Python process whose sync
+  // size_concept blocks its event loop, so 5-6 workers' build/sensitivity
+  // traffic queues for minutes and starves latency-sensitive specs (featured
+  // TAM rows, /tam SSR). Three workers keeps it honest AND fast enough.
+  workers: process.env.CI ? 1 : 3,
   reporter: "html",
 
   use: {
@@ -78,6 +82,17 @@ export default defineConfig({
       url: "http://localhost:8000/healthz",
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
+      // Deterministic resolver: force the SDK backend with a key that can't
+      // work, so /resolve settles to its honest error in ~1s everywhere. The
+      // default backend shells out to the `claude` CLI, which EXISTS on dev
+      // machines (subscription auth) — turning the resolve specs into real
+      // 30–90s LLM calls locally while CI (no CLI) fails fast. Offline also
+      // pins the goal pipeline's live/fallback steps off.
+      env: {
+        STRATA_LLM_BACKEND: "anthropic",
+        ANTHROPIC_API_KEY: "e2e-invalid-key",
+        STRATA_OFFLINE: "1",
+      },
     },
     {
       command: `bun dev --port ${PORT}`,
