@@ -28,6 +28,7 @@ import {
 	provenanceNotes,
 } from "@/components/rail/ProvenanceBanner";
 import { ScenarioGraph } from "@/components/ScenarioGraph";
+import { MethodDirections } from "@/components/tam/MethodDirections";
 import { ScopeRailSummary, ScopeStrip, ScopeWarnings } from "@/components/tam/ScopeCheck";
 import { TamTrajectoryChart } from "@/components/tam/TamTrajectoryChart";
 import { Button } from "@/components/ui/Button";
@@ -245,6 +246,10 @@ export function BuildWorkspace({
 						mid={mid}
 						recomputing={recomputing}
 					/>
+					{/* Which canonical sizing directions back this number — and which are
+					    missing (sub-project 2 honesty: name the absent direction, never
+					    fabricate it). */}
+					<MethodDirections families={tam.method_families_used} />
 					<div className="relative">
 						{recomputing ? (
 							<div className="pointer-events-none absolute right-3 top-3 z-10 rounded-[var(--r-1)] bg-[var(--bg-0)]/90 px-2 py-1 text-[11px] text-[var(--accent)]">

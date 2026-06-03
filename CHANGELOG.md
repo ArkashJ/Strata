@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — methodology honesty: number→source links + named directions (sub-projects 2 & 3, v1)
+- **The number itself is now the link.** The evaluator enriches every consumed
+  atomic input with its primitive's real `source_url`
+  (`InputUsed.source_url`; `backend/src/strata/evaluator/engine.py`); composites
+  honestly carry `None` — a union has no single source, and we never link a
+  derived number to an invented URL. Display-only: the state-hash payload
+  projects name/primitive/hash per input, so no `/tam/<hash>` permalink
+  re-mints (+3 backend tests; 785 pass). `Source.url` is now schema-gated
+  non-empty so a blank URL fails at ingest, not as a dead link downstream.
+- **`SourcedNumber`** (`web/src/components/ui/`): renders a figure as a
+  dotted-underline link to its source — wired into the forwardable report's
+  per-method equation factors, input lists, and Sources & provenance table
+  (`TamReport`) and the workhorse composition product line (`CompositionChart`).
+- **`MethodDirections`** (`web/src/components/tam/`): every TAM now NAMES the
+  canonical directions backing it — "Top-down ✓ ∧ Bottoms-up ✓" — and when one
+  is absent says so plainly ("no bottoms-up method in the data bank yet"),
+  distinguishing single-direction estimates from ones cross-checked by
+  non-canonical families (comparable revenue / analog penetration / value
+  chain). Derived purely from `method_families_used`; a missing direction is
+  stated, never fabricated. Rendered on `/build/<hash>` and the report.
+- *Deferred (needs real sourcing, no invented figures):* per-source page/section
+  locators on the link target, and seeding the missing counterpart method for
+  single-direction concepts — both are data work requiring real documents.
+
 ### Fixed — authenticated e2e suite fully green (94/94)
 - **Refreshed every stale spec to the current UI** (they predated the v0.42
   rebuild and asserted removed surfaces): `build.spec` drives the new market-spec

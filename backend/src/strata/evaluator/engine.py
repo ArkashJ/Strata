@@ -216,6 +216,9 @@ class _ResolvedInput:
     # show a per-input provenance mix. A composite reports its members' shared
     # tier, or "mixed" when they differ (it has no single source of its own).
     source_tier: str | None = None
+    # The atomic's source URL (number-level provenance). None for composites —
+    # a union of members links its members, not one invented URL.
+    source_url: str | None = None
 
 
 def _resolve_input(registry: Registry, slug: str) -> _ResolvedInput:
@@ -234,7 +237,13 @@ def _resolve_input(registry: Registry, slug: str) -> _ResolvedInput:
     if slug in registry.atomic:
         a = registry.atomic[slug]
         return _ResolvedInput(
-            a.value, a.source.snapshot_sha256, a.name, a.unit, _banners_for(a), str(a.source.tier)
+            a.value,
+            a.source.snapshot_sha256,
+            a.name,
+            a.unit,
+            _banners_for(a),
+            str(a.source.tier),
+            source_url=str(a.source.url),
         )
 
     if slug not in registry.composite:
@@ -340,6 +349,7 @@ def _build_scenario(
                 name=resolved.name,
                 unit=resolved.unit,
                 source_tier=resolved.source_tier,
+                source_url=resolved.source_url,
             )
         )
         banners.extend(input_banners)
@@ -520,6 +530,7 @@ def _build_scenario_as_of(
                 name=resolved.name,
                 unit=resolved.unit,
                 source_tier=resolved.source_tier,
+                source_url=resolved.source_url,
             )
         )
         banners.extend(resolved.banners)

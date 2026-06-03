@@ -52,6 +52,17 @@ test.describe("Market sizing report", () => {
     // The provenance table lists at least one sourced input with a tier.
     await expect(page.getByText(/Sources/i).first()).toBeVisible();
     await expect(page.locator("table tbody tr").first()).toBeVisible();
+
+    // Number-level provenance (sub-project 3): the displayed figure itself links
+    // to the source behind it — a real http(s) URL from the primitive's source.
+    const sourced = page.getByTestId("sourced-number").first();
+    await expect(sourced).toBeVisible();
+    await expect(sourced).toHaveAttribute("href", /^https?:\/\//);
+
+    // Both-directions honesty (sub-project 2): the report names the canonical
+    // directions backing this number.
+    await expect(page.getByTestId("method-directions")).toContainText(/Top-down/i);
+    await expect(page.getByTestId("method-directions")).toContainText(/Bottoms-up/i);
   });
 
   test("the interactive TAM links to the report", async ({ page, request }) => {

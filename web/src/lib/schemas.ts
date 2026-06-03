@@ -59,6 +59,10 @@ export const inputUsedSchema = z.object({
   name: z.string().nullable().optional(),
   unit: unitSchema.nullable().optional(),
   source_tier: z.string().nullable().optional(),
+  // Number-level provenance: the atomic's source URL so the displayed number
+  // itself can link to the source behind it. Null for composites (no single
+  // source) and absent on pre-enrichment payloads.
+  source_url: z.string().nullable().optional(),
 });
 export type InputUsed = z.infer<typeof inputUsedSchema>;
 
