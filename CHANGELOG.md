@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — connector marketplace (PR B, Phase 3)
+- `/connectors` now shows **13 producing connectors** (was 5): the route's
+  `_CONNECTOR_HOSTS` map was stale and only counted the original four hosts, so the
+  newly-ingested connectors (OECD, Eurostat, EIA, CMS, FDIC, FAA, openFDA, Comtrade)
+  reported 0 despite having committed primitives. Mapped their source hosts.
+- Made the catalog's header search functional (was a no-op) — filter connectors by
+  name, tier, or what they return.
+
 ### Added — MCP agent harness (PR B, Phase 2)
 - **`/agents` page** (`web/src/app/agents/`) — first-class harness surface (sidebar
   link + icon): the 12-tool catalog (read/write/live badges), an agent-flow ASCII
