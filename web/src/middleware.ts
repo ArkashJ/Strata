@@ -19,6 +19,23 @@ type MiddlewareFn = (
   event: NextFetchEvent,
 ) => Response | Promise<Response | undefined> | undefined;
 
+// Protected-by-default: every route requires sign-in EXCEPT this small public
+// allowlist. We gate the whole product (landing included) — the only surfaces
+// left open are ones where a gate has no security value and would break a real
+// feature: the auth pages themselves, Clerk's own callback paths, the public
+// embeddable TAM iframe, SEO crawl files, and OpenGraph images (fetched by
+// unauthenticated unfurl bots). `auth.protect()` redirects signed-out visitors
+// to NEXT_PUBLIC_CLERK_SIGN_IN_URL (/sign-in).
+const isPublicRoute = createRouteMatcher([
+  "/", // public marketing landing (signed-out); the app home is gated behind it
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/embed(.*)",
+  "/robots.txt",
+  "/sitemap.xml",
+  /opengraph-image/,
+]);
+
 // Build the Clerk handler LAZILY — `clerkMiddleware()` reads the publishable key
 // at construction time, so calling it at module scope would run on every Edge
 // cold-start, including keyless prod. We only construct it once, inside the guard,
@@ -27,9 +44,8 @@ let _protect: MiddlewareFn | null = null;
 
 function getProtect(): MiddlewareFn {
   if (!_protect) {
-    const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
     _protect = clerkMiddleware(async (auth, req) => {
-      if (isProtectedRoute(req)) {
+      if (!isPublicRoute(req)) {
         await auth.protect();
       }
     }) as unknown as MiddlewareFn;
