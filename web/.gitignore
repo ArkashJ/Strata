@@ -41,3 +41,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Playwright Clerk auth state (contains a session)
+e2e/.clerk/
+
+# Storybook build output
+/storybook-static/
