@@ -233,7 +233,7 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   router decision into a validated primitive), the resolver's live connector
   step wired (`resolver/pipeline.py` step 3 → dispatch → `writer.upsert_primitive`),
   the ingest orchestrator + freshness CLI (`strata/ingest/`, `strata ingest
-  run|status|refresh`, manifest at repo-root `ingest-manifest.yaml`), the
+  run|status|refresh`, manifest at `data/ingest-manifest.yaml`), the
   read-only pyramid graph (`web/src/app/graph/`), and deploy hardening
   (entrypoint, CI gate, weekly refresh cron, DB pool config). 400 backend
   tests; CI type/lint gate scoped to `src/` (zero errors there; `tests/`

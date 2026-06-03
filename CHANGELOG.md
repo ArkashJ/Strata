@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — data-bank expansion (PR A: themed bulk ingest)
+- **Bulk promote** — `strata promote --from-ingest [--validate-only]`
+  (`backend/src/strata/cli.py`) walks every staged `~/.strata/auto-primitives/`
+  record, stages the whole batch into `data/primitives/`, validates the tree
+  **once** (not per-file), and iteratively rolls back only the validator's
+  attributed offenders so the committed tree is never left broken. Errors are
+  attributed exact-slug-first with an unattributed-only message-scan fallback to
+  avoid over-rollback; an unattributable round rolls the remaining batch back.
+  `--validate-only` is a dry run that commits nothing (+6 promote-CLI tests).
+
+### Removed
+- Deleted the stale repo-root `ingest-manifest.yaml` (legacy `methods:` dict
+  shape the loader rejects). `data/ingest-manifest.yaml` is the single canonical
+  manifest; README + CLAUDE.md references updated.
+
 ### Changed — /simplify pass (behavior-preserving)
 - One source of truth for: the e2e local-backend policy (`web/e2e/helpers.ts` —
   `API` + `buildHash`, replacing eight per-file copies so `E2E_API_URL` works

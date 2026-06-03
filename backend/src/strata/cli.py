@@ -13,7 +13,7 @@ from strata.loader import LoaderError
 from strata.models import TAMOutput, Unit
 from strata.registry import RegistryError
 from strata.sizing.cli import portfolio_app
-from strata.validator import Severity
+from strata.validator import Severity, ValidationFinding
 from strata.validator import validate as run_validate
 
 app = typer.Typer(
@@ -537,22 +537,168 @@ def goal(
 
 # ── `strata promote` — move auto-primitive into the committed tree (§7) ─
 
-_PROMOTE_SLUG_ARG = typer.Argument(..., help="Slug of the auto-primitive to promote.")
+_PROMOTE_SLUG_ARG = typer.Argument(
+    None, help="Slug of the auto-primitive to promote (omit with --from-ingest)."
+)
 _PROMOTE_DATA_DIR_OPT = typer.Option(
     Path("data"), "--data-dir", "-d", help="Target data directory."
 )
+_PROMOTE_FROM_INGEST_OPT = typer.Option(
+    False,
+    "--from-ingest",
+    help="Promote EVERY not-yet-committed auto-primitive (bulk ingest campaign).",
+)
+_PROMOTE_VALIDATE_ONLY_OPT = typer.Option(
+    False,
+    "--validate-only",
+    help="With --from-ingest: stage + validate but roll everything back (dry run).",
+)
+
+
+def _stage_auto_primitive(src: Path, dst: Path) -> None:
+    """Copy an auto-primitive into the committed tree, stripping its ingest-only
+    ``metadata`` block (is_auto / connector / args hash) which the committed
+    AtomicPrimitive schema forbids — provenance is already pinned in
+    ``source.snapshot_sha256``."""
+    import yaml
+
+    record = yaml.safe_load(src.read_text())
+    if isinstance(record, dict):
+        record.pop("metadata", None)
+    dst.write_text(yaml.safe_dump(record, sort_keys=False, allow_unicode=True))
+
+
+def _attribute_errors(errors: list[ValidationFinding], staged: set[str]) -> set[str]:
+    """Map validator errors back to the staged slug(s) that caused them.
+
+    Semantic/cross-record findings carry ``slug`` directly; structural findings
+    (e.g. duplicate slug) leave it blank but name the slug in ``message``. We try
+    the exact ``slug`` field first and only fall back to a message scan when no
+    error attributes cleanly — that keeps over-rollback to a minimum.
+    """
+    exact = {f.slug for f in errors if f.slug in staged}
+    if exact:
+        return exact
+    # Fall back to a message scan ONLY for errors that carry no staged slug of
+    # their own — otherwise a pre-existing tree error that merely mentions a
+    # staged slug name would wrongly eject a good primitive (over-rollback).
+    unattributed = [f for f in errors if f.slug not in staged]
+    return {s for s in staged for f in unattributed if s in f.message}
+
+
+def _first_error_for(errors: list[ValidationFinding], slug: str) -> str:
+    for f in errors:
+        if f.slug == slug or slug in f.message:
+            return f"{f.code}: {f.message}"
+    return "rejected by validator"
+
+
+def _promote_from_ingest(data_dir: Path, *, validate_only: bool) -> None:
+    """Bulk-promote every staged auto-primitive, validating once and rolling back
+    only the offenders so the committed tree is *never* left in a broken state.
+
+    Unlike the single-slug path this does not re-validate per file (O(n²) on a
+    few-hundred-primitive campaign): it stages the whole batch, validates once,
+    drops the slug(s) the validator blames, and re-validates until clean.
+    """
+    from strata.resolver import AUTO_PRIMITIVES_DIR
+
+    if not AUTO_PRIMITIVES_DIR.exists():
+        typer.echo("No auto-primitives staged. Run `strata ingest run` first.")
+        return
+
+    target_dir = data_dir / "primitives"
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    staged: dict[str, Path] = {}  # slug -> committed dst path (pending)
+    src_of: dict[str, Path] = {}  # slug -> staging src path
+    already = 0
+    for src in sorted(AUTO_PRIMITIVES_DIR.glob("*.yaml")):
+        slug = src.stem
+        dst = target_dir / f"{slug}.yaml"
+        if dst.exists():
+            already += 1
+            continue
+        _stage_auto_primitive(src, dst)
+        staged[slug] = dst
+        src_of[slug] = src
+
+    if not staged:
+        typer.echo(f"Nothing to promote ({already} already committed).")
+        return
+
+    rejected: dict[str, str] = {}
+    while staged:
+        report = run_validate(data_dir)
+        if report.ok:
+            break
+        offenders = _attribute_errors(report.errors, set(staged))
+        removed_any = False
+        for slug in offenders:
+            if slug not in staged:  # defensive: keep the loop crash-free
+                continue
+            rejected[slug] = _first_error_for(report.errors, slug)
+            staged.pop(slug).unlink(missing_ok=True)
+            removed_any = True
+        if not removed_any:
+            # Errors persist but no staged primitive can be blamed — roll the
+            # whole remaining batch back so the tree stays loadable (guarantees
+            # termination), then surface the errors.
+            for slug, dst in staged.items():
+                dst.unlink(missing_ok=True)
+                rejected[slug] = "rolled back: unattributable validation error"
+            staged.clear()
+            typer.echo(
+                "ERROR: validation errors not attributable to one primitive — "
+                "rolled the batch back:",
+                err=True,
+            )
+            for f in report.errors[:5]:
+                typer.echo(f"  • {f.code}: {f.message}", err=True)
+            break
+
+    committed = sorted(staged)
+    if validate_only:
+        for dst in staged.values():
+            dst.unlink(missing_ok=True)
+        typer.echo(
+            f"[validate-only] {len(committed)} would promote · "
+            f"{len(rejected)} rejected · {already} already committed."
+        )
+    else:
+        for slug in committed:
+            src_of[slug].unlink(missing_ok=True)
+        typer.echo(
+            f"✓ Promoted {len(committed)} primitive(s) → {target_dir} "
+            f"({len(rejected)} rejected · {already} already committed)."
+        )
+    for slug, reason in sorted(rejected.items()):
+        typer.echo(f"  ✗ {slug}: {reason}", err=True)
+    if rejected and not committed:
+        raise typer.Exit(code=1)
 
 
 @app.command("promote")
 def promote(
-    slug: str = _PROMOTE_SLUG_ARG,
+    slug: str | None = _PROMOTE_SLUG_ARG,
     data_dir: Path = _PROMOTE_DATA_DIR_OPT,
+    from_ingest: bool = _PROMOTE_FROM_INGEST_OPT,
+    validate_only: bool = _PROMOTE_VALIDATE_ONLY_OPT,
 ) -> None:
     """Move ~/.strata/auto-primitives/{slug}.yaml → data/primitives/{slug}.yaml.
 
     Refuses promotion if the validator rejects (mirrors v0.5 contribution flow).
-    Idempotent: re-running on an already-promoted slug is a no-op.
+    Idempotent: re-running on an already-promoted slug is a no-op. Pass
+    ``--from-ingest`` to promote the whole staged batch at once.
     """
+    if from_ingest:
+        _promote_from_ingest(data_dir, validate_only=validate_only)
+        return
+
+    if slug is None:
+        typer.echo("ERROR: provide a slug, or use --from-ingest to bulk-promote.", err=True)
+        raise typer.Exit(code=2)
+
     from strata.resolver import AUTO_PRIMITIVES_DIR
 
     src = AUTO_PRIMITIVES_DIR / f"{slug}.yaml"
@@ -570,16 +716,8 @@ def promote(
         typer.echo(f"{slug} is already promoted — no-op.")
         return
 
-    # Stage, then run the validator on data_dir. Roll back on reject. Auto-
-    # primitives carry an ingest-only `metadata` block (is_auto, connector, args
-    # hash) that the committed AtomicPrimitive schema forbids — strip it on the
-    # way in; provenance is already pinned in source.snapshot_sha256.
-    import yaml
-
-    record = yaml.safe_load(src.read_text())
-    if isinstance(record, dict):
-        record.pop("metadata", None)
-    dst.write_text(yaml.safe_dump(record, sort_keys=False, allow_unicode=True))
+    # Stage, then run the validator on data_dir. Roll back on reject.
+    _stage_auto_primitive(src, dst)
     try:
         report = run_validate(data_dir)
     except LoaderError as exc:

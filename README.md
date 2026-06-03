@@ -200,7 +200,7 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
   connector method, `call_and_convert` fetches + writes a sourced primitive),
   then Claude+Exa fallback. See [`docs/13-strata-goal-cli.md`](docs/13-strata-goal-cli.md).
 - **`strata ingest run|status|refresh`** — populate and refresh the data bank in
-  bulk from a declarative `ingest-manifest.yaml`; key-less connectors are skipped,
+  bulk from a declarative `data/ingest-manifest.yaml`; key-less connectors are skipped,
   and `refresh` rewrites only numbers whose source snapshot changed.
 - **Pyramid graph (`/graph`)** — read-only 3-axis explorer (Qualitative ·
   Quantitative · Industry) with geo/time filter chips and click-to-narrow.
