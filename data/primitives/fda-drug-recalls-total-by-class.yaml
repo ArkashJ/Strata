@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: fda-drug-recalls-total-by-class
+schema_version: 1
+concept_slug: us-drug-safety
+name: FDA drug recalls (total across severity classes)
+description: Total count of FDA drug enforcement recalls summed across Class I/II/III,
+  openFDA drug/enforcement count endpoint.
+value: 17681
+unit:
+  kind: stock
+  dimension: events
+as_of: '2026-06-03'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: other
+delivery_mode: n/a
+source:
+  slug: fda-drug-events-drug-recalls-by-class
+  tier: regulator
+  url: https://api.fda.gov/drug/enforcement.json
+  accessed: '2026-06-03'
+  snapshot_sha256: 5175811039b104d1833a34a19c66178f79d81244ab46d065b4d594f5b6c2f93f

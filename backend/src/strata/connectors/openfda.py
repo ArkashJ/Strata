@@ -1345,7 +1345,7 @@ def event_count_to_primitive_yaml(
         "as_of": date.today().isoformat(),
         "geo": {"level": geo_level, "codes": list(geo_codes)},
         "geo_perspective": geo_perspective,
-        "distribution_shape": "empirical",
+        "distribution_shape": "other",
         "delivery_mode": "n/a",
         "source": {
             "slug": source_slug,
@@ -1397,7 +1397,7 @@ def clearance_count_to_primitive_yaml(
         "as_of": date.today().isoformat(),
         "geo": {"level": geo_level, "codes": list(geo_codes)},
         "geo_perspective": geo_perspective,
-        "distribution_shape": "empirical",
+        "distribution_shape": "other",
         "delivery_mode": "n/a",
         "source": {
             "slug": source_slug,

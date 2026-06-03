@@ -44,15 +44,6 @@ connectors:
           unit_kind: flow
           unit_dimension: currency
           unit_currency: USD
-        - series_id: CPIAUCSL
-          primitive_slug: fred-us-cpi-all-urban
-          concept_slug: us-consumer-price-index
-          name: US CPI-U all items (FRED CPIAUCSL, index)
-          description: US Consumer Price Index for All Urban Consumers, all items, latest index value.
-          source_url: https://fred.stlouisfed.org/series/CPIAUCSL
-          unit_kind: stock
-          unit_dimension: index
-
   # ── BLS — employment + occupation wages (regulator). ───────────────────
   bls:
     - method: get_series
@@ -416,7 +407,7 @@ connectors:
   eurostat:
     - method: get_gdp
       arg_sets:
-        - country: DE
+        - geo: DE
           year: 2023
           concept_slug: eurostat-gdp-de
           primitive_slug: eurostat-gdp-de-2023
@@ -428,7 +419,7 @@ connectors:
           unit_kind: flow
           unit_dimension: currency
           unit_currency: EUR
-        - country: FR
+        - geo: FR
           year: 2023
           concept_slug: eurostat-gdp-fr
           primitive_slug: eurostat-gdp-fr-2023
@@ -530,26 +521,6 @@ connectors:
           unit_kind: flow
           unit_dimension: people
           unit_denominator: year
-
-  # ── USDA NASS — US agriculture. Key: STRATA_USDA_NASS_API_KEY. No `year`
-  # (collides with a converter keyword; auto-selects latest). ─────────────
-  usda_nass:
-    - method: get_state_rankings
-      arg_sets:
-        - commodity: CORN
-          statistic: PRODUCTION
-          concept_slug: us-corn-production
-          primitive_slug: nass-corn-production-us-latest
-          name: US corn production (latest year)
-          description: Most-recent annual US corn production from USDA NASS QuickStats, PRODUCTION statistic.
-          source_url: https://quickstats.nass.usda.gov/
-        - commodity: SOYBEANS
-          statistic: PRODUCTION
-          concept_slug: us-soybean-production
-          primitive_slug: nass-soybean-production-us-latest
-          name: US soybean production (latest year)
-          description: Most-recent annual US soybean production from USDA NASS QuickStats, PRODUCTION statistic.
-          source_url: https://quickstats.nass.usda.gov/
 
   # ── openFDA — life-sciences (regulator, keyless). drug_name is a converter
   # label feeding the source slug/sha, not a query arg. ───────────────────
