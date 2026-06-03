@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — user-generated graph builder (PR B, Phase 4)
+- **`/build/graph`** (sidebar link) — compose your own TAM from the bank: pick a market,
+  then re-bind any framework input to a different sourced primitive (swaps are kept
+  unit-compatible). The TAM recomputes live via `POST /build/recompute` and the minted
+  `state_hash` is the shareable artifact (Open & share → `/tam/<hash>`, or edit in the
+  workhorse). No fabricated numbers — every binding is an existing hash-pinned primitive;
+  what-if wiring is never persisted as a primitive.
+
 ### Added — connector marketplace (PR B, Phase 3)
 - `/connectors` now shows **13 producing connectors** (was 5): the route's
   `_CONNECTOR_HOSTS` map was stale and only counted the original four hosts, so the

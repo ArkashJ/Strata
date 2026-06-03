@@ -71,6 +71,7 @@ export function Sidebar() {
         <NavItem icon={<HomeIcon />} label="Home" href="/" exact />
         <NavItem icon={<DashboardIcon />} label="Dashboard" href="/dashboard" />
         <NavItem icon={<PyramidIcon />} label="Pyramid explorer" href="/graph" />
+        <NavItem icon={<FrameworksIcon />} label="Build a graph" href="/build/graph" />
         <NavItem icon={<ConnectorsIcon />} label="Connectors" href="/connectors" />
         <NavItem icon={<PortfolioIcon />} label="Portfolio" href="/portfolio" />
         <NavItem icon={<IntegrationsIcon />} label="Integrations" href="/integrations" />
