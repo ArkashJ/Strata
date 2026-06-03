@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added — MCP agent harness (PR B, Phase 2)
+- **`/agents` page** (`web/src/app/agents/`) — first-class harness surface (sidebar
+  link + icon): the 12-tool catalog (read/write/live badges), an agent-flow ASCII
+  diagram, stdio + streamable-HTTP connect snippets, and the "frameworks are
+  harnesses" explainer. Promotes MCP off the single `/integrations` card.
 - Four new MCP tools on the read-only Strata server (`mcp/tools.py`, now 12 total),
   every payload keeping the `source_url`+`tier`+`snapshot_sha256` contract:
   - **`list_primitives`** — paginated, filterable (tier/dimension/query) inventory of
