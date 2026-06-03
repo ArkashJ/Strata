@@ -6,6 +6,7 @@
 // reason two methods can disagree. The displayed scope is always the primitive's
 // own truth (snap-to-truth); these are read-only on the frozen /tam artifact.
 
+import { codedTagLabel } from "@/lib/format";
 import type { MarketScope, ScopeReport } from "@/lib/schemas";
 
 // A relationship's tone: a definite size mismatch is a warning; a wrong-market
@@ -22,10 +23,10 @@ type Chip = { key: string; label: string };
 function scopeChips(scope: MarketScope): Chip[] {
   const chips: Chip[] = [];
   for (const t of scope.vertical) {
-    chips.push({ key: `v-${t.code}`, label: `${t.system} ${t.code} · ${t.label}` });
+    chips.push({ key: `v-${t.code}`, label: codedTagLabel(t) });
   }
   for (const t of scope.persona) {
-    chips.push({ key: `p-${t.code}`, label: `${t.system} ${t.code} · ${t.label}` });
+    chips.push({ key: `p-${t.code}`, label: codedTagLabel(t) });
   }
   if (scope.segment) chips.push({ key: "seg", label: scope.segment.label });
   for (const g of scope.geo_demand) chips.push({ key: `gd-${g}`, label: g });

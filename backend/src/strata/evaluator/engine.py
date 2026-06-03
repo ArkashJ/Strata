@@ -42,6 +42,7 @@ from ..models import (
     UnitDimension,
     UnitKind,
 )
+from ..models.scope import MarketScope
 from ..registry import Registry, RegistryError
 from ..scope import build_scope_report
 
@@ -91,6 +92,7 @@ def size_concept(
     registry: Registry,
     concept_slug: str,
     overrides: EvalOverrides | None = None,
+    declared_scope_override: MarketScope | None = None,
 ) -> TAMOutput:
     try:
         concept = registry.get_concept(concept_slug)
@@ -150,6 +152,17 @@ def size_concept(
                 for fw, binds in sorted(overrides.framework_assumptions.items())
             },
         }
+    # A user-pinned market is a real input: when present it overrides the
+    # concept's declared scope as the side the guard checks each primitive
+    # against, and folds into the hash so a different market mints a different
+    # /build/<hash>. Empty/absent override = the concept's own declared scope.
+    declared_scope = (
+        declared_scope_override
+        if declared_scope_override is not None and not declared_scope_override.is_empty
+        else concept.scope
+    )
+    if declared_scope_override is not None and not declared_scope_override.is_empty:
+        payload["declared_scope"] = declared_scope.model_dump(mode="json")
     tam_hash = mint_state_hash(payload)
     uses_synthetic = any(b.uses_synthetic for b in builds)
     return TAMOutput(
@@ -165,7 +178,7 @@ def size_concept(
         independence_score=_independence(builds),
         uses_synthetic_primitives=uses_synthetic,
         uses_modeled_composites=False,
-        scope=build_scope_report(registry, concept.scope, scenarios),
+        scope=build_scope_report(registry, declared_scope, scenarios),
     )
 
 
@@ -203,6 +216,9 @@ class _ResolvedInput:
     # show a per-input provenance mix. A composite reports its members' shared
     # tier, or "mixed" when they differ (it has no single source of its own).
     source_tier: str | None = None
+    # The atomic's source URL (number-level provenance). None for composites —
+    # a union of members links its members, not one invented URL.
+    source_url: str | None = None
 
 
 def _resolve_input(registry: Registry, slug: str) -> _ResolvedInput:
@@ -221,7 +237,13 @@ def _resolve_input(registry: Registry, slug: str) -> _ResolvedInput:
     if slug in registry.atomic:
         a = registry.atomic[slug]
         return _ResolvedInput(
-            a.value, a.source.snapshot_sha256, a.name, a.unit, _banners_for(a), str(a.source.tier)
+            a.value,
+            a.source.snapshot_sha256,
+            a.name,
+            a.unit,
+            _banners_for(a),
+            str(a.source.tier),
+            source_url=str(a.source.url),
         )
 
     if slug not in registry.composite:
@@ -327,6 +349,7 @@ def _build_scenario(
                 name=resolved.name,
                 unit=resolved.unit,
                 source_tier=resolved.source_tier,
+                source_url=resolved.source_url,
             )
         )
         banners.extend(input_banners)
@@ -507,6 +530,7 @@ def _build_scenario_as_of(
                 name=resolved.name,
                 unit=resolved.unit,
                 source_tier=resolved.source_tier,
+                source_url=resolved.source_url,
             )
         )
         banners.extend(resolved.banners)

@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-const API_URL = "http://localhost:8000";
+import { API } from "./helpers";
 
 test.describe("Connector explorer", () => {
   test("GET /connectors returns the catalog with live bank counts", async ({ request }) => {
-    const res = await request.get(`${API_URL}/connectors`);
+    const res = await request.get(`${API}/connectors`);
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -20,7 +20,9 @@ test.describe("Connector explorer", () => {
 
   test("page shows the pipeline, producing connectors, and a sample link", async ({ page }) => {
     await page.goto("/connectors");
-    await expect(page.getByRole("heading", { name: "Connectors" })).toBeVisible({
+    // "Connectors" appears as both the TopBar route title and the page heading —
+    // .first() avoids the strict-mode collision; visibility is what matters.
+    await expect(page.getByRole("heading", { name: "Connectors" }).first()).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByText("How a number gets here")).toBeVisible();

@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -9,9 +10,12 @@ import { InterpretationCard, type InterpretationMatch } from "@/components/Inter
 import { TamCard, type TamSummary } from "@/components/TamCard";
 import { Hero } from "@/components/landing/Hero";
 import { HowItWorks } from "@/components/landing/HowItWorks";
+import { NightCanvas } from "@/components/landing/NightCanvas";
+import { PublicLanding } from "@/components/landing/PublicLanding";
 import { Reveal } from "@/components/landing/Reveal";
 import { StatBlock } from "@/components/ui/StatBlock";
 import { Stagger, StaggerItem } from "@/components/ui/motion";
+import { clerkEnabled } from "@/lib/clerk";
 import { formatUSD } from "@/lib/format";
 import { rankByQuery } from "@/lib/fuzzy";
 import { buildQuery, conceptsQuery, frameworksQuery, primitivesQuery } from "@/lib/queries";
@@ -351,8 +355,30 @@ function LandingContent() {
   );
 }
 
-// Suspense required because useSearchParams() needs it in the Next.js app router.
-export default function Landing() {
+// Root route. Signed-out visitors get the public marketing landing (night canvas,
+// no app chrome); signed-in users get the app home. The keyless dev build (no
+// Clerk) keeps the app home, unchanged. Suspense wraps the app home because
+// LandingContent calls useSearchParams().
+export default function Home() {
+  if (!clerkEnabled) {
+    return (
+      <Suspense>
+        <LandingContent />
+      </Suspense>
+    );
+  }
+  return <HomeGate />;
+}
+
+// Render exactly one branch so the public marketing landing never mounts the
+// app home (which would fire its library/build queries for a signed-out
+// visitor). While Clerk resolves, show the bare night canvas — no flash of the
+// app home, no wasted requests.
+function HomeGate() {
+  const { isLoaded, isSignedIn } = useAuth();
+  if (!isLoaded || !isSignedIn) {
+    return <NightCanvas>{isLoaded ? <PublicLanding /> : null}</NightCanvas>;
+  }
   return (
     <Suspense>
       <LandingContent />

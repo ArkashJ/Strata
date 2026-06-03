@@ -27,7 +27,7 @@ import {
   tamOutputSchema,
   tamTrajectorySchema,
 } from "./schemas";
-import type { BuildState } from "./state-hash";
+import { type BuildState, isScopeEmpty } from "./state-hash";
 
 function validated<T>(schema: z.ZodType<T>, data: unknown): T {
   return schema.parse(data);
@@ -122,11 +122,21 @@ export function hasOverrides(state: BuildState): boolean {
   return Object.values(fa).some((m) => Object.keys(m).length > 0) || Object.keys(po).length > 0;
 }
 
+// The plain GET /build/{slug} always sizes against the concept's *own* declared
+// scope, so a user-pinned market — like a what-if — can only be honoured by the
+// recompute path. Recompute whenever the state carries either.
+export function needsRecompute(state: BuildState): boolean {
+  return hasOverrides(state) || !isScopeEmpty(state.scope);
+}
+
 function toRecomputeRequest(state: BuildState): RecomputeRequest {
   return {
     concept_slug: state.target_concept_slug,
     framework_assumptions: state.framework_assumptions,
     primitive_overrides: state.primitive_overrides,
+    // Only send a pinned market; an empty scope is omitted so the backend follows
+    // its unchanged default-scope path.
+    scope: isScopeEmpty(state.scope) ? undefined : (state.scope ?? undefined),
   };
 }
 
@@ -144,7 +154,7 @@ export const recomputeQuery = (state: BuildState) => {
       });
       return validated(tamOutputSchema, data);
     },
-    enabled: !!state.target_concept_slug && hasOverrides(state),
+    enabled: !!state.target_concept_slug && needsRecompute(state),
     staleTime: 5 * 60_000,
   });
 };

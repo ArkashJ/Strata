@@ -14,11 +14,15 @@ test.describe("Interpretation branch (/?q=)", () => {
 
   test("shows at least one card or the direct-size fallback", async ({ page }) => {
     await page.goto("/?q=insurance+automation");
+    // Either the ranked concept list renders (aria-label "Interpretation options"),
+    // or — with no close match — the inline "size it with live synthesis" fallback.
+    // The lead paragraph always offers a "size it directly" button.
     await expect(
       page
         .getByRole("list", { name: /interpretation options/i })
-        .or(page.getByText(/size it with live synthesis/i))
-        .or(page.getByRole("button", { name: /size it directly/i })),
+        .or(page.getByRole("button", { name: /size it with live synthesis/i }))
+        .or(page.getByRole("button", { name: /size it directly/i }))
+        .first(),
     ).toBeVisible({ timeout: 10_000 });
   });
 
@@ -43,17 +47,26 @@ test.describe("Interpretation branch (/?q=)", () => {
     expect(page.url()).toContain("/build?q=");
   });
 
-  test("logo link returns to plain landing", async ({ page }) => {
+  test("home nav link returns to the plain landing", async ({ page }) => {
     await page.goto("/?q=insurance+automation");
-    await page.getByRole("link", { name: "Strata" }).click();
-    await page.waitForURL("/");
-    expect(page.url()).toMatch(/\/$/);
+    // The brand wordmark is no longer a link (Logo is an aria-hidden glyph); the
+    // app shell's home affordance is the "Home" rail link (href="/").
+    await page
+      .getByRole("navigation", { name: "Primary" })
+      .getByRole("link", { name: "Home", exact: true })
+      .click();
+    await page.waitForURL(/\/$/);
+    // Back on the plain landing (no ?q=), the hero search box is present again.
+    await expect(page.getByLabel("Market sizing query")).toBeVisible();
   });
 
   test("nav links visible in interpretation branch", async ({ page }) => {
     await page.goto("/?q=some+query");
-    await expect(page.getByRole("link", { name: "Data" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Browse" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Contribute" })).toBeVisible();
+    // Same restructured sidebar as the landing spec — assert the current labels.
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await expect(nav.getByRole("link", { name: "Home", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Dashboard" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Concepts" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Frameworks" })).toBeVisible();
   });
 });

@@ -11,20 +11,8 @@
 import { useEffect, useState } from "react";
 
 import { CountUp, FadeIn } from "@/components/ui/motion";
-import { formatCompact } from "@/lib/format";
+import { familyLabel, formatCompact } from "@/lib/format";
 import type { Convergence } from "@/lib/schemas";
-
-const FAMILY_LABEL: Record<string, string> = {
-  bottoms_up_seats: "Bottoms-up · seats",
-  top_down_spend: "Top-down · spend",
-  comparable_revenue: "Comparable revenue",
-  analog_penetration: "Analog penetration",
-  value_chain: "Value chain",
-};
-
-function familyLabel(family: string): string {
-  return FAMILY_LABEL[family] ?? family.replace(/_/g, " ");
-}
 
 // Agreement grading — honest framing, never "confidence". Tight methods (≤1.5×)
 // read as corroboration; a wide spread is flagged, not hidden.

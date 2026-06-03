@@ -1,17 +1,18 @@
-// Clerk catch-all sign-in route. The [[...sign-in]] optional-catch-all lets Clerk
-// own every sub-path (factor-two, SSO callback, etc.) under /sign-in.
+// Clerk catch-all sign-in route, on the Strata night canvas (no app chrome).
+// The [[...sign-in]] optional-catch-all lets Clerk own every sub-path
+// (factor-two, SSO callback, etc.) under /sign-in.
 import { SignIn } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 
+import { AuthCanvas } from "@/components/landing/AuthCanvas";
 import { clerkEnabled } from "@/lib/clerk";
+import { strataClerkAppearance } from "@/lib/clerk-appearance";
 
 export default function SignInPage() {
-  // Without keys there is no ClerkProvider, so <SignIn/> would render a broken
-  // shell — send the visitor home instead (matches the keyless-prod state).
   if (!clerkEnabled) redirect("/");
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <SignIn />
-    </main>
+    <AuthCanvas altHref="/sign-up" altLabel="Create account">
+      <SignIn appearance={strataClerkAppearance} />
+    </AuthCanvas>
   );
 }

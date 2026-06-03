@@ -1,10 +1,17 @@
 import { expect, test } from "@playwright/test";
 
-// TAM-over-time chart (PR13) on the frozen artifact page. Reuses the seed state
-// hash from tam.spec.ts. Seed primitives currently share one as_of date, so the
-// honest single-snapshot state is the expected default — the chart must NOT
-// fabricate a multi-point curve. The lead runs Playwright.
-const KNOWN_HASH = "fb1bab3e782196427c750cbc8a49124f7dbd1236e949014fd74a2f6681060541";
+import { buildHash } from "./helpers";
+
+// TAM-over-time chart (PR13) on the frozen artifact page. Seed primitives
+// currently share one as_of date, so the honest single-snapshot state is the
+// expected default — the chart must NOT fabricate a multi-point curve.
+// The hash is derived at runtime (see helpers.buildHash), once per worker.
+let KNOWN_HASH = "";
+
+test.beforeEach(async ({ request }) => {
+  if (KNOWN_HASH) return;
+  KNOWN_HASH = await buildHash(request);
+});
 
 test.describe("TAM over time", () => {
   test("renders the TAM-over-time section on the artifact page", async ({ page }) => {

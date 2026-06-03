@@ -28,14 +28,16 @@ import {
 	provenanceNotes,
 } from "@/components/rail/ProvenanceBanner";
 import { ScenarioGraph } from "@/components/ScenarioGraph";
+import { MethodDirections } from "@/components/tam/MethodDirections";
+import { ScopeRailSummary, ScopeStrip, ScopeWarnings } from "@/components/tam/ScopeCheck";
 import { TamTrajectoryChart } from "@/components/tam/TamTrajectoryChart";
 import { Button } from "@/components/ui/Button";
 import { IndependenceDonut } from "@/components/ui/IndependenceDonut";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { formatCompact, lensLabel, tierLabel } from "@/lib/format";
 import { trajectoryQuery } from "@/lib/queries";
-import type { InputUsed, Scenario, TAMOutput, Unit } from "@/lib/schemas";
-import { type BuildState, encodeState, hashState } from "@/lib/state-hash";
+import type { InputUsed, Scenario, ScopeReport, TAMOutput, Unit } from "@/lib/schemas";
+import { type BuildState, encodeState, hashState, isScopeEmpty } from "@/lib/state-hash";
 import { isDegenerate, midScenario, tamRange, tamToMarkdown } from "@/lib/tam";
 
 // Every framework slug present in the backend evaluation — the universe the user
@@ -211,6 +213,12 @@ export function BuildWorkspace({
 		[state, mint],
 	);
 
+	// Surface the pinned/declared market (sub-project 1.5): the chip strip + scope
+	// check only when a market is actually declared — an unscoped concept stays
+	// clean rather than showing an empty "all good" section.
+	const report = tam.scope ?? null;
+	const scoped = !!report && !isScopeEmpty(report.declared);
+
 	const degenerate = isDegenerate(tam);
 	const range = tamRange(tam);
 	const mid = midScenario(tam);
@@ -223,6 +231,12 @@ export function BuildWorkspace({
 		<main className="mx-auto flex w-full max-w-[var(--content-max)] flex-1 flex-col px-8 py-8">
 			<Header industry={industry} geo={geo} time={time} hash8={hashFromUrl()} />
 
+			{scoped && report ? (
+				<div className="mt-4">
+					<ScopeStrip scope={report.declared} />
+				</div>
+			) : null}
+
 			<div className="mt-6 flex flex-col gap-6 lg:flex-row">
 				<section className="flex min-w-0 flex-1 flex-col gap-6">
 					<HeadlineCard
@@ -232,6 +246,10 @@ export function BuildWorkspace({
 						mid={mid}
 						recomputing={recomputing}
 					/>
+					{/* Which canonical sizing directions back this number — and which are
+					    missing (sub-project 2 honesty: name the absent direction, never
+					    fabricate it). */}
+					<MethodDirections families={tam.method_families_used} />
 					<div className="relative">
 						{recomputing ? (
 							<div className="pointer-events-none absolute right-3 top-3 z-10 rounded-[var(--r-1)] bg-[var(--bg-0)]/90 px-2 py-1 text-[11px] text-[var(--accent)]">
@@ -245,6 +263,7 @@ export function BuildWorkspace({
 						/>
 					</div>
 					<ChartsSection tam={tam} mid={mid} />
+					{scoped && report ? <ScopeWarnings report={report} /> : null}
 					<TrajectorySection slug={tam.target.concept} />
 				</section>
 
@@ -253,6 +272,7 @@ export function BuildWorkspace({
 					baseTam={baseTam}
 					universe={universe}
 					selected={selected}
+					report={scoped ? report : null}
 					onToggleFramework={toggleFramework}
 					degenerate={degenerate}
 				/>
@@ -457,6 +477,7 @@ function Rail({
 	baseTam,
 	universe,
 	selected,
+	report,
 	onToggleFramework,
 	degenerate,
 }: {
@@ -464,6 +485,7 @@ function Rail({
 	baseTam: TAMOutput;
 	universe: string[];
 	selected: string[];
+	report: ScopeReport | null;
 	onToggleFramework: (slug: string) => void;
 	degenerate: boolean;
 }) {
@@ -485,6 +507,13 @@ function Rail({
 					</span>
 				</div>
 			</AccordionSection>
+
+			{/* MARKET — the pinned scope's at-a-glance check (sub-project 1.5). */}
+			{report ? (
+				<AccordionSection title="Market" defaultOpen>
+					<ScopeRailSummary report={report} />
+				</AccordionSection>
+			) : null}
 
 			{/* FRAMEWORKS — open by default. Toggling a row is a meaningful change. */}
 			<AccordionSection

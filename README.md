@@ -177,9 +177,18 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
   click a number  ->  set what-if / swap source  ->  TAM recomputes  ->  share the link
                                                       (what-if flagged)
   ```
-- **Dashboard + activity log (PR #55, optional sign-in)** — `/dashboard` shows
-  library counts, your recent builds, and an audit feed. Sign-in (Clerk) is off
-  until you add keys; the app runs the same without them.
+- **Sign-in gate + dashboard (PR #82)** — with Clerk keys set, every route
+  except the marketing landing, sign-in/up, and embeds requires sign-in; the
+  signed-out `/` is a night-canvas marketing page. Without keys the gate is
+  inert and the app runs as before (CI-safe). `/dashboard` shows library
+  counts, your recent builds, and an audit feed.
+
+  ```
+  visitor ──▶ / (marketing page, no app chrome)
+     │  sign in (Clerk)
+     ▼
+  full app ──▶ /build?q= ──▶ pin the market ──▶ Size ──▶ /build/<hash>
+  ```
 - **22 data connectors** — BLS, FRED, Census, EDGAR, World Bank, Kalshi, OECD,
   Eurostat, UN Comtrade, FDIC, CMS, EIA, USDA NASS, FAA, openFDA, plus 7 added
   in v0.3 (Alpha Vantage, Nasdaq Data Link, yfinance, Reddit, GitHub, Stack
@@ -197,8 +206,9 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
   Quantitative · Industry) with geo/time filter chips and click-to-narrow.
 - **Deploy-ready** — one-command boot (migrate → seed → serve), a PR CI gate,
   and a weekly cron that opens a PR with refreshed data.
-- **400 backend tests** passing; type/lint clean on shipping code (`src/`) and
-  enforced in CI; frontend build clean on bun.
+- **785 backend tests** passing; type/lint clean on shipping code (`src/`) and
+  enforced in CI; frontend build clean on bun; the authenticated Playwright
+  e2e suite (95+ tests) runs green under the sign-in gate.
 - **50+ APIs cataloged** for integration ([`docs/11-api-catalog.md`](docs/11-api-catalog.md))
 
 ### v0.3 — ask in plain English, get a sourced TAM
@@ -413,7 +423,7 @@ uv run strata promote fdic-deposits-us-2024 -d ../data # curate auto-primitive
 Tests + checks:
 
 ```sh
-uv run pytest                # 167 tests (models, API, connectors, evaluator, resolve)
+uv run pytest                # 785 tests (models, API, connectors, evaluator, scope, resolve)
 uv run ruff check .
 uv run pyright
 ```
@@ -458,7 +468,7 @@ bun run test
 │   ├── scripts/
 │   │   ├── populate_data_bank.py       initial 29-query seeding
 │   │   └── populate_lens_primitives.py 86-query lens-aligned expansion
-│   └── tests/                    167 tests (models, API, connectors, evaluator)
+│   └── tests/                    785 tests (models, API, connectors, evaluator)
 │
 ├── web/                          Next.js 16 + React 19 + bun
 │   └── src/

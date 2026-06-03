@@ -9,9 +9,12 @@ test.describe("Framework detail", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText("Formula")).toBeVisible();
-    await expect(page.getByText("Inputs")).toBeVisible();
-    await expect(page.getByText("Variants")).toBeVisible();
+    // Target the section headings by role, not free text: the formula prose
+    // ("Multiplies its inputs into a …") contains the word "inputs", so a bare
+    // getByText("Inputs") matches two nodes and trips strict mode.
+    await expect(page.getByRole("heading", { name: "Formula" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Inputs" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Variants" })).toBeVisible();
     // The mono formula string is rendered verbatim.
     await expect(page.getByText("persona_pool * cost_per_persona")).toBeVisible();
   });

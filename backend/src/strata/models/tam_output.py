@@ -77,6 +77,12 @@ class InputUsed(BaseModel):
     # Source tier of the underlying primitive (or "mixed" for a composite) so the
     # TAM artifact can show a per-input provenance breakdown.
     source_tier: str | None = None
+    # The atomic primitive's source URL — lets the UI hyperlink the number
+    # itself to the source behind it (number-level provenance, sub-project 3).
+    # None for composites: a union of members has no single source of its own.
+    # Display enrichment only — the state-hash payload projects
+    # name/primitive/hash per input, so this can never re-mint a permalink.
+    source_url: str | None = None
 
 
 class ScenarioBanner(BaseModel):

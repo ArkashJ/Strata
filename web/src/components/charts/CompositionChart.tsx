@@ -15,6 +15,7 @@
 // than a fabricated breakdown.
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts";
 
+import { SourcedNumber } from "@/components/ui/SourcedNumber";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import type { ChartConfig } from "@/components/ui/chart";
 import { formatCompact } from "@/lib/format";
@@ -135,7 +136,8 @@ export function CompositionChart({ scenario }: { scenario: Scenario }) {
         {sized.map((input, i) => (
           <span key={input.primitive_slug} className="font-mono">
             {i > 0 && <span className="mx-0.5 text-[var(--fg-4)]">×</span>}
-            {formatCompact(input.value ?? 0, input.unit)}
+            {/* Each factor links to the source behind it (number-level provenance). */}
+            <SourcedNumber input={input} />
           </span>
         ))}
         <span className="mx-0.5 text-[var(--fg-4)]">=</span>

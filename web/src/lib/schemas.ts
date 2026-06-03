@@ -59,6 +59,10 @@ export const inputUsedSchema = z.object({
   name: z.string().nullable().optional(),
   unit: unitSchema.nullable().optional(),
   source_tier: z.string().nullable().optional(),
+  // Number-level provenance: the atomic's source URL so the displayed number
+  // itself can link to the source behind it. Null for composites (no single
+  // source) and absent on pre-enrichment payloads.
+  source_url: z.string().nullable().optional(),
 });
 export type InputUsed = z.infer<typeof inputUsedSchema>;
 
@@ -116,6 +120,7 @@ export const firmSizeBandSchema = z.object({
   max_emp: z.number().nullable().optional(),
   label: z.string(),
 });
+export type FirmSizeBand = z.infer<typeof firmSizeBandSchema>;
 
 // All array fields are always present in the JSON (the backend serializes every
 // MarketScope field, empty tuples included), so they are required here — no
@@ -132,6 +137,22 @@ export const marketScopeSchema = z.object({
   exclude: z.array(z.string()),
 });
 export type MarketScope = z.infer<typeof marketScopeSchema>;
+
+// A fully-formed empty MarketScope (empty arrays, not undefined) — the single
+// source of truth for the default-scope shape so adding a backend field is a
+// one-line change here, not a hunt across the form + view + tests.
+export function emptyMarketScope(): MarketScope {
+  return {
+    vertical: [],
+    persona: [],
+    segment: null,
+    geo_supply: [],
+    geo_demand: [],
+    product: [],
+    include: [],
+    exclude: [],
+  };
+}
 
 export const scopeWarningSchema = z.object({
   dimension: z.string(),
@@ -190,6 +211,10 @@ export const recomputeRequestSchema = z.object({
   concept_slug: z.string(),
   framework_assumptions: z.record(z.record(z.string())).optional(),
   primitive_overrides: z.record(primitiveOverrideSchema).optional(),
+  // The user-pinned market (sub-project 1.5). When non-empty it overrides the
+  // concept's declared scope as the side the guard checks against, and folds into
+  // the backend state hash. Omitted/empty → unchanged behaviour.
+  scope: marketScopeSchema.optional(),
 });
 export type RecomputeRequest = z.infer<typeof recomputeRequestSchema>;
 
@@ -340,6 +365,9 @@ export const conceptDetailSchema = z.object({
   measurements: z.array(z.string()),
   competing_concepts: z.array(z.string()),
   requires_clearance: z.array(z.string()),
+  // The concept's canonical declared market (sub-project 1). The market-spec step
+  // prefills its chips from this; defaults empty so unscoped concepts load fine.
+  scope: marketScopeSchema.optional(),
 });
 export type ConceptDetail = z.infer<typeof conceptDetailSchema>;
 

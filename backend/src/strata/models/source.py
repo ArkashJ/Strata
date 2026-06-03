@@ -39,7 +39,10 @@ class _SourceBase(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     slug: Slug
-    url: str
+    # Non-empty at the schema gate: the URL now backs number-level provenance
+    # (InputUsed.source_url links the displayed figure to it), so an empty
+    # string must fail at ingest, not render as a dead link downstream.
+    url: str = Field(min_length=1)
     accessed: date
     snapshot_sha256: Sha256Hex
     # Wave 1 / AC1.7 — freshness SLA in days. A primitive whose data period

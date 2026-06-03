@@ -7,6 +7,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — /simplify pass (behavior-preserving)
+- One source of truth for: the e2e local-backend policy (`web/e2e/helpers.ts` —
+  `API` + `buildHash`, replacing eight per-file copies so `E2E_API_URL` works
+  suite-wide), the method-family labels (`familyLabel` in `lib/format.ts`,
+  shared by ConvergenceBanner + MethodDirections), the coded-tag chip label
+  (`codedTagLabel`, shared by ScopeStrip + MarketSpecStep), and the
+  sign-in/sign-up night-canvas shell (`AuthCanvas`). Full e2e suite 96/0 after.
+
+### Added — methodology honesty: number→source links + named directions (sub-projects 2 & 3, v1)
+- **The number itself is now the link.** The evaluator enriches every consumed
+  atomic input with its primitive's real `source_url`
+  (`InputUsed.source_url`; `backend/src/strata/evaluator/engine.py`); composites
+  honestly carry `None` — a union has no single source, and we never link a
+  derived number to an invented URL. Display-only: the state-hash payload
+  projects name/primitive/hash per input, so no `/tam/<hash>` permalink
+  re-mints (+3 backend tests; 785 pass). `Source.url` is now schema-gated
+  non-empty so a blank URL fails at ingest, not as a dead link downstream.
+- **`SourcedNumber`** (`web/src/components/ui/`): renders a figure as a
+  dotted-underline link to its source — wired into the forwardable report's
+  per-method equation factors, input lists, and Sources & provenance table
+  (`TamReport`) and the workhorse composition product line (`CompositionChart`).
+- **`MethodDirections`** (`web/src/components/tam/`): every TAM now NAMES the
+  canonical directions backing it — "Top-down ✓ ∧ Bottoms-up ✓" — and when one
+  is absent says so plainly ("no bottoms-up method in the data bank yet"),
+  distinguishing single-direction estimates from ones cross-checked by
+  non-canonical families (comparable revenue / analog penetration / value
+  chain). Derived purely from `method_families_used`; a missing direction is
+  stated, never fabricated. Rendered on `/build/<hash>` and the report.
+- *Deferred (needs real sourcing, no invented figures):* per-source page/section
+  locators on the link target, and seeding the missing counterpart method for
+  single-direction concepts — both are data work requiring real documents.
+
+### Fixed — authenticated e2e suite fully green (94/94)
+- **Refreshed every stale spec to the current UI** (they predated the v0.42
+  rebuild and asserted removed surfaces): `build.spec` drives the new market-spec
+  gate via a `sizeThroughGate` helper (and asserts reload — not Back — restores a
+  minted state, matching the deliberate `router.replace` auto-mint model);
+  landing/interpretation/palette use the current nav (Home/Dashboard/Concepts/
+  Frameworks), "Featured TAMs", and the `/c` route for deterministic ⌘K; `tam.spec`
+  follows the "Triangulated midpoint" rename; resolver/concept/framework specs fix
+  drifted copy + strict-mode collisions; `contribute.spec` deleted (surface
+  removed until the v0.5 expert layer).
+- **De-flaked the harness:** `tam.spec`/`trajectory.spec` derive the artifact hash
+  at runtime by building the seeded concept first (hardcoded hashes strand the
+  file when seed data re-mints); `tam-share-og`/`wave2-motion` target the LOCAL
+  e2e backend via `E2E_API_URL` (never `NEXT_PUBLIC_API_URL`, which `.env.local`
+  points at prod); the e2e backend forces a fail-fast LLM (`STRATA_LLM_BACKEND=
+  anthropic` + invalid key) so `/resolve` settles to its honest error in ~1s
+  everywhere instead of shelling out to a dev machine's real `claude` CLI; local
+  workers capped at 3 (the single-process backend's sync evaluator saturates
+  beyond that); Featured-TAMs asserts the TamCard buttons that actually exist
+  (rows navigate via router.push, not `<a>`).
+
+### Added — market-spec step before sizing (sub-project 1.5, frontend)
+- **Pin the market before any number.** `/build?q=` no longer auto-sizes; it
+  renders a new **`MarketSpecStep`** (`web/src/components/build/MarketSpecStep.tsx`)
+  — editable NAICS/SOC chips, a firm-size segment picker (All firms · SMB · Mid-
+  market · Enterprise · custom), geo (default US), and include/exclude rules —
+  prefilled from the matched concept's declared scope (`GET /c/<slug>.scope`). The
+  **Size** button is the gate: sizing only runs once the market is confirmed.
+- **A pinned market is part of the build identity.** `BuildState.scope`
+  (`web/src/lib/state-hash.ts`) folds a non-empty scope into the canonical state
+  (and thus the hash) — a different market mints a different `/build/<hash>`. An
+  empty scope is omitted, so every pre-scope URL still round-trips byte-for-byte.
+  On Size, `BuildView` recomputes via `POST /build/recompute { scope }` (priming
+  the query cache the workhorse reuses) and redirects to the scope-specific hash.
+- **The pinned market drives the scope check, now on `/build` too.** `BuildWorkspace`
+  surfaces the declared-market chip strip, the per-input "Scope check" (which
+  sources read narrower/broader than the pinned market — why methods disagree),
+  and a rail summary — reusing the `/tam` `ScopeCheck` components, gated to a
+  non-empty declared scope. Zod `marketScopeSchema` threaded through
+  `recomputeRequestSchema` + `conceptDetailSchema`; `needsRecompute()` recomputes
+  on a pinned market as well as a what-if. New authenticated e2e
+  (`web/e2e/market-spec.spec.ts`) + unit tests for the scope→hash→recompute path.
+  (Requires the sub-project-1.5 backend — `size_concept(declared_scope_override=)`,
+  commit `64f161d`; deployed backends must redeploy for the pin to take effect.)
+
+### Added — Clerk auth gate + signed-out landing
+- **Sign-in now required to use the product.** `web/src/middleware.ts` is
+  protected-by-default: every route calls `auth.protect()` except a small public
+  allowlist (`/`, `/sign-in`, `/sign-up`, `/embed/*`, `robots.txt`,
+  `sitemap.xml`, OpenGraph images). The keyless-CI graceful-degradation guard is
+  preserved (no publishable key → pass-through, app renders as before).
+- **Public marketing landing** at `/` for signed-out visitors — a split-editorial
+  hero on a fixed deep-navy "night canvas" (`.strata-night`): an infinite indigo
+  grid + drifting glow (`.grid-canvas`) and glassmorphism panels (`.glass`),
+  with the animated Strata pyramid + concept→framework→primitive→TAM pipeline.
+  `web/src/components/landing/{NightCanvas,PublicLanding}.tsx`. The app sidebar /
+  chrome no longer renders before sign-in.
+- **`/sign-in` + `/sign-up`** restyled onto the same night canvas (glass card,
+  Strata-indigo Clerk `appearance` via `web/src/lib/clerk-appearance.ts`); the
+  shell (`AppShell`) renders bare for the auth routes and the signed-out landing,
+  the full sidebar only once signed in.
+- **Playwright e2e authenticates under the gate.** `@clerk/testing` +
+  `e2e/global.setup.ts` obtain a Clerk Testing Token (bypassing bot detection),
+  sign in the standing test user, and save `storageState`; `playwright.config.ts`
+  runs feature specs authenticated and a new `e2e/auth-gate.spec.ts` (signed-out)
+  asserts the gate redirect + no-chrome landing. The e2e frontend runs on a
+  dedicated port against the local backend. (Pre-existing specs that assert on
+  removed/renamed UI — `Contribute`, `Recently updated` — remain red and need a
+  separate refresh; they are unrelated to auth.)
+- **Storybook** (10.x, Vite builder + `@tailwindcss/vite`) with a light/dark
+  toolbar toggle and stories for the new UI (`Button`, `NightCanvas` +
+  `PublicLanding`, design tokens / `.glass` / `.role-chip`). `bun run storybook`
+  / `build-storybook`.
+
 ### Added — rigorous market definition, sub-project 1
 - **`MarketScope` value object** (`strata.models.scope`) — the structured,
   checkable definition of *which* market a number sizes: `vertical` (NAICS),

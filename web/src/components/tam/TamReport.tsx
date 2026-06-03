@@ -11,7 +11,9 @@ import Link from "next/link";
 
 import { ConvergenceBanner } from "@/components/charts/ConvergenceBanner";
 import { TornadoChart } from "@/components/charts/TornadoChart";
+import { MethodDirections } from "@/components/tam/MethodDirections";
 import { Button } from "@/components/ui/Button";
+import { SourcedNumber } from "@/components/ui/SourcedNumber";
 import { formatCompact, lensLabel, tierLabel } from "@/lib/format";
 import { sensitivityQuery } from "@/lib/queries";
 import type { InputUsed, Scenario, TAMOutput } from "@/lib/schemas";
@@ -79,6 +81,11 @@ export function TamReport({ tam }: { tam: TAMOutput }) {
         <Kpi label="Methods" value={String(tam.method_families_used.length)} />
         <Kpi label="Independence" value={tam.independence_score.toFixed(2)} />
       </section>
+
+      {/* Which canonical directions back this number — and which are missing. */}
+      <div className="report-block mt-4">
+        <MethodDirections families={tam.method_families_used} />
+      </div>
 
       {/* Convergence cross-check (only when triangulated). */}
       {tam.convergence ? (
@@ -162,9 +169,12 @@ function MethodCard({ scenario: s }: { scenario: Scenario }) {
           {s.inputs_used.map((iu, i) => (
             <span key={iu.primitive_slug} className="inline-flex items-center gap-1.5">
               {i > 0 ? <span className="text-[var(--fg-4)]">×</span> : null}
-              <span className="tabular-nums">
-                {iu.value != null ? formatCompact(iu.value, iu.unit) : iu.role_name}
-              </span>
+              {/* The factor itself links to its source (number-level provenance). */}
+              {iu.value != null ? (
+                <SourcedNumber input={iu} />
+              ) : (
+                <span className="tabular-nums">{iu.role_name}</span>
+              )}
             </span>
           ))}
           <span className="text-[var(--fg-4)]">=</span>
@@ -177,9 +187,7 @@ function MethodCard({ scenario: s }: { scenario: Scenario }) {
           {s.inputs_used.map((iu) => (
             <li key={iu.primitive_slug} className="flex items-center justify-between gap-3">
               <span>{iu.name ?? iu.role_name}</span>
-              <span className="tabular-nums text-[var(--fg-3)]">
-                {iu.value != null ? formatCompact(iu.value, iu.unit) : "—"}
-              </span>
+              <SourcedNumber input={iu} className="text-[var(--fg-3)]" />
             </li>
           ))}
         </ul>
@@ -236,8 +244,8 @@ function ProvenanceTable({ tam }: { tam: TAMOutput }) {
                 className="border-b border-[var(--border-1)] last:border-0"
               >
                 <td className="px-3 py-2 text-[var(--fg-1)]">{iu.name ?? iu.primitive_slug}</td>
-                <td className="px-3 py-2 tabular-nums text-[var(--fg-2)]">
-                  {iu.value != null ? formatCompact(iu.value, iu.unit) : "—"}
+                <td className="px-3 py-2 text-[var(--fg-2)]">
+                  <SourcedNumber input={iu} />
                 </td>
                 <td className="px-3 py-2 text-[var(--fg-2)]">
                   {iu.source_tier ? tierLabel(iu.source_tier) : "composite"}

@@ -1,11 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-// The command palette is mounted by the app shell on every route, so we exercise
-// it from the landing page. These assertions only touch chrome the shell owns —
-// they don't depend on which concepts the backend happens to serve.
+// The command palette is mounted by the app shell on every route. We exercise it
+// from a LIBRARY route (/c) rather than the home page: the signed-in home mounts
+// its OWN ⌘K handler (LandingContent, which focuses the hero search box), so
+// pressing ⌘K there races the shell's palette toggle. Every other route has only
+// the shell handler, giving a deterministic open. These assertions touch chrome
+// the shell owns — they don't depend on which concepts the backend serves, beyond
+// needing the library to load for the typed-filter test.
 test.describe("Command palette", () => {
   test("⌘K opens the palette and Escape closes it", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/c");
     const dialog = page.getByRole("dialog", { name: "Command palette" });
     await expect(dialog).toHaveCount(0);
 
@@ -27,7 +31,7 @@ test.describe("Command palette", () => {
   });
 
   test("typing filters results and arrow+Enter routes to a concept", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/c");
     await page.keyboard.press("ControlOrMeta+k");
 
     const dialog = page.getByRole("dialog", { name: "Command palette" });
@@ -48,13 +52,14 @@ test.describe("Command palette", () => {
   });
 
   test("free text submits a market-sizing query to /?q=", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/c");
     await page.keyboard.press("ControlOrMeta+k");
 
     const dialog = page.getByRole("dialog", { name: "Command palette" });
     await dialog.getByPlaceholder(/Jump to concepts/i).fill("quantum widgets market 2030");
 
-    // The trailing "Size a market" action is always last; route through it.
+    // The trailing "Size a market" action is always last; route through it. Its
+    // label is `Size a market: “<query>”`, so match on the leading phrase.
     await dialog.getByRole("button", { name: /size a market/i }).click();
     await page.waitForURL(/\/\?q=/, { timeout: 10_000 });
     expect(page.url()).toContain("quantum");

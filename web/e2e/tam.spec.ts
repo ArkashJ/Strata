@@ -1,14 +1,21 @@
 import { expect, test } from "@playwright/test";
 
-// Frozen TAM artifact (/tam/[hash]). Uses a known state hash from the seed data.
-// NOTE: persisted /tam/{hash} retrieval is not wired in the backend yet, so these
-// run against integration once the route resolves; the lead runs Playwright.
-const KNOWN_HASH = "fb1bab3e782196427c750cbc8a49124f7dbd1236e949014fd74a2f6681060541";
+import { buildHash } from "./helpers";
+
+// Frozen TAM artifact (/tam/[hash]). The hash is derived at runtime (see
+// helpers.buildHash) — deterministic per backend, derived once and reused.
+let KNOWN_HASH = "";
+
+test.beforeEach(async ({ request }) => {
+  if (KNOWN_HASH) return;
+  KNOWN_HASH = await buildHash(request);
+});
 
 test.describe("TAM artifact page", () => {
   test("renders the headline mid scenario card", async ({ page }) => {
     await page.goto(`/tam/${KNOWN_HASH}`);
-    await expect(page.getByText("Mid scenario")).toBeVisible({
+    // The headline is the triangulated mid scenario card (eyebrow copy).
+    await expect(page.getByText("Triangulated midpoint")).toBeVisible({
       timeout: 15_000,
     });
     // Headline value renders in a mono number block.
@@ -17,7 +24,7 @@ test.describe("TAM artifact page", () => {
 
   test("shows a non-dismissable provenance note only when flagged", async ({ page }) => {
     await page.goto(`/tam/${KNOWN_HASH}`);
-    await expect(page.getByText("Mid scenario")).toBeVisible({
+    await expect(page.getByText("Triangulated midpoint")).toBeVisible({
       timeout: 15_000,
     });
     // The doc-gen TAM uses neither synthetic primitives nor modeled composites,
@@ -35,7 +42,7 @@ test.describe("TAM artifact page", () => {
 
   test("Fork links to /build", async ({ page }) => {
     await page.goto(`/tam/${KNOWN_HASH}`);
-    await expect(page.getByText("Mid scenario")).toBeVisible({
+    await expect(page.getByText("Triangulated midpoint")).toBeVisible({
       timeout: 15_000,
     });
     const fork = page.getByRole("link", { name: "Fork" });
@@ -45,7 +52,7 @@ test.describe("TAM artifact page", () => {
 
   test("Export popover offers URL / Markdown / PDF", async ({ page }) => {
     await page.goto(`/tam/${KNOWN_HASH}`);
-    await expect(page.getByText("Mid scenario")).toBeVisible({
+    await expect(page.getByText("Triangulated midpoint")).toBeVisible({
       timeout: 15_000,
     });
     await page.getByRole("button", { name: "Export" }).first().click();
@@ -57,6 +64,11 @@ test.describe("TAM artifact page", () => {
 
   test("unknown hash shows the not-found surface", async ({ page }) => {
     await page.goto("/tam/deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef");
-    await expect(page.getByText(/not found/i)).toBeVisible({ timeout: 15_000 });
+    // NotFoundState renders "{label} not found"; the TAM surface labels it "TAM".
+    // Target that exact heading text so we don't strict-mode-collide with the
+    // document <title> ("TAM not found · Strata") or the "Browse TAMs" action.
+    await expect(page.getByText("TAM not found", { exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

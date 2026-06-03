@@ -10,7 +10,7 @@
 
 import { expect, test } from "@playwright/test";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { API } from "./helpers";
 // A concept seeded in every backend build, so this spec doesn't depend on
 // freshly-added demo data being present in the running backend.
 const CONCEPT = "doc-gen-pc-insurance";
@@ -24,6 +24,8 @@ function distinctiveWord(conceptName: string): string {
 
 test.describe("AC0.8 — shareable, SSR'd, OG-tagged TAM permalink", () => {
   test("share link is server-rendered with the value and OG tags", async ({ page, request }) => {
+    // Patient budget: the retry loop below can spend ~45s under full-suite load.
+    test.setTimeout(120_000);
     // 1. Build a TAM so the permalink exists (persisted in the backend process).
     const built = await request.get(`${API}/build/${CONCEPT}`);
     expect(built.ok()).toBeTruthy();
@@ -32,20 +34,33 @@ test.describe("AC0.8 — shareable, SSR'd, OG-tagged TAM permalink", () => {
     expect(hash).toBeTruthy();
     const word = distinctiveWord(body.target.concept_name ?? CONCEPT);
 
-    // 2. Raw HTML must already contain the TAM value (proves SSR, not CSR-only).
-    const raw = await request.get(`/tam/${hash}`);
+    // 2. Visit the page in the BROWSER first. Two jobs: (a) sanity on the live
+    // route, and (b) clerk-js refreshes the short-lived (~60s) dev session JWT
+    // into the context's cookie jar. The raw fetch below shares that jar via
+    // page.request — with a STALE storageState cookie, Clerk's auth.protect()
+    // returns 404 for non-document requests (it only redirects real
+    // navigations), which made this spec a run-order-dependent flake.
+    await page.goto(`/tam/${hash}`);
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.locator("body")).toContainText(VALUE_RE);
+
+    // 3. Raw HTML must already contain the TAM value (proves SSR, not CSR-only).
+    // page.request carries the freshly-refreshed Clerk session, so the gate lets
+    // the server render the real page. Brief retry for transient backend load.
+    let raw = await page.request.get(`/tam/${hash}`);
+    for (let attempt = 0; attempt < 3 && !raw.ok(); attempt++) {
+      await page.waitForTimeout(3_000);
+      raw = await page.request.get(`/tam/${hash}`);
+    }
     expect(raw.ok()).toBeTruthy();
     const html = await raw.text();
     expect(html).toMatch(VALUE_RE);
     expect(html.toLowerCase()).toContain(word);
 
-    // 3. OpenGraph tags present (file-convention og:image + generateMetadata title).
+    // 4. OpenGraph tags present (file-convention og:image + generateMetadata title).
     expect(html).toMatch(/<meta[^>]+property="og:image"/);
     expect(html).toMatch(/<meta[^>]+property="og:title"/);
-
-    // 4. The rendered page shows the headline (sanity on the live route).
-    await page.goto(`/tam/${hash}`);
-    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
-    await expect(page.locator("body")).toContainText(VALUE_RE);
   });
 });

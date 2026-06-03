@@ -16,7 +16,7 @@ import { NotFoundState } from "@/components/ui/NotFoundState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ApiError } from "@/lib/api-client";
 import { recordBuildVisit } from "@/lib/build-history";
-import { buildQuery, hasOverrides, recomputeQuery } from "@/lib/queries";
+import { buildQuery, needsRecompute, recomputeQuery } from "@/lib/queries";
 import { type BuildState, decodeState } from "@/lib/state-hash";
 
 // Decode ?s= defensively — a hand-edited or truncated param must not throw past
@@ -50,16 +50,17 @@ const EMPTY_STATE: BuildState = {
 export function BuildHashView({ hash, s }: { hash: string; s: string | null }) {
 	const state = safeDecode(s);
 	const slug = state?.target_concept_slug ?? "";
-	// When the user has diverged (a what-if scalar or a primitive swap), the TAM
-	// must be recomputed server-side; otherwise the registry default GET suffices.
-	// Both hooks always run (stable order); enabled flags pick exactly one.
-	const overriding = state ? hasOverrides(state) : false;
+	// When the user has diverged — a what-if scalar, a primitive swap, or a pinned
+	// market — the TAM must be recomputed server-side; otherwise the registry
+	// default GET suffices. Both hooks always run (stable order); enabled flags
+	// pick exactly one.
+	const recomputing = state ? needsRecompute(state) : false;
 	const build = useQuery({
 		...buildQuery(slug),
-		enabled: !!slug && !overriding,
+		enabled: !!slug && !recomputing,
 	});
 	const recompute = useQuery(recomputeQuery(state ?? EMPTY_STATE));
-	const active = overriding ? recompute : build;
+	const active = recomputing ? recompute : build;
 
 	// Remember this build so it surfaces under "Your builds" on /dashboard. The
 	// backend doesn't persist TAMs, so we keep the hash + encoded state locally;
@@ -121,7 +122,7 @@ export function BuildHashView({ hash, s }: { hash: string; s: string | null }) {
 		return (
 			<Centered>
 				<ErrorState
-					title={overriding ? "Could not recompute with your overrides" : "Could not size this concept"}
+					title={recomputing ? "Could not recompute with your overrides" : "Could not size this concept"}
 					error={active.error}
 					onRetry={() => active.refetch()}
 				/>

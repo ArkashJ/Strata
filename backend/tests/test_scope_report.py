@@ -16,6 +16,7 @@ import pytest
 from strata.evaluator import size_concept
 from strata.loader import load_data_dir
 from strata.models import InputScope, ScopeReport
+from strata.models.scope import FirmSizeBand, MarketScope
 from strata.registry import Registry
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
@@ -94,3 +95,29 @@ def test_scope_report_is_not_part_of_state_hash(registry: Registry):
     a = size_concept(registry, _SALES_OPS)
     assert a.state_hash == _SALES_OPS_GOLDEN_HASH  # unchanged despite scope present
     assert a.scope is not None  # ...and scope really is populated
+
+
+# ── Sub-project 1.5: a user-pinned market overrides the declared scope ──────────
+
+
+def test_pinned_scope_override_drives_the_declared_side(registry: Registry):
+    """A non-empty pinned scope replaces the concept's declared scope as the side
+    the guard checks against — the ScopeReport reflects the market the user pinned."""
+    pinned = MarketScope(segment=FirmSizeBand(min_emp=1000, max_emp=None, label="Enterprise"))
+    report = size_concept(registry, _SALES_OPS, declared_scope_override=pinned).scope
+    assert report is not None
+    assert report.declared.segment == pinned.segment
+
+
+def test_pinned_market_is_a_distinct_build(registry: Registry):
+    """A different pinned market is a different build, so it mints a different hash
+    (unlike the derived report, which never moves the hash)."""
+    pinned = MarketScope(segment=FirmSizeBand(min_emp=1000, max_emp=None, label="Enterprise"))
+    pinned_tam = size_concept(registry, _SALES_OPS, declared_scope_override=pinned)
+    assert pinned_tam.state_hash != _SALES_OPS_GOLDEN_HASH
+
+
+def test_empty_scope_override_is_a_noop(registry: Registry):
+    """An empty override is indistinguishable from passing nothing — same hash."""
+    tam = size_concept(registry, _SALES_OPS, declared_scope_override=MarketScope())
+    assert tam.state_hash == _SALES_OPS_GOLDEN_HASH
