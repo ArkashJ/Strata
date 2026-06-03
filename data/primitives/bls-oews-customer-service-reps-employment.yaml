@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: bls-oews-customer-service-reps-employment
+schema_version: 1
+concept_slug: us-customer-service-rep-labor
+name: US customer service representatives — national employment (OEWS 43-4051)
+description: National employment of customer service reps — persona headcount for
+  AI-support-agent automation TAMs.
+value: 2595750.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: bls-oeun000000000000043405101-2025
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes434051.htm
+  accessed: '2026-06-03'
+  snapshot_sha256: a4460e256be75c32db5c39d6aaa1573a3ee424fd6d097664b18d2bd92bbe0c16

@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: oecd-gdp-gbr-2022
+schema_version: 1
+concept_slug: oecd-gdp-gbr
+name: United Kingdom GDP, expenditure approach (OECD national accounts)
+description: United Kingdom GDP at current prices, absolute GBP (OECD reports DSD_NAMAIN10
+  B1GQ in millions; value_scale lifts it to base units).
+value: 2580949000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: GBP
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - GBR
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: oecd-oecd-sdd-nad-dsd-namain10-df-table1-expenditure-gbr-2022
+  tier: aggregator
+  url: https://data.oecd.org/
+  accessed: '2026-06-03'
+  snapshot_sha256: a93f58f98fe3d0939df65000f13588d622bac8ac90f2ce654199741b6a02eb13

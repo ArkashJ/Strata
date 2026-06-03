@@ -7,6 +7,115 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — contribution flow (PR B, Phase 5)
+- **`/contribute`** page (sidebar link) — re-adds the contribution surface (removed for
+  the v0.5 expert layer) on top of the existing `POST /contribute` route: a form submits a
+  proposed primitive, the backend runs the SAME validator the committed bank uses (schema +
+  unit signature + real source URL + SHA-256), and returns accepted / needs-review / rejected
+  with reasons. Regulator / first-party auto-accept org-private; everything else queues for
+  human review — an unsourced number can never auto-publish into a TAM.
+
+### Added — user-generated graph builder (PR B, Phase 4)
+- **`/build/graph`** (sidebar link) — compose your own TAM from the bank: pick a market,
+  then re-bind any framework input to a different sourced primitive (swaps are kept
+  unit-compatible). The TAM recomputes live via `POST /build/recompute` and the minted
+  `state_hash` is the shareable artifact (Open & share → `/tam/<hash>`, or edit in the
+  workhorse). No fabricated numbers — every binding is an existing hash-pinned primitive;
+  what-if wiring is never persisted as a primitive.
+
+### Added — connector marketplace (PR B, Phase 3)
+- `/connectors` now shows **13 producing connectors** (was 5): the route's
+  `_CONNECTOR_HOSTS` map was stale and only counted the original four hosts, so the
+  newly-ingested connectors (OECD, Eurostat, EIA, CMS, FDIC, FAA, openFDA, Comtrade)
+  reported 0 despite having committed primitives. Mapped their source hosts.
+- Made the catalog's header search functional (was a no-op) — filter connectors by
+  name, tier, or what they return.
+
+### Added — MCP agent harness (PR B, Phase 2)
+- **`/agents` page** (`web/src/app/agents/`) — first-class harness surface (sidebar
+  link + icon): the 12-tool catalog (read/write/live badges), an agent-flow ASCII
+  diagram, stdio + streamable-HTTP connect snippets, and the "frameworks are
+  harnesses" explainer. Promotes MCP off the single `/integrations` card.
+- Four new MCP tools on the read-only Strata server (`mcp/tools.py`, now 12 total),
+  every payload keeping the `source_url`+`tier`+`snapshot_sha256` contract:
+  - **`list_primitives`** — paginated, filterable (tier/dimension/query) inventory of
+    the sourced data bank.
+  - **`build_tam`** — what-if sizing: swap a primitive's value (the unit is inherited
+    from the primitive it replaces, so the framework signature still validates) or
+    re-point a framework input; never persisted (`user_override` banner).
+  - **`list_connectors`** — the typed-connector supply side (connector · tier · methods).
+  - **`get_connector_data`** — `[LIVE]` run one connector method → validated, hash-pinned
+    primitive; gated by `STRATA_MCP_LIVE_CONNECTORS=1` so the default surface is offline-safe.
+  +9 MCP tests. This is the "research harness for agents" wedge.
+- **Ingest orchestrator** now treats `cms`/`fdic`/`openfda` as keyless (their ctors take
+  no key) so they run offline instead of being wrongly skipped.
+
+### Fixed — unit-scale correctness (PR A, from code review)
+- Government financial APIs report scaled figures — FDIC BankFind in **thousands**,
+  OECD/Eurostat GDP in **millions** — but the primitives stored the raw number labelled
+  as base currency, so a consuming framework would be 1000×/1,000,000× off. Added a
+  `value_scale` converter param (`financial_/oecd_observation_/observation_to_primitive_yaml`)
+  set per-arg-set in the manifest (FDIC ×1000, OECD/Eurostat GDP ×1e6). Largest US bank
+  now stores **$3.46T** (was $3.46B), DEU GDP **€3.99T**, DE GDP **€4.22T**. Also gated
+  those converters' currency stamp on `unit_dimension == "currency"` (matching FRED/WB).
+
+### Fixed — eight more connectors made ingest-ready (PR A, "test all the APIs")
+- A parallel audit fixed real bugs that meant most connectors had **never** produced
+  a valid primitive. Bank → **214**. Each fix verified live through `call_and_convert`:
+  - **EIA**: facet keys must be lowercase (`stateid`/`sectorid`) + value lives under the
+    column key (`sales`), not `value`. → US electricity 4.06M GWh.
+  - **CMS**: dataset addressed by UUID (not slug) + uppercase filter fields
+    (`YEAR`/`BENE_STATE_ABRVTN`) + `TOT_BENES`. → CA Medicare 6.6M beneficiaries.
+  - **OECD**: served **SDMX-JSON 2.0** but the parser read 1.0; wrong dataflow ID and a
+    2-field key against a 12-dimension DSD. → DEU GDP €3.99T.
+  - **Comtrade**: the keyless preview rejects combined-flow (`MX`) → single flow `M`.
+    → US imports HS85 $463B, US–China trade $448B.
+  - **Census SUSB** has no Data API → switched `get_susb` to the Annual Business Survey
+    Company Summary (`abscs FIRMPDEMP`). → 123,842 computer-systems-design firms.
+  - **FAA**: the `US_Airports` ArcGIS service was retired (new layer has no passenger
+    field); pivoted `get_airport_count` to the live `US_Airport` layer. → 13,171 US airports.
+  - **BLS OEWS**: the series ID was missing the mandatory areatype digit (24 vs 25 chars),
+    which `api.bls.gov` rejected mid-request. → occupation employment now ingests.
+  - **FDIC**: `get_financials` wasn't in `capabilities()` so dispatch never registered it;
+    exposed it. → largest-bank assets.
+  Honest limits recorded: FAA enplanements (Excel-only), Comtrade world-aggregate
+  (needs a paid key), OECD/Eurostat values in millions — noted in the manifest, never
+  fabricated.
+
+### Fixed — connector ingest correctness (PR A)
+- **FRED ingest was broken** — its default converter required a `SeriesInfo`
+  object that `get_observations` never returns (and a `series_id` converter param
+  would collide with the method arg). Added `observations_only_to_primitive_yaml`
+  (`connectors/fred.py`), which derives the source slug + content hash from
+  `primitive_slug` + the observation; wired as FRED's dispatch default. `strata
+  ingest run --connector fred` now produces a real, hash-pinned primitive.
+- **World Bank stamped a bogus `currency: USD`** on non-currency units (a
+  population primitive came out with a currency). The converter now only adds a
+  currency to a currency-dimension unit (+2 tests; existing 7 still pass).
+
+### Added — data-bank expansion (PR A: themed bulk ingest)
+- **First real multi-connector ingest** — expanded `data/ingest-manifest.yaml` to
+  46 concept-linked arg-sets across 14 connectors (researched against live APIs +
+  each converter's dispatch signature). First live run promoted **11 new
+  regulator/aggregator primitives** (bank → 195): FRED US GDP + personal
+  consumption, BLS nonfarm employment, World Bank population/GDP/labor-force across
+  US·DEU·GBR·FRA·JPN·IND. All hash-pinned to real source snapshots. Remaining
+  connectors (OEWS, SUSB, OECD/Eurostat SDMX, EIA, FAA, openFDA, Comtrade, CMS/FDIC)
+  are staged in the manifest and being fixed connector-by-connector.
+- **Bulk promote** — `strata promote --from-ingest [--validate-only]`
+  (`backend/src/strata/cli.py`) walks every staged `~/.strata/auto-primitives/`
+  record, stages the whole batch into `data/primitives/`, validates the tree
+  **once** (not per-file), and iteratively rolls back only the validator's
+  attributed offenders so the committed tree is never left broken. Errors are
+  attributed exact-slug-first with an unattributed-only message-scan fallback to
+  avoid over-rollback; an unattributable round rolls the remaining batch back.
+  `--validate-only` is a dry run that commits nothing (+6 promote-CLI tests).
+
+### Removed
+- Deleted the stale repo-root `ingest-manifest.yaml` (legacy `methods:` dict
+  shape the loader rejects). `data/ingest-manifest.yaml` is the single canonical
+  manifest; README + CLAUDE.md references updated.
+
 ### Changed — /simplify pass (behavior-preserving)
 - One source of truth for: the e2e local-backend policy (`web/e2e/helpers.ts` —
   `API` + `buildHash`, replacing eight per-file copies so `E2E_API_URL` works

@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: fda-510k-clearances-total
+schema_version: 1
+concept_slug: us-medical-device-clearances
+name: FDA 510(k) device clearances (total across years)
+description: Total count of FDA device 510(k) clearances summed across all decision
+  years, openFDA device/510k count endpoint.
+value: 175091
+unit:
+  kind: stock
+  dimension: events
+as_of: '2026-06-03'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: other
+delivery_mode: n/a
+source:
+  slug: fda-drug-events-device-510k-clearances
+  tier: regulator
+  url: https://api.fda.gov/device/510k.json
+  accessed: '2026-06-03'
+  snapshot_sha256: a39aaba83ea08dc1004e08218845f5479ba0ecc89ed15f2673773461732e0532

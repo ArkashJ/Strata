@@ -8,7 +8,7 @@
 // yet ingested". All read-only — no live API calls.
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -29,9 +29,17 @@ const TIER_TOKEN: Record<string, string> = {
 
 export default function ConnectorsPage() {
   const q = useQuery(connectorsQuery);
+  const [filter, setFilter] = useState("");
 
   const { active, wired, totalPrimitives } = useMemo(() => {
-    const rows = q.data ?? [];
+    const needle = filter.trim().toLowerCase();
+    const rows = (q.data ?? []).filter(
+      (c) =>
+        !needle ||
+        c.connector.toLowerCase().includes(needle) ||
+        c.source_tier.toLowerCase().includes(needle) ||
+        c.capabilities.some((cap) => cap.returns.toLowerCase().includes(needle)),
+    );
     const active = rows
       .filter((c) => c.primitives_in_bank > 0)
       .sort((a, b) => b.primitives_in_bank - a.primitives_in_bank);
@@ -40,16 +48,16 @@ export default function ConnectorsPage() {
       .sort((a, b) => a.connector.localeCompare(b.connector));
     const totalPrimitives = active.reduce((n, c) => n + c.primitives_in_bank, 0);
     return { active, wired, totalPrimitives };
-  }, [q.data]);
+  }, [q.data, filter]);
 
   return (
     <main className="flex flex-1 flex-col">
       <ListHeader
         title="Connectors"
         count={(q.data ?? []).length}
-        filter=""
-        onFilter={() => {}}
-        placeholder=""
+        filter={filter}
+        onFilter={setFilter}
+        placeholder="Filter by name, tier, or what it returns…"
       />
 
       <div className="mx-auto w-full max-w-[1100px] flex-1 px-8 py-8">

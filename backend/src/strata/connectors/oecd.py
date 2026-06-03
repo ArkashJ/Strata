@@ -83,7 +83,7 @@ class OECDDataflow(StrEnum):
     ``/data/{dataflow}`` endpoint).
     """
 
-    GDP = "OECD.SDD.NAD,DSD_NAMAIN1@DF_TABLE1_EXPENDITURE"
+    GDP = "OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE1_EXPENDITURE"
     LABOUR = "OECD.SDD.TPS,DSD_LFS@DF_IALFS_INDIC"
     TRADE = "OECD.SDD.TPS,DSD_BOP@DF_BOP"
     HEALTH_SPENDING = "OECD.ELS.HD,DSD_SHA@DF_SHA"
@@ -251,8 +251,17 @@ def _parse_data_message(
     are colon-separated dimension indices.  We resolve each index back to
     the human-readable value using the ``structure`` block.
     """
-    structure: dict[str, Any] = body.get("structure", {})
-    datasets: list[dict[str, Any]] = body.get("dataSets", [])
+    # SDMX-JSON 2.0 (current OECD API) wraps everything under "data" and uses a
+    # "structures" list; SDMX-JSON 1.0 put "structure" (singular) and "dataSets"
+    # at the top level. Accept both so the parser survives the version the live
+    # endpoint actually serves.
+    container: dict[str, Any] = body.get("data", body)
+    structure: dict[str, Any] = container.get("structure", {})
+    if not structure:
+        structures = container.get("structures", [])
+        if structures:
+            structure = structures[0]
+    datasets: list[dict[str, Any]] = container.get("dataSets", [])
 
     if not datasets:
         return OECDResponse(kind="data", total=0)
@@ -734,11 +743,19 @@ class OECDClient:
         start_period: str | None = None,
         end_period: str | None = None,
     ) -> OECDResponse:
-        """GDP by expenditure approach (current prices, national currency)."""
-        return self.get_indicator(
+        """GDP by expenditure approach (current prices, national currency).
+
+        The DSD_NAMAIN10 structure has 12 ordered dimensions
+        (FREQ.REF_AREA.SECTOR.COUNTERPART_SECTOR.TRANSACTION.INSTR_ASSET.
+        ACTIVITY.EXPENDITURE.UNIT_MEASURE.PRICE_BASE.TRANSFORMATION.
+        TABLE_IDENTIFIER); the bare ``{country}.{freq}`` key the generic
+        ``get_indicator`` builds is rejected (HTTP 422). Pin GDP B1GQ for the
+        total economy at current prices (V) in national currency (XDC).
+        """
+        key = f"{frequency}.{country}.S1.S1.B1GQ._Z._Z._Z.XDC.V.N.T0102"
+        return self.get_indicator_raw(
             OECDDataflow.GDP,
-            country=country,
-            frequency=frequency,
+            key=key,
             start_period=start_period,
             end_period=end_period,
         )
@@ -1303,8 +1320,17 @@ def _as_of_date(time_period: str) -> str:
 
 
 def _slug_safe(s: str) -> str:
-    """Convert a string to a slug-safe form (lowercase, dots/spaces to dashes)."""
-    return s.lower().replace(".", "-").replace(" ", "-").replace(",", "-").replace("@", "-")
+    """Convert a string to a slug-safe form (lowercase; punctuation to dashes).
+
+    OECD dataflow ids carry dots, commas, ``@`` and underscores
+    (e.g. ``OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE1_EXPENDITURE``); the
+    AtomicPrimitive source slug pattern is ``^[a-z0-9][a-z0-9-]*$`` so every
+    separator — including ``_`` — must collapse to ``-``.
+    """
+    out = s.lower()
+    for ch in (".", " ", ",", "@", "_"):
+        out = out.replace(ch, "-")
+    return out
 
 
 def oecd_observation_to_primitive_yaml(
@@ -1323,24 +1349,29 @@ def oecd_observation_to_primitive_yaml(
     unit_dimension: str = "currency",
     unit_denominator: str | None = None,
     unit_currency: str | None = "USD",
+    value_scale: float = 1.0,
     distribution_shape: str = "normal",
     delivery_mode: str = "n/a",
 ) -> dict[str, Any]:
     """Convert OECD observations to a Strata AtomicPrimitive YAML dict.
 
     Returns a dict ready for ``yaml.dump()`` that conforms to the
-    AtomicPrimitive schema (models/primitive.py).
+    AtomicPrimitive schema (models/primitive.py). OECD national-accounts GDP is
+    reported in **millions** of national currency, so pass ``value_scale=1e6`` to
+    store an absolute figure instead of one a million times too small.
     """
     point = _pick_observation(observations, year)
     source_slug = (
         f"oecd-{_slug_safe(point.dataflow_id)}-{point.country.lower()}-{point.time_period}"
     )
     sha = _snapshot_hash(point.dataflow_id, point.country, point.time_period, point.value)
+    value = point.value * value_scale if point.value is not None else point.value
 
     unit: dict[str, str] = {"kind": unit_kind, "dimension": unit_dimension}
     if unit_denominator:
         unit["denominator"] = unit_denominator
-    if unit_currency:
+    # Only a currency-dimension unit carries a currency code.
+    if unit_currency and unit_dimension == "currency":
         unit["currency"] = unit_currency
 
     return {
@@ -1350,7 +1381,7 @@ def oecd_observation_to_primitive_yaml(
         "concept_slug": concept_slug,
         "name": name,
         "description": description,
-        "value": point.value,
+        "value": value,
         "unit": unit,
         "as_of": _as_of_date(point.time_period),
         "geo": {"level": geo_level, "codes": list(geo_codes)},

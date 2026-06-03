@@ -14,7 +14,7 @@ from collections.abc import Callable
 from typing import Any
 
 from ..evaluator import size_concept
-from ..evaluator.engine import EvaluatorError
+from ..evaluator.engine import EvalOverrides, EvaluatorError, OverrideValue
 from ..models import AtomicPrimitive
 from ..registry import Registry, RegistryError
 from ..resolver.match import match_concept
@@ -107,8 +107,10 @@ def list_frameworks(reg: Registry) -> dict[str, Any]:
     return {"count": len(frameworks), "frameworks": frameworks}
 
 
-def _serialize_tam(reg: Registry, concept_slug: str) -> dict[str, Any]:
-    tam = size_concept(reg, concept_slug)
+def _serialize_tam(
+    reg: Registry, concept_slug: str, overrides: EvalOverrides | None = None
+) -> dict[str, Any]:
+    tam = size_concept(reg, concept_slug, overrides=overrides)
     scenarios = [
         {
             "framework": s.framework,
@@ -179,6 +181,105 @@ def resolve_market(reg: Registry, *, query: str) -> dict[str, Any]:
     return {"matched": True, "via": "concept", **_serialize_tam(reg, slug)}
 
 
+def list_primitives(
+    reg: Registry,
+    *,
+    tier: str | None = None,
+    dimension: str | None = None,
+    query: str | None = None,
+    limit: int = 50,
+) -> dict[str, Any]:
+    """Paginated browse over sizing-grade primitives with optional filters —
+    every row carries its sourced citation (the harness's data inventory)."""
+    q = (query or "").lower().strip()
+    rows: list[dict[str, Any]] = []
+    for slug, p in sorted(reg.atomic.items()):
+        if tier and p.source.tier.value != tier:
+            continue
+        if dimension and p.unit.dimension.value != dimension:
+            continue
+        if q and q not in f"{slug} {p.name}".lower():
+            continue
+        rows.append(_cite(p))
+        if len(rows) >= limit:
+            break
+    return {"count": len(rows), "primitives": rows}
+
+
+def build_tam(
+    reg: Registry,
+    *,
+    concept_slug: str,
+    primitive_overrides: dict[str, float] | None = None,
+    framework_assumptions: dict[str, dict[str, str]] | None = None,
+) -> dict[str, Any]:
+    """Override-aware sizing so an agent can run what-if scenarios (swap a
+    primitive's value, or re-point a framework input) — not just read the frozen
+    TAM. What-if values are NEVER persisted (the result carries a banner)."""
+    if concept_slug not in reg.concepts:
+        raise ToolError(f"concept {concept_slug!r} not found")
+    # A what-if value keeps the unit of the primitive it replaces, so the
+    # framework input signature still validates (the unit is looked up, not
+    # supplied by the caller).
+    po: dict[str, OverrideValue] = {}
+    for slug, val in (primitive_overrides or {}).items():
+        if slug not in reg.atomic:
+            raise ToolError(f"override target primitive {slug!r} not found")
+        po[slug] = OverrideValue(value=float(val), unit=reg.atomic[slug].unit)
+    overrides = EvalOverrides(
+        primitive_overrides=po,
+        framework_assumptions={k: dict(v) for k, v in (framework_assumptions or {}).items()},
+    )
+    try:
+        return _serialize_tam(reg, concept_slug, overrides)
+    except EvaluatorError as exc:
+        raise ToolError(str(exc)) from exc
+
+
+def list_connectors(reg: Registry, *, tier: str | None = None) -> dict[str, Any]:
+    """List the typed data connectors (the supply side of the data bank): each
+    connector, its source tier, and its callable methods. Pairs with
+    ``get_connector_data`` to pull a fresh sourced number on demand."""
+    from ..connectors._capability import all_capabilities
+
+    by_connector: dict[str, dict[str, Any]] = {}
+    for spec in all_capabilities():
+        spec_tier = str(spec.source_tier)
+        if tier and spec_tier != tier:
+            continue
+        entry = by_connector.setdefault(
+            spec.connector,
+            {"connector": spec.connector, "source_tier": spec_tier, "methods": []},
+        )
+        entry["methods"].append({"method": spec.method, "returns": spec.returns})
+    connectors = sorted(by_connector.values(), key=lambda c: c["connector"])
+    return {"count": len(connectors), "connectors": connectors}
+
+
+def get_connector_data(
+    reg: Registry, *, connector: str, method: str, args: dict[str, Any]
+) -> dict[str, Any]:
+    """Live, sourced fetch: run one connector method and return the validated
+    primitive (value + unit + source_url + hash). Gated behind
+    ``STRATA_MCP_LIVE_CONNECTORS=1`` so the default MCP surface stays offline-safe
+    and an agent can't trigger surprise network/credentialed calls."""
+    import os
+
+    if os.getenv("STRATA_MCP_LIVE_CONNECTORS") != "1":
+        raise ToolError(
+            "live connector calls are disabled; set STRATA_MCP_LIVE_CONNECTORS=1 to enable "
+            "get_connector_data (the read-only tools — search_concepts/list_primitives/"
+            "size_tam — need no network)."
+        )
+    from ..connectors._dispatch import call_and_convert
+
+    try:
+        primitive = call_and_convert(connector, method, dict(args))
+    except Exception as exc:
+        raise ToolError(f"connector call failed: {type(exc).__name__}: {exc}") from exc
+    return {"connector": connector, "method": method, "primitive": primitive}
+
+
 _Handler = Callable[[Registry, dict[str, Any]], dict[str, Any]]
 
 
@@ -200,6 +301,35 @@ def _h_size_tam(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
 
 def _h_resolve_market(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
     return resolve_market(reg, query=args["query"])
+
+
+def _h_list_primitives(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    return list_primitives(
+        reg,
+        tier=args.get("tier"),
+        dimension=args.get("dimension"),
+        query=args.get("query"),
+        limit=int(args.get("limit", 50)),
+    )
+
+
+def _h_build_tam(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    return build_tam(
+        reg,
+        concept_slug=args["concept_slug"],
+        primitive_overrides=args.get("primitive_overrides"),
+        framework_assumptions=args.get("framework_assumptions"),
+    )
+
+
+def _h_list_connectors(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    return list_connectors(reg, tier=args.get("tier"))
+
+
+def _h_get_connector_data(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    return get_connector_data(
+        reg, connector=args["connector"], method=args["method"], args=dict(args.get("args", {}))
+    )
 
 
 def _h_import_portfolio(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
@@ -252,6 +382,30 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": "Resolve a free-form market query to a sourced TAM (registry-first, no LLM).",
         "inputSchema": schemas.RESOLVE_MARKET,
         "handler": _h_resolve_market,
+    },
+    "list_primitives": {
+        "description": "Browse sizing-grade primitives (filter by tier/dimension/query); each row "
+        "carries its source citation. The harness's data inventory.",
+        "inputSchema": schemas.LIST_PRIMITIVES,
+        "handler": _h_list_primitives,
+    },
+    "build_tam": {
+        "description": "Size a concept with what-if overrides (swap a primitive's value or re-point "
+        "a framework input) — scenario analysis, never persisted.",
+        "inputSchema": schemas.BUILD_TAM,
+        "handler": _h_build_tam,
+    },
+    "list_connectors": {
+        "description": "List the typed data connectors (supply side): each connector, its source "
+        "tier, and callable methods. Pairs with get_connector_data.",
+        "inputSchema": schemas.LIST_CONNECTORS,
+        "handler": _h_list_connectors,
+    },
+    "get_connector_data": {
+        "description": "[LIVE] Run one connector method and return the validated, hash-pinned "
+        "primitive. Gated by STRATA_MCP_LIVE_CONNECTORS=1 (network/credentialed).",
+        "inputSchema": schemas.GET_CONNECTOR_DATA,
+        "handler": _h_get_connector_data,
     },
     "import_portfolio": {
         "description": (

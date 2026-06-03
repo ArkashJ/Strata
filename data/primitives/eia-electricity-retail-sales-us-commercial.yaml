@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: eia-electricity-retail-sales-us-commercial
+schema_version: 1
+concept_slug: us-electricity-retail-sales
+name: US commercial retail electricity sales
+description: US commercial-sector retail electricity sales volume, latest annual period
+  (million kWh).
+value: 1493486.09361
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: eia-electricity-retail-sales-us-2025
+  tier: regulator
+  url: https://www.eia.gov/electricity/data.php
+  accessed: '2026-06-03'
+  snapshot_sha256: 7db3ca3675b31e7af92bc3c1d6bf938f1dba7c454ff2af439e60e7e49054c19b

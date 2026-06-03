@@ -1,0 +1,28 @@
+kind: atomic_primitive
+slug: ct-us-imports-electronics-2023
+schema_version: 1
+concept_slug: us-electronics-imports
+name: US imports of electrical machinery (HS 85), 2023
+description: US (reporter 842) import value of HS chapter 85 (electrical machinery
+  and equipment) for 2023, UN Comtrade preview API (World reporter requires a subscription
+  key).
+value: 463363545006.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: year
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - USA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: ct-none-none-m-85-2023
+  tier: aggregator
+  url: https://comtrade.un.org/
+  accessed: '2026-06-03'
+  snapshot_sha256: 4de5ece5469b1e0ee4751495b778ffa166fb69222f4369991b512ab60f39130e

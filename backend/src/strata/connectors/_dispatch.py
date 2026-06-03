@@ -66,6 +66,7 @@ from . import (
     TwitterClient,
     WorldBankClient,
     YFinanceClient,
+    airport_count_to_primitive_yaml,
     airport_to_primitive_yaml,
     concept_to_primitive_yaml,
     datapoint_to_primitive_yaml,
@@ -82,7 +83,7 @@ from . import (
     nasdaq_observation_to_primitive_yaml,
     nass_record_to_primitive_yaml,
     observation_to_primitive_yaml,
-    observations_to_primitive_yaml,
+    observations_only_to_primitive_yaml,
     oecd_observation_to_primitive_yaml,
     passenger_count_to_primitive_yaml,
     quote_to_primitive_yaml,
@@ -148,7 +149,7 @@ _DEFAULT_CONVERTERS: dict[str, Converter] = {
     "eurostat": observation_to_primitive_yaml,
     "faa": airport_to_primitive_yaml,
     "fdic": financial_to_primitive_yaml,
-    "fred": observations_to_primitive_yaml,
+    "fred": observations_only_to_primitive_yaml,
     "github": repo_to_primitive_yaml,
     "kalshi": market_to_primitive_yaml,
     "nasdaq_data_link": nasdaq_observation_to_primitive_yaml,
@@ -170,6 +171,7 @@ _CONVERTER_OVERRIDES: dict[tuple[str, str], Converter] = {
     ("cms", "get_national_health_expenditure"): spending_to_primitive_yaml,
     ("edgar", "get_frames"): frame_to_primitive_yaml,
     ("faa", "get_total_passengers"): passenger_count_to_primitive_yaml,
+    ("faa", "get_airport_count"): airport_count_to_primitive_yaml,
 }
 
 # connector → ordered (ctor_param, env_var) credentials the factory passes when

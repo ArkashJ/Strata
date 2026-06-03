@@ -29,7 +29,10 @@ import httpx
 class CMSDataset(StrEnum):
     """Key CMS dataset identifiers (URL path segments or UUIDs)."""
 
-    MEDICARE_ENROLLMENT = "medicare-total-enrollment"
+    # "Medicare Monthly Enrollment" — the data-api/v1 endpoint addresses
+    # datasets by UUID, not the human slug. This is the latest annual+monthly
+    # geographic enrollment release (state/county/national breakdowns).
+    MEDICARE_ENROLLMENT = "d7fabe1e-d19b-4333-9eff-e80e0643f2fd"
     MEDICARE_SPENDING = "medicare-spending-by-state"
     PART_D_SPENDING = "medicare-part-d-spending-by-drug"
     PART_D_PRESCRIBERS = "medicare-part-d-prescribers-by-provider"
@@ -390,26 +393,47 @@ class CMSResponse:
 
 
 def _parse_enrollment(raw: dict[str, Any]) -> EnrollmentRecord:
+    # The Medicare Monthly Enrollment dataset uses upper-case beneficiary-count
+    # column names (TOT_BENES, A_TOT_BENES, ...); keep the older lower-case
+    # fallbacks for any other enrollment-shaped dataset.
     year_val = _safe_int(raw.get("year") or raw.get("Year") or raw.get("YEAR"))
     return EnrollmentRecord(
         year=year_val or 0,
-        state=str(raw.get("state") or raw.get("State") or raw.get("STATE") or ""),
+        state=str(
+            raw.get("state")
+            or raw.get("State")
+            or raw.get("STATE")
+            or raw.get("BENE_STATE_ABRVTN")
+            or ""
+        ),
         total_enrollment=_safe_int(
             raw.get("total_enrollment")
             or raw.get("Total_Enrollment")
             or raw.get("total_medicare_enrollment")
+            or raw.get("TOT_BENES")
         ),
-        part_a=_safe_int(raw.get("part_a_enrollment") or raw.get("Part_A_Enrollment")),
-        part_b=_safe_int(raw.get("part_b_enrollment") or raw.get("Part_B_Enrollment")),
-        part_d=_safe_int(raw.get("part_d_enrollment") or raw.get("Part_D_Enrollment")),
+        part_a=_safe_int(
+            raw.get("part_a_enrollment") or raw.get("Part_A_Enrollment") or raw.get("A_TOT_BENES")
+        ),
+        part_b=_safe_int(
+            raw.get("part_b_enrollment") or raw.get("Part_B_Enrollment") or raw.get("B_TOT_BENES")
+        ),
+        part_d=_safe_int(
+            raw.get("part_d_enrollment")
+            or raw.get("Part_D_Enrollment")
+            or raw.get("PRSCRPTN_DRUG_TOT_BENES")
+        ),
         medicare_advantage=_safe_int(
             raw.get("medicare_advantage_enrollment")
             or raw.get("Medicare_Advantage_Enrollment")
             or raw.get("ma_enrollment")
             or raw.get("BENES_MA_CNT")
+            or raw.get("MA_AND_OTH_BENES")
         ),
         original_medicare=_safe_int(
-            raw.get("original_medicare_enrollment") or raw.get("Original_Medicare_Enrollment")
+            raw.get("original_medicare_enrollment")
+            or raw.get("Original_Medicare_Enrollment")
+            or raw.get("ORGNL_MDCR_BENES")
         ),
     )
 
@@ -811,8 +835,17 @@ class CMSClient:
             limit: Maximum records to return.
         """
         url = self._dataset_url(CMSDataset.MEDICARE_ENROLLMENT)
-        params = self._build_filters(year=year, state=state)
-        params["size"] = str(limit)
+        # The Medicare Monthly Enrollment dataset uses upper-case column names
+        # for filters. Pin to the annual aggregate (MONTH=Year); narrow the geo
+        # level to State when a state is given, else National.
+        params: dict[str, str] = {"size": str(limit), "filter[MONTH]": "Year"}
+        if year is not None:
+            params["filter[YEAR]"] = str(year)
+        if state is not None:
+            params["filter[BENE_GEO_LVL]"] = "State"
+            params["filter[BENE_STATE_ABRVTN]"] = str(state)
+        else:
+            params["filter[BENE_GEO_LVL]"] = "National"
         return self._request(url, params, kind="enrollment")
 
     def get_enrollment_trends(

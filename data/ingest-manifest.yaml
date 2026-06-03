@@ -7,25 +7,44 @@
 # `connectors._dispatch.call_and_convert` splits the two by signature.
 #
 # Connectors whose STRATA_<X>_API_KEY is unset are skipped (logged, batch
-# continues). Keyless connectors (edgar, worldbank, ...) always run.
+# continues). Keyless connectors (edgar, worldbank, oecd, eurostat, faa,
+# fdic, cms, ...) always run.
 #
 # Slugs MUST be kebab-case (^[a-z0-9][a-z0-9-]*$). Keep one arg_set per
-# distinct primitive you want in the bank.
+# distinct primitive you want in the bank. Every source_url host MUST be in
+# resolver.citations.CONNECTOR_HOSTS or the writer rejects the primitive.
+#
+# DISPATCH TRAP CHECKLIST (see plan): a (connector, method, converter) triple
+# is only ingest-ready once it (1) has no converter-keyword/method-arg name
+# collision and (2) the method's response actually carries the dataclass the
+# converter's positional needs. Each block below is single-record by design so
+# _match_positional hands the converter exactly one row.
 
 connectors:
+
+  # ── FRED — US macro (regulator). observations_only converter. ──────────
   fred:
     - method: get_observations
       arg_sets:
         - series_id: GDP
           primitive_slug: fred-us-gdp-nominal
           concept_slug: us-gdp
-          name: US nominal GDP (FRED GDP)
-          description: US nominal gross domestic product, latest annual observation.
+          name: US nominal GDP (FRED GDP, billions USD)
+          description: US nominal gross domestic product, latest annual observation (billions of USD).
           source_url: https://fred.stlouisfed.org/series/GDP
           unit_kind: flow
           unit_dimension: currency
           unit_currency: USD
-
+        - series_id: PCEC
+          primitive_slug: fred-us-personal-consumption
+          concept_slug: us-personal-consumption
+          name: US personal consumption expenditures (FRED PCEC, billions USD)
+          description: US personal consumption expenditures, latest observation (billions of USD).
+          source_url: https://fred.stlouisfed.org/series/PCEC
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: USD
+  # ── BLS — employment + occupation wages (regulator). ───────────────────
   bls:
     - method: get_series
       arg_sets:
@@ -37,13 +56,174 @@ connectors:
           source_url: https://www.bls.gov/ces/
           unit_kind: stock
           unit_dimension: people
+    # OEWS national occupation employment + wages. occ_code (6-digit SOC),
+    # area (0000000 = national), datatype (01 = employment, 04 = annual mean
+    # wage) route to the method; none collide with converter keywords. No
+    # `year:` here — that IS a converter keyword and would select a data point
+    # rather than reach the method.
+    - method: get_oes_employment
+      arg_sets:
+        - occ_code: "15-1252"
+          area: "0000000"
+          datatype: "01"
+          concept_slug: us-software-developer-labor
+          primitive_slug: bls-oews-software-developers-employment
+          name: US software developers — national employment (OEWS 15-1252)
+          description: National employment of software developers — persona headcount for AI-coding-assistant TAMs.
+          source_url: https://www.bls.gov/oes/current/oes151252.htm
+          unit_kind: stock
+          unit_dimension: people
+        - occ_code: "15-1252"
+          area: "0000000"
+          datatype: "04"
+          concept_slug: us-software-developer-labor
+          primitive_slug: bls-oews-software-developers-mean-wage
+          name: US software developers — national annual mean wage (OEWS 15-1252)
+          description: National annual mean wage of software developers — cost-per-persona input for AI-coding cost-efficiency TAMs.
+          source_url: https://www.bls.gov/oes/current/oes151252.htm
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: USD
+          unit_denominator: year
+        - occ_code: "43-4051"
+          area: "0000000"
+          datatype: "01"
+          concept_slug: us-customer-service-rep-labor
+          primitive_slug: bls-oews-customer-service-reps-employment
+          name: US customer service representatives — national employment (OEWS 43-4051)
+          description: National employment of customer service reps — persona headcount for AI-support-agent automation TAMs.
+          source_url: https://www.bls.gov/oes/current/oes434051.htm
+          unit_kind: stock
+          unit_dimension: people
+        - occ_code: "43-4051"
+          area: "0000000"
+          datatype: "04"
+          concept_slug: us-customer-service-rep-labor
+          primitive_slug: bls-oews-customer-service-reps-mean-wage
+          name: US customer service representatives — national annual mean wage (OEWS 43-4051)
+          description: National annual mean wage of customer service reps — cost-per-persona input for AI-support-deflection TAMs.
+          source_url: https://www.bls.gov/oes/current/oes434051.htm
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: USD
+          unit_denominator: year
+        - occ_code: "23-1011"
+          area: "0000000"
+          datatype: "01"
+          concept_slug: us-lawyer-labor
+          primitive_slug: bls-oews-lawyers-employment
+          name: US lawyers — national employment (OEWS 23-1011)
+          description: National employment of lawyers — persona headcount for AI-legal-assistant productivity TAMs.
+          source_url: https://www.bls.gov/oes/current/oes231011.htm
+          unit_kind: stock
+          unit_dimension: people
+        - occ_code: "23-1011"
+          area: "0000000"
+          datatype: "04"
+          concept_slug: us-lawyer-labor
+          primitive_slug: bls-oews-lawyers-mean-wage
+          name: US lawyers — national annual mean wage (OEWS 23-1011)
+          description: National annual mean wage of lawyers — cost-per-persona input for AI-legal cost-efficiency TAMs.
+          source_url: https://www.bls.gov/oes/current/oes231011.htm
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: USD
+          unit_denominator: year
+        - occ_code: "41-4012"
+          area: "0000000"
+          datatype: "01"
+          concept_slug: us-sales-rep-labor
+          primitive_slug: bls-oews-sales-reps-employment
+          name: US wholesale & manufacturing sales reps — national employment (OEWS 41-4012)
+          description: National employment of sales reps — persona headcount for AI-sales-ops automation TAMs.
+          source_url: https://www.bls.gov/oes/current/oes414012.htm
+          unit_kind: stock
+          unit_dimension: people
 
-  # NOTE on edgar: get_company_concept is intentionally NOT used here. Its
-  # converter's first positional param is literally named `concept`, which
-  # collides with the method's own `concept` arg under
-  # connectors._dispatch.call_and_convert (converter-param names are stripped
-  # from method args). get_frames has no such collision (positional `entries`),
-  # so it is the dispatch-safe EDGAR entry.
+  # ── Census — establishment/firm counts by NAICS (regulator). ───────────
+  # CBP → establishments/employees (default converter industry_to_primitive_yaml);
+  # get_susb → true firm counts via the Annual Business Survey Company Summary
+  # (abscs FIRMPDEMP) — SUSB has NO Census Data API; abscs is the live firm-count
+  # equivalent (override firm_to_primitive_yaml). Single NAICS per arg_set so
+  # _match_positional gets exactly one industry/firm record. Hosts are the www.
+  # pages (api.census.gov is NOT in CONNECTOR_HOSTS).
+  census:
+    - method: get_cbp
+      arg_sets:
+        - year: 2022
+          naics: "5415"
+          concept_slug: us-computer-systems-design-market
+          primitive_slug: census-cbp-5415-establishments-2022
+          name: US computer systems design establishments (NAICS 5415, CBP 2022)
+          description: Count of US establishments in computer systems design & related services — firm denominator for AI-services TAMs.
+          source_url: https://www.census.gov/programs-surveys/cbp.html
+          unit_kind: stock
+          unit_dimension: organizations
+          value_field: establishments
+        - year: 2022
+          naics: "5415"
+          concept_slug: us-computer-systems-design-market
+          primitive_slug: census-cbp-5415-employees-2022
+          name: US computer systems design employment (NAICS 5415, CBP 2022)
+          description: Paid employees in US computer systems design & related services — headcount denominator for productivity-uplift AI lenses.
+          source_url: https://www.census.gov/programs-surveys/cbp.html
+          unit_kind: stock
+          unit_dimension: people
+          value_field: employees
+        - year: 2022
+          naics: "5112"
+          concept_slug: us-software-publishing-market
+          primitive_slug: census-cbp-5112-establishments-2022
+          name: US software publisher establishments (NAICS 5112, CBP 2022)
+          description: Count of US software-publishing establishments — denominator for software-bundle AI TAMs.
+          source_url: https://www.census.gov/programs-surveys/cbp.html
+          unit_kind: stock
+          unit_dimension: organizations
+          value_field: establishments
+        - year: 2022
+          naics: "5182"
+          concept_slug: us-data-processing-hosting-market
+          primitive_slug: census-cbp-5182-establishments-2022
+          name: US data processing & hosting establishments (NAICS 5182, CBP 2022)
+          description: Count of US data-processing, hosting and related-services establishments — infra denominator for AI-compute TAMs.
+          source_url: https://www.census.gov/programs-surveys/cbp.html
+          unit_kind: stock
+          unit_dimension: organizations
+          value_field: establishments
+        - year: 2022
+          naics: "5416"
+          concept_slug: us-management-consulting-market
+          primitive_slug: census-cbp-5416-establishments-2022
+          name: US management/scientific consulting establishments (NAICS 5416, CBP 2022)
+          description: Count of US management & scientific consulting establishments — denominator for AI-consulting / decision-support TAMs.
+          source_url: https://www.census.gov/programs-surveys/cbp.html
+          unit_kind: stock
+          unit_dimension: organizations
+          value_field: establishments
+    - method: get_susb
+      arg_sets:
+        - year: 2021
+          naics: "5415"
+          concept_slug: us-computer-systems-design-market
+          primitive_slug: census-susb-5415-firms-2021
+          name: US computer systems design employer firms (NAICS 5415, ABS 2021)
+          description: Count of US employer firms (enterprises, not establishments) in computer systems design (Census Annual Business Survey Company Summary, FIRMPDEMP) — true buyer denominator for AI-services TAMs.
+          source_url: https://www.census.gov/programs-surveys/abs.html
+          unit_kind: stock
+          unit_dimension: organizations
+          value_field: firms
+        - year: 2021
+          naics: "5112"
+          concept_slug: us-software-publishing-market
+          primitive_slug: census-susb-5112-firms-2021
+          name: US software publisher employer firms (NAICS 5112, ABS 2021)
+          description: Count of US software-publishing employer firms (enterprises) (Census Annual Business Survey Company Summary, FIRMPDEMP) — true firm denominator for software-bundle AI TAMs.
+          source_url: https://www.census.gov/programs-surveys/abs.html
+          unit_kind: stock
+          unit_dimension: organizations
+          value_field: firms
+
+  # ── EDGAR — SEC XBRL frames (regulator, keyless). ──────────────────────
   edgar:
     - method: get_frames
       arg_sets:
@@ -60,15 +240,344 @@ connectors:
           unit_dimension: currency
           unit_currency: USD
 
+  # ── World Bank — international macro (aggregator, keyless). ─────────────
+  # get_indicator is the ONLY dispatchable method. Indicator codes live-
+  # verified. country = ISO-3; geo_codes set per country so geo isn't US.
   worldbank:
     - method: get_indicator
       arg_sets:
         - country: USA
           indicator: SP.POP.TOTL
           primitive_slug: worldbank-us-population
-          concept_slug: us-population
+          concept_slug: world-population-usa
           name: US total population (World Bank SP.POP.TOTL)
           description: Total US population, latest World Bank annual estimate.
           source_url: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=US
+          geo_codes: [USA]
+          geo_level: country
           unit_kind: stock
           unit_dimension: people
+        - country: DEU
+          indicator: SP.POP.TOTL
+          primitive_slug: wb-population-deu-2023
+          concept_slug: world-population-deu
+          name: Germany total population (World Bank SP.POP.TOTL)
+          description: Total population of Germany, latest World Bank annual estimate.
+          source_url: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=DE
+          geo_codes: [DEU]
+          geo_level: country
+          unit_kind: stock
+          unit_dimension: people
+        - country: GBR
+          indicator: SP.POP.TOTL
+          primitive_slug: wb-population-gbr-2023
+          concept_slug: world-population-gbr
+          name: United Kingdom total population (World Bank SP.POP.TOTL)
+          description: Total population of the United Kingdom, latest World Bank annual estimate.
+          source_url: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=GB
+          geo_codes: [GBR]
+          geo_level: country
+          unit_kind: stock
+          unit_dimension: people
+        - country: JPN
+          indicator: SP.POP.TOTL
+          primitive_slug: wb-population-jpn-2023
+          concept_slug: world-population-jpn
+          name: Japan total population (World Bank SP.POP.TOTL)
+          description: Total population of Japan, latest World Bank annual estimate.
+          source_url: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=JP
+          geo_codes: [JPN]
+          geo_level: country
+          unit_kind: stock
+          unit_dimension: people
+        - country: IND
+          indicator: SP.POP.TOTL
+          primitive_slug: wb-population-ind-2023
+          concept_slug: world-population-ind
+          name: India total population (World Bank SP.POP.TOTL)
+          description: Total population of India, latest World Bank annual estimate.
+          source_url: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=IN
+          geo_codes: [IND]
+          geo_level: country
+          unit_kind: stock
+          unit_dimension: people
+        - country: DEU
+          indicator: NY.GDP.MKTP.CD
+          primitive_slug: wb-gdp-deu-2023
+          concept_slug: world-gdp-deu
+          name: Germany nominal GDP (World Bank NY.GDP.MKTP.CD)
+          description: Germany GDP, current US dollars, latest World Bank annual value.
+          source_url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=DE
+          geo_codes: [DEU]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: USD
+        - country: GBR
+          indicator: NY.GDP.MKTP.CD
+          primitive_slug: wb-gdp-gbr-2023
+          concept_slug: world-gdp-gbr
+          name: United Kingdom nominal GDP (World Bank NY.GDP.MKTP.CD)
+          description: United Kingdom GDP, current US dollars, latest World Bank annual value.
+          source_url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=GB
+          geo_codes: [GBR]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: USD
+        - country: JPN
+          indicator: NY.GDP.MKTP.CD
+          primitive_slug: wb-gdp-jpn-2023
+          concept_slug: world-gdp-jpn
+          name: Japan nominal GDP (World Bank NY.GDP.MKTP.CD)
+          description: Japan GDP, current US dollars, latest World Bank annual value.
+          source_url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=JP
+          geo_codes: [JPN]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: USD
+        - country: FRA
+          indicator: NY.GDP.MKTP.CD
+          primitive_slug: wb-gdp-fra-2023
+          concept_slug: world-gdp-fra
+          name: France nominal GDP (World Bank NY.GDP.MKTP.CD)
+          description: France GDP, current US dollars, latest World Bank annual value.
+          source_url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=FR
+          geo_codes: [FRA]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: USD
+        - country: DEU
+          indicator: SL.TLF.TOTL.IN
+          primitive_slug: wb-labor-force-deu-2023
+          concept_slug: world-labor-force-deu
+          name: Germany total labor force (World Bank SL.TLF.TOTL.IN)
+          description: Germany labor force (ages 15+ supplying labor), latest World Bank estimate.
+          source_url: https://data.worldbank.org/indicator/SL.TLF.TOTL.IN?locations=DE
+          geo_codes: [DEU]
+          geo_level: country
+          unit_kind: stock
+          unit_dimension: people
+        - country: IND
+          indicator: SL.TLF.TOTL.IN
+          primitive_slug: wb-labor-force-ind-2023
+          concept_slug: world-labor-force-ind
+          name: India total labor force (World Bank SL.TLF.TOTL.IN)
+          description: India labor force (ages 15+ supplying labor), latest World Bank estimate.
+          source_url: https://data.worldbank.org/indicator/SL.TLF.TOTL.IN?locations=IN
+          geo_codes: [IND]
+          geo_level: country
+          unit_kind: stock
+          unit_dimension: people
+
+  # ── OECD — national accounts (aggregator, keyless). Only the clean
+  # {country}.{freq}-key methods (get_gdp / get_health_spending); SDMX sector
+  # methods are flagged un-verified in the connector source. OECD GDP is in
+  # NATIONAL currency. ────────────────────────────────────────────────────
+  oecd:
+    - method: get_gdp
+      arg_sets:
+        - country: DEU
+          year: 2022
+          concept_slug: oecd-gdp-deu
+          primitive_slug: oecd-gdp-deu-2022
+          name: Germany GDP, expenditure approach (OECD national accounts)
+          description: Germany GDP at current prices, absolute EUR (OECD reports DSD_NAMAIN10 B1GQ in millions; value_scale lifts it to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [DEU]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - country: GBR
+          year: 2022
+          concept_slug: oecd-gdp-gbr
+          primitive_slug: oecd-gdp-gbr-2022
+          name: United Kingdom GDP, expenditure approach (OECD national accounts)
+          description: United Kingdom GDP at current prices, absolute GBP (OECD reports DSD_NAMAIN10 B1GQ in millions; value_scale lifts it to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [GBR]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: GBP
+          value_scale: 1000000
+
+  # ── Eurostat — EU national accounts (regulator, keyless). GDP is CP_MEUR
+  # (millions EUR) — noted in descriptions. ───────────────────────────────
+  eurostat:
+    - method: get_gdp
+      arg_sets:
+        - geo: DE
+          year: 2023
+          concept_slug: eurostat-gdp-de
+          primitive_slug: eurostat-gdp-de-2023
+          name: Germany GDP at market prices (Eurostat nama_10_gdp, B1GQ)
+          description: Germany GDP at current prices, absolute EUR (Eurostat reports nama_10_gdp B1GQ as CP_MEUR / millions; value_scale lifts it to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
+          geo_codes: [DEU]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - geo: FR
+          year: 2023
+          concept_slug: eurostat-gdp-fr
+          primitive_slug: eurostat-gdp-fr-2023
+          name: France GDP at market prices (Eurostat nama_10_gdp, B1GQ)
+          description: France GDP at current prices, absolute EUR (Eurostat reports nama_10_gdp B1GQ as CP_MEUR / millions; value_scale lifts it to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
+          geo_codes: [FRA]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+
+  # ── EIA — US energy (regulator). Key: STRATA_EIA_API_KEY. ──────────────
+  eia:
+    - method: get_electricity_sales
+      arg_sets:
+        - state: US
+          sector: ALL
+          frequency: annual
+          route: electricity/retail-sales
+          concept_slug: us-electricity-retail-sales
+          primitive_slug: eia-electricity-retail-sales-us-all
+          name: US retail electricity sales (all sectors)
+          description: Total US retail electricity sales volume, all sectors, latest annual period (million kWh).
+          source_url: https://www.eia.gov/electricity/data.php
+          unit_kind: flow
+          unit_dimension: transactions
+        - state: US
+          sector: COM
+          frequency: annual
+          route: electricity/retail-sales
+          concept_slug: us-electricity-retail-sales
+          primitive_slug: eia-electricity-retail-sales-us-commercial
+          name: US commercial retail electricity sales
+          description: US commercial-sector retail electricity sales volume, latest annual period (million kWh).
+          source_url: https://www.eia.gov/electricity/data.php
+          unit_kind: flow
+          unit_dimension: transactions
+
+  # ── FDIC — US banking (regulator, keyless). Only get_financials is
+  # dispatchable; it returns the single largest bank by the sort field, NOT an
+  # industry total (descriptions say so). ─────────────────────────────────
+  fdic:
+    - method: get_financials
+      arg_sets:
+        - report_date: "20241231"
+          limit: 1
+          sort_by: ASSET
+          sort_order: DESC
+          field: ASSET
+          concept_slug: us-bank-total-assets
+          primitive_slug: fdic-largest-bank-assets-2024
+          name: Largest US insured bank — total assets (2024-12-31)
+          description: Total assets of the single largest FDIC-insured institution by assets, year-end 2024 (absolute USD). NOT an industry total.
+          source_url: https://banks.data.fdic.gov/
+          unit_kind: stock
+          unit_dimension: currency
+          unit_currency: USD
+          value_scale: 1000  # FDIC BankFind reports dollar fields in thousands
+
+  # ── CMS — Medicare (regulator, keyless). NHE excluded (converter/method
+  # type mismatch). State row passed for determinism. ─────────────────────
+  cms:
+    - method: get_enrollment
+      arg_sets:
+        - year: 2022
+          state: CA
+          limit: 500
+          concept_slug: us-medicare-enrollment
+          primitive_slug: cms-medicare-enrollment-ca-2022
+          name: California Medicare enrollment (2022)
+          description: Total Medicare beneficiaries in California, 2022.
+          source_url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
+          geo_codes: ["US-CA"]
+          geo_level: subnational
+          unit_kind: stock
+          unit_dimension: people
+
+  # ── FAA — US aviation (regulator, keyless). source_url MUST be faa.gov
+  # (the converter's arcgis default is not allowlisted). The live FAA AIS
+  # "US_Airport" feature layer is an airport identity/location layer — it has
+  # NO enplanement or operations columns, so we size airport COUNTS (a supply
+  # denominator), never passenger figures (which FAA only publishes as Excel
+  # files, not a queryable API). ──────────────────────────────────────────
+  faa:
+    - method: get_airport_count
+      arg_sets:
+        - airport_type: AD
+          concept_slug: us-air-travel
+          primitive_slug: faa-us-airport-count
+          name: US airport count (FAA AIS, type AD)
+          description: Count of US landplane airports (TYPE_CODE='AD') on the FAA AIS Airports feature layer — supply-side facility denominator for aviation-services TAMs.
+          source_url: https://www.faa.gov/air_traffic/flight_info/aeronav
+          geo_level: country
+        - state: CA
+          concept_slug: us-air-travel
+          primitive_slug: faa-ca-airport-count
+          name: California airport/facility count (FAA AIS)
+          description: Count of all FAA-listed aviation facilities (airports, heliports, seaplane bases) in California on the FAA AIS Airports feature layer.
+          source_url: https://www.faa.gov/air_traffic/flight_info/aeronav
+          geo_level: subnational
+
+  # ── openFDA — life-sciences (regulator, keyless). drug_name is a converter
+  # label feeding the source slug/sha, not a query arg. ───────────────────
+  openfda:
+    - method: get_clearance_count_by_year
+      arg_sets:
+        - drug_name: device-510k-clearances
+          concept_slug: us-medical-device-clearances
+          primitive_slug: fda-510k-clearances-total
+          name: FDA 510(k) device clearances (total across years)
+          description: Total count of FDA device 510(k) clearances summed across all decision years, openFDA device/510k count endpoint.
+          source_url: https://api.fda.gov/device/510k.json
+    - method: get_drug_recall_count_by_class
+      arg_sets:
+        - drug_name: drug-recalls-by-class
+          concept_slug: us-drug-safety
+          primitive_slug: fda-drug-recalls-total-by-class
+          name: FDA drug recalls (total across severity classes)
+          description: Total count of FDA drug enforcement recalls summed across Class I/II/III, openFDA drug/enforcement count endpoint.
+          source_url: https://api.fda.gov/drug/enforcement.json
+
+  # ── UN Comtrade — global trade. Key: STRATA_COMTRADE_API_KEY
+  # (subscription_key). reporter/partner = M49 codes; cmd_code = HS chapter. ─
+  comtrade:
+    # NOTE: the keyless public preview endpoint does NOT support the World
+    # reporter (reporterCode=0 returns zero rows). Use a concrete reporter
+    # (842 = USA) so the call returns a real record. With a subscription key
+    # the World aggregate becomes available; switch reporter back to "0" then.
+    - method: get_world_imports
+      arg_sets:
+        - cmd_code: "85"
+          period: 2023
+          reporter: "842"
+          year: 2023
+          concept_slug: us-electronics-imports
+          primitive_slug: ct-us-imports-electronics-2023
+          name: US imports of electrical machinery (HS 85), 2023
+          description: US (reporter 842) import value of HS chapter 85 (electrical machinery and equipment) for 2023, UN Comtrade preview API (World reporter requires a subscription key).
+          source_url: https://comtrade.un.org/
+          geo_codes: ["USA"]
+          unit_currency: USD
+    - method: get_bilateral_trade
+      arg_sets:
+        - reporter: "842"
+          partner: "156"
+          period: 2023
+          year: 2023
+          concept_slug: us-china-trade
+          primitive_slug: ct-us-china-bilateral-2023
+          name: US–China bilateral trade (all commodities), 2023
+          description: Bilateral trade value between the US (reporter 842) and China (partner 156) for 2023, UN Comtrade.
+          source_url: https://comtrade.un.org/
+          geo_codes: ["USA"]
+          unit_currency: USD

@@ -604,20 +604,28 @@ class BLSClient:
         occ_code: str,
         area: str = "0000000",
         *,
+        areatype: str = "N",
+        industry: str = "000000",
         datatype: str = "01",
     ) -> BLSResponse:
         """OES (OEWS) occupational employment & wages by SOC / area.
 
-        Series layout ``OE`` + seasonal ``U`` + area (7) + industry (6,
-        ``000000`` = cross-industry) + occupation (6) + datatype (2).
+        Series layout (25 chars): ``OE`` + seasonal ``U`` + areatype (1) +
+        area (7) + industry (6, ``000000`` = cross-industry) + occupation
+        (6) + datatype (2). The ``areatype`` digit is mandatory — omitting it
+        builds a 24-char id that api.bls.gov rejects mid-request (the symptom
+        was a ``RemoteProtocolError`` "Server disconnected without sending a
+        response").
 
         Args:
             occ_code: 6-digit SOC code without the hyphen (e.g. "151252").
             area: 7-digit OES area code ("0000000" = national).
+            areatype: 1-char area type ("N"=national, "S"=state, "M"=metro).
+            industry: 6-digit industry code ("000000" = cross-industry).
             datatype: "01"=employment, "04"=annual mean wage, "13"=median.
         """
         occ = occ_code.replace("-", "").zfill(6)
-        series_id = f"OEU{area.zfill(7)}000000{occ}{datatype.zfill(2)}"
+        series_id = f"OEU{areatype}{area.zfill(7)}{industry.zfill(6)}{occ}{datatype.zfill(2)}"
         return self.get_series(series_id)
 
     def get_qcew_by_naics(

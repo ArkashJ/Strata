@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: wb-population-jpn-2023
+schema_version: 1
+concept_slug: world-population-jpn
+name: Japan total population (World Bank SP.POP.TOTL)
+description: Total population of Japan, latest World Bank annual estimate.
+value: 123975371.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - JPN
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sp-pop-totl-jp-2024
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=JP
+  accessed: '2026-06-03'
+  snapshot_sha256: 64e852ca9a6ed58382f58c63c972e9d9347c83eec905774b0726663707e764b9

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: wb-labor-force-ind-2023
+schema_version: 1
+concept_slug: world-labor-force-ind
+name: India total labor force (World Bank SL.TLF.TOTL.IN)
+description: India labor force (ages 15+ supplying labor), latest World Bank estimate.
+value: 617625336.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - IND
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sl-tlf-totl-in-in-2025
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/SL.TLF.TOTL.IN?locations=IN
+  accessed: '2026-06-03'
+  snapshot_sha256: 4d314f7ed210d087deae85e2dfb72be8872d6023bd256ad30338fe2295c16fce

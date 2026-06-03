@@ -126,3 +126,132 @@ def test_promote_validator_rejects_rolls_back(tmp_path: Path) -> None:
     assert not (data_dir / "primitives" / f"{slug}.yaml").exists()
     # And the auto file must still be in place
     assert (auto_dir / f"{slug}.yaml").exists()
+
+
+# ── bulk promote (`--from-ingest`) ──────────────────────────────────────
+
+
+def _reject(slug: str) -> ValidationReport:
+    from strata.validator import Severity
+    from strata.validator.pipeline import ValidationFinding
+
+    return ValidationReport(
+        findings=[
+            ValidationFinding(
+                layer="semantic",
+                code="X001",
+                severity=Severity.ERROR,
+                message="bad primitive",
+                slug=slug,
+            )
+        ],
+        registry=None,
+    )
+
+
+def test_promote_from_ingest_promotes_whole_batch(tmp_path: Path) -> None:
+    auto_dir = tmp_path / "auto"
+    auto_dir.mkdir()
+    data_dir = tmp_path / "data"
+    (data_dir / "primitives").mkdir(parents=True)
+    slugs = ["census-firms-2022", "bls-wage-2024", "edgar-assets-2023"]
+    for s in slugs:
+        (auto_dir / f"{s}.yaml").write_text(_good_primitive_yaml(s))
+
+    with (
+        patch("strata.resolver.AUTO_PRIMITIVES_DIR", auto_dir),
+        patch("strata.cli.run_validate", return_value=_empty_report()),
+    ):
+        result = runner.invoke(app, ["promote", "--from-ingest", "--data-dir", str(data_dir)])
+
+    assert result.exit_code == 0, result.output
+    assert "Promoted 3" in result.output
+    for s in slugs:
+        assert (data_dir / "primitives" / f"{s}.yaml").exists()
+        assert not (auto_dir / f"{s}.yaml").exists()
+
+
+def test_promote_from_ingest_rolls_back_only_offender(tmp_path: Path) -> None:
+    """A single bad primitive is dropped; the rest of the batch still commits."""
+    auto_dir = tmp_path / "auto"
+    auto_dir.mkdir()
+    data_dir = tmp_path / "data"
+    (data_dir / "primitives").mkdir(parents=True)
+    good = ["census-firms-2022", "bls-wage-2024"]
+    bad = "edgar-broken-2023"
+    for s in [*good, bad]:
+        (auto_dir / f"{s}.yaml").write_text(_good_primitive_yaml(s))
+
+    # First validate blames the offender; after it is rolled back the tree is clean.
+    with (
+        patch("strata.resolver.AUTO_PRIMITIVES_DIR", auto_dir),
+        patch("strata.cli.run_validate", side_effect=[_reject(bad), _empty_report()]),
+    ):
+        result = runner.invoke(app, ["promote", "--from-ingest", "--data-dir", str(data_dir)])
+
+    assert result.exit_code == 0, result.output
+    assert "Promoted 2" in result.output
+    for s in good:
+        assert (data_dir / "primitives" / f"{s}.yaml").exists()
+    assert not (data_dir / "primitives" / f"{bad}.yaml").exists()
+    # offender stays in the staging dir for inspection
+    assert (auto_dir / f"{bad}.yaml").exists()
+    assert f"✗ {bad}" in result.output
+
+
+def test_promote_from_ingest_validate_only_commits_nothing(tmp_path: Path) -> None:
+    auto_dir = tmp_path / "auto"
+    auto_dir.mkdir()
+    data_dir = tmp_path / "data"
+    (data_dir / "primitives").mkdir(parents=True)
+    slug = "census-firms-2022"
+    (auto_dir / f"{slug}.yaml").write_text(_good_primitive_yaml(slug))
+
+    with (
+        patch("strata.resolver.AUTO_PRIMITIVES_DIR", auto_dir),
+        patch("strata.cli.run_validate", return_value=_empty_report()),
+    ):
+        result = runner.invoke(
+            app, ["promote", "--from-ingest", "--validate-only", "--data-dir", str(data_dir)]
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "validate-only" in result.output
+    assert "1 would promote" in result.output
+    # nothing committed; the auto file is untouched
+    assert not (data_dir / "primitives" / f"{slug}.yaml").exists()
+    assert (auto_dir / f"{slug}.yaml").exists()
+
+
+def test_promote_from_ingest_validate_only_cleans_up_with_rejection(tmp_path: Path) -> None:
+    """Dry-run must leave NO files in data/primitives/, even when one is rejected."""
+    auto_dir = tmp_path / "auto"
+    auto_dir.mkdir()
+    data_dir = tmp_path / "data"
+    (data_dir / "primitives").mkdir(parents=True)
+    good = "census-firms-2022"
+    bad = "edgar-broken-2023"
+    for s in (good, bad):
+        (auto_dir / f"{s}.yaml").write_text(_good_primitive_yaml(s))
+
+    with (
+        patch("strata.resolver.AUTO_PRIMITIVES_DIR", auto_dir),
+        patch("strata.cli.run_validate", side_effect=[_reject(bad), _empty_report()]),
+    ):
+        result = runner.invoke(
+            app, ["promote", "--from-ingest", "--validate-only", "--data-dir", str(data_dir)]
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "1 would promote" in result.output
+    # Nothing committed — neither the good nor the bad primitive lands on disk.
+    assert list((data_dir / "primitives").glob("*.yaml")) == []
+    # Both staging files remain for re-runs.
+    assert (auto_dir / f"{good}.yaml").exists()
+    assert (auto_dir / f"{bad}.yaml").exists()
+
+
+def test_promote_requires_slug_or_flag() -> None:
+    result = runner.invoke(app, ["promote"])
+    assert result.exit_code == 2
+    assert "--from-ingest" in result.output

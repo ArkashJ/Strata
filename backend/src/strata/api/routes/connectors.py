@@ -38,6 +38,17 @@ _CONNECTOR_HOSTS: dict[str, tuple[str, ...]] = {
     "fred": ("fred.stlouisfed.org",),
     "edgar": ("data.sec.gov", "www.sec.gov"),
     "worldbank": ("data.worldbank.org",),
+    # Added in the data-bank expansion (PR #83) once these connectors began
+    # producing committed primitives — keep in sync with the source_url hosts
+    # in data/ingest-manifest.yaml.
+    "oecd": ("data.oecd.org",),
+    "eurostat": ("ec.europa.eu",),
+    "eia": ("www.eia.gov",),
+    "cms": ("data.cms.gov",),
+    "fdic": ("banks.data.fdic.gov",),
+    "faa": ("www.faa.gov",),
+    "openfda": ("api.fda.gov",),
+    "comtrade": ("comtrade.un.org",),
 }
 
 

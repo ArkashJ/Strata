@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: ct-us-china-bilateral-2023
+schema_version: 1
+concept_slug: us-china-trade
+name: US–China bilateral trade (all commodities), 2023
+description: Bilateral trade value between the US (reporter 842) and China (partner
+  156) for 2023, UN Comtrade.
+value: 448017376384.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: year
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - USA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: ct-none-none-m-total-2023
+  tier: aggregator
+  url: https://comtrade.un.org/
+  accessed: '2026-06-03'
+  snapshot_sha256: a238918d51e9c641b0fe498c41aee5b6704bf52830ca1e0c177e24fd61734fe8

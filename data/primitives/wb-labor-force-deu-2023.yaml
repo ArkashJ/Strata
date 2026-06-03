@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: wb-labor-force-deu-2023
+schema_version: 1
+concept_slug: world-labor-force-deu
+name: Germany total labor force (World Bank SL.TLF.TOTL.IN)
+description: Germany labor force (ages 15+ supplying labor), latest World Bank estimate.
+value: 43199538.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - DEU
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sl-tlf-totl-in-de-2025
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/SL.TLF.TOTL.IN?locations=DE
+  accessed: '2026-06-03'
+  snapshot_sha256: 0c6a760e64e3a99d4d507aa8792677f1bc44b68f59b055c90f8ca638d0aa4f02

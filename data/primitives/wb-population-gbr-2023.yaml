@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: wb-population-gbr-2023
+schema_version: 1
+concept_slug: world-population-gbr
+name: United Kingdom total population (World Bank SP.POP.TOTL)
+description: Total population of the United Kingdom, latest World Bank annual estimate.
+value: 69226000.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - GBR
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sp-pop-totl-gb-2024
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=GB
+  accessed: '2026-06-03'
+  snapshot_sha256: 42977034446e310f22f96337ba29e1253f53594bb06311e2f17217e81ae14e2c

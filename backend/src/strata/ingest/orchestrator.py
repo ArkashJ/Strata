@@ -51,7 +51,21 @@ Dispatch = Callable[[str, str, dict[str, Any]], dict[str, Any]]
 # Connectors whose clients take no credential — absence of an env var must not
 # skip them. Mirrors connectors._dispatch._CREDENTIALS coverage (the inverse).
 KEYLESS_CONNECTORS: frozenset[str] = frozenset(
-    {"edgar", "worldbank", "kalshi", "oecd", "eurostat", "faa", "yfinance", "stack_exchange"}
+    {
+        "edgar",
+        "worldbank",
+        "kalshi",
+        "oecd",
+        "eurostat",
+        "faa",
+        "yfinance",
+        "stack_exchange",
+        # These three have credential-free ctors (verified) but were being
+        # skipped offline because they weren't listed — they need no API key.
+        "cms",
+        "fdic",
+        "openfda",
+    }
 )
 
 

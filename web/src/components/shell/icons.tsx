@@ -57,6 +57,17 @@ export function IntegrationsIcon(props: IconProps) {
   );
 }
 
+export function AgentsIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="4" y="8" width="16" height="11" rx="2.5" />
+      <path d="M12 5v3" />
+      <circle cx="12" cy="4" r="1" />
+      <path d="M9 13h.01M15 13h.01" />
+    </Svg>
+  );
+}
+
 export function GuidesIcon(props: IconProps) {
   return (
     <Svg {...props}>

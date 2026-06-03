@@ -249,7 +249,7 @@ def _parse_firm_rows(
             FirmRecord(
                 naics_code=naics,
                 naics_label=row.get("NAICS2017_LABEL", ""),
-                firms=_safe_int(row.get("FIRM", "0")),
+                firms=_safe_int(row.get("FIRM", row.get("FIRMPDEMP", "0"))),
                 establishments=_safe_int(row.get("ESTAB", "0")),
                 employees=_safe_int(row.get("EMP", "0")),
                 annual_payroll=_safe_int(row.get("PAYANN", "0")),
@@ -546,24 +546,37 @@ class CensusClient:
         year: int,
         naics: str | None = None,
     ) -> CensusResponse:
-        """Query Statistics of US Businesses for firm-level data.
+        """Query national firm counts by NAICS industry.
 
-        Returns firm counts, establishments, employees, and payroll by
-        NAICS industry at the national level.
+        Returns the number of employer firms (``FIRMPDEMP``), employees, and
+        payroll for a NAICS industry at the national level.
+
+        SUSB itself has NO Census Data API endpoint — it is only published as
+        downloadable datasets. The live firm-count equivalent is the Annual
+        Business Survey *Company Summary* (``abscs``), which reports
+        ``FIRMPDEMP`` (number of employer firms) by NAICS. We pin the
+        all-owner demographic total (``SEX/ETH_GROUP/RACE_GROUP/VET_GROUP`` =
+        the "all firms" code) so a single row comes back per industry.
         """
         variables = (
             "NAICS2017",
             "NAICS2017_LABEL",
-            "FIRM",
-            "ESTAB",
+            "FIRMPDEMP",
             "EMP",
             "PAYANN",
         )
-        predicates: dict[str, str] | None = None
+        # All-firms demographic total — without these the API returns one row
+        # per owner demographic group instead of the industry aggregate.
+        predicates: dict[str, str] = {
+            "SEX": "001",
+            "ETH_GROUP": "001",
+            "RACE_GROUP": "00",
+            "VET_GROUP": "001",
+        }
         if naics is not None:
-            predicates = {"NAICS2017": naics}
+            predicates["NAICS2017"] = naics
 
-        url = self._build_url(CensusDataset.SUSB, year)
+        url = self._build_url(CensusDataset.ABS, year)
         params = self._build_params(variables, CensusGeoLevel.US, predicates=predicates)
         raw, is_cached, age = self._request_cached(url, params)
 
@@ -571,7 +584,7 @@ class CensusClient:
         records = _parse_firm_rows(rows, year)
 
         return CensusResponse(
-            dataset=CensusDataset.SUSB,
+            dataset=CensusDataset.ABS,
             year=year,
             records=records,
             raw_headers=headers,

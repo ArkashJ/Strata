@@ -14,7 +14,8 @@ from mcp.shared.memory import create_connected_server_and_client_session
 
 from strata.mcp.server import build_server, build_streamable_http_app
 
-# The 5 read-only tools (Wave 5A) plus the 3 write tools (portfolio P1).
+# The 5 read-only tools (Wave 5A) + 3 write tools (portfolio P1) + 4 harness
+# tools (data-bank expansion: browse, what-if sizing, connector inventory + live).
 _EXPECTED_TOOLS = {
     "search_concepts",
     "get_primitive",
@@ -24,6 +25,10 @@ _EXPECTED_TOOLS = {
     "import_portfolio",
     "size_company",
     "list_portfolio",
+    "list_primitives",
+    "build_tam",
+    "list_connectors",
+    "get_connector_data",
 }
 
 
