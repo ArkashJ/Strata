@@ -934,6 +934,71 @@ def observations_to_primitive_yaml(
     }
 
 
+def observations_only_to_primitive_yaml(
+    observations: tuple[Observation, ...],
+    *,
+    concept_slug: str,
+    primitive_slug: str,
+    name: str,
+    description: str,
+    source_url: str,
+    year: int | None = None,
+    geo_codes: tuple[str, ...] = ("US",),
+    geo_level: str = "country",
+    geo_perspective: str = "supply",
+    unit_kind: str = "stock",
+    unit_dimension: str = "currency",
+    unit_denominator: str | None = None,
+    unit_currency: str | None = None,
+    distribution_shape: str = "normal",
+    delivery_mode: str = "n/a",
+) -> dict[str, Any]:
+    """Dispatch-safe FRED converter: builds a primitive from observations alone.
+
+    The richer :func:`observations_to_primitive_yaml` needs a ``SeriesInfo``
+    object, but ``get_observations`` returns none (and naming a converter param
+    ``series_id`` would collide with the method's own ``series_id`` arg under
+    ``call_and_convert``). So this variant derives the source slug + content hash
+    from ``primitive_slug`` + the picked observation — no series metadata needed.
+    Currency is stamped only on a currency-dimension unit.
+    """
+    obs = _pick_observation(observations, year)
+    source_slug = f"{primitive_slug}-src"
+    content = json.dumps(
+        {"slug": primitive_slug, "date": obs.date, "value": obs.value}, sort_keys=True
+    )
+    sha = hashlib.sha256(content.encode()).hexdigest()
+
+    unit: dict[str, str] = {"kind": unit_kind, "dimension": unit_dimension}
+    if unit_denominator:
+        unit["denominator"] = unit_denominator
+    if unit_currency and unit_dimension == "currency":
+        unit["currency"] = unit_currency
+
+    return {
+        "kind": "atomic_primitive",
+        "slug": primitive_slug,
+        "schema_version": 1,
+        "concept_slug": concept_slug,
+        "name": name,
+        "description": description,
+        "value": obs.value,
+        "unit": unit,
+        "as_of": _as_of_date(obs),
+        "geo": {"level": geo_level, "codes": list(geo_codes)},
+        "geo_perspective": geo_perspective,
+        "distribution_shape": distribution_shape,
+        "delivery_mode": delivery_mode,
+        "source": {
+            "slug": source_slug,
+            "tier": "regulator",
+            "url": source_url,
+            "accessed": date.today().isoformat(),
+            "snapshot_sha256": sha,
+        },
+    }
+
+
 def observations_to_source_yaml(
     series_info: SeriesInfo,
     observations: tuple[Observation, ...],

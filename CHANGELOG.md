@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — connector ingest correctness (PR A)
+- **FRED ingest was broken** — its default converter required a `SeriesInfo`
+  object that `get_observations` never returns (and a `series_id` converter param
+  would collide with the method arg). Added `observations_only_to_primitive_yaml`
+  (`connectors/fred.py`), which derives the source slug + content hash from
+  `primitive_slug` + the observation; wired as FRED's dispatch default. `strata
+  ingest run --connector fred` now produces a real, hash-pinned primitive.
+- **World Bank stamped a bogus `currency: USD`** on non-currency units (a
+  population primitive came out with a currency). The converter now only adds a
+  currency to a currency-dimension unit (+2 tests; existing 7 still pass).
+
 ### Added — data-bank expansion (PR A: themed bulk ingest)
 - **Bulk promote** — `strata promote --from-ingest [--validate-only]`
   (`backend/src/strata/cli.py`) walks every staged `~/.strata/auto-primitives/`

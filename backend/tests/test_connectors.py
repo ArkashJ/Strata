@@ -60,6 +60,7 @@ from strata.connectors.fred import (
     _parse_observation,
     _parse_observations_response,
     _parse_series_info,
+    observations_only_to_primitive_yaml,
     observations_to_primitive_yaml,
     observations_to_source_yaml,
 )
@@ -324,6 +325,45 @@ class TestFREDConverters:
         assert result["value"] == 31856.3
         assert result["source"]["tier"] == "regulator"
         assert result["source"]["slug"] == "fred-gdp-2024"
+
+    def test_observations_only_to_primitive_yaml(self) -> None:
+        """The dispatch-safe converter builds a valid primitive from observations
+        alone (no SeriesInfo), deriving source slug + hash from primitive_slug."""
+        _info, obs = self._make_fixtures()
+        result = observations_only_to_primitive_yaml(
+            obs,
+            concept_slug="us-gdp",
+            primitive_slug="fred-us-gdp-nominal",
+            name="US nominal GDP",
+            description="Nominal GDP from FRED",
+            source_url="https://fred.stlouisfed.org/series/GDP",
+            year=2024,
+            unit_kind="flow",
+            unit_dimension="currency",
+            unit_currency="USD",
+        )
+        assert result["kind"] == "atomic_primitive"
+        assert result["value"] == 31856.3
+        assert result["source"]["slug"] == "fred-us-gdp-nominal-src"
+        assert result["unit"]["currency"] == "USD"
+        assert len(result["source"]["snapshot_sha256"]) == 64
+
+    def test_observations_only_no_currency_on_non_currency_unit(self) -> None:
+        """A people/percent unit must NOT inherit a currency."""
+        _info, obs = self._make_fixtures()
+        result = observations_only_to_primitive_yaml(
+            obs,
+            concept_slug="us-labor",
+            primitive_slug="fred-us-employment",
+            name="US employment",
+            description="Headcount",
+            source_url="https://fred.stlouisfed.org/series/PAYEMS",
+            year=2024,
+            unit_kind="stock",
+            unit_dimension="people",
+            unit_currency="USD",  # ignored: dimension is not currency
+        )
+        assert "currency" not in result["unit"]
 
     def test_observations_to_source_yaml(self) -> None:
         info, obs = self._make_fixtures()

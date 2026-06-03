@@ -604,7 +604,10 @@ def indicator_to_primitive_yaml(
     unit: dict[str, str] = {"kind": unit_kind, "dimension": unit_dimension}
     if unit_denominator:
         unit["denominator"] = unit_denominator
-    if unit_currency:
+    # Only stamp a currency on a currency-dimension unit. The default is USD so
+    # currency indicators "just work", but a population (people) or share
+    # (percent) indicator must NOT inherit a bogus currency.
+    if unit_currency and unit_dimension == "currency":
         unit["currency"] = unit_currency
 
     return {

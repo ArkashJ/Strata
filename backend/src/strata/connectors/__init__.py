@@ -273,6 +273,7 @@ from .fred import (
     Observation,
     Release,
     SeriesInfo,
+    observations_only_to_primitive_yaml,
     observations_to_primitive_yaml,
     observations_to_source_yaml,
 )
@@ -766,6 +767,7 @@ __all__ = [
     "nass_record_to_source_yaml",
     "observation_to_primitive_yaml",
     "observation_to_source_yaml",
+    "observations_only_to_primitive_yaml",
     "observations_to_primitive_yaml",
     "observations_to_source_yaml",
     "oecd_observation_to_primitive_yaml",
