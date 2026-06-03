@@ -210,6 +210,12 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
   and `refresh` rewrites only numbers whose source snapshot changed.
 - **Pyramid graph (`/graph`)** — read-only 3-axis explorer (Qualitative ·
   Quantitative · Industry) with geo/time filter chips and click-to-narrow.
+- **`/connectors`** — Plaid-style catalog of the 23 typed connectors (13 producing,
+  filterable) showing the connector → primitive → framework → TAM pipeline.
+- **`/build/graph`** — compose your own TAM: pick a market, re-bind any framework input
+  to another sourced primitive, recompute live to a shareable `/tam/<hash>`.
+- **`/agents`** — the MCP agent harness (12 tools) so an AI agent researches against the
+  sourced data bank. **`/contribute`** — validator-gated intake for proposing a primitive.
 - **Deploy-ready** — one-command boot (migrate → seed → serve), a PR CI gate,
   and a weekly cron that opens a PR with refreshed data.
 - **797 backend tests** passing; type/lint clean on shipping code (`src/`) and

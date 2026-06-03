@@ -42,10 +42,21 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
   **Phase 2 (agent harness):** 4 new MCP tools (12 total) — `list_primitives`,
   `build_tam` (what-if; unit inherited from the replaced primitive; never persisted),
   `list_connectors`, `get_connector_data` (`[LIVE]`, gated by `STRATA_MCP_LIVE_CONNECTORS`).
-  New **`/agents`** page surfaces the harness (tool catalog + connect snippets). 797
-  backend tests, pyright/ruff/biome clean. **Deploy:** prod seed still pending (Railway
-  redeploy + `STRATA_SEED_ON_BOOT=1`). The connector layer is **23 typed connectors**
-  (CLAUDE.md's older "15" is stale); 13 now produce committed primitives.
+  New **`/agents`** page surfaces the harness (tool catalog + connect snippets).
+  **Phase 3 (marketplace):** `/connectors` now shows **13 producing connectors** (the
+  route's host map was stale) + a working filter. **Phase 4 (user graphs):**
+  **`/build/graph`** composer — pick a market, re-bind any framework input to another
+  bank primitive (unit-compatible), recompute live → shareable `/tam/<hash>`. **Phase 5
+  (contribution):** **`/contribute`** re-added on the existing validator-gated `POST
+  /contribute` (regulator/first-party auto-accept org-private; rest queue for review).
+  798 backend tests, pyright/ruff/biome clean. **Deploy:** prod seed still pending
+  (Railway redeploy + `STRATA_SEED_ON_BOOT=1`). The connector layer is **23 typed
+  connectors** (CLAUDE.md's older "15" is stale); 13 produce committed primitives.
+
+  ```
+  data bank ─▶ /connectors (Plaid-style catalog) ─▶ /build/graph (compose) ─▶ /tam/<hash>
+            ─▶ MCP /agents (agent harness)         ─▶ /contribute (validator-gated intake)
+  ```
 
 - **Merged (PR #82 — `feat/clerk-auth-and-landing`):** four workstreams.
   (1) **Auth gate + landing:** sign-in required on every route except a public
