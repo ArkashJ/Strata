@@ -38,19 +38,24 @@ test.describe("AC0.8 — shareable, SSR'd, OG-tagged TAM permalink", () => {
     expect(hash).toBeTruthy();
     const word = distinctiveWord(body.target.concept_name ?? CONCEPT);
 
-    // 2. Raw HTML must already contain the TAM value (proves SSR, not CSR-only).
-    // Use page.request (not the standalone `request` fixture): it shares the
-    // browser context's Clerk session cookies, so the auth gate lets the server
-    // render the real /tam page instead of redirecting to /sign-in. The
-    // standalone fixture carries no session and would 1) bounce to the sign-in
-    // HTML and 2) drop the OG meta tags this test asserts.
-    // Under full-suite parallel load the SSR of this route can transiently fail:
-    // the single-process e2e backend's sync size_concept blocks its event loop
-    // (sensitivity tornado calls from sibling tests), starving the Next server's
-    // backend fetch. Keep retrying for up to ~45s before judging.
+    // 2. Visit the page in the BROWSER first. Two jobs: (a) sanity on the live
+    // route, and (b) clerk-js refreshes the short-lived (~60s) dev session JWT
+    // into the context's cookie jar. The raw fetch below shares that jar via
+    // page.request — with a STALE storageState cookie, Clerk's auth.protect()
+    // returns 404 for non-document requests (it only redirects real
+    // navigations), which made this spec a run-order-dependent flake.
+    await page.goto(`/tam/${hash}`);
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible({
+      timeout: 20_000,
+    });
+    await expect(page.locator("body")).toContainText(VALUE_RE);
+
+    // 3. Raw HTML must already contain the TAM value (proves SSR, not CSR-only).
+    // page.request carries the freshly-refreshed Clerk session, so the gate lets
+    // the server render the real page. Brief retry for transient backend load.
     let raw = await page.request.get(`/tam/${hash}`);
-    for (let attempt = 0; attempt < 9 && !raw.ok(); attempt++) {
-      await page.waitForTimeout(5_000);
+    for (let attempt = 0; attempt < 3 && !raw.ok(); attempt++) {
+      await page.waitForTimeout(3_000);
       raw = await page.request.get(`/tam/${hash}`);
     }
     expect(raw.ok()).toBeTruthy();
@@ -58,13 +63,8 @@ test.describe("AC0.8 — shareable, SSR'd, OG-tagged TAM permalink", () => {
     expect(html).toMatch(VALUE_RE);
     expect(html.toLowerCase()).toContain(word);
 
-    // 3. OpenGraph tags present (file-convention og:image + generateMetadata title).
+    // 4. OpenGraph tags present (file-convention og:image + generateMetadata title).
     expect(html).toMatch(/<meta[^>]+property="og:image"/);
     expect(html).toMatch(/<meta[^>]+property="og:title"/);
-
-    // 4. The rendered page shows the headline (sanity on the live route).
-    await page.goto(`/tam/${hash}`);
-    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
-    await expect(page.locator("body")).toContainText(VALUE_RE);
   });
 });

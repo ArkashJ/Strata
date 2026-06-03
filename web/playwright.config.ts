@@ -36,7 +36,10 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  // One local retry (CI keeps 2): the latency-sensitive specs rotate flakes
+  // under full-suite load on the single-process backend; a retried pass is
+  // reported as "flaky" — honest — while a real regression still fails twice.
+  retries: process.env.CI ? 2 : 1,
   // Local cap, not cores/2: the e2e backend is ONE Python process whose sync
   // size_concept blocks its event loop, so 5-6 workers' build/sensitivity
   // traffic queues for minutes and starves latency-sensitive specs (featured
