@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — contribution flow (PR B, Phase 5)
+- **`/contribute`** page (sidebar link) — re-adds the contribution surface (removed for
+  the v0.5 expert layer) on top of the existing `POST /contribute` route: a form submits a
+  proposed primitive, the backend runs the SAME validator the committed bank uses (schema +
+  unit signature + real source URL + SHA-256), and returns accepted / needs-review / rejected
+  with reasons. Regulator / first-party auto-accept org-private; everything else queues for
+  human review — an unsourced number can never auto-publish into a TAM.
+
 ### Added — user-generated graph builder (PR B, Phase 4)
 - **`/build/graph`** (sidebar link) — compose your own TAM from the bank: pick a market,
   then re-bind any framework input to a different sourced primitive (swaps are kept

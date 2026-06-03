@@ -76,6 +76,7 @@ export function Sidebar() {
         <NavItem icon={<PortfolioIcon />} label="Portfolio" href="/portfolio" />
         <NavItem icon={<IntegrationsIcon />} label="Integrations" href="/integrations" />
         <NavItem icon={<AgentsIcon />} label="Agent harness" href="/agents" />
+        <NavItem icon={<PrimitivesIcon />} label="Contribute" href="/contribute" />
         <NavItem icon={<GuidesIcon />} label="Guides" href="/guides" />
         <NavItem icon={<SearchIcon />} label="Search" onClick={openPalette} />
 
