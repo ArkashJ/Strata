@@ -23,8 +23,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Strata-indigo Clerk `appearance` via `web/src/lib/clerk-appearance.ts`); the
   shell (`AppShell`) renders bare for the auth routes and the signed-out landing,
   the full sidebar only once signed in.
-- `@clerk/testing` added (dev) to authenticate the Playwright e2e suite under the
-  new gate (wiring follows).
+- **Playwright e2e authenticates under the gate.** `@clerk/testing` +
+  `e2e/global.setup.ts` obtain a Clerk Testing Token (bypassing bot detection),
+  sign in the standing test user, and save `storageState`; `playwright.config.ts`
+  runs feature specs authenticated and a new `e2e/auth-gate.spec.ts` (signed-out)
+  asserts the gate redirect + no-chrome landing. The e2e frontend runs on a
+  dedicated port against the local backend. (Pre-existing specs that assert on
+  removed/renamed UI — `Contribute`, `Recently updated` — remain red and need a
+  separate refresh; they are unrelated to auth.)
+- **Storybook** (10.x, Vite builder + `@tailwindcss/vite`) with a light/dark
+  toolbar toggle and stories for the new UI (`Button`, `NightCanvas` +
+  `PublicLanding`, design tokens / `.glass` / `.role-chip`). `bun run storybook`
+  / `build-storybook`.
 
 ### Added — rigorous market definition, sub-project 1
 - **`MarketScope` value object** (`strata.models.scope`) — the structured,
