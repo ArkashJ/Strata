@@ -13,6 +13,7 @@
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { codedTagLabel } from "@/lib/format";
 import { type CodedTag, emptyMarketScope, type FirmSizeBand, type MarketScope } from "@/lib/schemas";
 
 // Geo defaults to US (design): a fresh, geo-less concept still pins a concrete
@@ -294,7 +295,7 @@ function CodedTagField({
             {tags.map((t) => (
               <Chip
                 key={t.code}
-                label={`${t.system} ${t.code} · ${t.label}`}
+                label={codedTagLabel(t)}
                 onRemove={() => onChange(tags.filter((x) => x.code !== t.code))}
               />
             ))}

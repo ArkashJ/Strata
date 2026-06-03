@@ -1,15 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-const API_URL = "http://localhost:8000";
+import { API } from "./helpers";
 
 test.describe("Backend API", () => {
   test("GET /healthz returns 200", async ({ request }) => {
-    const res = await request.get(`${API_URL}/healthz`);
+    const res = await request.get(`${API}/healthz`);
     expect(res.status()).toBe(200);
   });
 
   test("GET /c returns concepts array", async ({ request }) => {
-    const res = await request.get(`${API_URL}/c`);
+    const res = await request.get(`${API}/c`);
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -22,7 +22,7 @@ test.describe("Backend API", () => {
   });
 
   test("GET /p returns primitives array", async ({ request }) => {
-    const res = await request.get(`${API_URL}/p`);
+    const res = await request.get(`${API}/p`);
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -34,7 +34,7 @@ test.describe("Backend API", () => {
   });
 
   test("GET /f returns frameworks array", async ({ request }) => {
-    const res = await request.get(`${API_URL}/f`);
+    const res = await request.get(`${API}/f`);
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -46,7 +46,7 @@ test.describe("Backend API", () => {
   });
 
   test("GET /build/doc-gen-pc-insurance returns TAM data", async ({ request }) => {
-    const res = await request.get(`${API_URL}/build/doc-gen-pc-insurance`);
+    const res = await request.get(`${API}/build/doc-gen-pc-insurance`);
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(body).toHaveProperty("target");

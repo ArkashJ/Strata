@@ -109,7 +109,9 @@ test.describe("Build workhorse", () => {
     );
   });
 
-  test("deselecting a framework mints a new /build/<hash> URL, reload restores", async ({ page }) => {
+  test("deselecting a framework mints a new /build/<hash> URL, reload restores", async ({
+    page,
+  }) => {
     const before = await sizeThroughGate(page, KNOWN);
 
     const switches = page.getByRole("switch");

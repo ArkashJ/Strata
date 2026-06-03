@@ -1,18 +1,14 @@
 import { expect, test } from "@playwright/test";
 
-// Frozen TAM artifact (/tam/[hash]). The hash is derived at runtime by building
-// the seeded doc-gen concept first: state hashes are deterministic, but any
-// data/evaluator change re-mints them — a hardcoded hash silently strands the
-// whole file the moment the seed data moves, and never resolves on a cold
-// backend that hasn't built the concept yet.
-const API = process.env.E2E_API_URL ?? "http://localhost:8000";
+import { buildHash } from "./helpers";
+
+// Frozen TAM artifact (/tam/[hash]). The hash is derived at runtime (see
+// helpers.buildHash) — deterministic per backend, derived once and reused.
 let KNOWN_HASH = "";
 
 test.beforeEach(async ({ request }) => {
-  if (KNOWN_HASH) return; // deterministic per backend — derive once, reuse
-  const built = await request.get(`${API}/build/doc-gen-pc-insurance`);
-  expect(built.ok()).toBeTruthy();
-  KNOWN_HASH = (await built.json()).state_hash as string;
+  if (KNOWN_HASH) return;
+  KNOWN_HASH = await buildHash(request);
 });
 
 test.describe("TAM artifact page", () => {

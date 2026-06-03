@@ -3,6 +3,7 @@
 // direction is missing. Derived purely from method_families_used — when a
 // direction is absent we SAY so; we never fabricate a second method.
 
+import { familyLabel } from "@/lib/format";
 import type { MethodFamily } from "@/lib/schemas";
 
 // The two canonical directions; the remaining families are additional
@@ -10,17 +11,13 @@ import type { MethodFamily } from "@/lib/schemas";
 const TOP_DOWN: MethodFamily = "top_down_spend";
 const BOTTOMS_UP: MethodFamily = "bottoms_up_seats";
 
-const EXTRA_LABEL: Partial<Record<MethodFamily, string>> = {
-  comparable_revenue: "comparable revenue",
-  analog_penetration: "analog penetration",
-  value_chain: "value chain",
-};
-
 export function MethodDirections({ families }: { families: MethodFamily[] }) {
   const fams = new Set(families);
   const hasTop = fams.has(TOP_DOWN);
   const hasBottom = fams.has(BOTTOMS_UP);
-  const extras = families.filter((f) => EXTRA_LABEL[f]).map((f) => EXTRA_LABEL[f]);
+  const extras = families
+    .filter((f) => f !== TOP_DOWN && f !== BOTTOMS_UP)
+    .map((f) => familyLabel(f));
 
   return (
     <div

@@ -10,11 +10,7 @@
 
 import { expect, test } from "@playwright/test";
 
-// Always the LOCAL e2e backend — never NEXT_PUBLIC_API_URL: the playwright
-// config loads web/.env.local into the TEST process, where that var points at
-// the PRODUCTION backend. Building the TAM there yields a hash the local app
-// can never resolve (the /tam/<hash> SSR fetch hits the local backend → 404).
-const API = process.env.E2E_API_URL ?? "http://localhost:8000";
+import { API } from "./helpers";
 // A concept seeded in every backend build, so this spec doesn't depend on
 // freshly-added demo data being present in the running backend.
 const CONCEPT = "doc-gen-pc-insurance";

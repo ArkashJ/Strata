@@ -1,18 +1,16 @@
 import { expect, test } from "@playwright/test";
 
+import { buildHash } from "./helpers";
+
 // TAM-over-time chart (PR13) on the frozen artifact page. Seed primitives
 // currently share one as_of date, so the honest single-snapshot state is the
 // expected default — the chart must NOT fabricate a multi-point curve.
-// The hash is derived at runtime (build-first) — hardcoding strands the file
-// the moment the seed data re-mints, and never resolves on a cold backend.
-const API = process.env.E2E_API_URL ?? "http://localhost:8000";
+// The hash is derived at runtime (see helpers.buildHash), once per worker.
 let KNOWN_HASH = "";
 
 test.beforeEach(async ({ request }) => {
-  if (KNOWN_HASH) return; // deterministic per backend — derive once, reuse
-  const built = await request.get(`${API}/build/doc-gen-pc-insurance`);
-  expect(built.ok()).toBeTruthy();
-  KNOWN_HASH = (await built.json()).state_hash as string;
+  if (KNOWN_HASH) return;
+  KNOWN_HASH = await buildHash(request);
 });
 
 test.describe("TAM over time", () => {

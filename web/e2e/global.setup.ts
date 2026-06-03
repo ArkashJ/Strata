@@ -1,9 +1,9 @@
+import path from "node:path";
 // Playwright global setup: obtain a Clerk Testing Token (bypasses bot
 // detection) and sign in the standing test user, saving the authenticated
 // storage state so every other spec runs signed-in under the new gate.
 import { clerk, clerkSetup } from "@clerk/testing/playwright";
 import { test as setup } from "@playwright/test";
-import path from "node:path";
 
 // Serial: the token must be obtained before we sign in.
 setup.describe.configure({ mode: "serial" });

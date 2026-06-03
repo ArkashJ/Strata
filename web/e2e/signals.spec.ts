@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-const API_URL = "http://localhost:8000";
+import { API } from "./helpers";
 
 test.describe("Signals — prediction-market surface (T1)", () => {
   test("GET /signals returns prediction_market rows with a source pin", async ({ request }) => {
-    const res = await request.get(`${API_URL}/signals`);
+    const res = await request.get(`${API}/signals`);
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
@@ -18,12 +18,12 @@ test.describe("Signals — prediction-market surface (T1)", () => {
 
   test("signals never leak into /p (Q20 quarantine)", async ({ request }) => {
     const signalSlugs = new Set(
-      ((await (await request.get(`${API_URL}/signals`)).json()) as { slug: string }[]).map(
+      ((await (await request.get(`${API}/signals`)).json()) as { slug: string }[]).map(
         (s) => s.slug,
       ),
     );
     const primitiveSlugs = new Set(
-      ((await (await request.get(`${API_URL}/p`)).json()) as { slug: string }[]).map((p) => p.slug),
+      ((await (await request.get(`${API}/p`)).json()) as { slug: string }[]).map((p) => p.slug),
     );
     for (const slug of signalSlugs) {
       expect(primitiveSlugs.has(slug)).toBe(false);

@@ -36,3 +36,23 @@ export function lensLabel(lens: string): string {
     .map((s) => (s[0]?.toUpperCase() ?? "") + s.slice(1))
     .join(" ");
 }
+
+// One map for the five method families — ConvergenceBanner and MethodDirections
+// both label them; a sixth family is added here once, not hunted across views.
+const FAMILY_LABEL: Record<string, string> = {
+  bottoms_up_seats: "Bottoms-up · seats",
+  top_down_spend: "Top-down · spend",
+  comparable_revenue: "Comparable revenue",
+  analog_penetration: "Analog penetration",
+  value_chain: "Value chain",
+};
+
+export function familyLabel(family: string): string {
+  return FAMILY_LABEL[family] ?? family.replace(/_/g, " ");
+}
+
+// The canonical rendering of a coded scope tag ("SOC 41-4012 · Sales reps…") —
+// shared by the /tam scope strip and the market-spec form chips.
+export function codedTagLabel(tag: { system: string; code: string; label: string }): string {
+  return `${tag.system} ${tag.code} · ${tag.label}`;
+}
