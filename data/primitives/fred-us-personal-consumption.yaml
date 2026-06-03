@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: fred-us-personal-consumption
+schema_version: 1
+concept_slug: us-personal-consumption
+name: US personal consumption expenditures (FRED PCEC, billions USD)
+description: US personal consumption expenditures, latest observation (billions of
+  USD).
+value: 21677.711
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2026-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-us-personal-consumption-src
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/PCEC
+  accessed: '2026-06-03'
+  snapshot_sha256: 3f7374e72265beac27076d31bb7aa0d0ceabbd48420854a2320991e2817ead6a

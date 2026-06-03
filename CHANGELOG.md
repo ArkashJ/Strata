@@ -19,6 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   currency to a currency-dimension unit (+2 tests; existing 7 still pass).
 
 ### Added — data-bank expansion (PR A: themed bulk ingest)
+- **First real multi-connector ingest** — expanded `data/ingest-manifest.yaml` to
+  46 concept-linked arg-sets across 14 connectors (researched against live APIs +
+  each converter's dispatch signature). First live run promoted **11 new
+  regulator/aggregator primitives** (bank → 195): FRED US GDP + personal
+  consumption, BLS nonfarm employment, World Bank population/GDP/labor-force across
+  US·DEU·GBR·FRA·JPN·IND. All hash-pinned to real source snapshots. Remaining
+  connectors (OEWS, SUSB, OECD/Eurostat SDMX, EIA, FAA, openFDA, Comtrade, CMS/FDIC)
+  are staged in the manifest and being fixed connector-by-connector.
 - **Bulk promote** — `strata promote --from-ingest [--validate-only]`
   (`backend/src/strata/cli.py`) walks every staged `~/.strata/auto-primitives/`
   record, stages the whole batch into `data/primitives/`, validates the tree

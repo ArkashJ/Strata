@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: wb-gdp-fra-2023
+schema_version: 1
+concept_slug: world-gdp-fra
+name: France nominal GDP (World Bank NY.GDP.MKTP.CD)
+description: France GDP, current US dollars, latest World Bank annual value.
+value: 3160442622465.08
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - FRA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-ny-gdp-mktp-cd-fr-2024
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=FR
+  accessed: '2026-06-03'
+  snapshot_sha256: 09b9c4b54395b693107e1a4e6b957a380c7c09ea692bb01eef95d932cfaabd1b

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: wb-population-deu-2023
+schema_version: 1
+concept_slug: world-population-deu
+name: Germany total population (World Bank SP.POP.TOTL)
+description: Total population of Germany, latest World Bank annual estimate.
+value: 83516593.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - DEU
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sp-pop-totl-de-2024
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=DE
+  accessed: '2026-06-03'
+  snapshot_sha256: b8032d584bcf40ddf82c3625ef270eab5643c3711e4d254ed34558ba8e497b18

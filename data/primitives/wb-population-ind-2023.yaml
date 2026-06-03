@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: wb-population-ind-2023
+schema_version: 1
+concept_slug: world-population-ind
+name: India total population (World Bank SP.POP.TOTL)
+description: Total population of India, latest World Bank annual estimate.
+value: 1450935791.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - IND
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sp-pop-totl-in-2024
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=IN
+  accessed: '2026-06-03'
+  snapshot_sha256: 7d991ae57c951b326fe189ba09a7d212a4991ac817cc104ddd63db59f72c85ba

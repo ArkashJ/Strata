@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: fred-us-gdp-nominal
+schema_version: 1
+concept_slug: us-gdp
+name: US nominal GDP (FRED GDP, billions USD)
+description: US nominal gross domestic product, latest annual observation (billions
+  of USD).
+value: 31819.464
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2026-01-01'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fred-us-gdp-nominal-src
+  tier: regulator
+  url: https://fred.stlouisfed.org/series/GDP
+  accessed: '2026-06-03'
+  snapshot_sha256: 29a3b656657fbfd7465ab5c560d9658eb29eb24c877574f91c6913c603f30a23

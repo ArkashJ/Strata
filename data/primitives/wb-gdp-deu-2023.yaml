@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: wb-gdp-deu-2023
+schema_version: 1
+concept_slug: world-gdp-deu
+name: Germany nominal GDP (World Bank NY.GDP.MKTP.CD)
+description: Germany GDP, current US dollars, latest World Bank annual value.
+value: 4685592577804.69
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - DEU
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-ny-gdp-mktp-cd-de-2024
+  tier: aggregator
+  url: https://data.worldbank.org/indicator/NY.GDP.MKTP.CD?locations=DE
+  accessed: '2026-06-03'
+  snapshot_sha256: 422c7101fa3aa637df93a62e1893e7c9c3563928f2996c216d81f4755d28edea

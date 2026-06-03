@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: bls-us-total-nonfarm-employment
+schema_version: 1
+concept_slug: us-employment
+name: US total nonfarm employment (BLS CES0000000001)
+description: Total nonfarm payroll employment, seasonally adjusted, latest point.
+value: 158736.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2026-04-28'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: bls-ces0000000001-2026
+  tier: regulator
+  url: https://www.bls.gov/ces/
+  accessed: '2026-06-03'
+  snapshot_sha256: 859192f8c5ab61ef249e797cc66e03bf2454538cca4dc8e79275bdd8675d1beb
