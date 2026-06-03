@@ -345,6 +345,33 @@ class TestFDICExpansion:
         assert out["value"] == 1.0e10
         assert len(out["source"]["snapshot_sha256"]) == 64
 
+    def test_value_scale_lifts_thousands_to_absolute(self) -> None:
+        """FDIC dollar fields are in $thousands; value_scale=1000 → absolute USD."""
+        rec = FinancialRecord(
+            cert=628,
+            name="BANK OF X",
+            report_date="20231231",
+            assets=1.0e10,
+            deposits=None,
+            net_income=None,
+            interest_income=None,
+            non_interest_income=None,
+            roa=None,
+            roe=None,
+            state="California",
+            city="LA",
+        )
+        out = financial_to_primitive_yaml(
+            rec,
+            concept_slug="bank-assets",
+            primitive_slug="fdic-628-asset-scaled",
+            name="Bank of X assets",
+            description="Total assets, absolute USD",
+            value_scale=1000,
+        )
+        assert out["value"] == 1.0e13
+        assert out["unit"]["currency"] == "USD"
+
     def test_capability_methods_exist(self) -> None:
         for spec in fdic_capabilities():
             assert hasattr(FDICClient, spec.method), spec.method

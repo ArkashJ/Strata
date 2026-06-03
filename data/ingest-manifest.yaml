@@ -384,25 +384,27 @@ connectors:
           concept_slug: oecd-gdp-deu
           primitive_slug: oecd-gdp-deu-2022
           name: Germany GDP, expenditure approach (OECD national accounts)
-          description: Germany GDP at current prices, MILLIONS of national currency (EUR millions), OECD national accounts (DSD_NAMAIN10 expenditure table, B1GQ).
+          description: Germany GDP at current prices, absolute EUR (OECD reports DSD_NAMAIN10 B1GQ in millions; value_scale lifts it to base units).
           source_url: https://data.oecd.org/
           geo_codes: [DEU]
           geo_level: country
           unit_kind: flow
           unit_dimension: currency
           unit_currency: EUR
+          value_scale: 1000000
         - country: GBR
           year: 2022
           concept_slug: oecd-gdp-gbr
           primitive_slug: oecd-gdp-gbr-2022
           name: United Kingdom GDP, expenditure approach (OECD national accounts)
-          description: United Kingdom GDP at current prices, MILLIONS of national currency (GBP millions), OECD national accounts (DSD_NAMAIN10 expenditure table, B1GQ).
+          description: United Kingdom GDP at current prices, absolute GBP (OECD reports DSD_NAMAIN10 B1GQ in millions; value_scale lifts it to base units).
           source_url: https://data.oecd.org/
           geo_codes: [GBR]
           geo_level: country
           unit_kind: flow
           unit_dimension: currency
           unit_currency: GBP
+          value_scale: 1000000
 
   # ── Eurostat — EU national accounts (regulator, keyless). GDP is CP_MEUR
   # (millions EUR) — noted in descriptions. ───────────────────────────────
@@ -414,25 +416,27 @@ connectors:
           concept_slug: eurostat-gdp-de
           primitive_slug: eurostat-gdp-de-2023
           name: Germany GDP at market prices (Eurostat nama_10_gdp, B1GQ)
-          description: Germany GDP at current prices, million EUR (CP_MEUR), Eurostat national accounts.
+          description: Germany GDP at current prices, absolute EUR (Eurostat reports nama_10_gdp B1GQ as CP_MEUR / millions; value_scale lifts it to base units).
           source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
           geo_codes: [DEU]
           geo_level: country
           unit_kind: flow
           unit_dimension: currency
           unit_currency: EUR
+          value_scale: 1000000
         - geo: FR
           year: 2023
           concept_slug: eurostat-gdp-fr
           primitive_slug: eurostat-gdp-fr-2023
           name: France GDP at market prices (Eurostat nama_10_gdp, B1GQ)
-          description: France GDP at current prices, million EUR (CP_MEUR), Eurostat national accounts.
+          description: France GDP at current prices, absolute EUR (Eurostat reports nama_10_gdp B1GQ as CP_MEUR / millions; value_scale lifts it to base units).
           source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
           geo_codes: [FRA]
           geo_level: country
           unit_kind: flow
           unit_dimension: currency
           unit_currency: EUR
+          value_scale: 1000000
 
   # ── EIA — US energy (regulator). Key: STRATA_EIA_API_KEY. ──────────────
   eia:
@@ -475,11 +479,12 @@ connectors:
           concept_slug: us-bank-total-assets
           primitive_slug: fdic-largest-bank-assets-2024
           name: Largest US insured bank — total assets (2024-12-31)
-          description: Total assets of the single largest FDIC-insured institution by assets, year-end 2024. NOT an industry total.
+          description: Total assets of the single largest FDIC-insured institution by assets, year-end 2024 (absolute USD). NOT an industry total.
           source_url: https://banks.data.fdic.gov/
           unit_kind: stock
           unit_dimension: currency
           unit_currency: USD
+          value_scale: 1000  # FDIC BankFind reports dollar fields in thousands
 
   # ── CMS — Medicare (regulator, keyless). NHE excluded (converter/method
   # type mismatch). State row passed for determinism. ─────────────────────

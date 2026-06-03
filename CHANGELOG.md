@@ -26,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ingest orchestrator** now treats `cms`/`fdic`/`openfda` as keyless (their ctors take
   no key) so they run offline instead of being wrongly skipped.
 
+### Fixed — unit-scale correctness (PR A, from code review)
+- Government financial APIs report scaled figures — FDIC BankFind in **thousands**,
+  OECD/Eurostat GDP in **millions** — but the primitives stored the raw number labelled
+  as base currency, so a consuming framework would be 1000×/1,000,000× off. Added a
+  `value_scale` converter param (`financial_/oecd_observation_/observation_to_primitive_yaml`)
+  set per-arg-set in the manifest (FDIC ×1000, OECD/Eurostat GDP ×1e6). Largest US bank
+  now stores **$3.46T** (was $3.46B), DEU GDP **€3.99T**, DE GDP **€4.22T**. Also gated
+  those converters' currency stamp on `unit_dimension == "currency"` (matching FRED/WB).
+
 ### Fixed — eight more connectors made ingest-ready (PR A, "test all the APIs")
 - A parallel audit fixed real bugs that meant most connectors had **never** produced
   a valid primitive. Bank → **214**. Each fix verified live through `call_and_convert`:

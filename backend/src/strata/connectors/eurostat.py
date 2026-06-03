@@ -1088,22 +1088,27 @@ def observation_to_primitive_yaml(
     unit_dimension: str = "currency",
     unit_denominator: str | None = None,
     unit_currency: str | None = "EUR",
+    value_scale: float = 1.0,
     distribution_shape: str = "normal",
     delivery_mode: str = "n/a",
 ) -> dict[str, Any]:
     """Convert Eurostat observations to a Strata AtomicPrimitive YAML dict.
 
     Returns a dict ready for ``yaml.dump()`` that conforms to the
-    AtomicPrimitive schema (models/primitive.py).
+    AtomicPrimitive schema (models/primitive.py). Eurostat GDP is reported in
+    **CP_MEUR (millions of EUR)**, so pass ``value_scale=1e6`` to store an
+    absolute figure instead of one a million times too small.
     """
     obs = _pick_observation(observations, year)
     source_slug = f"es-{obs.dataset.lower().replace('_', '-')}-{obs.geo.lower()}-{obs.time_period}"
     sha = _snapshot_hash(obs.dataset, obs.geo, obs.time_period, obs.value)
+    value = obs.value * value_scale if obs.value is not None else obs.value
 
     unit: dict[str, str] = {"kind": unit_kind, "dimension": unit_dimension}
     if unit_denominator:
         unit["denominator"] = unit_denominator
-    if unit_currency:
+    # Only a currency-dimension unit carries a currency code.
+    if unit_currency and unit_dimension == "currency":
         unit["currency"] = unit_currency
 
     # Determine as_of date: yearly data uses Dec 31, monthly uses last day
@@ -1137,7 +1142,7 @@ def observation_to_primitive_yaml(
         "concept_slug": concept_slug,
         "name": name,
         "description": description,
-        "value": obs.value,
+        "value": value,
         "unit": unit,
         "as_of": as_of,
         "geo": {"level": geo_level, "codes": list(geo_codes)},

@@ -3,9 +3,9 @@ slug: oecd-gdp-gbr-2022
 schema_version: 1
 concept_slug: oecd-gdp-gbr
 name: United Kingdom GDP, expenditure approach (OECD national accounts)
-description: United Kingdom GDP at current prices, MILLIONS of national currency (GBP
-  millions), OECD national accounts (DSD_NAMAIN10 expenditure table, B1GQ).
-value: 2580949.0
+description: United Kingdom GDP at current prices, absolute GBP (OECD reports DSD_NAMAIN10
+  B1GQ in millions; value_scale lifts it to base units).
+value: 2580949000000.0
 unit:
   kind: flow
   dimension: currency

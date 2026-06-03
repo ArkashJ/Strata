@@ -3,9 +3,9 @@ slug: eurostat-gdp-fr-2023
 schema_version: 1
 concept_slug: eurostat-gdp-fr
 name: France GDP at market prices (Eurostat nama_10_gdp, B1GQ)
-description: France GDP at current prices, million EUR (CP_MEUR), Eurostat national
-  accounts.
-value: 2826541.5
+description: France GDP at current prices, absolute EUR (Eurostat reports nama_10_gdp
+  B1GQ as CP_MEUR / millions; value_scale lifts it to base units).
+value: 2826541500000.0
 unit:
   kind: flow
   dimension: currency

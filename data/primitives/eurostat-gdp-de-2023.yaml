@@ -3,9 +3,9 @@ slug: eurostat-gdp-de-2023
 schema_version: 1
 concept_slug: eurostat-gdp-de
 name: Germany GDP at market prices (Eurostat nama_10_gdp, B1GQ)
-description: Germany GDP at current prices, million EUR (CP_MEUR), Eurostat national
-  accounts.
-value: 4219310.0
+description: Germany GDP at current prices, absolute EUR (Eurostat reports nama_10_gdp
+  B1GQ as CP_MEUR / millions; value_scale lifts it to base units).
+value: 4219310000000.0
 unit:
   kind: flow
   dimension: currency

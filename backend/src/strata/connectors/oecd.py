@@ -1349,24 +1349,29 @@ def oecd_observation_to_primitive_yaml(
     unit_dimension: str = "currency",
     unit_denominator: str | None = None,
     unit_currency: str | None = "USD",
+    value_scale: float = 1.0,
     distribution_shape: str = "normal",
     delivery_mode: str = "n/a",
 ) -> dict[str, Any]:
     """Convert OECD observations to a Strata AtomicPrimitive YAML dict.
 
     Returns a dict ready for ``yaml.dump()`` that conforms to the
-    AtomicPrimitive schema (models/primitive.py).
+    AtomicPrimitive schema (models/primitive.py). OECD national-accounts GDP is
+    reported in **millions** of national currency, so pass ``value_scale=1e6`` to
+    store an absolute figure instead of one a million times too small.
     """
     point = _pick_observation(observations, year)
     source_slug = (
         f"oecd-{_slug_safe(point.dataflow_id)}-{point.country.lower()}-{point.time_period}"
     )
     sha = _snapshot_hash(point.dataflow_id, point.country, point.time_period, point.value)
+    value = point.value * value_scale if point.value is not None else point.value
 
     unit: dict[str, str] = {"kind": unit_kind, "dimension": unit_dimension}
     if unit_denominator:
         unit["denominator"] = unit_denominator
-    if unit_currency:
+    # Only a currency-dimension unit carries a currency code.
+    if unit_currency and unit_dimension == "currency":
         unit["currency"] = unit_currency
 
     return {
@@ -1376,7 +1381,7 @@ def oecd_observation_to_primitive_yaml(
         "concept_slug": concept_slug,
         "name": name,
         "description": description,
-        "value": point.value,
+        "value": value,
         "unit": unit,
         "as_of": _as_of_date(point.time_period),
         "geo": {"level": geo_level, "codes": list(geo_codes)},

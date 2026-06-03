@@ -1276,6 +1276,7 @@ def financial_to_primitive_yaml(
     unit_dimension: str = "currency",
     unit_denominator: str | None = None,
     unit_currency: str | None = "USD",
+    value_scale: float = 1.0,
     distribution_shape: str = "normal",
     delivery_mode: str = "n/a",
 ) -> dict[str, Any]:
@@ -1283,6 +1284,11 @@ def financial_to_primitive_yaml(
 
     Returns a dict ready for ``yaml.dump()`` that conforms to the
     AtomicPrimitive schema (models/primitive.py).
+
+    ``value_scale`` multiplies the raw field — FDIC BankFind reports dollar
+    fields (ASSET, DEP, ...) in **thousands**, so pass ``value_scale=1000`` to
+    store a true-USD figure rather than a 1000×-too-small number. Ratio fields
+    (ROA/ROE) take the default 1.0.
     """
     # Map field names to record attributes
     field_map: dict[str, float | None] = {
@@ -1295,6 +1301,8 @@ def financial_to_primitive_yaml(
         "ROE": record.roe,
     }
     value = field_map.get(field)
+    if value is not None:
+        value *= value_scale
 
     # Format report date for as_of
     rd = record.report_date
@@ -1306,7 +1314,8 @@ def financial_to_primitive_yaml(
     unit: dict[str, str] = {"kind": unit_kind, "dimension": unit_dimension}
     if unit_denominator:
         unit["denominator"] = unit_denominator
-    if unit_currency:
+    # Only a currency-dimension unit carries a currency code.
+    if unit_currency and unit_dimension == "currency":
         unit["currency"] = unit_currency
 
     return {
