@@ -66,6 +66,7 @@ from . import (
     TwitterClient,
     WorldBankClient,
     YFinanceClient,
+    airport_count_to_primitive_yaml,
     airport_to_primitive_yaml,
     concept_to_primitive_yaml,
     datapoint_to_primitive_yaml,
@@ -170,6 +171,7 @@ _CONVERTER_OVERRIDES: dict[tuple[str, str], Converter] = {
     ("cms", "get_national_health_expenditure"): spending_to_primitive_yaml,
     ("edgar", "get_frames"): frame_to_primitive_yaml,
     ("faa", "get_total_passengers"): passenger_count_to_primitive_yaml,
+    ("faa", "get_airport_count"): airport_count_to_primitive_yaml,
 }
 
 # connector → ordered (ctor_param, env_var) credentials the factory passes when

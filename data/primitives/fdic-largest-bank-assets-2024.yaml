@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: fdic-largest-bank-assets-2024
+schema_version: 1
+concept_slug: us-bank-total-assets
+name: Largest US insured bank — total assets (2024-12-31)
+description: Total assets of the single largest FDIC-insured institution by assets,
+  year-end 2024. NOT an industry total.
+value: 3459261000.0
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fdic-628-asset-20241231
+  tier: regulator
+  url: https://banks.data.fdic.gov/
+  accessed: '2026-06-03'
+  snapshot_sha256: 73d96a063ebd3c5402b9dd73e4ca571a1ac2588b16ef9cd1b9240ef61f587df0

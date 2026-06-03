@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: oecd-gdp-deu-2022
+schema_version: 1
+concept_slug: oecd-gdp-deu
+name: Germany GDP, expenditure approach (OECD national accounts)
+description: Germany GDP at current prices, MILLIONS of national currency (EUR millions),
+  OECD national accounts (DSD_NAMAIN10 expenditure table, B1GQ).
+value: 3989390.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - DEU
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: oecd-oecd-sdd-nad-dsd-namain10-df-table1-expenditure-deu-2022
+  tier: aggregator
+  url: https://data.oecd.org/
+  accessed: '2026-06-03'
+  snapshot_sha256: ff498b564b0fb4e92058d23569c2841733fa649a0556bfce0ed37f50c5148709

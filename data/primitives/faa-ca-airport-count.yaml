@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: faa-ca-airport-count
+schema_version: 1
+concept_slug: us-air-travel
+name: California airport/facility count (FAA AIS)
+description: Count of all FAA-listed aviation facilities (airports, heliports, seaplane
+  bases) in California on the FAA AIS Airports feature layer.
+value: 874
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2026-06-03'
+geo:
+  level: subnational
+  codes:
+  - CA
+geo_perspective: supply
+distribution_shape: other
+delivery_mode: n/a
+source:
+  slug: faa-airport-count-ca
+  tier: regulator
+  url: https://www.faa.gov/air_traffic/flight_info/aeronav
+  accessed: '2026-06-03'
+  snapshot_sha256: 1cbc88020fbd3174c7b6c42a041d19700f246b3ead2e425bfb382e23e310eefb

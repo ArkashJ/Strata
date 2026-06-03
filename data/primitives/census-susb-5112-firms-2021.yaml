@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: census-susb-5112-firms-2021
+schema_version: 1
+concept_slug: us-software-publishing-market
+name: US software publisher employer firms (NAICS 5112, ABS 2021)
+description: Count of US software-publishing employer firms (enterprises) (Census
+  Annual Business Survey Company Summary, FIRMPDEMP) — true firm denominator for software-bundle
+  AI TAMs.
+value: 11526
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2021-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: census-susb-5112-2021
+  tier: regulator
+  url: https://www.census.gov/programs-surveys/abs.html
+  accessed: '2026-06-03'
+  snapshot_sha256: d41e47aaa156d0af15162b3e09406b64dd1c4a88a41e7d0943be44650cb31c47

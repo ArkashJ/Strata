@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: cms-medicare-enrollment-ca-2022
+schema_version: 1
+concept_slug: us-medicare-enrollment
+name: California Medicare enrollment (2022)
+description: Total Medicare beneficiaries in California, 2022.
+value: 6625047
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: subnational
+  codes:
+  - CA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: cms-enrollment-ca-2022
+  tier: regulator
+  url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
+  accessed: '2026-06-03'
+  snapshot_sha256: 59c3b47ee729cc1041e8d07ac1ead14eb99373e13f188affc28ea7486e8e05c2

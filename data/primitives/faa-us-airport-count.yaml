@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: faa-us-airport-count
+schema_version: 1
+concept_slug: us-air-travel
+name: US airport count (FAA AIS, type AD)
+description: Count of US landplane airports (TYPE_CODE='AD') on the FAA AIS Airports
+  feature layer — supply-side facility denominator for aviation-services TAMs.
+value: 13171
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2026-06-03'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: other
+delivery_mode: n/a
+source:
+  slug: faa-airport-count-us
+  tier: regulator
+  url: https://www.faa.gov/air_traffic/flight_info/aeronav
+  accessed: '2026-06-03'
+  snapshot_sha256: 73584b5c495f00a682404fcc38ae4e0d1e1761b32c3860c4139b0b8f70e6d998

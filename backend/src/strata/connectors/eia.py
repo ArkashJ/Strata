@@ -241,15 +241,37 @@ def _safe_float(raw: object) -> float | None:
         return None
 
 
+# EIA v2 returns the requested data column under its own key (e.g. ``sales``,
+# ``price``, ``revenue``), not a generic ``value`` field; units arrive as
+# ``<column>-units``. Facet IDs come back lowercase (``stateid``/``sectorid``).
+_EIA_VALUE_COLUMNS: tuple[str, ...] = (
+    "value",
+    "sales",
+    "price",
+    "revenue",
+    "customers",
+    "generation",
+    "capacity",
+)
+
+
 def _parse_data_point(raw: dict[str, Any]) -> EIADataPoint:
+    value: float | None = None
+    units = str(raw.get("units", raw.get("unit", "")))
+    for col in _EIA_VALUE_COLUMNS:
+        if col in raw:
+            value = _safe_float(raw.get(col))
+            if not units:
+                units = str(raw.get(f"{col}-units", ""))
+            break
     return EIADataPoint(
         period=str(raw.get("period", "")),
-        state=str(raw.get("stateId", raw.get("duoarea", ""))),
+        state=str(raw.get("stateid", raw.get("stateId", raw.get("duoarea", "")))),
         state_name=str(raw.get("stateDescription", raw.get("areaName", ""))),
-        sector=str(raw.get("sectorId", raw.get("fuelTypeId", ""))),
+        sector=str(raw.get("sectorid", raw.get("sectorId", raw.get("fuelTypeId", "")))),
         sector_name=str(raw.get("sectorName", raw.get("fuelTypeDescription", ""))),
-        value=_safe_float(raw.get("value")),
-        units=str(raw.get("units", raw.get("unit", ""))),
+        value=value,
+        units=units,
         series_id=str(raw.get("seriesId", raw.get("msn", ""))),
     )
 
@@ -562,7 +584,7 @@ class EIAClient:
         return self.get_data(
             EIARoute.ELECTRICITY_RETAIL,
             data_fields=["price"],
-            facets={"stateId": state, "sectorId": sector},
+            facets={"stateid": state, "sectorid": sector},
             frequency=frequency,
             start=start,
             end=end,
@@ -589,7 +611,7 @@ class EIAClient:
         return self.get_data(
             EIARoute.ELECTRICITY_RETAIL,
             data_fields=["sales"],
-            facets={"stateId": state, "sectorId": sector},
+            facets={"stateid": state, "sectorid": sector},
             frequency=frequency,
             start=start,
             end=end,

@@ -142,9 +142,11 @@ connectors:
 
   # ── Census — establishment/firm counts by NAICS (regulator). ───────────
   # CBP → establishments/employees (default converter industry_to_primitive_yaml);
-  # SUSB → true firm counts (override firm_to_primitive_yaml). Single NAICS per
-  # arg_set so _match_positional gets exactly one industry/firm record. Hosts
-  # are the www. pages (api.census.gov is NOT in CONNECTOR_HOSTS).
+  # get_susb → true firm counts via the Annual Business Survey Company Summary
+  # (abscs FIRMPDEMP) — SUSB has NO Census Data API; abscs is the live firm-count
+  # equivalent (override firm_to_primitive_yaml). Single NAICS per arg_set so
+  # _match_positional gets exactly one industry/firm record. Hosts are the www.
+  # pages (api.census.gov is NOT in CONNECTOR_HOSTS).
   census:
     - method: get_cbp
       arg_sets:
@@ -204,9 +206,9 @@ connectors:
           naics: "5415"
           concept_slug: us-computer-systems-design-market
           primitive_slug: census-susb-5415-firms-2021
-          name: US computer systems design firms (NAICS 5415, SUSB 2021)
-          description: Count of US firms (enterprises, not establishments) in computer systems design — true buyer denominator for AI-services TAMs.
-          source_url: https://www.census.gov/programs-surveys/susb.html
+          name: US computer systems design employer firms (NAICS 5415, ABS 2021)
+          description: Count of US employer firms (enterprises, not establishments) in computer systems design (Census Annual Business Survey Company Summary, FIRMPDEMP) — true buyer denominator for AI-services TAMs.
+          source_url: https://www.census.gov/programs-surveys/abs.html
           unit_kind: stock
           unit_dimension: organizations
           value_field: firms
@@ -214,9 +216,9 @@ connectors:
           naics: "5112"
           concept_slug: us-software-publishing-market
           primitive_slug: census-susb-5112-firms-2021
-          name: US software publisher firms (NAICS 5112, SUSB 2021)
-          description: Count of US software-publishing firms (enterprises) — true firm denominator for software-bundle AI TAMs.
-          source_url: https://www.census.gov/programs-surveys/susb.html
+          name: US software publisher employer firms (NAICS 5112, ABS 2021)
+          description: Count of US software-publishing employer firms (enterprises) (Census Annual Business Survey Company Summary, FIRMPDEMP) — true firm denominator for software-bundle AI TAMs.
+          source_url: https://www.census.gov/programs-surveys/abs.html
           unit_kind: stock
           unit_dimension: organizations
           value_field: firms
@@ -382,8 +384,8 @@ connectors:
           concept_slug: oecd-gdp-deu
           primitive_slug: oecd-gdp-deu-2022
           name: Germany GDP, expenditure approach (OECD national accounts)
-          description: Germany GDP at current prices, national currency (EUR), OECD national accounts.
-          source_url: https://www.oecd.org/
+          description: Germany GDP at current prices, MILLIONS of national currency (EUR millions), OECD national accounts (DSD_NAMAIN10 expenditure table, B1GQ).
+          source_url: https://data.oecd.org/
           geo_codes: [DEU]
           geo_level: country
           unit_kind: flow
@@ -394,8 +396,8 @@ connectors:
           concept_slug: oecd-gdp-gbr
           primitive_slug: oecd-gdp-gbr-2022
           name: United Kingdom GDP, expenditure approach (OECD national accounts)
-          description: United Kingdom GDP at current prices, national currency (GBP), OECD national accounts.
-          source_url: https://www.oecd.org/
+          description: United Kingdom GDP at current prices, MILLIONS of national currency (GBP millions), OECD national accounts (DSD_NAMAIN10 expenditure table, B1GQ).
+          source_url: https://data.oecd.org/
           geo_codes: [GBR]
           geo_level: country
           unit_kind: flow
@@ -446,7 +448,7 @@ connectors:
           description: Total US retail electricity sales volume, all sectors, latest annual period (million kWh).
           source_url: https://www.eia.gov/electricity/data.php
           unit_kind: flow
-          unit_dimension: energy
+          unit_dimension: transactions
         - state: US
           sector: COM
           frequency: annual
@@ -457,7 +459,7 @@ connectors:
           description: US commercial-sector retail electricity sales volume, latest annual period (million kWh).
           source_url: https://www.eia.gov/electricity/data.php
           unit_kind: flow
-          unit_dimension: energy
+          unit_dimension: transactions
 
   # ── FDIC — US banking (regulator, keyless). Only get_financials is
   # dispatchable; it returns the single largest bank by the sort field, NOT an
@@ -493,34 +495,33 @@ connectors:
           description: Total Medicare beneficiaries in California, 2022.
           source_url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
           geo_codes: ["US-CA"]
-          geo_level: state
+          geo_level: subnational
           unit_kind: stock
           unit_dimension: people
 
   # ── FAA — US aviation (regulator, keyless). source_url MUST be faa.gov
-  # (the converter's arcgis default is not allowlisted). ──────────────────
+  # (the converter's arcgis default is not allowlisted). The live FAA AIS
+  # "US_Airport" feature layer is an airport identity/location layer — it has
+  # NO enplanement or operations columns, so we size airport COUNTS (a supply
+  # denominator), never passenger figures (which FAA only publishes as Excel
+  # files, not a queryable API). ──────────────────────────────────────────
   faa:
-    - method: get_total_passengers
+    - method: get_airport_count
       arg_sets:
+        - airport_type: AD
+          concept_slug: us-air-travel
+          primitive_slug: faa-us-airport-count
+          name: US airport count (FAA AIS, type AD)
+          description: Count of US landplane airports (TYPE_CODE='AD') on the FAA AIS Airports feature layer — supply-side facility denominator for aviation-services TAMs.
+          source_url: https://www.faa.gov/air_traffic/flight_info/aeronav
+          geo_level: country
         - state: CA
           concept_slug: us-air-travel
-          primitive_slug: faa-total-enplaned-passengers-ca
-          name: California total enplaned passengers
-          description: Sum of annual enplaned passengers across California airports, FAA airports feature layer.
-          source_url: https://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger
-          geo_level: state
-    - method: get_enplanements_ranked
-      arg_sets:
-        - limit: 1
-          concept_slug: us-air-travel
-          primitive_slug: faa-busiest-airport-enplanements
-          name: Busiest US airport — annual passengers
-          description: Annual passenger enplanements at the single busiest US airport (PASSENGERS DESC, rank 1).
-          source_url: https://www.faa.gov/airports/planning_capacity/passenger_allcargo_stats/passenger
-          geo_level: state
-          unit_kind: flow
-          unit_dimension: people
-          unit_denominator: year
+          primitive_slug: faa-ca-airport-count
+          name: California airport/facility count (FAA AIS)
+          description: Count of all FAA-listed aviation facilities (airports, heliports, seaplane bases) in California on the FAA AIS Airports feature layer.
+          source_url: https://www.faa.gov/air_traffic/flight_info/aeronav
+          geo_level: subnational
 
   # ── openFDA — life-sciences (regulator, keyless). drug_name is a converter
   # label feeding the source slug/sha, not a query arg. ───────────────────
@@ -545,18 +546,22 @@ connectors:
   # ── UN Comtrade — global trade. Key: STRATA_COMTRADE_API_KEY
   # (subscription_key). reporter/partner = M49 codes; cmd_code = HS chapter. ─
   comtrade:
+    # NOTE: the keyless public preview endpoint does NOT support the World
+    # reporter (reporterCode=0 returns zero rows). Use a concrete reporter
+    # (842 = USA) so the call returns a real record. With a subscription key
+    # the World aggregate becomes available; switch reporter back to "0" then.
     - method: get_world_imports
       arg_sets:
         - cmd_code: "85"
           period: 2023
-          flow: M
+          reporter: "842"
           year: 2023
-          concept_slug: global-electronics-trade
-          primitive_slug: ct-world-imports-electronics-2023
-          name: World imports of electrical machinery (HS 85), 2023
-          description: Global import value of HS chapter 85 (electrical machinery and equipment) for 2023, UN Comtrade world-aggregate.
+          concept_slug: us-electronics-imports
+          primitive_slug: ct-us-imports-electronics-2023
+          name: US imports of electrical machinery (HS 85), 2023
+          description: US (reporter 842) import value of HS chapter 85 (electrical machinery and equipment) for 2023, UN Comtrade preview API (World reporter requires a subscription key).
           source_url: https://comtrade.un.org/
-          geo_codes: ["WLD"]
+          geo_codes: ["USA"]
           unit_currency: USD
     - method: get_bilateral_trade
       arg_sets:

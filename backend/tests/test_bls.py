@@ -60,8 +60,12 @@ def test_get_oes_employment_builds_series_id(tmp_path: Path) -> None:
     client = _client_with(httpx.MockTransport(handler), tmp_path)
     resp = client.get_oes_employment("15-1252", area="0000000", datatype="01")
     assert resp.status.value == "REQUEST_SUCCEEDED"
-    # OE + U + area(7) + 000000 + occ(6) + datatype(2)
-    assert captured["path"].endswith("OEU0000000000000151252" + "01")
+    # OE + U + areatype(1,N=national) + area(7) + industry(6) + occ(6) + datatype(2) = 25 chars.
+    # The areatype digit is mandatory; omitting it built a 24-char id that
+    # api.bls.gov rejected mid-request ("Server disconnected without sending a response").
+    sid = captured["path"].rsplit("/", 1)[-1]
+    assert sid == "OEUN000000000000015125201"
+    assert len(sid) == 25
     assert resp.series[0].data[0].value == 2183300.0
     client.close()
 

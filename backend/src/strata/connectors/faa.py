@@ -243,16 +243,20 @@ class FAAResponse:
 
 def _parse_airport(attrs: dict[str, Any]) -> Airport:
     """Parse ArcGIS feature attributes into an Airport dataclass."""
+    # Field names follow the live FAA AIS ``US_Airport`` layer; legacy keys
+    # (FAC_NAME/LOCID/CITY/PASSENGERS/OPERATIONS) are kept as fallbacks for the
+    # disk cache and tests. The current layer has no passenger/operations data,
+    # so those default to 0 (honest absence, never a fabricated number).
     return Airport(
-        fac_name=str(attrs.get("FAC_NAME", "")),
-        loc_id=str(attrs.get("LOCID", "")),
-        city=str(attrs.get("CITY", "")),
+        fac_name=str(attrs.get("NAME", attrs.get("FAC_NAME", ""))),
+        loc_id=str(attrs.get("IDENT", attrs.get("LOCID", ""))),
+        city=str(attrs.get("SERVCITY", attrs.get("CITY", ""))),
         state=str(attrs.get("STATE", "")),
         county=str(attrs.get("COUNTY", "")),
-        elevation=float(attrs.get("ELEV", 0) or 0),
+        elevation=float(attrs.get("ELEVATION", attrs.get("ELEV", 0)) or 0),
         latitude=float(attrs.get("LATITUDE", 0) or 0),
         longitude=float(attrs.get("LONGITUDE", 0) or 0),
-        airport_type=str(attrs.get("FAC_TYPE", "")),
+        airport_type=str(attrs.get("TYPE_CODE", attrs.get("FAC_TYPE", ""))),
         owner_type=str(attrs.get("OWNER_TYPE", "")),
         passengers=int(attrs.get("PASSENGERS", 0) or 0),
         operations=int(attrs.get("OPERATIONS", 0) or 0),
@@ -347,14 +351,16 @@ class _DiskCache:
 
 _ARCGIS_BASE = (
     "https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services"
-    "/US_Airports/FeatureServer/0/query"
+    "/US_Airport/FeatureServer/0/query"
 )
 _STATUS_BASE = "https://soa.smext.faa.gov/asws/api/airport/status"
 
-_DEFAULT_OUT_FIELDS = (
-    "FAC_NAME,LOCID,CITY,STATE,COUNTY,ELEV,LATITUDE,LONGITUDE,"
-    "FAC_TYPE,OWNER_TYPE,PASSENGERS,OPERATIONS,REGION"
-)
+# Field names on the live FAA AIS Airports layer. The retired ``US_Airports``
+# service carried PASSENGERS/OPERATIONS/FAC_NAME/LOCID; the current
+# ``US_Airport`` (AIS chart-reference) layer does NOT — it is an airport
+# identity/location layer (IDENT, NAME, TYPE_CODE, STATE), with no enplanement
+# or operations columns anywhere on FAA's ArcGIS.
+_DEFAULT_OUT_FIELDS = "IDENT,NAME,SERVCITY,STATE,COUNTRY,ELEVATION,LATITUDE,LONGITUDE,TYPE_CODE"
 
 
 class FAAClientError(RuntimeError):
@@ -700,7 +706,7 @@ class FAAClient:
         if state is not None:
             clauses.append(f"STATE='{state.upper()}'")
         if airport_type is not None:
-            clauses.append(f"FAC_TYPE='{airport_type}'")
+            clauses.append(f"TYPE_CODE='{airport_type}'")
         where = " AND ".join(clauses) if clauses else "1=1"
 
         params: dict[str, str] = {
@@ -709,17 +715,16 @@ class FAAClient:
             "f": "json",
         }
 
+        # Geo label for the summary: the state when filtering by state, else
+        # "US" (a type-only or unfiltered count is national).
+        label = state.upper() if state is not None else "US"
+
         ck = self._cache_key(_ARCGIS_BASE, params)
         cached = self._cache.get(ck)
         if cached is not None:
             data, age = cached
             count = int(data.get("count", 0))
-            return FAAResponse(
-                kind="count",
-                total=count,
-                cached=True,
-                cache_age_seconds=round(age, 1),
-            )
+            return self._count_response(count, label, cached=True, age=round(age, 1))
 
         http_resp = self._http.get(_ARCGIS_BASE, params=params)
         http_resp.raise_for_status()
@@ -728,9 +733,34 @@ class FAAClient:
         if not isinstance(body, dict):
             raise FAAClientError(f"ArcGIS returned unexpected type: {type(body).__name__}")
         body_dict = cast(dict[str, Any], body)
+        # ArcGIS returns its own error envelope with HTTP 200 — surface it.
+        if "error" in body_dict:
+            err: dict[str, Any] = body_dict["error"]
+            raise FAAClientError(
+                f"ArcGIS error {err.get('code', '?')}: {err.get('message', 'unknown')}"
+            )
         self._cache.put(ck, body_dict)
         count = int(body_dict.get("count", 0))
-        return FAAResponse(kind="count", total=count)
+        return self._count_response(count, label)
+
+    @staticmethod
+    def _count_response(
+        count: int, label: str, *, cached: bool = False, age: float = 0.0
+    ) -> FAAResponse:
+        """Wrap an airport count as an AirportSummary the converter can read."""
+        summary = AirportSummary(
+            state=label,
+            count=count,
+            total_passengers=0,
+            total_operations=0,
+        )
+        return FAAResponse(
+            kind="count",
+            summaries=(summary,),
+            total=count,
+            cached=cached,
+            cache_age_seconds=age,
+        )
 
     def get_total_passengers(self, state: str | None = None) -> FAAResponse:
         """Sum annual passenger counts for airports in a state (or all US).
@@ -1163,6 +1193,55 @@ def passenger_count_to_primitive_yaml(
         "description": description,
         "value": summary.total_passengers,
         "unit": {"kind": "flow", "dimension": "people", "denominator": "year"},
+        "as_of": date.today().isoformat(),
+        "geo": {"level": geo_level, "codes": [summary.state]},
+        "geo_perspective": geo_perspective,
+        "distribution_shape": distribution_shape,
+        "delivery_mode": delivery_mode,
+        "source": {
+            "slug": source_slug,
+            "tier": "regulator",
+            "url": source_url,
+            "accessed": date.today().isoformat(),
+            "snapshot_sha256": sha,
+        },
+    }
+
+
+def airport_count_to_primitive_yaml(
+    summary: AirportSummary,
+    *,
+    concept_slug: str,
+    primitive_slug: str,
+    name: str,
+    description: str,
+    source_url: str = "https://www.faa.gov/air_traffic/flight_info/aeronav",
+    geo_level: str = "country",
+    geo_perspective: str = "supply",
+    unit_kind: str = "stock",
+    unit_dimension: str = "organizations",
+    distribution_shape: str = "other",
+    delivery_mode: str = "n/a",
+) -> dict[str, Any]:
+    """Convert an airport-count AirportSummary to a Strata AtomicPrimitive.
+
+    The value field is the airport ``count`` from the FAA AIS Airports layer —
+    a supply-side denominator (count of airports/facilities matching a
+    state/type filter). This is the live FAA ArcGIS layer's true measure; it
+    carries no enplanement data, so we never emit a passenger figure here.
+    """
+    sha = _snapshot_hash({"label": summary.state, "count": summary.count})
+    source_slug = f"faa-airport-count-{summary.state.lower().replace(' ', '-')}"
+
+    return {
+        "kind": "atomic_primitive",
+        "slug": primitive_slug,
+        "schema_version": 1,
+        "concept_slug": concept_slug,
+        "name": name,
+        "description": description,
+        "value": summary.count,
+        "unit": {"kind": unit_kind, "dimension": unit_dimension},
         "as_of": date.today().isoformat(),
         "geo": {"level": geo_level, "codes": [summary.state]},
         "geo_perspective": geo_perspective,

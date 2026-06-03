@@ -612,13 +612,21 @@ class ComtradeClient:
         reporter: str,
         partner: str,
         period: int,
+        *,
+        flow: str = ComtradeFlowCode.IMPORTS,
     ) -> ComtradeResponse:
-        """Fetch bilateral trade (imports + exports) between two countries."""
+        """Fetch bilateral trade between two countries for one flow direction.
+
+        The keyless public *preview* endpoint rejects the combined ``MX`` flow
+        with HTTP 400 — it accepts a single flow per request. Default to
+        imports (``M``); callers with a subscription key can pass ``flow`` to
+        select exports or, on the full data endpoint, both.
+        """
         return self.get_trade(
             reporter,
             period,
             partner=partner,
-            flow=ComtradeFlowCode.BOTH,
+            flow=flow,
             commodity=ComtradeHSChapter.TOTAL,
         )
 

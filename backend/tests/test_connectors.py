@@ -1924,7 +1924,9 @@ class TestCMSClient:
             assert client is not None
 
     def test_enum_values(self) -> None:
-        assert CMSDataset.MEDICARE_ENROLLMENT == "medicare-total-enrollment"
+        # Medicare Monthly Enrollment dataset is addressed by UUID on the
+        # data-api/v1 endpoint (the human slug 404s).
+        assert CMSDataset.MEDICARE_ENROLLMENT == "d7fabe1e-d19b-4333-9eff-e80e0643f2fd"
         assert CMSState.CA == "CA"
 
 

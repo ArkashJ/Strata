@@ -1437,6 +1437,17 @@ def capabilities() -> list[CapabilitySpec]:
     return [
         CapabilitySpec(
             connector="fdic",
+            method="get_financials",
+            description=(
+                "Per-institution quarterly financials (assets, deposits, net income). "
+                "Returns FinancialRecord rows the converter turns into atomic primitives."
+            ),
+            returns="atomic primitive, unit=currency USD, tier=regulator",
+            args=[_report_date],
+            source_tier="regulator",
+        ),
+        CapabilitySpec(
+            connector="fdic",
             method="get_total_assets",
             description="Total US banking system assets for a report period.",
             returns="atomic primitive, unit=currency USD, tier=regulator",

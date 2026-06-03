@@ -22,6 +22,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Ingest orchestrator** now treats `cms`/`fdic`/`openfda` as keyless (their ctors take
   no key) so they run offline instead of being wrongly skipped.
 
+### Fixed — eight more connectors made ingest-ready (PR A, "test all the APIs")
+- A parallel audit fixed real bugs that meant most connectors had **never** produced
+  a valid primitive. Bank → **214**. Each fix verified live through `call_and_convert`:
+  - **EIA**: facet keys must be lowercase (`stateid`/`sectorid`) + value lives under the
+    column key (`sales`), not `value`. → US electricity 4.06M GWh.
+  - **CMS**: dataset addressed by UUID (not slug) + uppercase filter fields
+    (`YEAR`/`BENE_STATE_ABRVTN`) + `TOT_BENES`. → CA Medicare 6.6M beneficiaries.
+  - **OECD**: served **SDMX-JSON 2.0** but the parser read 1.0; wrong dataflow ID and a
+    2-field key against a 12-dimension DSD. → DEU GDP €3.99T.
+  - **Comtrade**: the keyless preview rejects combined-flow (`MX`) → single flow `M`.
+    → US imports HS85 $463B, US–China trade $448B.
+  - **Census SUSB** has no Data API → switched `get_susb` to the Annual Business Survey
+    Company Summary (`abscs FIRMPDEMP`). → 123,842 computer-systems-design firms.
+  - **FAA**: the `US_Airports` ArcGIS service was retired (new layer has no passenger
+    field); pivoted `get_airport_count` to the live `US_Airport` layer. → 13,171 US airports.
+  - **BLS OEWS**: the series ID was missing the mandatory areatype digit (24 vs 25 chars),
+    which `api.bls.gov` rejected mid-request. → occupation employment now ingests.
+  - **FDIC**: `get_financials` wasn't in `capabilities()` so dispatch never registered it;
+    exposed it. → largest-bank assets.
+  Honest limits recorded: FAA enplanements (Excel-only), Comtrade world-aggregate
+  (needs a paid key), OECD/Eurostat values in millions — noted in the manifest, never
+  fabricated.
+
 ### Fixed — connector ingest correctness (PR A)
 - **FRED ingest was broken** — its default converter required a `SeriesInfo`
   object that `get_observations` never returns (and a `series_id` converter param
