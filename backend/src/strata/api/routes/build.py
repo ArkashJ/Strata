@@ -18,6 +18,7 @@ from strata.evaluator.engine import (
     trajectory,
 )
 from strata.models import TAMOutput, TAMTrajectory, Unit
+from strata.models.scope import MarketScope
 from strata.registry import Registry, RegistryError
 
 router = APIRouter(tags=["build"])
@@ -35,6 +36,11 @@ class RecomputeRequest(BaseModel):
     concept_slug: str
     framework_assumptions: dict[str, dict[str, str]] | None = None
     primitive_overrides: dict[str, OverrideValueIn] | None = None
+    # The user-pinned market (sub-project 1.5). When non-empty it overrides the
+    # concept's declared scope as the side the scope guard checks against, so the
+    # ScopeReport reflects the market the user actually pinned. Optional + empty
+    # by default → unchanged behaviour.
+    scope: MarketScope | None = None
 
 
 def _validate_override_units(reg: Registry, req: RecomputeRequest) -> None:
@@ -114,7 +120,12 @@ async def recompute_tam(
         framework_assumptions=req.framework_assumptions or {},
     )
     try:
-        out = size_concept(reg, req.concept_slug, overrides=overrides)
+        out = size_concept(
+            reg,
+            req.concept_slug,
+            overrides=overrides,
+            declared_scope_override=req.scope,
+        )
     except ValueError as exc:
         # Unknown re-pointed primitive in framework_assumptions.
         raise HTTPException(422, str(exc)) from exc
@@ -131,6 +142,7 @@ async def recompute_tam(
             "state_hash": out.state_hash,
             "has_overrides": bool(req.primitive_overrides),
             "has_assumptions": bool(req.framework_assumptions),
+            "has_scope": bool(req.scope and not req.scope.is_empty),
         },
     )
     return out

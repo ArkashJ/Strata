@@ -42,6 +42,7 @@ from ..models import (
     UnitDimension,
     UnitKind,
 )
+from ..models.scope import MarketScope
 from ..registry import Registry, RegistryError
 from ..scope import build_scope_report
 
@@ -91,6 +92,7 @@ def size_concept(
     registry: Registry,
     concept_slug: str,
     overrides: EvalOverrides | None = None,
+    declared_scope_override: MarketScope | None = None,
 ) -> TAMOutput:
     try:
         concept = registry.get_concept(concept_slug)
@@ -150,6 +152,17 @@ def size_concept(
                 for fw, binds in sorted(overrides.framework_assumptions.items())
             },
         }
+    # A user-pinned market is a real input: when present it overrides the
+    # concept's declared scope as the side the guard checks each primitive
+    # against, and folds into the hash so a different market mints a different
+    # /build/<hash>. Empty/absent override = the concept's own declared scope.
+    declared_scope = (
+        declared_scope_override
+        if declared_scope_override is not None and not declared_scope_override.is_empty
+        else concept.scope
+    )
+    if declared_scope_override is not None and not declared_scope_override.is_empty:
+        payload["declared_scope"] = declared_scope.model_dump(mode="json")
     tam_hash = mint_state_hash(payload)
     uses_synthetic = any(b.uses_synthetic for b in builds)
     return TAMOutput(
@@ -165,7 +178,7 @@ def size_concept(
         independence_score=_independence(builds),
         uses_synthetic_primitives=uses_synthetic,
         uses_modeled_composites=False,
-        scope=build_scope_report(registry, concept.scope, scenarios),
+        scope=build_scope_report(registry, declared_scope, scenarios),
     )
 
 
