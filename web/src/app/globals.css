@@ -205,7 +205,9 @@ body {
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: -0.005em;
-  font-feature-settings: "tnum" 1, "lnum" 1;
+  font-feature-settings:
+    "tnum" 1,
+    "lnum" 1;
 }
 
 /* Harvey-style workflow card — white, soft, used for graph nodes + rail rows */
@@ -236,4 +238,118 @@ body {
 .role-chip--accent {
   background: var(--accent-tint);
   color: var(--accent-active);
+}
+
+/* ───────────────────────────────────────────────────────────────────────────
+ * Night canvas — the signed-out first impression (public landing + /sign-in +
+ * /sign-up). A FIXED deep-navy surface with an infinite indigo grid and
+ * glassmorphism panels, intentionally independent of the light/dark app theme:
+ * the marketing/auth surface is always the dark grid (docs/design reference).
+ * Tokens stay here so components never inline a hex.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.strata-night {
+  color-scheme: dark;
+  --night-bg: #080b16;
+  --night-bg-2: #0b1020;
+  --night-line: rgba(124, 124, 240, 0.06);
+  --night-line-strong: rgba(124, 124, 240, 0.11);
+  --night-fg-1: #f6f7fc;
+  --night-fg-2: #9aa3c2;
+  --night-fg-3: #646d8c;
+  --night-accent: #8b8bf5;
+  --night-accent-soft: rgba(124, 124, 240, 0.16);
+  --night-glass: rgba(255, 255, 255, 0.045);
+  --night-glass-2: rgba(255, 255, 255, 0.028);
+  --night-glass-border: rgba(255, 255, 255, 0.1);
+  background-color: var(--night-bg);
+  color: var(--night-fg-1);
+}
+
+/* The infinite grid + ambient indigo glow. Sits behind everything (z-0),
+ * pointer-events-none so it never eats clicks. Two drifting glow blobs add
+ * depth; the whole layer is static under prefers-reduced-motion. */
+.grid-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-color: var(--night-bg);
+  background-image:
+    linear-gradient(var(--night-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--night-line) 1px, transparent 1px);
+  background-size: 54px 54px;
+  background-position: center;
+  mask-image: radial-gradient(ellipse 120% 90% at 50% 30%, #000 55%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 120% 90% at 50% 30%, #000 55%, transparent 100%);
+}
+.grid-canvas::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(40rem 40rem at 22% 18%, var(--night-accent-soft), transparent 60%),
+    radial-gradient(36rem 36rem at 82% 72%, rgba(43, 163, 154, 0.1), transparent 60%);
+  filter: blur(8px);
+  animation: night-drift 26s var(--ease-in-out) infinite alternate;
+}
+.grid-canvas::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 60%, var(--night-bg) 100%);
+}
+@keyframes night-drift {
+  from {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3%, 2%, 0) scale(1.06);
+  }
+}
+
+/* Frosted glass panel — translucent, blurred, hairline-lit. */
+.glass {
+  background: var(--night-glass);
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  border: 1px solid var(--night-glass-border);
+  border-radius: 18px;
+  box-shadow:
+    0 12px 48px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.glass-soft {
+  background: var(--night-glass-2);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--night-glass-border);
+  border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid-canvas::before {
+    animation: none;
+  }
+}
+
+/* Re-point the core app tokens inside the night canvas so existing components
+ * (PyramidGlyph, canvas-cards, chips, accent buttons) recolor to navy for free,
+ * instead of each needing a night-specific variant. */
+.strata-night {
+  --bg-0: #080b16;
+  --bg-1: rgba(255, 255, 255, 0.035);
+  --bg-2: rgba(255, 255, 255, 0.06);
+  --bg-3: rgba(255, 255, 255, 0.09);
+  --fg-1: #f6f7fc;
+  --fg-2: #9aa3c2;
+  --fg-3: #646d8c;
+  --fg-4: #4a5270;
+  --border-1: rgba(255, 255, 255, 0.08);
+  --border-2: rgba(255, 255, 255, 0.13);
+  --border-3: rgba(255, 255, 255, 0.22);
+  --accent: #8b8bf5;
+  --accent-hover: #9d9df7;
+  --accent-active: #7c7cf0;
+  --accent-fg-on: #0a0a0b;
+  --accent-tint: rgba(124, 124, 240, 0.18);
 }

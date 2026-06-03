@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Clerk auth gate + signed-out landing
+- **Sign-in now required to use the product.** `web/src/middleware.ts` is
+  protected-by-default: every route calls `auth.protect()` except a small public
+  allowlist (`/`, `/sign-in`, `/sign-up`, `/embed/*`, `robots.txt`,
+  `sitemap.xml`, OpenGraph images). The keyless-CI graceful-degradation guard is
+  preserved (no publishable key → pass-through, app renders as before).
+- **Public marketing landing** at `/` for signed-out visitors — a split-editorial
+  hero on a fixed deep-navy "night canvas" (`.strata-night`): an infinite indigo
+  grid + drifting glow (`.grid-canvas`) and glassmorphism panels (`.glass`),
+  with the animated Strata pyramid + concept→framework→primitive→TAM pipeline.
+  `web/src/components/landing/{NightCanvas,PublicLanding}.tsx`. The app sidebar /
+  chrome no longer renders before sign-in.
+- **`/sign-in` + `/sign-up`** restyled onto the same night canvas (glass card,
+  Strata-indigo Clerk `appearance` via `web/src/lib/clerk-appearance.ts`); the
+  shell (`AppShell`) renders bare for the auth routes and the signed-out landing,
+  the full sidebar only once signed in.
+- `@clerk/testing` added (dev) to authenticate the Playwright e2e suite under the
+  new gate (wiring follows).
+
 ### Added — rigorous market definition, sub-project 1
 - **`MarketScope` value object** (`strata.models.scope`) — the structured,
   checkable definition of *which* market a number sizes: `vertical` (NAICS),
