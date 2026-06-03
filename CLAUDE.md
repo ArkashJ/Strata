@@ -17,9 +17,37 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ---
 
-## Repo state (as of 2026-06-02)
+## Repo state (as of 2026-06-03)
 
-- **In flight (PR #82 — `feat/clerk-auth-and-landing`):** four workstreams.
+- **In flight (PR #83 — `feat/data-bank-expansion`):** the "Plaid/Statista for AI
+  agents" buildout — exercise the idle connectors for real, then expose the bank to
+  agents. **Phase 1 (data bank):** grew **185 → 214 sourced primitives** by ingesting
+  13 regulator/aggregator connectors live (was only 4). New **bulk-promote CLI**
+  (`strata promote --from-ingest [--validate-only]`: stage the batch, validate once,
+  roll back only attributed offenders — committed tree never left broken). Reconciled
+  the manifest (deleted the dead root `ingest-manifest.yaml`; `data/ingest-manifest.yaml`
+  is canonical). **Fixed 11 latent connector bugs** that meant most connectors had never
+  produced a valid primitive — each fix live-verified: FRED, World Bank, openFDA, EIA,
+  CMS, OECD (SDMX-JSON 2.0), Comtrade, Census SUSB→Annual Business Survey, FAA
+  airport-counts, BLS OEWS series-ID, FDIC capability. Honest limits recorded (FAA
+  enplanements Excel-only, Comtrade world-aggregate needs a paid key, OECD/Eurostat in
+  millions), never fabricated.
+
+  ```
+  manifest (concept-linked arg_sets) ─▶ ingest run (live APIs) ─▶ promote --from-ingest
+                                                                  ─▶ data/primitives/*.yaml
+                                                                     (hash-pinned, validated)
+  ```
+
+  **Phase 2 (agent harness):** 4 new MCP tools (12 total) — `list_primitives`,
+  `build_tam` (what-if; unit inherited from the replaced primitive; never persisted),
+  `list_connectors`, `get_connector_data` (`[LIVE]`, gated by `STRATA_MCP_LIVE_CONNECTORS`).
+  New **`/agents`** page surfaces the harness (tool catalog + connect snippets). 797
+  backend tests, pyright/ruff/biome clean. **Deploy:** prod seed still pending (Railway
+  redeploy + `STRATA_SEED_ON_BOOT=1`). The connector layer is **23 typed connectors**
+  (CLAUDE.md's older "15" is stale); 13 now produce committed primitives.
+
+- **Merged (PR #82 — `feat/clerk-auth-and-landing`):** four workstreams.
   (1) **Auth gate + landing:** sign-in required on every route except a public
   allowlist (`web/src/middleware.ts`; keyless graceful-degradation preserved);
   signed-out `/` is a night-canvas marketing page with no app chrome

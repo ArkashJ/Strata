@@ -64,11 +64,15 @@ in front of a partner. New here? Take the in-app tour at **`/guides`** (or read
 
 ## Connect to Claude (MCP)
 
-Strata ships a **read-only MCP server** so any agent (Claude Desktop, IDE
-assistants) can pull **sourced, hash-pinned** market numbers — every figure
-carries its source URL, tier, and `snapshot_sha256`. Five tools:
-`search_concepts`, `get_primitive`, `list_frameworks`, `size_tam`,
-`resolve_market`.
+Strata is a **research harness** for AI agents: any agent (Claude Desktop, IDE
+assistants, your own) can pull **sourced, hash-pinned** market numbers — every
+figure carries its source URL, tier, and `snapshot_sha256`. **12 tools** —
+browse the bank (`search_concepts`, `list_primitives`, `get_primitive`,
+`list_frameworks`, `list_connectors`), size markets (`size_tam`, `build_tam`
+what-if, `resolve_market`), pull a fresh number live (`get_connector_data`,
+gated), and manage a portfolio (`import_portfolio`, `size_company`,
+`list_portfolio`). The in-app **`/agents`** page documents the catalog + connect
+steps.
 
 ```sh
 # local (stdio)
@@ -189,12 +193,14 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
      ▼
   full app ──▶ /build?q= ──▶ pin the market ──▶ Size ──▶ /build/<hash>
   ```
-- **22 data connectors** — BLS, FRED, Census, EDGAR, World Bank, Kalshi, OECD,
-  Eurostat, UN Comtrade, FDIC, CMS, EIA, USDA NASS, FAA, openFDA, plus 7 added
-  in v0.3 (Alpha Vantage, Nasdaq Data Link, yfinance, Reddit, GitHub, Stack
-  Exchange, Twitter/X). All typed clients with disk caching, YAML converters,
-  and a CapabilitySpec manifest so the router knows what each one can answer.
-- **307 atomic primitives** from live API queries across all six lenses + 87 sources
+- **23 data connectors** — BLS, FRED, Census, EDGAR, World Bank, Kalshi, OECD,
+  Eurostat, UN Comtrade, FDIC, CMS, EIA, USDA NASS, FAA, openFDA, plus Alpha
+  Vantage, Nasdaq Data Link, yfinance, Reddit, GitHub, Stack Exchange, Twitter/X,
+  Dune. All typed clients with disk caching, YAML converters, and a CapabilitySpec
+  manifest. **13 regulator/aggregator connectors now produce committed primitives**
+  (live-verified end-to-end); the rest are wired but idle.
+- **214 sizing-grade atomic primitives** (+202 quarantined prediction-market
+  signals) across all six lenses + 87 sources, each hash-pinned to a source snapshot
 - **`strata goal "<query>"` CLI** — ask free-form TAM questions from the terminal.
   Maps to known data first, then **live connector calls** (the router picks a
   connector method, `call_and_convert` fetches + writes a sourced primitive),
@@ -206,7 +212,7 @@ full UX surface in [`docs/08-product-surface-brainstorm.md`](docs/08-product-sur
   Quantitative · Industry) with geo/time filter chips and click-to-narrow.
 - **Deploy-ready** — one-command boot (migrate → seed → serve), a PR CI gate,
   and a weekly cron that opens a PR with refreshed data.
-- **785 backend tests** passing; type/lint clean on shipping code (`src/`) and
+- **797 backend tests** passing; type/lint clean on shipping code (`src/`) and
   enforced in CI; frontend build clean on bun; the authenticated Playwright
   e2e suite (95+ tests) runs green under the sign-in gate.
 - **50+ APIs cataloged** for integration ([`docs/11-api-catalog.md`](docs/11-api-catalog.md))
