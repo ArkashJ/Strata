@@ -1,4 +1,4 @@
-import type { Unit } from "./schemas";
+import type { CodedTag, MarketScope, Unit } from "./schemas";
 
 // Build-view state canonicalization + content-addressing.
 //
@@ -29,6 +29,45 @@ export interface BuildState {
   primitive_pins: Record<string, string>;
   // primitive slug → transient what-if scalar override (not sourced)
   primitive_overrides: Record<string, PrimitiveOverride>;
+  // The user-pinned market (sub-project 1.5). A different market IS a different
+  // build, so a non-empty scope folds into the canonical state (and thus the
+  // hash). Absent/empty reproduces today's unscoped flow byte-for-byte, so every
+  // pre-scope /build/<hash> still round-trips. The backend mirrors this: it only
+  // adds `declared_scope` to the hash payload when the override is non-empty.
+  scope?: MarketScope | null;
+}
+
+// Mirrors backend MarketScope.is_empty — true when no dimension is pinned. An
+// "all firms" segment is the *absence* of a band (segment null), not a band.
+export function isScopeEmpty(scope: MarketScope | null | undefined): boolean {
+  if (!scope) return true;
+  return (
+    scope.vertical.length === 0 &&
+    scope.persona.length === 0 &&
+    !scope.segment &&
+    scope.geo_supply.length === 0 &&
+    scope.geo_demand.length === 0 &&
+    scope.product.length === 0 &&
+    scope.include.length === 0 &&
+    scope.exclude.length === 0
+  );
+}
+
+// Canonicalize a pinned scope so two logically-equal markets collide: sort every
+// union dimension (tag order is meaningless, the set is what defines the market).
+function normalizeScope(scope: MarketScope): MarketScope {
+  const byTag = (a: CodedTag, b: CodedTag) =>
+    `${a.system}:${a.code}:${a.label}`.localeCompare(`${b.system}:${b.code}:${b.label}`);
+  return {
+    vertical: [...scope.vertical].sort(byTag),
+    persona: [...scope.persona].sort(byTag),
+    segment: scope.segment ?? null,
+    geo_supply: [...scope.geo_supply].sort(),
+    geo_demand: [...scope.geo_demand].sort(),
+    product: [...scope.product].sort(),
+    include: [...scope.include].sort(),
+    exclude: [...scope.exclude].sort(),
+  };
 }
 
 // Recursively sort object keys so logically-equal states serialize identically.
@@ -62,6 +101,11 @@ export function canonicalizeState(state: BuildState): string {
     primitive_pins: state.primitive_pins ?? {},
     primitive_overrides: state.primitive_overrides ?? {},
   };
+  // Only fold a pinned market into the canonical form; an empty scope is omitted
+  // so unscoped states serialize byte-identically to the pre-scope era.
+  if (!isScopeEmpty(state.scope)) {
+    normalized.scope = normalizeScope(state.scope as MarketScope);
+  }
   return JSON.stringify(sortValue(normalized));
 }
 

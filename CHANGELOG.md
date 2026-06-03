@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — market-spec step before sizing (sub-project 1.5, frontend)
+- **Pin the market before any number.** `/build?q=` no longer auto-sizes; it
+  renders a new **`MarketSpecStep`** (`web/src/components/build/MarketSpecStep.tsx`)
+  — editable NAICS/SOC chips, a firm-size segment picker (All firms · SMB · Mid-
+  market · Enterprise · custom), geo (default US), and include/exclude rules —
+  prefilled from the matched concept's declared scope (`GET /c/<slug>.scope`). The
+  **Size** button is the gate: sizing only runs once the market is confirmed.
+- **A pinned market is part of the build identity.** `BuildState.scope`
+  (`web/src/lib/state-hash.ts`) folds a non-empty scope into the canonical state
+  (and thus the hash) — a different market mints a different `/build/<hash>`. An
+  empty scope is omitted, so every pre-scope URL still round-trips byte-for-byte.
+  On Size, `BuildView` recomputes via `POST /build/recompute { scope }` (priming
+  the query cache the workhorse reuses) and redirects to the scope-specific hash.
+- **The pinned market drives the scope check, now on `/build` too.** `BuildWorkspace`
+  surfaces the declared-market chip strip, the per-input "Scope check" (which
+  sources read narrower/broader than the pinned market — why methods disagree),
+  and a rail summary — reusing the `/tam` `ScopeCheck` components, gated to a
+  non-empty declared scope. Zod `marketScopeSchema` threaded through
+  `recomputeRequestSchema` + `conceptDetailSchema`; `needsRecompute()` recomputes
+  on a pinned market as well as a what-if. New authenticated e2e
+  (`web/e2e/market-spec.spec.ts`) + unit tests for the scope→hash→recompute path.
+  (Requires the sub-project-1.5 backend — `size_concept(declared_scope_override=)`,
+  commit `64f161d`; deployed backends must redeploy for the pin to take effect.)
+
 ### Added — Clerk auth gate + signed-out landing
 - **Sign-in now required to use the product.** `web/src/middleware.ts` is
   protected-by-default: every route calls `auth.protect()` except a small public

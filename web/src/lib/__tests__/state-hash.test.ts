@@ -1,12 +1,29 @@
 import { describe, expect, it } from "vitest";
 
+import type { MarketScope } from "../schemas";
 import {
   type BuildState,
   canonicalizeState,
   decodeState,
   encodeState,
   hashState,
+  isScopeEmpty,
 } from "../state-hash";
+
+function emptyScope(): MarketScope {
+  return {
+    vertical: [],
+    persona: [],
+    segment: null,
+    geo_supply: [],
+    geo_demand: [],
+    product: [],
+    include: [],
+    exclude: [],
+  };
+}
+
+const MID_MARKET = { min_emp: 100, max_emp: 999, label: "Mid-market (100–999)" };
 
 function baseState(): BuildState {
   return {
@@ -80,6 +97,95 @@ describe("canonicalizeState", () => {
       },
     };
     expect(canonicalizeState(base)).not.toBe(canonicalizeState(withOverride));
+  });
+
+  // ── pinned market scope (sub-project 1.5) ───────────────────────────────────
+  it("an empty/absent scope canonicalizes identically to no scope (back-compat)", () => {
+    const noScope = baseState();
+    const withEmpty: BuildState = { ...baseState(), scope: emptyScope() };
+    const withNull: BuildState = { ...baseState(), scope: null };
+    // Unscoped states must keep producing today's exact canonical bytes, so
+    // every pre-scope /build/<hash> URL still round-trips.
+    expect(canonicalizeState(withEmpty)).toBe(canonicalizeState(noScope));
+    expect(canonicalizeState(withNull)).toBe(canonicalizeState(noScope));
+  });
+
+  it("a pinned market changes the canonical state (a different market is a different build)", () => {
+    const base = baseState();
+    const pinned: BuildState = {
+      ...base,
+      scope: { ...emptyScope(), segment: MID_MARKET },
+    };
+    expect(canonicalizeState(base)).not.toBe(canonicalizeState(pinned));
+  });
+
+  it("two logically-equal scopes collide regardless of tag order", () => {
+    const a: BuildState = {
+      ...baseState(),
+      scope: {
+        ...emptyScope(),
+        vertical: [
+          { system: "NAICS", code: "5411", label: "Legal" },
+          { system: "NAICS", code: "5415", label: "Computer systems" },
+        ],
+        geo_demand: ["US", "CA"],
+      },
+    };
+    const b: BuildState = {
+      ...baseState(),
+      scope: {
+        ...emptyScope(),
+        vertical: [
+          { system: "NAICS", code: "5415", label: "Computer systems" },
+          { system: "NAICS", code: "5411", label: "Legal" },
+        ],
+        geo_demand: ["CA", "US"],
+      },
+    };
+    expect(canonicalizeState(a)).toBe(canonicalizeState(b));
+  });
+
+  it("distinguishes two different pinned markets", () => {
+    const smb: BuildState = {
+      ...baseState(),
+      scope: { ...emptyScope(), segment: { min_emp: null, max_emp: 99, label: "SMB (<100)" } },
+    };
+    const ent: BuildState = {
+      ...baseState(),
+      scope: { ...emptyScope(), segment: { min_emp: 1000, max_emp: null, label: "Enterprise" } },
+    };
+    expect(canonicalizeState(smb)).not.toBe(canonicalizeState(ent));
+  });
+});
+
+describe("isScopeEmpty", () => {
+  it("is true for null/undefined and an all-empty scope", () => {
+    expect(isScopeEmpty(null)).toBe(true);
+    expect(isScopeEmpty(undefined)).toBe(true);
+    expect(isScopeEmpty(emptyScope())).toBe(true);
+  });
+
+  it("is false once any dimension is pinned", () => {
+    expect(isScopeEmpty({ ...emptyScope(), segment: MID_MARKET })).toBe(false);
+    expect(isScopeEmpty({ ...emptyScope(), geo_demand: ["US"] })).toBe(false);
+    expect(
+      isScopeEmpty({
+        ...emptyScope(),
+        vertical: [{ system: "NAICS", code: "5411", label: "Legal" }],
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("encode/decode preserves a pinned scope", () => {
+  it("round-trips the market through ?s=", () => {
+    const s: BuildState = {
+      ...baseState(),
+      scope: { ...emptyScope(), segment: MID_MARKET, geo_demand: ["US"] },
+    };
+    const decoded = decodeState(encodeState(s));
+    expect(decoded.scope?.segment?.label).toBe("Mid-market (100–999)");
+    expect(decoded.scope?.geo_demand).toEqual(["US"]);
   });
 });
 
