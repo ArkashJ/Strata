@@ -13,14 +13,20 @@ import json
 import logging
 import os
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from exa_py import Exa
 from pydantic import BaseModel, ConfigDict
 
 from . import llm as _llm
 from .citations import host_of, tier_for_host
 from .parse import ParsedPrimitive
+
+if TYPE_CHECKING:
+    # Imported lazily in `_get_exa()` at runtime: the `exa_py` SDK runs heavy
+    # work at import time, so eager-importing it would slow every app/CLI/spec
+    # boot (and stalls entirely on some machines). The resolver only needs it
+    # when a live Exa fallback actually fires.
+    from exa_py import Exa
 
 _exa_client: Exa | None = None
 _log = logging.getLogger(__name__)
@@ -29,6 +35,8 @@ _log = logging.getLogger(__name__)
 def _get_exa() -> Exa:
     global _exa_client
     if _exa_client is None:
+        from exa_py import Exa
+
         _exa_client = Exa(api_key=os.environ.get("EXA_API_KEY"))
     return _exa_client
 

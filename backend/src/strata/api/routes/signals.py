@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from strata.api.deps import get_registry
+from strata.api.responses import error
 from strata.models import AtomicPrimitive
 from strata.registry import Registry
 
@@ -73,6 +74,7 @@ async def list_signals(reg: Registry = _REG) -> list[SignalSummary]:
     response_model=AtomicPrimitive,
     summary="Signal detail",
     description="Full signal primitive: value, unit, geo, source with SHA256 pin, uncertainty.",
+    responses=error(404, "Signal not found."),
 )
 async def get_signal(slug: str, reg: Registry = _REG) -> AtomicPrimitive:
     signal = reg.signals.get(slug)

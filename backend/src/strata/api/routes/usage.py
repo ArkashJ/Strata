@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from strata.api.auth import Principal, require_principal
 from strata.api.metering import get_meter
+from strata.api.responses import UNAUTHORIZED
 
 router = APIRouter(tags=["ops"])
 
@@ -19,7 +20,13 @@ class UsageResponse(BaseModel):
     by_route: dict[str, int]
 
 
-@router.get("/usage", response_model=UsageResponse, summary="Per-key usage counts")
+@router.get(
+    "/usage",
+    response_model=UsageResponse,
+    summary="Per-key usage counts",
+    description="Fetch request counts by route for the authenticated key.",
+    responses=UNAUTHORIZED,
+)
 async def get_usage(principal: Principal = _PRINCIPAL) -> UsageResponse:
     meter = get_meter()
     return UsageResponse(
@@ -29,7 +36,11 @@ async def get_usage(principal: Principal = _PRINCIPAL) -> UsageResponse:
     )
 
 
-@router.get("/metrics", summary="Prometheus-style request metrics")
+@router.get(
+    "/metrics",
+    summary="Prometheus-style request metrics",
+    description="Export metered request counts in Prometheus text exposition format.",
+)
 async def metrics() -> Response:
     snapshot = get_meter().snapshot()
     lines = [

@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from strata.api.auth import Principal, require_principal
 from strata.api.deps import get_registry
 from strata.api.ratelimit import enforce_rate_limit
+from strata.api.responses import RATE_LIMITED, UNAUTHORIZED, error, merge
 from strata.db.audit import record_audit_safe
 from strata.db.tams import get_tam_from_db_safe, persist_tam_safe
 from strata.evaluator.engine import (
@@ -80,6 +81,7 @@ def _validate_override_units(reg: Registry, req: RecomputeRequest) -> None:
     "/build/{concept_slug}",
     response_model=TAMOutput,
     summary="Evaluate concept → TAM scenario tree",
+    responses=error(422, "Concept evaluation failed (missing inputs or invalid values)."),
 )
 async def build_tam(
     concept_slug: str,
@@ -98,6 +100,15 @@ async def build_tam(
     "/build/recompute",
     response_model=TAMOutput,
     summary="Recompute a concept's TAM with what-if overrides / primitive swaps",
+    responses=merge(
+        UNAUTHORIZED,
+        RATE_LIMITED,
+        error(404, "Concept not found."),
+        error(
+            422,
+            "Override unit mismatch or invalid framework input / evaluation failed.",
+        ),
+    ),
 )
 async def recompute_tam(
     req: RecomputeRequest,
@@ -152,6 +163,7 @@ async def recompute_tam(
     "/build/{concept_slug}/trajectory",
     response_model=TAMTrajectory,
     summary="TAM-over-time series derived from primitive as_of dates",
+    responses=error(422, "Concept evaluation failed (missing inputs or invalid values)."),
 )
 async def build_trajectory(
     concept_slug: str,
@@ -189,11 +201,12 @@ def _tam_midpoint(tam: TAMOutput) -> float:
     "/build/{concept_slug}/sensitivity",
     response_model=SensitivityResponse,
     summary="Per-input ±pct swing on the TAM (feeds the tornado chart)",
+    responses=error(404, "Concept not found or not evaluable."),
 )
 async def build_sensitivity(
     concept_slug: str,
     reg: Registry = _REG,
-    pct: float = 0.2,
+    pct: float = Query(0.2, description="Sensitivity swing percentage (e.g., 0.2 for ±20%)."),
 ) -> SensitivityResponse:
     try:
         base_tam = size_concept(reg, concept_slug)
@@ -250,6 +263,11 @@ async def build_sensitivity(
     "/build/{concept_slug}/promote",
     response_model=TAMOutput,
     summary="Build + promote a concept's TAM (appears in /browse + sitemap)",
+    responses=merge(
+        UNAUTHORIZED,
+        RATE_LIMITED,
+        error(422, "Concept evaluation failed (missing inputs or invalid values)."),
+    ),
 )
 async def promote_tam(
     concept_slug: str, reg: Registry = _REG, principal: Principal = _PRINCIPAL
@@ -274,6 +292,7 @@ async def browse(reg: Registry = _REG) -> list[TAMOutput]:
     "/tam/{state_hash}",
     response_model=TAMOutput,
     summary="Retrieve a frozen TAM by state hash",
+    responses=error(404, "TAM not found."),
 )
 async def get_tam(
     state_hash: str,

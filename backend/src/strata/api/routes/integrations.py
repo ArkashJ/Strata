@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from strata.api.auth import Principal, require_authenticated
+from strata.api.responses import UNAUTHORIZED, error, merge
 from strata.connectors.saas.crypto import get_pending_auth, get_vault
 from strata.connectors.saas.providers import get_connector, provider_names
 from strata.connectors.saas.store import get_store
@@ -44,7 +45,13 @@ def _connector_or_404(provider: str):
     return connector
 
 
-@router.get("/{provider}/authorize", response_model=AuthorizeResponse)
+@router.get(
+    "/{provider}/authorize",
+    response_model=AuthorizeResponse,
+    summary="Start OAuth authorization",
+    description="Generate an OAuth authorization URL for the provider.",
+    responses=merge(UNAUTHORIZED, error(404, "Provider not found.")),
+)
 async def authorize(
     provider: str, redirect_uri: str = "", principal: Principal = _PRINCIPAL
 ) -> AuthorizeResponse:
@@ -56,7 +63,17 @@ async def authorize(
     return AuthorizeResponse(provider=provider, authorize_url=url)
 
 
-@router.get("/{provider}/callback")
+@router.get(
+    "/{provider}/callback",
+    summary="OAuth callback handler",
+    description="Complete OAuth flow: exchange code for token and store encrypted.",
+    responses=merge(
+        UNAUTHORIZED,
+        error(404, "Provider not found."),
+        error(400, "Invalid or expired OAuth state."),
+        error(502, "OAuth token exchange failed."),
+    ),
+)
 async def callback(
     provider: str, code: str, state: str, redirect_uri: str = "", principal: Principal = _PRINCIPAL
 ) -> dict[str, str]:
@@ -78,7 +95,17 @@ async def callback(
     return {"status": "connected", "provider": provider, "org_id": org_id}
 
 
-@router.post("/{provider}/sync", response_model=SyncResponse)
+@router.post(
+    "/{provider}/sync",
+    response_model=SyncResponse,
+    summary="Fetch and ingest provider data",
+    description="Sync connected provider data into private org-scoped primitives.",
+    responses=merge(
+        UNAUTHORIZED,
+        error(404, "Provider not found or not connected for this org."),
+        error(409, "Sync already in progress."),
+    ),
+)
 async def sync(provider: str, principal: Principal = _PRINCIPAL) -> SyncResponse:
     connector = _connector_or_404(provider)
     stored = get_vault().get(principal.org_id, provider)
@@ -92,7 +119,13 @@ async def sync(provider: str, principal: Principal = _PRINCIPAL) -> SyncResponse
     )
 
 
-@router.delete("/{provider}", response_model=DisconnectResponse)
+@router.delete(
+    "/{provider}",
+    response_model=DisconnectResponse,
+    summary="Disconnect provider integration",
+    description="Purge stored tokens and remove all org-private primitives.",
+    responses=merge(UNAUTHORIZED, error(404, "Provider not found.")),
+)
 async def disconnect(provider: str, principal: Principal = _PRINCIPAL) -> DisconnectResponse:
     _connector_or_404(provider)
     purged_tokens = get_vault().purge(principal.org_id, provider)

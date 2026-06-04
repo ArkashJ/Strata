@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from strata.api.auth import Principal, require_authenticated, require_principal
 from strata.api.ratelimit import enforce_rate_limit
+from strata.api.responses import RATE_LIMITED, UNAUTHORIZED, merge
 from strata.db.contributions import Contribution, list_contributions, record_contribution_safe
 from strata.db.engine import get_session
 from strata.models import Annotation, AtomicPrimitive
@@ -97,7 +98,13 @@ def _validate(req: ContributionRequest) -> tuple[ContributionStatus, list[str]]:
     return "needs_review", [f"{tier}-tier source requires human review before publish"]
 
 
-@router.post("/contribute", response_model=ContributionResponse)
+@router.post(
+    "/contribute",
+    response_model=ContributionResponse,
+    summary="Submit a primitive or annotation",
+    description="Validate and queue a new primitive or annotation for review.",
+    responses=merge(UNAUTHORIZED, RATE_LIMITED),
+)
 async def contribute(
     req: ContributionRequest, principal: Principal = _PRINCIPAL
 ) -> ContributionResponse:
@@ -116,7 +123,13 @@ async def contribute(
     return ContributionResponse(status=status, reasons=reasons, contribution_id=cid)
 
 
-@router.get("/contributions", response_model=list[Contribution], summary="Review queue")
+@router.get(
+    "/contributions",
+    response_model=list[Contribution],
+    summary="Review queue",
+    description="List pending contributions queued for human review.",
+    responses=UNAUTHORIZED,
+)
 async def list_contributions_route(
     status: str | None = None,
     session: AsyncSession = _SESSION,

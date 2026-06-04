@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from strata.api.deps import get_registry
+from strata.api.responses import error
 from strata.models import Framework
 from strata.registry import Registry, RegistryError
 
@@ -22,7 +23,12 @@ class FrameworkSummary(BaseModel):
     input_count: int
 
 
-@router.get("", response_model=list[FrameworkSummary], summary="List frameworks")
+@router.get(
+    "",
+    response_model=list[FrameworkSummary],
+    summary="List frameworks",
+    description="Return all frameworks with method family and input count.",
+)
 async def list_frameworks(
     reg: Registry = _REG,
 ) -> list[FrameworkSummary]:
@@ -38,7 +44,13 @@ async def list_frameworks(
     ]
 
 
-@router.get("/{slug}", response_model=Framework, summary="Framework detail")
+@router.get(
+    "/{slug}",
+    response_model=Framework,
+    summary="Framework detail",
+    description="Return full framework model including method family, unit signature, and inputs.",
+    responses=error(404, "Framework not found."),
+)
 async def get_framework(
     slug: str,
     reg: Registry = _REG,

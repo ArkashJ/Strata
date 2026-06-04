@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from strata.api.deps import get_registry
+from strata.api.responses import error
 from strata.models import AtomicPrimitive, CompositePrimitive
 from strata.registry import Registry, RegistryError
 
@@ -60,8 +61,10 @@ async def list_primitives(
 
 @router.get(
     "/{slug}",
+    response_model=AtomicPrimitive | CompositePrimitive,
     summary="Primitive detail",
     description="Return full primitive model including value, unit, geo, source with SHA256 pin, and uncertainty.",
+    responses=error(404, "Primitive not found."),
 )
 async def get_primitive(
     slug: str,

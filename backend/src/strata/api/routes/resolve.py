@@ -28,6 +28,7 @@ from pydantic import BaseModel
 from strata.api.auth import Principal, require_principal
 from strata.api.deps import get_registry
 from strata.api.ratelimit import enforce_rate_limit
+from strata.api.responses import RATE_LIMITED, UNAUTHORIZED, merge
 from strata.db.audit import record_audit_safe
 from strata.registry import Registry
 from strata.resolver import RunOptions, parse_query, run, search_primitive
@@ -78,12 +79,24 @@ def _registry_first_slug(query: str, registry: Registry) -> ResolvedQuery:
     return ResolvedQuery(intent=ResolverIntent.NOVEL, confidence=0.0)
 
 
-@router.post("/resolve")
+@router.post(
+    "/resolve",
+    summary="Resolve a market query (SSE)",
+    responses=merge(UNAUTHORIZED, RATE_LIMITED),
+)
 async def resolve_query(
     body: ResolveRequest,
     registry: Registry = _get_registry,
     principal: Principal = _require_principal,
 ) -> StreamingResponse:
+    """Stream SSE events as the resolver parses and evaluates a market query.
+
+    Requires authentication (API key or Clerk session). Subject to per-org
+    rate limiting (429 response).
+
+    Response is text/event-stream with events: ``parsing``, ``searching``,
+    ``framework_selected``, ``evaluating``, ``result``, ``error``, ``done``
+    (plus legacy ``step`` for frontend compatibility)."""
     # AC3.1/AC3.2: auth resolves the principal (401 if required+missing); the
     # LLM route is token-bucket rate-limited per org (429 + Retry-After).
     enforce_rate_limit(principal.org_id)

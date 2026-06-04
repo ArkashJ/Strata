@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from strata.api.deps import get_registry
+from strata.api.responses import error
 from strata.models import Concept
 from strata.registry import Registry, RegistryError
 
@@ -48,6 +49,7 @@ async def list_concepts(
     response_model=Concept,
     summary="Concept detail",
     description="Return full concept model including analysis lens, modifiers, measurements, and competing concepts.",
+    responses=error(404, "Concept not found."),
 )
 async def get_concept(
     slug: str,

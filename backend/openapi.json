@@ -1,0 +1,4253 @@
+{
+  "components": {
+    "schemas": {
+      "AnalysisLens": {
+        "description": "Six first-class TAM lenses (Q39).\n\nEach lens has a structurally distinct math shape; frameworks are tagged to\nexactly one lens and the framework picker filters by the concept's declared\nlens. The validator enforces lens-tag agreement between concept and framework.",
+        "enum": [
+          "cost_efficiency",
+          "revenue_generation",
+          "latent_demand",
+          "platform_throughput",
+          "bundle_consolidation",
+          "productivity_uplift"
+        ],
+        "title": "AnalysisLens",
+        "type": "string"
+      },
+      "AnalystParaphraseSource": {
+        "additionalProperties": false,
+        "description": "Q40 paraphrase variant. ``snapshot_sha256`` is over the paraphrase +\nmetadata, not the original document \u2014 fair-use transformative.",
+        "properties": {
+          "accessed": {
+            "format": "date",
+            "title": "Accessed",
+            "type": "string"
+          },
+          "freshness_sla_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Freshness Sla Days"
+          },
+          "original_publisher": {
+            "minLength": 1,
+            "title": "Original Publisher",
+            "type": "string"
+          },
+          "paraphrase_reviewer": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Paraphrase Reviewer",
+            "type": "string"
+          },
+          "paraphrase_text": {
+            "maxLength": 280,
+            "minLength": 1,
+            "title": "Paraphrase Text",
+            "type": "string"
+          },
+          "slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Slug",
+            "type": "string"
+          },
+          "snapshot_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Snapshot Sha256",
+            "type": "string"
+          },
+          "tier": {
+            "const": "analyst-paraphrase",
+            "title": "Tier",
+            "type": "string"
+          },
+          "url": {
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "url",
+          "accessed",
+          "snapshot_sha256",
+          "tier",
+          "original_publisher",
+          "paraphrase_reviewer",
+          "paraphrase_text"
+        ],
+        "title": "AnalystParaphraseSource",
+        "type": "object"
+      },
+      "AtomicPrimitive": {
+        "additionalProperties": false,
+        "description": "One sourced number tied to a concept (Q2).",
+        "properties": {
+          "as_of": {
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "concept_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Concept Slug",
+            "type": "string"
+          },
+          "delivery_mode": {
+            "$ref": "#/components/schemas/DeliveryMode",
+            "default": "n/a"
+          },
+          "derives_from": {
+            "default": [],
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            },
+            "title": "Derives From",
+            "type": "array"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "distribution_shape": {
+            "$ref": "#/components/schemas/DistributionShape",
+            "default": "uniform"
+          },
+          "expiry": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry"
+          },
+          "geo": {
+            "$ref": "#/components/schemas/Geo"
+          },
+          "geo_perspective": {
+            "$ref": "#/components/schemas/GeoPerspective"
+          },
+          "kind": {
+            "const": "atomic_primitive",
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "org_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Org Id"
+          },
+          "schema_version": {
+            "minimum": 1.0,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/MarketScope",
+            "default": {
+              "exclude": [],
+              "geo_demand": [],
+              "geo_supply": [],
+              "include": [],
+              "persona": [],
+              "product": [],
+              "vertical": []
+            }
+          },
+          "slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Slug",
+            "type": "string"
+          },
+          "source": {
+            "discriminator": {
+              "mapping": {
+                "aggregator": "#/components/schemas/StandardSource",
+                "analyst": "#/components/schemas/StandardSource",
+                "analyst-paraphrase": "#/components/schemas/AnalystParaphraseSource",
+                "community": "#/components/schemas/StandardSource",
+                "community-modeled": "#/components/schemas/StandardSource",
+                "first_party": "#/components/schemas/StandardSource",
+                "onchain": "#/components/schemas/StandardSource",
+                "prediction_market": "#/components/schemas/StandardSource",
+                "regulator": "#/components/schemas/StandardSource"
+              },
+              "propertyName": "tier"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/StandardSource"
+              },
+              {
+                "$ref": "#/components/schemas/AnalystParaphraseSource"
+              }
+            ],
+            "title": "Source"
+          },
+          "uncertainty": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Uncertainty"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          },
+          "visibility": {
+            "default": "public",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "schema_version",
+          "concept_slug",
+          "name",
+          "description",
+          "value",
+          "unit",
+          "as_of",
+          "geo",
+          "geo_perspective",
+          "source"
+        ],
+        "title": "AtomicPrimitive",
+        "type": "object"
+      },
+      "AuditEvent": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "ts": {
+            "format": "date-time",
+            "title": "Ts",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "actor",
+          "action",
+          "target",
+          "ts"
+        ],
+        "title": "AuditEvent",
+        "type": "object"
+      },
+      "AuthorizeResponse": {
+        "properties": {
+          "authorize_url": {
+            "title": "Authorize Url",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "authorize_url"
+        ],
+        "title": "AuthorizeResponse",
+        "type": "object"
+      },
+      "BannerKind": {
+        "description": "Banner taxonomy. Surfaces in the UI (U10) and in PDF/markdown exports\nas footnotes.\n\n`analyst_paraphrase` covers Q40; `synthetic` and `modeled` cover Q20;\n`subsidy` covers regime-modifier frameworks (e.g. IRA); `regulated` covers\nQ36 clearance-gated outputs; `dark_estimate` flags low-confidence\nprimitives. `user_override` flags a transient what-if scalar the user typed\nin the `/build` UI \u2014 never a sourced/persisted primitive (Strata Live).",
+        "enum": [
+          "synthetic",
+          "modeled",
+          "subsidy",
+          "regulated",
+          "dark-estimate",
+          "analyst-paraphrase",
+          "user_override",
+          "private"
+        ],
+        "title": "BannerKind",
+        "type": "string"
+      },
+      "CapabilityOut": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "returns": {
+            "title": "Returns",
+            "type": "string"
+          }
+        },
+        "required": [
+          "method",
+          "description",
+          "returns"
+        ],
+        "title": "CapabilityOut",
+        "type": "object"
+      },
+      "CodeSystem": {
+        "description": "Classification system a coded scope tag references.\n\n``NAICS`` (industry) and ``SOC`` (occupation) are hierarchical and the guard\ncompares them by significant-prefix containment. ``CUSTOM`` carries a\nhuman label with no machine hierarchy \u2014 the guard treats it as unverifiable\n(``UNKNOWN``) unless two custom tags match exactly.",
+        "enum": [
+          "NAICS",
+          "SOC",
+          "custom"
+        ],
+        "title": "CodeSystem",
+        "type": "string"
+      },
+      "CodedTag": {
+        "additionalProperties": false,
+        "description": "One scope tag: a classification code plus a human label.\n\nMultiple tags per dimension express a union \u2014 e.g. B2B sales reps as SOC\n``41-3000`` (services) + ``41-4000`` (wholesale & manufacturing).",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "system": {
+            "$ref": "#/components/schemas/CodeSystem"
+          }
+        },
+        "required": [
+          "system",
+          "code",
+          "label"
+        ],
+        "title": "CodedTag",
+        "type": "object"
+      },
+      "CompositePrimitive": {
+        "additionalProperties": false,
+        "description": "Same-unit set op over atomic primitives (Q3).",
+        "properties": {
+          "as_of": {
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "concept_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Concept Slug",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "geo": {
+            "$ref": "#/components/schemas/Geo"
+          },
+          "geo_perspective": {
+            "$ref": "#/components/schemas/GeoPerspective"
+          },
+          "inputs": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            },
+            "title": "Inputs",
+            "type": "array"
+          },
+          "kind": {
+            "const": "composite_primitive",
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "schema_version": {
+            "minimum": 1.0,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "set_operation": {
+            "$ref": "#/components/schemas/SetOperation"
+          },
+          "slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Slug",
+            "type": "string"
+          },
+          "tag_filter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tag Filter"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "schema_version",
+          "concept_slug",
+          "name",
+          "description",
+          "inputs",
+          "set_operation",
+          "as_of",
+          "unit",
+          "geo",
+          "geo_perspective"
+        ],
+        "title": "CompositePrimitive",
+        "type": "object"
+      },
+      "Concept": {
+        "additionalProperties": false,
+        "description": "Default concept record. ``Marketplace`` and ``Company`` variants extend\nthis with extra mandatory fields (Q19, Q21) \u2014 out of scope for the v0.2\nlens-aware slice but the schema leaves room.",
+        "properties": {
+          "analysis_lens": {
+            "$ref": "#/components/schemas/ConceptAnalysisLens"
+          },
+          "competing_concepts": {
+            "default": [],
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            },
+            "title": "Competing Concepts",
+            "type": "array"
+          },
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "kind": {
+            "const": "concept",
+            "title": "Kind",
+            "type": "string"
+          },
+          "measurements": {
+            "default": [],
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            },
+            "title": "Measurements",
+            "type": "array"
+          },
+          "modifiers": {
+            "$ref": "#/components/schemas/ConceptModifiers",
+            "default": {}
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "requires_clearance": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Requires Clearance",
+            "type": "array"
+          },
+          "schema_version": {
+            "minimum": 1.0,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/MarketScope",
+            "default": {
+              "exclude": [],
+              "geo_demand": [],
+              "geo_supply": [],
+              "include": [],
+              "persona": [],
+              "product": [],
+              "vertical": []
+            }
+          },
+          "slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "schema_version",
+          "name",
+          "definition",
+          "analysis_lens"
+        ],
+        "title": "Concept",
+        "type": "object"
+      },
+      "ConceptAnalysisLens": {
+        "additionalProperties": false,
+        "description": "Primary + optional secondary lens (Q39).\n\nThe validator warns when scenarios from the two lenses land within 30% of\neach other (means secondary isn't doing strategic work).",
+        "properties": {
+          "primary": {
+            "$ref": "#/components/schemas/AnalysisLens"
+          },
+          "secondary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisLens"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "primary"
+        ],
+        "title": "ConceptAnalysisLens",
+        "type": "object"
+      },
+      "ConceptModifiers": {
+        "additionalProperties": false,
+        "description": "Four composable modifiers (Q39).\n\nEach modifier is a field, not a separate lens; they layer onto whichever\nprimary lens the concept declares.",
+        "properties": {
+          "margin_capture": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MarginCaptureModifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "opex_conversion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpexConversionModifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "regulatory_unlock": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegulatoryUnlockModifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "risk_transfer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RiskTransferModifier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ConceptModifiers",
+        "type": "object"
+      },
+      "ConceptSummary": {
+        "properties": {
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "measurement_count": {
+            "title": "Measurement Count",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "primary_lens": {
+            "title": "Primary Lens",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "definition",
+          "primary_lens",
+          "measurement_count"
+        ],
+        "title": "ConceptSummary",
+        "type": "object"
+      },
+      "ConnectorOut": {
+        "properties": {
+          "capabilities": {
+            "items": {
+              "$ref": "#/components/schemas/CapabilityOut"
+            },
+            "title": "Capabilities",
+            "type": "array"
+          },
+          "connector": {
+            "title": "Connector",
+            "type": "string"
+          },
+          "method_count": {
+            "title": "Method Count",
+            "type": "integer"
+          },
+          "primitives_in_bank": {
+            "title": "Primitives In Bank",
+            "type": "integer"
+          },
+          "sample_primitive_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Primitive Slug"
+          },
+          "sample_source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Source Url"
+          },
+          "source_tier": {
+            "title": "Source Tier",
+            "type": "string"
+          }
+        },
+        "required": [
+          "connector",
+          "source_tier",
+          "method_count",
+          "capabilities",
+          "primitives_in_bank",
+          "sample_primitive_slug",
+          "sample_source_url"
+        ],
+        "title": "ConnectorOut",
+        "type": "object"
+      },
+      "Contribution": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "org_id": {
+            "title": "Org Id",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "org_id",
+          "kind",
+          "status",
+          "reasons",
+          "created_at"
+        ],
+        "title": "Contribution",
+        "type": "object"
+      },
+      "ContributionRequest": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "atomic_primitive",
+              "annotation"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          }
+        },
+        "required": [
+          "kind",
+          "payload"
+        ],
+        "title": "ContributionRequest",
+        "type": "object"
+      },
+      "ContributionResponse": {
+        "properties": {
+          "contribution_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contribution Id"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "accepted",
+              "needs_review",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "reasons"
+        ],
+        "title": "ContributionResponse",
+        "type": "object"
+      },
+      "Convergence": {
+        "additionalProperties": false,
+        "description": "Bottoms-up vs tops-down cross-check (MV2). When a concept is sized by \u22652\n*independent* method families, the two family medians are compared head to\nhead: the agreement ratio (high/low) is the triangulation signal a VC would\notherwise assemble by hand. This is pure synthesis of already-sourced\nscenario values \u2014 no new number is invented. ``None`` (the default) means the\nconcept has a single method family, so there is nothing to converge and the\nUI must NOT manufacture a second method.",
+        "properties": {
+          "high_family": {
+            "$ref": "#/components/schemas/MethodFamily"
+          },
+          "high_value": {
+            "title": "High Value",
+            "type": "number"
+          },
+          "low_family": {
+            "$ref": "#/components/schemas/MethodFamily"
+          },
+          "low_value": {
+            "title": "Low Value",
+            "type": "number"
+          },
+          "ratio": {
+            "minimum": 1.0,
+            "title": "Ratio",
+            "type": "number"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "low_family",
+          "high_family",
+          "low_value",
+          "high_value",
+          "ratio",
+          "unit"
+        ],
+        "title": "Convergence",
+        "type": "object"
+      },
+      "DeliveryMode": {
+        "enum": [
+          "direct",
+          "embedded",
+          "bundled",
+          "platform_passthrough",
+          "n/a"
+        ],
+        "title": "DeliveryMode",
+        "type": "string"
+      },
+      "DisconnectResponse": {
+        "properties": {
+          "org_id": {
+            "title": "Org Id",
+            "type": "string"
+          },
+          "primitives_purged": {
+            "title": "Primitives Purged",
+            "type": "integer"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "tokens_purged": {
+            "title": "Tokens Purged",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "provider",
+          "org_id",
+          "tokens_purged",
+          "primitives_purged"
+        ],
+        "title": "DisconnectResponse",
+        "type": "object"
+      },
+      "DistributionShape": {
+        "enum": [
+          "uniform",
+          "normal",
+          "power_law",
+          "bimodal",
+          "other"
+        ],
+        "title": "DistributionShape",
+        "type": "string"
+      },
+      "ErrorDetail": {
+        "description": "The envelope FastAPI returns for an ``HTTPException``: ``{\"detail\": \"...\"}``.",
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "ExpansionStage": {
+        "enum": [
+          "wedge",
+          "adjacent",
+          "platform",
+          "n/a"
+        ],
+        "title": "ExpansionStage",
+        "type": "string"
+      },
+      "FirmSizeBand": {
+        "additionalProperties": false,
+        "description": "A firm-size segment, e.g. mid-market = 100-999 employees.\n\n``None`` on either bound means open-ended (``min_emp=None`` \u2192 from 0;\n``max_emp=None`` \u2192 no upper limit). An all-firms scope is the absence of a\nband (``segment=None`` on the scope), not a band with both bounds open.",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "max_emp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Emp"
+          },
+          "min_emp": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Emp"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "FirmSizeBand",
+        "type": "object"
+      },
+      "Framework": {
+        "additionalProperties": false,
+        "properties": {
+          "applicable_to": {
+            "default": [],
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            },
+            "title": "Applicable To",
+            "type": "array"
+          },
+          "expansion_stage_parameter": {
+            "default": false,
+            "title": "Expansion Stage Parameter",
+            "type": "boolean"
+          },
+          "formula": {
+            "title": "Formula",
+            "type": "string"
+          },
+          "horizon_class": {
+            "$ref": "#/components/schemas/HorizonClass",
+            "default": "snapshot"
+          },
+          "inputs": {
+            "items": {
+              "$ref": "#/components/schemas/FrameworkInput"
+            },
+            "title": "Inputs",
+            "type": "array"
+          },
+          "kind": {
+            "const": "framework",
+            "title": "Kind",
+            "type": "string"
+          },
+          "lens": {
+            "$ref": "#/components/schemas/AnalysisLens"
+          },
+          "method_family": {
+            "$ref": "#/components/schemas/MethodFamily"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "not_applicable_to": {
+            "default": [],
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            },
+            "title": "Not Applicable To",
+            "type": "array"
+          },
+          "output_unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "requires_clearance": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Requires Clearance",
+            "type": "array"
+          },
+          "schema_version": {
+            "minimum": 1.0,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Slug",
+            "type": "string"
+          },
+          "variants": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FrameworkVariant"
+            },
+            "title": "Variants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "slug",
+          "schema_version",
+          "name",
+          "method_family",
+          "lens",
+          "inputs",
+          "formula",
+          "output_unit"
+        ],
+        "title": "Framework",
+        "type": "object"
+      },
+      "FrameworkInput": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "required": {
+            "default": true,
+            "title": "Required",
+            "type": "boolean"
+          },
+          "role": {
+            "$ref": "#/components/schemas/InputRole"
+          },
+          "unit_signature": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "name",
+          "role",
+          "unit_signature"
+        ],
+        "title": "FrameworkInput",
+        "type": "object"
+      },
+      "FrameworkSummary": {
+        "properties": {
+          "input_count": {
+            "title": "Input Count",
+            "type": "integer"
+          },
+          "lens": {
+            "title": "Lens",
+            "type": "string"
+          },
+          "method_family": {
+            "title": "Method Family",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "method_family",
+          "lens",
+          "input_count"
+        ],
+        "title": "FrameworkSummary",
+        "type": "object"
+      },
+      "FrameworkVariant": {
+        "additionalProperties": false,
+        "description": "Q17 declared variant. v0.2 uses ``scope`` to bind the framework to a\nconcept; sector/region variants land at later milestones.",
+        "properties": {
+          "default_inputs": {
+            "additionalProperties": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-z0-9][a-z0-9-]*$",
+              "type": "string"
+            },
+            "title": "Default Inputs",
+            "type": "object"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope"
+        ],
+        "title": "FrameworkVariant",
+        "type": "object"
+      },
+      "Geo": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate"
+          },
+          "aggregation_rule": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeoAggregationRule"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "allocator_primitive": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allocator Primitive"
+          },
+          "codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Codes",
+            "type": "array"
+          },
+          "level": {
+            "$ref": "#/components/schemas/GeoLevel"
+          }
+        },
+        "required": [
+          "level",
+          "codes"
+        ],
+        "title": "Geo",
+        "type": "object"
+      },
+      "GeoAggregationRule": {
+        "enum": [
+          "union",
+          "sum",
+          "allocated_by"
+        ],
+        "title": "GeoAggregationRule",
+        "type": "string"
+      },
+      "GeoLevel": {
+        "enum": [
+          "country",
+          "subnational",
+          "supranational",
+          "global"
+        ],
+        "title": "GeoLevel",
+        "type": "string"
+      },
+      "GeoPerspective": {
+        "enum": [
+          "supply",
+          "demand",
+          "mixed",
+          "unknown"
+        ],
+        "title": "GeoPerspective",
+        "type": "string"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "properties": {
+          "env": {
+            "title": "Env",
+            "type": "string"
+          },
+          "status": {
+            "const": "ok",
+            "default": "ok",
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "env",
+          "version"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "HorizonClass": {
+        "enum": [
+          "snapshot",
+          "short_extrapolation",
+          "long_extrapolation"
+        ],
+        "title": "HorizonClass",
+        "type": "string"
+      },
+      "InputRole": {
+        "description": "Q6 input roles. Distinct from Q39 lens role names: a framework input\nhas both a ``name`` (matching a Q39 lens role like ``persona_pool``) and\na ``role`` (the Q6 time-travel role like ``base_value``).",
+        "enum": [
+          "base_value",
+          "growth_index",
+          "regime_modifier",
+          "conditional_adjustment"
+        ],
+        "title": "InputRole",
+        "type": "string"
+      },
+      "InputScope": {
+        "additionalProperties": false,
+        "description": "The snap-to-truth scope of one consumed primitive, plus any divergences\nfrom the concept's declared scope.",
+        "properties": {
+          "displayed": {
+            "$ref": "#/components/schemas/MarketScope"
+          },
+          "primitive_slug": {
+            "title": "Primitive Slug",
+            "type": "string"
+          },
+          "role_name": {
+            "title": "Role Name",
+            "type": "string"
+          },
+          "warnings": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ScopeWarningOut"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "primitive_slug",
+          "role_name",
+          "displayed"
+        ],
+        "title": "InputScope",
+        "type": "object"
+      },
+      "InputUsed": {
+        "additionalProperties": false,
+        "description": "One row of `inputs_used` on a scenario. Pinned by snapshot_sha256\n(Q5) so the scenario is reproducible.",
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "primitive_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Primitive Slug",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/InputRole"
+          },
+          "role_name": {
+            "title": "Role Name",
+            "type": "string"
+          },
+          "snapshot_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Snapshot Sha256",
+            "type": "string"
+          },
+          "source_tier": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Tier"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "role_name",
+          "role",
+          "primitive_slug",
+          "snapshot_sha256"
+        ],
+        "title": "InputUsed",
+        "type": "object"
+      },
+      "LLMHealth": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "backend": {
+            "enum": [
+              "claude-cli",
+              "anthropic-sdk"
+            ],
+            "title": "Backend",
+            "type": "string"
+          }
+        },
+        "required": [
+          "backend",
+          "available"
+        ],
+        "title": "LLMHealth",
+        "type": "object"
+      },
+      "MarginCaptureModifier": {
+        "additionalProperties": false,
+        "properties": {
+          "middleman": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Middleman",
+            "type": "string"
+          }
+        },
+        "required": [
+          "middleman"
+        ],
+        "title": "MarginCaptureModifier",
+        "type": "object"
+      },
+      "MarketScope": {
+        "additionalProperties": false,
+        "description": "The structured definition of a market (sub-project 1 design).\n\nEvery field defaults empty so an unscoped record is valid; the guard treats\nan empty dimension as \"unconstrained\" on that side.",
+        "properties": {
+          "exclude": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclude",
+            "type": "array"
+          },
+          "geo_demand": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Geo Demand",
+            "type": "array"
+          },
+          "geo_supply": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Geo Supply",
+            "type": "array"
+          },
+          "include": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Include",
+            "type": "array"
+          },
+          "persona": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CodedTag"
+            },
+            "title": "Persona",
+            "type": "array"
+          },
+          "product": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Product",
+            "type": "array"
+          },
+          "segment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FirmSizeBand"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "vertical": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CodedTag"
+            },
+            "title": "Vertical",
+            "type": "array"
+          }
+        },
+        "title": "MarketScope",
+        "type": "object"
+      },
+      "MethodFamily": {
+        "description": "Q7 method families. Independence scoring warns when triangulation\nuses two frameworks from the same family.",
+        "enum": [
+          "top_down_spend",
+          "bottoms_up_seats",
+          "comparable_revenue",
+          "analog_penetration",
+          "value_chain"
+        ],
+        "title": "MethodFamily",
+        "type": "string"
+      },
+      "OpexConversionModifier": {
+        "additionalProperties": false,
+        "properties": {
+          "pricing_premium": {
+            "title": "Pricing Premium",
+            "type": "number"
+          }
+        },
+        "required": [
+          "pricing_premium"
+        ],
+        "title": "OpexConversionModifier",
+        "type": "object"
+      },
+      "OverrideValueIn": {
+        "properties": {
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "value",
+          "unit"
+        ],
+        "title": "OverrideValueIn",
+        "type": "object"
+      },
+      "PortfolioCompany": {
+        "properties": {
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "has_analyst_input": {
+            "default": false,
+            "title": "Has Analyst Input",
+            "type": "boolean"
+          },
+          "market_concept_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Concept Slug"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "state_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State Hash"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "tam_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tam Value"
+          },
+          "vertical": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vertical"
+          }
+        },
+        "required": [
+          "name",
+          "domain",
+          "vertical",
+          "status",
+          "market_concept_slug",
+          "tam_value",
+          "reason",
+          "state_hash"
+        ],
+        "title": "PortfolioCompany",
+        "type": "object"
+      },
+      "PortfolioResponse": {
+        "properties": {
+          "companies": {
+            "items": {
+              "$ref": "#/components/schemas/PortfolioCompany"
+            },
+            "title": "Companies",
+            "type": "array"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "org_id": {
+            "title": "Org Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "org_id",
+          "enabled",
+          "counts",
+          "companies"
+        ],
+        "title": "PortfolioResponse",
+        "type": "object"
+      },
+      "PrimitiveSummary": {
+        "properties": {
+          "concept_slug": {
+            "title": "Concept Slug",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "unit_label": {
+            "title": "Unit Label",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "kind",
+          "concept_slug",
+          "value",
+          "unit_label"
+        ],
+        "title": "PrimitiveSummary",
+        "type": "object"
+      },
+      "RecomputeRequest": {
+        "properties": {
+          "concept_slug": {
+            "title": "Concept Slug",
+            "type": "string"
+          },
+          "framework_assumptions": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Framework Assumptions"
+          },
+          "primitive_overrides": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/OverrideValueIn"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primitive Overrides"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MarketScope"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "concept_slug"
+        ],
+        "title": "RecomputeRequest",
+        "type": "object"
+      },
+      "RegulatoryUnlockModifier": {
+        "additionalProperties": false,
+        "properties": {
+          "driver": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Driver",
+            "type": "string"
+          },
+          "effective_date": {
+            "format": "date",
+            "title": "Effective Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "driver",
+          "effective_date"
+        ],
+        "title": "RegulatoryUnlockModifier",
+        "type": "object"
+      },
+      "ResolveRequest": {
+        "properties": {
+          "query": {
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "ResolveRequest",
+        "type": "object"
+      },
+      "RiskTransferModifier": {
+        "additionalProperties": false,
+        "properties": {
+          "loss_basis": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Loss Basis",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loss_basis"
+        ],
+        "title": "RiskTransferModifier",
+        "type": "object"
+      },
+      "Scenario": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "object"
+          },
+          "banners": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ScenarioBanner"
+            },
+            "title": "Banners",
+            "type": "array"
+          },
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "framework": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Framework",
+            "type": "string"
+          },
+          "framework_variant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Framework Variant"
+          },
+          "inputs_used": {
+            "items": {
+              "$ref": "#/components/schemas/InputUsed"
+            },
+            "title": "Inputs Used",
+            "type": "array"
+          },
+          "lens": {
+            "$ref": "#/components/schemas/AnalysisLens"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "uses_synthetic_primitives": {
+            "default": false,
+            "title": "Uses Synthetic Primitives",
+            "type": "boolean"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "definition",
+          "lens",
+          "framework",
+          "value",
+          "unit",
+          "inputs_used"
+        ],
+        "title": "Scenario",
+        "type": "object"
+      },
+      "ScenarioBanner": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/BannerKind"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "message"
+        ],
+        "title": "ScenarioBanner",
+        "type": "object"
+      },
+      "ScopeDimension": {
+        "description": "The dimension a guard warning refers to (for UI grouping).\n\n``VERTICAL``, ``PERSONA``, ``SEGMENT`` and ``GEO`` are code/range-anchored and\nthe guard emits warnings for them. ``PRODUCT`` (and the free-text\n``include`` / ``exclude`` rules) are display-only in v1 \u2014 the guard never\nemits a ``PRODUCT`` warning yet, because comparing free-text product\ntaxonomies is deferred to a later milestone. It is enumerated here so the UI\ncan group the product scope chips it renders.",
+        "enum": [
+          "vertical",
+          "persona",
+          "segment",
+          "geo",
+          "product"
+        ],
+        "title": "ScopeDimension",
+        "type": "string"
+      },
+      "ScopeReport": {
+        "additionalProperties": false,
+        "description": "Per-build scope check: the declared market scope plus, for each consumed\nprimitive, its true (displayed) scope and any mismatch warnings. ``ok`` is\nTrue when no input diverged from the declared market.",
+        "properties": {
+          "declared": {
+            "$ref": "#/components/schemas/MarketScope"
+          },
+          "inputs": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/InputScope"
+            },
+            "title": "Inputs",
+            "type": "array"
+          },
+          "ok": {
+            "default": true,
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "declared"
+        ],
+        "title": "ScopeReport",
+        "type": "object"
+      },
+      "ScopeWarningOut": {
+        "additionalProperties": false,
+        "description": "One surfaced scope divergence on a consumed primitive.",
+        "properties": {
+          "dimension": {
+            "$ref": "#/components/schemas/ScopeDimension"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "relationship": {
+            "title": "Relationship",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dimension",
+          "relationship",
+          "message"
+        ],
+        "title": "ScopeWarningOut",
+        "type": "object"
+      },
+      "SensitivityResponse": {
+        "properties": {
+          "base": {
+            "title": "Base",
+            "type": "number"
+          },
+          "concept_slug": {
+            "title": "Concept Slug",
+            "type": "string"
+          },
+          "inputs": {
+            "items": {
+              "$ref": "#/components/schemas/SensitivityRow"
+            },
+            "title": "Inputs",
+            "type": "array"
+          },
+          "pct": {
+            "title": "Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "concept_slug",
+          "base",
+          "pct",
+          "inputs"
+        ],
+        "title": "SensitivityResponse",
+        "type": "object"
+      },
+      "SensitivityRow": {
+        "properties": {
+          "base": {
+            "title": "Base",
+            "type": "number"
+          },
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "impact": {
+            "title": "Impact",
+            "type": "number"
+          },
+          "low": {
+            "title": "Low",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "primitive_slug": {
+            "title": "Primitive Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "primitive_slug",
+          "name",
+          "base",
+          "low",
+          "high",
+          "impact"
+        ],
+        "title": "SensitivityRow",
+        "type": "object"
+      },
+      "SetOperation": {
+        "enum": [
+          "union",
+          "intersection",
+          "filter",
+          "restrict_by_tag"
+        ],
+        "title": "SetOperation",
+        "type": "string"
+      },
+      "SignalSummary": {
+        "properties": {
+          "as_of": {
+            "title": "As Of",
+            "type": "string"
+          },
+          "concept_slug": {
+            "title": "Concept Slug",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "snapshot_sha256": {
+            "title": "Snapshot Sha256",
+            "type": "string"
+          },
+          "source_tier": {
+            "title": "Source Tier",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "uncertainty_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Basis"
+          },
+          "uncertainty_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty High"
+          },
+          "uncertainty_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uncertainty Low"
+          },
+          "unit_dimension": {
+            "title": "Unit Dimension",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "concept_slug",
+          "value",
+          "unit_dimension",
+          "as_of",
+          "source_url",
+          "source_tier",
+          "snapshot_sha256",
+          "uncertainty_low",
+          "uncertainty_high",
+          "uncertainty_basis"
+        ],
+        "title": "SignalSummary",
+        "type": "object"
+      },
+      "StandardSource": {
+        "additionalProperties": false,
+        "description": "Every tier except ``analyst-paraphrase``.",
+        "properties": {
+          "accessed": {
+            "format": "date",
+            "title": "Accessed",
+            "type": "string"
+          },
+          "freshness_sla_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Freshness Sla Days"
+          },
+          "slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Slug",
+            "type": "string"
+          },
+          "snapshot_sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Snapshot Sha256",
+            "type": "string"
+          },
+          "tier": {
+            "enum": [
+              "first_party",
+              "regulator",
+              "aggregator",
+              "analyst",
+              "community",
+              "onchain",
+              "prediction_market",
+              "community-modeled"
+            ],
+            "title": "Tier",
+            "type": "string"
+          },
+          "url": {
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "url",
+          "accessed",
+          "snapshot_sha256",
+          "tier"
+        ],
+        "title": "StandardSource",
+        "type": "object"
+      },
+      "SyncResponse": {
+        "properties": {
+          "org_id": {
+            "title": "Org Id",
+            "type": "string"
+          },
+          "primitives_added": {
+            "title": "Primitives Added",
+            "type": "integer"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "org_id",
+          "primitives_added"
+        ],
+        "title": "SyncResponse",
+        "type": "object"
+      },
+      "TAMOutput": {
+        "additionalProperties": false,
+        "properties": {
+          "convergence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Convergence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Created By",
+            "type": "string"
+          },
+          "independence_score": {
+            "default": 0.0,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Independence Score",
+            "type": "number"
+          },
+          "is_promoted": {
+            "default": false,
+            "title": "Is Promoted",
+            "type": "boolean"
+          },
+          "kind": {
+            "const": "tam_output",
+            "title": "Kind",
+            "type": "string"
+          },
+          "method_families_used": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/MethodFamily"
+            },
+            "title": "Method Families Used",
+            "type": "array"
+          },
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/Scenario"
+            },
+            "minItems": 1,
+            "title": "Scenarios",
+            "type": "array"
+          },
+          "schema_version": {
+            "minimum": 1.0,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScopeReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state_hash": {
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "State Hash",
+            "type": "string"
+          },
+          "target": {
+            "$ref": "#/components/schemas/TAMTarget"
+          },
+          "uses_modeled_composites": {
+            "default": false,
+            "title": "Uses Modeled Composites",
+            "type": "boolean"
+          },
+          "uses_synthetic_primitives": {
+            "default": false,
+            "title": "Uses Synthetic Primitives",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "state_hash",
+          "schema_version",
+          "created_by",
+          "created_at",
+          "target",
+          "scenarios"
+        ],
+        "title": "TAMOutput",
+        "type": "object"
+      },
+      "TAMTarget": {
+        "additionalProperties": false,
+        "properties": {
+          "concept": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Concept",
+            "type": "string"
+          },
+          "concept_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Concept Name"
+          },
+          "expansion_stage": {
+            "$ref": "#/components/schemas/ExpansionStage",
+            "default": "n/a"
+          },
+          "geo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geo"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time"
+          }
+        },
+        "required": [
+          "concept"
+        ],
+        "title": "TAMTarget",
+        "type": "object"
+      },
+      "TAMTrajectory": {
+        "additionalProperties": false,
+        "description": "TAM-over-time series derived from primitive ``as_of`` dates.\n\nEach point represents the evaluator output at a distinct ``as_of``\ndate \u2014 using only the primitives available at or before that date. Points\nwhere no framework is fully satisfiable are omitted; ``points: []`` means\nthe concept has no resolvable history at all.",
+        "properties": {
+          "concept_name": {
+            "title": "Concept Name",
+            "type": "string"
+          },
+          "concept_slug": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Concept Slug",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/TrajectoryPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "concept_slug",
+          "concept_name",
+          "unit",
+          "points"
+        ],
+        "title": "TAMTrajectory",
+        "type": "object"
+      },
+      "TrajectoryPoint": {
+        "additionalProperties": false,
+        "description": "One data point in a TAM-over-time trajectory.\n\n`value` is the triangulated midpoint of all satisfiable scenarios at this\nsnapshot date; `low`/`high` are the min/max of those scenario values.",
+        "properties": {
+          "as_of": {
+            "format": "date",
+            "title": "As Of",
+            "type": "string"
+          },
+          "high": {
+            "title": "High",
+            "type": "number"
+          },
+          "low": {
+            "title": "Low",
+            "type": "number"
+          },
+          "method_families": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Method Families",
+            "type": "array"
+          },
+          "scenarios_n": {
+            "title": "Scenarios N",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "as_of",
+          "value",
+          "low",
+          "high",
+          "method_families",
+          "scenarios_n"
+        ],
+        "title": "TrajectoryPoint",
+        "type": "object"
+      },
+      "Uncertainty": {
+        "additionalProperties": false,
+        "properties": {
+          "basis": {
+            "title": "Basis",
+            "type": "string"
+          },
+          "range": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Range",
+            "type": "array"
+          }
+        },
+        "required": [
+          "range",
+          "basis"
+        ],
+        "title": "Uncertainty",
+        "type": "object"
+      },
+      "Unit": {
+        "additionalProperties": false,
+        "description": "Structured unit per Q4.\n\n`denominator` carries the \"per-X\" axis (per-year, per-seat, per-policy);\n`currency` is set only when `dimension` is currency-bearing.",
+        "properties": {
+          "basis": {
+            "$ref": "#/components/schemas/UnitBasis",
+            "default": "nominal"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "denominator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Denominator"
+          },
+          "dimension": {
+            "$ref": "#/components/schemas/UnitDimension"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/UnitKind"
+          }
+        },
+        "required": [
+          "kind",
+          "dimension"
+        ],
+        "title": "Unit",
+        "type": "object"
+      },
+      "UnitBasis": {
+        "enum": [
+          "nominal"
+        ],
+        "title": "UnitBasis",
+        "type": "string"
+      },
+      "UnitDimension": {
+        "enum": [
+          "people",
+          "currency",
+          "transactions",
+          "events",
+          "percent",
+          "tokens",
+          "impressions",
+          "organizations",
+          "seats"
+        ],
+        "title": "UnitDimension",
+        "type": "string"
+      },
+      "UnitKind": {
+        "enum": [
+          "stock",
+          "flow",
+          "intensive",
+          "dimensionless"
+        ],
+        "title": "UnitKind",
+        "type": "string"
+      },
+      "UsageResponse": {
+        "properties": {
+          "by_route": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "By Route",
+            "type": "object"
+          },
+          "org_id": {
+            "title": "Org Id",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "org_id",
+          "total",
+          "by_route"
+        ],
+        "title": "UsageResponse",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "in": "header",
+        "name": "X-API-Key",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "arkash@benmore.tech",
+      "name": "Strata"
+    },
+    "description": "Proprietary curated market-sizing engine for VCs and operators.\n\n**Data bank:** 307 atomic primitives from BLS, FRED, Census, EDGAR, and World Bank. All SHA256-pinned to source snapshots.\n\n**Six TAM lenses:** cost_efficiency, revenue_generation, latent_demand, platform_throughput, bundle_consolidation, productivity_uplift.\n\n**Dynamic resolution:** POST /resolve accepts natural language market queries, parses them into lens + primitives via Claude, searches for data via Exa, and streams results via SSE.",
+    "license": {
+      "name": "Apache-2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "title": "Strata API",
+    "version": "0.11.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/audit": {
+      "get": {
+        "description": "Fetch audit trail of resolve and recompute events.",
+        "operationId": "get_audit_audit_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEvent"
+                  },
+                  "title": "Response Get Audit Audit Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or invalid API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Recent audit events (newest first)",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
+    "/browse": {
+      "get": {
+        "operationId": "browse_browse_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TAMOutput"
+                  },
+                  "title": "Response Browse Browse Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List promoted TAMs",
+        "tags": [
+          "build"
+        ]
+      }
+    },
+    "/build/recompute": {
+      "post": {
+        "operationId": "recompute_tam_build_recompute_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecomputeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TAMOutput"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or invalid API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Concept not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Override unit mismatch or invalid framework input / evaluation failed."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Rate limit exceeded \u2014 retry after the interval in the Retry-After header."
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Recompute a concept's TAM with what-if overrides / primitive swaps",
+        "tags": [
+          "build"
+        ]
+      }
+    },
+    "/build/{concept_slug}": {
+      "get": {
+        "operationId": "build_tam_build__concept_slug__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "concept_slug",
+            "required": true,
+            "schema": {
+              "title": "Concept Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TAMOutput"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Concept evaluation failed (missing inputs or invalid values)."
+          }
+        },
+        "summary": "Evaluate concept \u2192 TAM scenario tree",
+        "tags": [
+          "build"
+        ]
+      }
+    },
+    "/build/{concept_slug}/promote": {
+      "post": {
+        "operationId": "promote_tam_build__concept_slug__promote_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "concept_slug",
+            "required": true,
+            "schema": {
+              "title": "Concept Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TAMOutput"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or invalid API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Concept evaluation failed (missing inputs or invalid values)."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Rate limit exceeded \u2014 retry after the interval in the Retry-After header."
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Build + promote a concept's TAM (appears in /browse + sitemap)",
+        "tags": [
+          "build"
+        ]
+      }
+    },
+    "/build/{concept_slug}/sensitivity": {
+      "get": {
+        "operationId": "build_sensitivity_build__concept_slug__sensitivity_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "concept_slug",
+            "required": true,
+            "schema": {
+              "title": "Concept Slug",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Sensitivity swing percentage (e.g., 0.2 for \u00b120%).",
+            "in": "query",
+            "name": "pct",
+            "required": false,
+            "schema": {
+              "default": 0.2,
+              "description": "Sensitivity swing percentage (e.g., 0.2 for \u00b120%).",
+              "title": "Pct",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SensitivityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Concept not found or not evaluable."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Per-input \u00b1pct swing on the TAM (feeds the tornado chart)",
+        "tags": [
+          "build"
+        ]
+      }
+    },
+    "/build/{concept_slug}/trajectory": {
+      "get": {
+        "operationId": "build_trajectory_build__concept_slug__trajectory_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "concept_slug",
+            "required": true,
+            "schema": {
+              "title": "Concept Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TAMTrajectory"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Concept evaluation failed (missing inputs or invalid values)."
+          }
+        },
+        "summary": "TAM-over-time series derived from primitive as_of dates",
+        "tags": [
+          "build"
+        ]
+      }
+    },
+    "/c": {
+      "get": {
+        "description": "Return all concepts in the registry with their primary analysis lens and measurement count.",
+        "operationId": "list_concepts_c_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConceptSummary"
+                  },
+                  "title": "Response List Concepts C Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List concepts",
+        "tags": [
+          "concepts"
+        ]
+      }
+    },
+    "/c/{slug}": {
+      "get": {
+        "description": "Return full concept model including analysis lens, modifiers, measurements, and competing concepts.",
+        "operationId": "get_concept_c__slug__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Concept"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Concept not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Concept detail",
+        "tags": [
+          "concepts"
+        ]
+      }
+    },
+    "/connectors": {
+      "get": {
+        "description": "The typed connectors that manufacture sourced primitives (connector \u2192 primitive \u2192 framework \u2192 TAM). Each carries its capability methods + source tier, plus a live count of primitives it has produced in the current data bank and a sample slug.",
+        "operationId": "list_connectors_connectors_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectorOut"
+                  },
+                  "title": "Response List Connectors Connectors Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List ingest connectors",
+        "tags": [
+          "connectors"
+        ]
+      }
+    },
+    "/contribute": {
+      "post": {
+        "description": "Validate and queue a new primitive or annotation for review.",
+        "operationId": "contribute_contribute_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContributionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or invalid API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Rate limit exceeded \u2014 retry after the interval in the Retry-After header."
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Submit a primitive or annotation",
+        "tags": [
+          "contribute"
+        ]
+      }
+    },
+    "/contributions": {
+      "get": {
+        "description": "List pending contributions queued for human review.",
+        "operationId": "list_contributions_route_contributions_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Contribution"
+                  },
+                  "title": "Response List Contributions Route Contributions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or invalid API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Review queue",
+        "tags": [
+          "contribute"
+        ]
+      }
+    },
+    "/f": {
+      "get": {
+        "description": "Return all frameworks with method family and input count.",
+        "operationId": "list_frameworks_f_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FrameworkSummary"
+                  },
+                  "title": "Response List Frameworks F Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List frameworks",
+        "tags": [
+          "frameworks"
+        ]
+      }
+    },
+    "/f/{slug}": {
+      "get": {
+        "description": "Return full framework model including method family, unit signature, and inputs.",
+        "operationId": "get_framework_f__slug__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Framework"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Framework not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Framework detail",
+        "tags": [
+          "frameworks"
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "description": "Report the service status, environment, and version.",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liveness probe",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/healthz/llm": {
+      "get": {
+        "description": "Report the resolver's selected LLM backend and whether it looks reachable. Never makes a completion call, never echoes key/token material.",
+        "operationId": "healthz_llm_healthz_llm_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LLMHealth"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Resolver LLM backend probe",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/integrations/{provider}": {
+      "delete": {
+        "description": "Purge stored tokens and remove all org-private primitives.",
+        "operationId": "disconnect_integrations__provider__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisconnectResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or invalid API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Provider not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Disconnect provider integration",
+        "tags": [
+          "integrations"
+        ]
+      }
+    },
+    "/integrations/{provider}/authorize": {
+      "get": {
+        "description": "Generate an OAuth authorization URL for the provider.",
+        "operationId": "authorize_integrations__provider__authorize_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "redirect_uri",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Redirect Uri",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthorizeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or invalid API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Provider not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Start OAuth authorization",
+        "tags": [
+          "integrations"
+        ]
+      }
+    },
+    "/integrations/{provider}/callback": {
+      "get": {
+        "description": "Complete OAuth flow: exchange code for token and store encrypted.",
+        "operationId": "callback_integrations__provider__callback_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "title": "Code",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "title": "State",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "redirect_uri",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Redirect Uri",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Callback Integrations  Provider  Callback Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Invalid or expired OAuth state."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or invalid API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Provider not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "OAuth token exchange failed."
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "OAuth callback handler",
+        "tags": [
+          "integrations"
+        ]
+      }
+    },
+    "/integrations/{provider}/sync": {
+      "post": {
+        "description": "Sync connected provider data into private org-scoped primitives.",
+        "operationId": "sync_integrations__provider__sync_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or invalid API key."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Provider not found or not connected for this org."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Sync already in progress."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Fetch and ingest provider data",
+        "tags": [
+          "integrations"
+        ]
+      }
+    },
+    "/metrics": {
+      "get": {
+        "description": "Export metered request counts in Prometheus text exposition format.",
+        "operationId": "metrics_metrics_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Prometheus-style request metrics",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/p": {
+      "get": {
+        "description": "Return all atomic and composite primitives with value, unit, and concept linkage. Currently 307+ primitives from BLS, FRED, Census, EDGAR, and World Bank.",
+        "operationId": "list_primitives_p_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PrimitiveSummary"
+                  },
+                  "title": "Response List Primitives P Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List primitives",
+        "tags": [
+          "primitives"
+        ]
+      }
+    },
+    "/p/{slug}": {
+      "get": {
+        "description": "Return full primitive model including value, unit, geo, source with SHA256 pin, and uncertainty.",
+        "operationId": "get_primitive_p__slug__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AtomicPrimitive"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CompositePrimitive"
+                    }
+                  ],
+                  "title": "Response Get Primitive P  Slug  Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Primitive not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Primitive detail",
+        "tags": [
+          "primitives"
+        ]
+      }
+    },
+    "/portfolio": {
+      "get": {
+        "description": "Read-only portfolio view. Serves the deterministic, pre-sized demo subset \u2014 every number is computed offline and cached; this route never calls an LLM or Exa. 'unsizable' rows are intentional: the platform refuses to invent a number it cannot source (the Q20 thesis, visible).",
+        "operationId": "get_portfolio_portfolio_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List the portfolio (cached demo subset)",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/resolve": {
+      "post": {
+        "description": "Stream SSE events as the resolver parses and evaluates a market query.\n\nRequires authentication (API key or Clerk session). Subject to per-org\nrate limiting (429 response).\n\nResponse is text/event-stream with events: ``parsing``, ``searching``,\n``framework_selected``, ``evaluating``, ``result``, ``error``, ``done``\n(plus legacy ``step`` for frontend compatibility).",
+        "operationId": "resolve_query_resolve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or invalid API key."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Rate limit exceeded \u2014 retry after the interval in the Retry-After header."
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Resolve a market query (SSE)",
+        "tags": [
+          "resolve"
+        ]
+      }
+    },
+    "/signals": {
+      "get": {
+        "description": "Return all read-only prediction-market signals (Kalshi event probabilities and contract volumes). Each carries a source URL + tier + SHA256 snapshot pin. Signals never feed a TAM (Q20) \u2014 they are a separate, honestly-labelled surface.",
+        "operationId": "list_signals_signals_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SignalSummary"
+                  },
+                  "title": "Response List Signals Signals Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List prediction-market signals",
+        "tags": [
+          "signals"
+        ]
+      }
+    },
+    "/signals/{slug}": {
+      "get": {
+        "description": "Full signal primitive: value, unit, geo, source with SHA256 pin, uncertainty.",
+        "operationId": "get_signal_signals__slug__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtomicPrimitive"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Signal not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Signal detail",
+        "tags": [
+          "signals"
+        ]
+      }
+    },
+    "/tam/{state_hash}": {
+      "get": {
+        "operationId": "get_tam_tam__state_hash__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "state_hash",
+            "required": true,
+            "schema": {
+              "title": "State Hash",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TAMOutput"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "TAM not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retrieve a frozen TAM by state hash",
+        "tags": [
+          "build"
+        ]
+      }
+    },
+    "/usage": {
+      "get": {
+        "description": "Fetch request counts by route for the authenticated key.",
+        "operationId": "get_usage_usage_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorDetail"
+                }
+              }
+            },
+            "description": "Missing or invalid API key."
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Per-key usage counts",
+        "tags": [
+          "ops"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "description": "Liveness and LLM-backend health probes.",
+      "name": "health"
+    },
+    {
+      "description": "Curated market concepts and their competing measurements.",
+      "name": "concepts"
+    },
+    {
+      "description": "Atomic and composite sourced primitives (value + unit + SHA256-pinned source).",
+      "name": "primitives"
+    },
+    {
+      "description": "Quarantined prediction-market signals \u2014 surfaced read-only, never fed into a TAM.",
+      "name": "signals"
+    },
+    {
+      "description": "Parameterized TAM recipes (the six analysis lenses) and their variants.",
+      "name": "frameworks"
+    },
+    {
+      "description": "Interactive TAM composition: size a concept, recompute with what-if overrides, browse/promote frozen artifacts.",
+      "name": "build"
+    },
+    {
+      "description": "Dynamic natural-language market resolution via Claude + Exa, streamed over SSE.",
+      "name": "resolve"
+    },
+    {
+      "description": "Recent resolve/recompute audit events.",
+      "name": "audit"
+    },
+    {
+      "description": "Per-org usage metering and Prometheus metrics.",
+      "name": "ops"
+    },
+    {
+      "description": "Inbound OAuth connectors (SaaS) producing org-private first-party primitives. Authentication required.",
+      "name": "integrations"
+    },
+    {
+      "description": "Catalog of typed ingest connectors cross-referenced with the live data bank.",
+      "name": "connectors"
+    },
+    {
+      "description": "Validator-gated community contribution intake and review queue.",
+      "name": "contribute"
+    },
+    {
+      "description": "Portfolio company sizing (cached demo subset).",
+      "name": "portfolio"
+    }
+  ]
+}

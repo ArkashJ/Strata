@@ -26,12 +26,25 @@ class LLMHealth(BaseModel):
     available: bool
 
 
-@router.get("/healthz", response_model=Health, summary="Liveness probe")
+@router.get(
+    "/healthz",
+    response_model=Health,
+    summary="Liveness probe",
+    description="Report the service status, environment, and version.",
+)
 async def healthz() -> Health:
     return Health(env=settings.env, version=__version__)
 
 
-@router.get("/healthz/llm", response_model=LLMHealth, summary="Resolver LLM backend probe")
+@router.get(
+    "/healthz/llm",
+    response_model=LLMHealth,
+    summary="Resolver LLM backend probe",
+    description=(
+        "Report the resolver's selected LLM backend and whether it looks reachable. "
+        "Never makes a completion call, never echoes key/token material."
+    ),
+)
 async def healthz_llm() -> LLMHealth:
     """Report the resolver's selected LLM backend and whether it looks reachable.
 

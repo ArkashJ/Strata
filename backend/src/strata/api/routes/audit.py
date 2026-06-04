@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from strata.api.auth import Principal, require_principal
+from strata.api.responses import UNAUTHORIZED
 from strata.db.audit import AuditEvent, list_audit_events
 from strata.db.engine import get_session
 
@@ -29,6 +30,8 @@ _PRINCIPAL = Depends(require_principal)
     "/audit",
     response_model=list[AuditEvent],
     summary="Recent audit events (newest first)",
+    description="Fetch audit trail of resolve and recompute events.",
+    responses=UNAUTHORIZED,
 )
 async def get_audit(
     limit: int = Query(50, ge=1, le=500),
