@@ -20,12 +20,22 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass, field
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Security
+from fastapi.security import APIKeyHeader
 
 from ..config import settings
 
 _API_KEY_HEADER = "x-api-key"
 _ANONYMOUS_ORG = "public"
+
+# OpenAPI security scheme. Declared with ``auto_error=False`` so it is purely a
+# *documentation* hook — it surfaces the ``X-API-Key`` header in ``/openapi.json``
+# (and the Authorize button in ``/docs``) and marks any route that depends on it
+# as secured, without itself rejecting requests. The actual key validation stays
+# in ``principal_for`` below, which reads the header directly. The ``X-API-Key``
+# name here must match ``_API_KEY_HEADER`` (case-insensitive).
+api_key_scheme = APIKeyHeader(name="X-API-Key", auto_error=False)
+_SECURITY = Security(api_key_scheme)
 
 
 @dataclass(frozen=True, slots=True)
@@ -85,15 +95,18 @@ def principal_for(request: Request) -> Principal:
     return _anonymous()
 
 
-def require_principal(request: Request) -> Principal:
-    """FastAPI dependency for protected routes."""
+def require_principal(request: Request, _key: str | None = _SECURITY) -> Principal:
+    """FastAPI dependency for protected routes. The ``_key`` parameter only wires
+    the ``X-API-Key`` security scheme into OpenAPI; validation uses the request
+    header directly via ``principal_for``."""
     return principal_for(request)
 
 
-def require_authenticated(request: Request) -> Principal:
+def require_authenticated(request: Request, _key: str | None = _SECURITY) -> Principal:
     """Stricter dependency for routes that handle tenant secrets / private data
     (Wave 5B): an anonymous ``public`` principal is rejected even in dev, so
-    unauthenticated callers can never share one tenant bucket."""
+    unauthenticated callers can never share one tenant bucket. The ``_key``
+    parameter only wires the ``X-API-Key`` security scheme into OpenAPI."""
     principal = principal_for(request)
     if principal.is_anonymous:
         raise HTTPException(status_code=401, detail="authentication required")

@@ -35,6 +35,51 @@ load_dotenv()
 
 log = get_logger(__name__)
 
+# Per-tag descriptions surfaced in /docs and /redoc. One entry per router tag so
+# the spec groups endpoints with a human explanation instead of a bare label.
+OPENAPI_TAGS: list[dict[str, str]] = [
+    {"name": "health", "description": "Liveness and LLM-backend health probes."},
+    {
+        "name": "concepts",
+        "description": "Curated market concepts and their competing measurements.",
+    },
+    {
+        "name": "primitives",
+        "description": "Atomic and composite sourced primitives (value + unit + SHA256-pinned source).",
+    },
+    {
+        "name": "signals",
+        "description": "Quarantined prediction-market signals — surfaced read-only, never fed into a TAM.",
+    },
+    {
+        "name": "frameworks",
+        "description": "Parameterized TAM recipes (the six analysis lenses) and their variants.",
+    },
+    {
+        "name": "build",
+        "description": "Interactive TAM composition: size a concept, recompute with what-if overrides, browse/promote frozen artifacts.",
+    },
+    {
+        "name": "resolve",
+        "description": "Dynamic natural-language market resolution via Claude + Exa, streamed over SSE.",
+    },
+    {"name": "audit", "description": "Recent resolve/recompute audit events."},
+    {"name": "ops", "description": "Per-org usage metering and Prometheus metrics."},
+    {
+        "name": "integrations",
+        "description": "Inbound OAuth connectors (SaaS) producing org-private first-party primitives. Authentication required.",
+    },
+    {
+        "name": "connectors",
+        "description": "Catalog of typed ingest connectors cross-referenced with the live data bank.",
+    },
+    {
+        "name": "contribute",
+        "description": "Validator-gated community contribution intake and review queue.",
+    },
+    {"name": "portfolio", "description": "Portfolio company sizing (cached demo subset)."},
+]
+
 
 @asynccontextmanager
 async def lifespan(application: FastAPI) -> AsyncGenerator[None]:
@@ -79,6 +124,9 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
+        openapi_tags=OPENAPI_TAGS,
+        contact={"name": "Strata", "email": "arkash@benmore.tech"},
+        license_info={"name": "Apache-2.0", "url": "https://www.apache.org/licenses/LICENSE-2.0"},
     )
 
     # AC3.4: CORS must not be wildcard in prod. A "*" origin list in prod is a
