@@ -21,12 +21,16 @@ export function DonutChart({
   centerLabel,
   centerValue,
   height = 240,
+  // Disable for print/PDF: recharts' entry animation leaves the ring as a
+  // partial arc if a snapshot/print is taken before it finishes.
+  animate = true,
 }: {
   data: Slice[];
   colors?: string[];
   centerLabel?: string;
   centerValue?: string;
   height?: number;
+  animate?: boolean;
 }) {
   if (data.length === 0) return null;
 
@@ -36,14 +40,27 @@ export function DonutChart({
     <ResponsiveContainer width="100%" height={height}>
       <PieChart>
         <Tooltip />
-        <Pie data={slices} dataKey="value" nameKey="label" innerRadius="58%" strokeWidth={2}>
+        <Pie
+          data={slices}
+          dataKey="value"
+          nameKey="label"
+          innerRadius="58%"
+          strokeWidth={2}
+          isAnimationActive={animate}
+        >
           {centerLabel || centerValue ? (
             <Label
               content={({ viewBox }) => {
                 if (!viewBox || !("cx" in viewBox)) return null;
                 const { cx, cy } = viewBox;
                 return (
-                  <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fill="currentColor">
+                  <text
+                    x={cx}
+                    y={cy}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill="currentColor"
+                  >
                     {centerValue ? (
                       <tspan x={cx} y={cy} style={{ fontSize: 22, fontWeight: 600 }}>
                         {centerValue}

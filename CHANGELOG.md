@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed — report charts, multi-page PDF, dynamic TAM unblock
 
+- **Size any market straight from /build.** Bare `/build` used to lock onto one
+  default market ("Accrual") with no way to change it — so it looked like nothing
+  worked. There's now a "Size a different market" box at the top of Build: type
+  any market and it pins a curated one or resolves a new one live.
+- **Report charts now print correctly.** The donuts were drawing as half-finished
+  arcs in the PDF because their entry animation hadn't finished when the page was
+  captured. Charts now render fully (animation off) in the report.
 - **Analysis report now has charts.** Three charts at the top of every report,
   all built only from numbers already in the report (no new figures invented):
   an answered-vs-gaps donut, a coverage-by-category radar, and a source-tier
