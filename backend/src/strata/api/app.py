@@ -215,8 +215,13 @@ def create_app() -> FastAPI:
             return getattr(app.state, "registry", None) or load_registry()
 
         mcp_app = build_streamable_http_app(get_registry=_mcp_registry)  # type: ignore[arg-type]
+        # Lifespan still drives the RAW app's session-manager (via app.state.mcp_app);
+        # the auth wrapper has no lifespan of its own — it only gates requests so the
+        # hosted agent surface requires an API key (Phase 3 / Workstream A).
+        from strata.api.mcp_auth import McpAuthMiddleware
+
         app.state.mcp_app = mcp_app
-        app.mount("/mcp", mcp_app)
+        app.mount("/mcp", McpAuthMiddleware(mcp_app))
     except Exception:  # MCP is additive; never block API boot on its failure
         log.warning("strata.mcp.mount_failed", exc_info=True)
 

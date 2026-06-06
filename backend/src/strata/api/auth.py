@@ -18,6 +18,7 @@ open locally. In prod (``require_auth=True``) a missing/invalid key is a 401.
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 from fastapi import HTTPException, Request, Security
@@ -79,10 +80,14 @@ def _anonymous() -> Principal:
     return Principal(org_id=_ANONYMOUS_ORG, key_id="anonymous", scopes=("read",))
 
 
-def principal_for(request: Request) -> Principal:
-    """Resolve the request's Principal. Raises 401 only when auth is required and
-    the key is missing/invalid."""
-    raw = request.headers.get(_API_KEY_HEADER)
+def principal_for_headers(headers: Mapping[str, str], *, require: bool) -> Principal:
+    """Resolve a Principal from raw request headers (transport-agnostic).
+
+    Factored out of ``principal_for`` so the pure-ASGI ``/mcp`` middleware can
+    authenticate without a FastAPI ``Request``. ``require=True`` forces a key
+    even when ``settings.require_auth`` is off — the hosted agent surface stays
+    closed regardless of the REST API's dev posture."""
+    raw = headers.get(_API_KEY_HEADER)
     if raw:
         principal = _KEY_STORE.get(hash_key(raw))
         if principal is not None:
@@ -90,9 +95,15 @@ def principal_for(request: Request) -> Principal:
         # A *present but wrong* key is always a 401, even in dev — it's an
         # explicit (failed) auth attempt, not an anonymous read.
         raise HTTPException(status_code=401, detail="invalid API key")
-    if settings.require_auth:
+    if require or settings.require_auth:
         raise HTTPException(status_code=401, detail="missing API key")
     return _anonymous()
+
+
+def principal_for(request: Request) -> Principal:
+    """Resolve the request's Principal. Raises 401 only when auth is required and
+    the key is missing/invalid."""
+    return principal_for_headers(request.headers, require=settings.require_auth)
 
 
 def require_principal(request: Request, _key: str | None = _SECURITY) -> Principal:
