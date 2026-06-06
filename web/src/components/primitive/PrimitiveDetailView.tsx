@@ -22,7 +22,7 @@ import { NotFoundState } from "@/components/ui/NotFoundState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { TierBadge } from "@/components/ui/TierBadge";
 import { ApiError } from "@/lib/api-client";
-import { formatCompact } from "@/lib/format";
+import { PLACEHOLDER_SNAPSHOT_LABEL, formatCompact, isPlaceholderSnapshot } from "@/lib/format";
 import { primitiveQuery } from "@/lib/queries";
 import type {
   AtomicPrimitive,
@@ -156,9 +156,13 @@ function AtomicSections({ p }: { p: AtomicPrimitive }) {
             <span className="font-mono text-[var(--fg-2)]">{p.source.accessed}</span>
           </Field>
           <Field label="Snapshot SHA-256">
-            <code className="break-all font-mono text-[12px] text-[var(--fg-2)]">
-              {p.source.snapshot_sha256}
-            </code>
+            {isPlaceholderSnapshot(p.source.snapshot_sha256) ? (
+              <span className="text-[12px] text-[var(--fg-3)]">{PLACEHOLDER_SNAPSHOT_LABEL}</span>
+            ) : (
+              <code className="break-all font-mono text-[12px] text-[var(--fg-2)]">
+                {p.source.snapshot_sha256}
+              </code>
+            )}
           </Field>
           {p.source.original_publisher ? (
             <Field label="Original publisher">

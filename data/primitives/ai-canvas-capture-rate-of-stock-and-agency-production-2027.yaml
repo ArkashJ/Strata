@@ -31,6 +31,6 @@ uncertainty:
 source:
   slug: strata-ai-creative-capture-model-2024
   tier: community-modeled
-  url: https://strata.internal/models/ai-creative-displacement
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/ai-canvas-capture-rate-of-stock-and-agency-production-2027.yaml
   accessed: '2026-05-26'
   snapshot_sha256: 688d4f3371eaaa501a92f2af71db9bbcae17dd886bf55a1e277a68a07ff1378b

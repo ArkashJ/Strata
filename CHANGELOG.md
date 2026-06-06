@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — trust quick-wins + doc/architecture recovery (v1.0 program · PR 0)
+
+First of the 6 sequenced v1.0 PRs (`docs/TODO_june6.md`). Stops "fake sources" on
+first contact and restores the deleted ground-truth docs. Guiding rule: **honesty
+over a fake green check** — fix the lie where it is displayed, never fake the data.
+
+- **Killed placeholder provenance.** The 12 `community-modeled` primitives that
+  cited the non-resolvable `strata.internal` host now cite their open-repo
+  model-definition file (`github.com/ArkashJ/Strata/blob/main/data/primitives/<slug>.yaml`)
+  — for a community model, the documented model *is* the real source — while each
+  primitive's description still names its real-world anchor (Copilot pricing, SaaS
+  precedents, etc.) for the reader. Tier stays `community-modeled`; the soft-data
+  fence is tier-keyed, so the MODELED banner and `source_url=None` display are
+  untouched. Zero `strata.internal` references remain in `data/`.
+- **Demo snapshots render honestly.** The 25 `demo-*` primitives carry a
+  placeholder `d3d3…d3` snapshot (never content-pinned). New `isPlaceholderSnapshot`
+  / `formatSnapshot` helpers (`web/src/lib/format.ts`) render "not pinned (demo)"
+  instead of a fake hash on the report's Sources table and the primitive detail
+  page; the report's reproducibility footnote downgrades to its qualified form
+  whenever a displayed row is unpinned. **Data unchanged — the display no longer
+  lies.** (We do not manufacture a snapshot, which would forge reproducibility we
+  don't have.)
+- **Homepage featured concepts are deterministic + sourced-forward.** The blind
+  `concepts.slice(0,3)` is replaced by a curated allowlist
+  (`web/src/lib/featured.ts`) of the three concepts with the highest
+  regulator/aggregator-input ratio (`kyber-pc-doc-gen`,
+  `effective-ai-insurance-knowledge`, `doc-gen-pc-insurance`), with graceful
+  fallback — so first contact leads with genuinely sourced numbers.
+- **Connector host-map.** `usda_nass` is host-mapped → `/connectors` now shows
+  `usda_nass = 8`. `github` is deliberately **not** mapped (honest-zero): its
+  primitives are hand-authored citations, not ingests, so attributing a count
+  would imply an ingest that never happened.
+- **Deleted dead charts** `WaterfallChart.tsx` + `ScenarioBarChart.tsx` (zero imports).
+- **Doc recovery.** Restored `00-vision`, `05-roadmap`, `07-data-layer-brainstorm`,
+  `08-product-surface-brainstorm`, `10-v0.2-backend-spec` and 13 more
+  referenced-but-deleted docs byte-faithfully from history (`0e2787b^`), so every
+  `docs/*.md` reference in `CLAUDE.md`/`README.md` resolves again. Added
+  `docs/architecture/` (as-built diagrams) and `docs/questions/` (PR 4 question-bank
+  spec) to the docs index.
+- **Verified:** 867 backend tests · `pyright src` 0 · `ruff check/format src` clean ·
+  `strata validate ../data` 0 errors · `verify-integrity` passes · resolver-eval
+  baseline · doc-count consistent · web `tsc` clean · 172 web unit tests (incl. new
+  `format`/`featured` helpers). Learnings + issues recorded in
+  [`docs/solutions/2026-06-06-pr0-trust-honesty-fences.md`](docs/solutions/2026-06-06-pr0-trust-honesty-fences.md).
+- **Known/flagged (follow-ups):** two pre-existing `community-modeled` citations
+  point at a wrong-org, now-deleted methodology doc (broken links — outside PR 0's
+  12); CI gates the backend only, so the repo's pre-existing web `biome` debt in
+  unmodified files is untouched here.
+
 ### Added — deeper data bank (Track B, Phase 1 · PR #86)
 - Grew the sourced bank **214 → 279 primitives (+65)** by activating/deepening **9
   regulator + aggregator connectors** that were only 0–2 primitives deep: OECD,

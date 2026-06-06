@@ -35,6 +35,6 @@ uncertainty:
 source:
   slug: strata-itsm-shareshift-model-2024
   tier: community-modeled
-  url: https://strata.internal/models/itsm-share-shift-2024
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/ai-native-itsm-share-shift-rate-2024.yaml
   accessed: '2026-05-26'
   snapshot_sha256: ace296af210ef66311f18538887351a1e3302ed1483983c8d96ca76e11a69c89

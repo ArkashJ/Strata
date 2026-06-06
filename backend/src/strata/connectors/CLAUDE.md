@@ -166,3 +166,22 @@ with BLSClient(api_key="...") as client:
 - Cache TTL defaults to 24 hours; BLS data changes monthly at most.
 - Converter functions are standalone (not methods) so they compose freely.
 - Don't invent figures — every value in the data bank must trace to an API response.
+
+## `GET /connectors` attribution (API behaviour)
+
+The `/connectors` endpoint (`api/routes/connectors.py`) returns **every** typed
+connector in the catalog with a `primitives_in_bank` count. That count is
+**host-attribution**: a primitive is attributed to a connector when its
+`source.url` host appears in that connector's `_CONNECTOR_HOSTS` entry. Catalog
+membership and the count are independent — a connector with no host map (or no
+matching primitives) is still listed, with `primitives_in_bank = 0`.
+
+Two load-bearing rules (PR 0):
+
+- **Map a connector's hosts only when it is a real ingest.** `usda_nass` is
+  mapped (`quickstats.nass.usda.gov`, `nass.usda.gov`) → 8 attributed primitives.
+- **`github` is deliberately *not* host-mapped (honest-zero).** The only
+  primitives citing `github.com` are hand-authored analyst/community citations
+  (and `community-modeled` model-definition links), **not** github-connector
+  ingests. Mapping it would print "github · N primitives" and imply an ingest
+  that never happened — a provenance lie. It stays listed with a count of 0.

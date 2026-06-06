@@ -30,6 +30,6 @@ uncertainty:
 source:
   slug: strata-modeled-ai-cpa-capture-2024
   tier: community-modeled
-  url: https://strata.internal/methodology/ai-native-regulated-services-capture
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/ai-native-cpa-firm-realistic-capture-rate-2024.yaml
   accessed: '2026-05-26'
   snapshot_sha256: 1889d213bf91ff20f3c6a70f7edfb11ec6cbb4823c53c531ec7e5358079b3112

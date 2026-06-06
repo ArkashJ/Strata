@@ -66,3 +66,27 @@ async def test_kalshi_absent_from_host_map() -> None:
     """Kalshi data is quarantined to reg.signals (Q20), so it must not be mapped
     as an atomic-bank producer — the map invariant is presence == has reg.atomic data."""
     assert "kalshi" not in _CONNECTOR_HOSTS
+
+
+async def test_github_is_honest_zero(client: AsyncClient) -> None:
+    """github is deliberately NOT host-mapped (PR 0): the only primitives citing
+    github.com are hand-authored analyst/community-modeled figures, not
+    github-connector ingests. Mapping it would attribute those citations as a fake
+    ingest count. github stays in the catalog with primitives_in_bank == 0 even
+    though primitives DO cite github.com — that gap is the honest-zero, not an
+    oversight, so guard against a silent map-back regression."""
+    assert "github" not in _CONNECTOR_HOSTS
+    rows = (await client.get("/connectors")).json()
+    gh = next((r for r in rows if r["connector"] == "github"), None)
+    assert gh is not None, "github should still be listed in the connector catalog"
+    assert gh["primitives_in_bank"] == 0
+
+
+async def test_usda_nass_is_mapped(client: AsyncClient) -> None:
+    """usda_nass is a real ingest (PR 0): host-mapped, so its citing primitives
+    are attributed. Guards the positive side of the same host-map invariant."""
+    assert "usda_nass" in _CONNECTOR_HOSTS
+    rows = (await client.get("/connectors")).json()
+    nass = next((r for r in rows if r["connector"] == "usda_nass"), None)
+    assert nass is not None
+    assert nass["primitives_in_bank"] > 0

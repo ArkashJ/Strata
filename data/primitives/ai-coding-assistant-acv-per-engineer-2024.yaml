@@ -35,6 +35,6 @@ uncertainty:
 source:
   slug: strata-modeled-ai-coding-acv-2024
   tier: community-modeled
-  url: https://strata.internal/models/ai-coding-acv-2024
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/ai-coding-assistant-acv-per-engineer-2024.yaml
   accessed: '2026-05-28'
   snapshot_sha256: b9ee1e4978ed783523f417a2fbbeb4d72295695407d7713c72e529175aacb821

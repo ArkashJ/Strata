@@ -53,3 +53,6 @@ tmp/
 !web/src/lib/**
 .playwright-cli/
 .vercel
+
+# Compound Engineering machine-local config
+.compound-engineering/*.local.yaml

@@ -24,7 +24,9 @@ const MULTIPLICATIVE_LENSES = new Set([
   "productivity_uplift",
 ]);
 
-// Lens drives the bar colour — matches ScenarioBarChart / FrameworkCard chips.
+// TODO(PR3): these hardcoded hex values reuse the source-tier ramp for lenses,
+// which violates the PR#84 "a colour means one thing" contract and ignores the
+// theme. Replace with the cool lens-family CSS vars.
 const LENS_COLORS: Record<string, string> = {
   cost_efficiency: "#5b5bd6",
   revenue_generation: "#3fa66b",

@@ -30,8 +30,8 @@ uncertainty:
     if buyers retain human recruiters for closing, or as high as 15% if agents prove
     out on volume mid-market roles. Range reflects category uncertainty.
 source:
-  slug: strata-internal-ai-recruiting-2024
+  slug: strata-modeled-ai-recruiting-2024
   tier: community-modeled
-  url: https://strata.internal/models/ai-recruiting-capture-rate
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/ai-recruiting-agent-capture-rate-2024.yaml
   accessed: '2026-05-26'
   snapshot_sha256: 9c1ae22e1f96add0be993f6d9553b05b5ac08f57b125ac34658e7934d602222b
