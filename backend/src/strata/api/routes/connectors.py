@@ -49,6 +49,11 @@ _CONNECTOR_HOSTS: dict[str, tuple[str, ...]] = {
     "faa": ("www.faa.gov",),
     "openfda": ("api.fda.gov",),
     "comtrade": ("comtrade.un.org",),
+    "usda_nass": ("quickstats.nass.usda.gov", "nass.usda.gov"),
+    # github is deliberately NOT mapped: the only primitives citing github.com are
+    # hand-authored analyst/community-modeled figures, NOT github-connector ingests.
+    # Mapping it would attribute those citations as connector ingests that never
+    # happened — a provenance lie. Honest-zero until the connector produces real output.
 }
 
 

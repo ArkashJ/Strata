@@ -43,6 +43,24 @@ When the visual system drifts, re-run `/impeccable document` to refresh
 
 ## Repo state (as of 2026-06-03)
 
+> **In flight — v1.0 program (6 stacked PRs, `docs/TODO_june6.md`).** Driving a
+> tool the owner would actually use: live steerable TAM tree, real per-user
+> workspace, Gartner charts + real PDF export, a ~150-question report engine, and
+> breadth to v1.0. **Stacked, never merged to `main` without review.**
+> - **PR 0 — trust quick-wins + doc/architecture recovery (`feat/pr0-trust-and-docs`):**
+>   killed the 12 `strata.internal` placeholder URLs (modeled primitives now
+>   uniformly cite their real open-repo model-definition file; tier-keyed
+>   soft-data fence intact); the 25 `demo-*` `d3d3` snapshots now render honestly
+>   ("not pinned (demo)") instead of as a fake content pin — **data unchanged, the
+>   display no longer lies** (`web/src/lib/format.ts` `isPlaceholderSnapshot`);
+>   homepage features a curated sourced-forward concept allowlist
+>   (`web/src/lib/featured.ts`) not a blind slice; `usda_nass` host-mapped
+>   (`/connectors`=8) while `github` stays an honest-zero (citations ≠ ingests);
+>   dead charts deleted; 18 deleted docs restored byte-faithfully from `0e2787b^`
+>   so every `docs/*` reference resolves; `docs/architecture/` + `docs/questions/`
+>   added to the index. Honesty rule + every environment gotcha hit during the
+>   build are in [`docs/solutions/2026-06-06-pr0-trust-honesty-fences.md`](docs/solutions/2026-06-06-pr0-trust-honesty-fences.md).
+
 - **In flight (PR #83 — `feat/data-bank-expansion`):** the "Plaid/Statista for AI
   agents" buildout — exercise the idle connectors for real, then expose the bank to
   agents. **Phase 1 (data bank):** grew **185 → 214 sourced primitives** by ingesting
@@ -565,11 +583,15 @@ Numbered for reading order. Cross-link liberally with relative paths.
 | `docs/09-expert-layer-brainstorm.md` | **Decision record** E1–E5: annotation schema (ops deferred to v0.5) |
 | `docs/10-v0.2-backend-spec.md` | Executable v0.2 backend spec — the implementation blueprint |
 | `docs/design/` | Brand kit tokens + component catalog + mockup screenshots |
+| `docs/architecture/` | As-built architecture (system context, sequences, validator, RLS, migrations) — recovered facts, every claim traced to `file:line` |
+| `docs/questions/` | Analysis-question bank spec (the ~150 TAM/market questions for the PR 4 report engine) |
 | `docs/plans/` | In-flight implementation plans |
 
 The three brainstorm decision records (07/08/09) plus the backend spec (10)
 are the **load-bearing** docs for current work. `01-primer.md` is the
 conceptual on-ramp — read it first if you've never seen the project.
+`docs/architecture/` is the as-built reference for the v1.0 program (the 6
+sequenced PRs in `docs/TODO_june6.md`).
 
 ---
 

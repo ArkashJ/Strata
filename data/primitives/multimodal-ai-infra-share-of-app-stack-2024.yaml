@@ -30,6 +30,6 @@ uncertainty:
 source:
   slug: strata-infra-take-rate-2024
   tier: community-modeled
-  url: https://www.strata.internal/models/infra-take-rate-benchmarks
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/multimodal-ai-infra-share-of-app-stack-2024.yaml
   accessed: '2026-05-26'
   snapshot_sha256: fad98159fc880dbff0b6f2737016ce98f06e3feace98592b27fdc0bdc003ca76

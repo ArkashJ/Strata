@@ -32,6 +32,6 @@ uncertainty:
 source:
   slug: strata-community-modeled-share-shift-2024
   tier: community-modeled
-  url: https://www.strata.internal/models/tax-compliance-share-shift
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/numeral-realistic-share-shift-capture-2024.yaml
   accessed: '2026-05-26'
   snapshot_sha256: 665ddd13da2e204ad97ce4b576215a0af3c8dca430cbb8fba3b4e11686dba457

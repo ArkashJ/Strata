@@ -31,6 +31,6 @@ uncertainty:
 source:
   slug: strata-modeled-voice-survey-capture-2024
   tier: community-modeled
-  url: https://strata.internal/models/ai-voice-survey-capture
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/ai-voice-survey-realistic-capture-rate-2024.yaml
   accessed: '2026-05-26'
   snapshot_sha256: 54455bfe7d5e2dff6a71e9c9057fe27b89a21c74183c82db45ee4b9dc60364e9

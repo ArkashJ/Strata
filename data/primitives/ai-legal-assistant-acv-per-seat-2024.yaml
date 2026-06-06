@@ -35,6 +35,6 @@ uncertainty:
 source:
   slug: strata-modeled-ai-legal-acv-2024
   tier: community-modeled
-  url: https://strata.internal/models/ai-legal-acv-2024
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/ai-legal-assistant-acv-per-seat-2024.yaml
   accessed: '2026-05-28'
   snapshot_sha256: 650cd74aa2b851164e56871d754b95dfcbd1fd73d65287b4018468740e90f103

@@ -16,6 +16,7 @@ import { Reveal } from "@/components/landing/Reveal";
 import { StatBlock } from "@/components/ui/StatBlock";
 import { Stagger, StaggerItem } from "@/components/ui/motion";
 import { clerkEnabled } from "@/lib/clerk";
+import { selectFeaturedSlugs } from "@/lib/featured";
 import { formatUSD } from "@/lib/format";
 import { rankByQuery } from "@/lib/fuzzy";
 import { buildQuery, conceptsQuery, frameworksQuery, primitivesQuery } from "@/lib/queries";
@@ -171,11 +172,13 @@ function LandingContent() {
   const { data: frameworks } = useQuery(frameworksQuery);
 
   // "Recently updated" used to be invented figures. The backend doesn't persist
-  // TAMs, so instead of faking a list we size the first few real concepts live
-  // via /build (which now persists each TAM to Postgres) and show their actual
-  // ranges. Rows link to the frozen /tam/<hash> artifact — the shareable
-  // permalink, durable across restarts (P0.1).
-  const featuredSlugs = (concepts ?? []).slice(0, 3).map((c) => c.slug);
+  // TAMs, so instead of faking a list we size real concepts live via /build
+  // (which now persists each TAM to Postgres) and show their actual ranges. Rows
+  // link to the frozen /tam/<hash> artifact — the shareable permalink, durable
+  // across restarts (P0.1). The featured set is a curated, sourced-forward
+  // allowlist (PR 0 trust pass) — not a blind slice — so first contact leads
+  // with concepts whose numbers are regulator/aggregator-backed.
+  const featuredSlugs = selectFeaturedSlugs(concepts ?? []);
   const featuredBuilds = useQueries({
     queries: featuredSlugs.map((slug) => buildQuery(slug)),
   });

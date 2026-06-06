@@ -88,3 +88,25 @@ Work queue, dependency-ordered:
   `dev` optional-extra; a bare `uv run pytest` otherwise resolves the global miniforge pytest
   and fails import). Use `uv run python -m pytest`.
 - **NOT merged.** Left as a green PR for human review. Next unit: Track B **P2** (formula engine).
+
+---
+
+## v1.0 program (docs/TODO_june6.md · 6 stacked PRs) — `/loop /goal-v1`
+
+### 2026-06-06 · PR 0 — trust quick-wins + doc/architecture recovery — DONE (open, locally green)
+
+- Branch `feat/pr0-trust-and-docs` → **PR #91** (open, against `main`, NOT merged).
+- Scope: killed 12 `strata.internal` URLs (→ repo-file model links, tier-keyed
+  fence intact); demo `d3d3` snapshots render "not pinned (demo)" (display-only,
+  data unchanged); curated sourced-forward homepage allowlist; `usda_nass`
+  host-mapped (=8), `github` honest-zero (+regression test); dead charts deleted;
+  18 deleted docs restored byte-faithfully from `0e2787b^`; architecture/questions
+  added to index.
+- Gates (local, all green): 867 pytest · pyright src 0 · ruff src clean · strata
+  validate 0 err · verify-integrity · resolver-eval · doc-count · web tsc · 174
+  web tests · live authed browser smoke (not-pinned-demo + usda_nass=8).
+- Learnings: `docs/solutions/2026-06-06-pr0-trust-honesty-fences.md`.
+- **⚠️ BLOCKER (external, affects ALL 6 PRs): GitHub Actions CI cannot run** —
+  "job not started: recent account payments have failed / spending limit." No
+  code fix; user must resolve Actions billing (Settings → Billing & plans), then
+  re-run. CI-green is unreachable until then; per-PR bar is "open + locally green."

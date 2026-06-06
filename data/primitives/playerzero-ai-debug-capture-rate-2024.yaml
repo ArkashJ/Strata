@@ -35,6 +35,6 @@ uncertainty:
 source:
   slug: strata-ai-debug-capture-2024
   tier: community-modeled
-  url: https://strata.internal/models/ai-debug-capture-rate
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/playerzero-ai-debug-capture-rate-2024.yaml
   accessed: '2026-05-26'
   snapshot_sha256: c81caeedd471198c35b2cb1487d6d0d004f0cc96ee1cf7b1b8c440f8307df806

@@ -32,6 +32,6 @@ uncertainty:
 source:
   slug: strata-modeled-ai-design-capture-2024
   tier: community-modeled
-  url: https://strata.internal/models/ai-design-capture-2024
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/ai-brand-design-agent-capture-rate-2024.yaml
   accessed: '2026-05-26'
   snapshot_sha256: 08d080c52995ac081f8307e27ecbb2a228d32b3d131a6766a53579a269bed454

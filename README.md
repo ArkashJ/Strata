@@ -52,8 +52,8 @@ See [`docs/00-vision.md`](docs/00-vision.md) for the full thesis.
 
 | | LLM chat | **Strata** |
 |---|---|---|
-| Numbers | Plausible, often unsourced | Every input is a sourced primitive (URL + tier + sha256 snapshot) |
-| Reproducible | Re-run → a different answer | Hash-pinned `/tam/<id>` — frozen, citable, shareable forever |
+| Numbers | Plausible, often unsourced | Every input carries its provenance (URL + tier + sha256 snapshot); modeled estimates are labeled MODELED, never disguised as sourced |
+| Reproducible | Re-run → a different answer | Hash-pinned `/tam/<id>` — frozen, citable, shareable forever; figures without a real content pin say so honestly rather than showing a fake hash |
 | The math | Black-box "≈ $X B" | Explicit equation (workforce × spend = TAM), every factor clickable |
 | Defensible | Can't defend to an IC/LP | Triangulation across ≥2 method families + independence score |
 | Honesty | Hides modeled assumptions | Loud banner when an input is modeled vs externally sourced |
