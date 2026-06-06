@@ -69,15 +69,52 @@ def _format_usd(value: float) -> str:
     return f"${value:,.0f}"
 
 
-def _registry_first_slug(query: str, registry: Registry) -> ResolvedQuery:
+def _registry_first_slug(
+    query: str, registry: Registry, *, semantic_slug: str | None = None
+) -> ResolvedQuery:
     """Registry-first slug seam (AC0.2): if the query already names a curated
     concept, resolve it to a CONCEPT intent (no LLM round-trip) so the pipeline
-    returns the full triangulated scenario tree. On a miss, fall through to
-    NOVEL → the dynamic-synthesis fallback path."""
+    returns the full triangulated scenario tree.
+
+    Order (flow 39): exact/fuzzy ``match_concept`` is PRIMARY; ``semantic_slug``
+    (a pgvector NN hit pre-computed in the async route) is a FALLBACK used only
+    when the literal matcher misses. On a total miss, fall through to NOVEL → the
+    dynamic-synthesis fallback path."""
     slug = match_concept(registry, query)
     if slug is not None:
         return ResolvedQuery(intent=ResolverIntent.CONCEPT, concept_slug=slug, confidence=1.0)
+    if semantic_slug is not None and semantic_slug in registry.concepts:
+        # Lower confidence than a literal hit: it's a semantic recovery, not an
+        # exact name match.
+        return ResolvedQuery(
+            intent=ResolverIntent.CONCEPT, concept_slug=semantic_slug, confidence=0.7
+        )
     return ResolvedQuery(intent=ResolverIntent.NOVEL, confidence=0.0)
+
+
+async def _semantic_concept_slug(query: str, registry: Registry) -> str | None:
+    """pgvector NN fallback (flow 39): only consulted when the literal
+    ``match_concept`` would miss. Best-effort — a DB/pgvector failure (e.g. the
+    extension/embeddings aren't provisioned yet) degrades silently to ``None`` so
+    resolve still works without the semantic layer."""
+    if match_concept(registry, query) is not None:
+        return None  # literal match wins; don't pay for a DB round-trip.
+    # A one-word query is too collision-prone for feature-hashing to match
+    # reliably (it can spuriously align with an unrelated concept's hashed
+    # tokens); leave those to the LLM/novel path.
+    if len(query.split()) < 2:
+        return None
+    try:
+        from strata.db.embeddings import match_concept_semantic
+        from strata.db.engine import SessionLocal
+        from strata.resolver.embeddings import embed_text
+
+        query_vec = embed_text(query)
+        async with SessionLocal() as session:
+            return await match_concept_semantic(session, query_vec)
+    except Exception:
+        _log.debug("semantic concept match unavailable", exc_info=True)
+        return None
 
 
 @router.post(
@@ -107,6 +144,10 @@ async def resolve_query(
         yield _sse("parsing", {"query": body.query, "model": _MODEL})
         yield _sse("step", {"type": "parsing", "message": f'Parsing: "{body.query}"...'})
 
+        # Semantic NN fallback (flow 39) — resolved here (async) so the
+        # in-thread, sync ``slug_fn`` can consume it without a DB round-trip.
+        semantic_slug = await _semantic_concept_slug(body.query, registry)
+
         try:
             result: ResolverResult = await asyncio.to_thread(
                 run,
@@ -118,7 +159,7 @@ async def resolve_query(
                 options=RunOptions(
                     allow_live=False, allow_fallback=exa_fallback_enabled(), model=_MODEL
                 ),
-                slug_fn=lambda q: _registry_first_slug(q, registry),
+                slug_fn=lambda q: _registry_first_slug(q, registry, semantic_slug=semantic_slug),
                 parse_fn=parse_query,
                 search_fn=search_primitive,
             )

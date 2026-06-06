@@ -17,6 +17,7 @@ import yaml
 from pydantic import ValidationError
 
 from .models import (
+    NON_SIZING_TIERS,
     AnalysisQuestion,
     Annotation,
     AtomicPrimitive,
@@ -138,9 +139,14 @@ def _dispatch(
         match kind:
             case "atomic_primitive":
                 prim = AtomicPrimitive.model_validate(raw)
-                # A file under data/signals/ is a non-sizing signal, never a
-                # framework input. Route it away from the primitive registry.
-                (out.signals if is_signal else out.atomic_primitives).append(prim)
+                # Quarantine away from the primitive registry (Q20) when EITHER
+                # the file lives under data/signals/ OR the record's tier is a
+                # non-sizing tier (prediction-market / community-social). The
+                # tier check is the load-path-independent guard shared with the
+                # DB path — a community/social primitive misfiled under
+                # data/primitives/ is still routed to signals, never to a TAM.
+                quarantined = is_signal or prim.source.tier in NON_SIZING_TIERS
+                (out.signals if quarantined else out.atomic_primitives).append(prim)
             case "composite_primitive":
                 out.composite_primitives.append(CompositePrimitive.model_validate(raw))
             case "concept":

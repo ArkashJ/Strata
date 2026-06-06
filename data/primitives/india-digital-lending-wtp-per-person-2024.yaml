@@ -1,0 +1,40 @@
+kind: atomic_primitive
+slug: india-digital-lending-wtp-per-person-2024
+schema_version: 1
+concept_slug: india-consumer-digital-lending
+name: India consumer digital-lending net revenue per borrower per year (modeled)
+description: >-
+  MODELED — not a sourced fact. Annual net interest-plus-fee revenue a digital
+  lender captures per active borrower in India, the willingness-to-pay proxy for
+  a credit product. Modeled at $36/year (~INR 3,000): a small average ticket and
+  short tenor typical of consumer/BNPL micro-credit, net of cost of funds. Per
+  ADOPTING borrower — the adopted share is applied separately via the logistic
+  curve. Do not cite as fact.
+value: 36.0
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - IN
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 18.0
+  - 90.0
+  basis: >-
+    Anchored on small-ticket, short-tenor Indian consumer-credit economics net
+    of funding cost. Low end ($18) = thin BNPL spreads; high end ($90) =
+    higher-yield personal-loan books. Range reflects product-mix uncertainty.
+source:
+  slug: strata-modeled-india-digital-lending-wtp-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/india-digital-lending-wtp-per-person-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: c5e47f96494cf200643d78f9278824f5f51a94339b67d2b56fd3478987068118

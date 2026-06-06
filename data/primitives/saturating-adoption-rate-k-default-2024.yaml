@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: saturating-adoption-rate-k-default-2024
+schema_version: 1
+concept_slug: latent-demand-shared-parameters
+name: Saturating-exponential adoption rate constant k (modeled structural bound)
+description: >-
+  MODELED - not a sourced fact. The dimensionless rate constant k in the saturating adoption curve 1 - e^(-k*position), an alternative diffusion shape to the logistic S-curve (no slow early-adopter knee; immediate concave take-up). Set at 0.8 - a moderate take-up speed. Shapes the adopted SHARE; asserts no headcount. Do not cite as fact.
+value: 0.8
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 0.4
+  - 1.5
+  basis: >-
+    k tunes how fast the curve saturates; 0.4 slow, 1.5 fast. 0.8 is a moderate default.
+source:
+  slug: strata-modeled-saturating-k-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/saturating-adoption-rate-k-default-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: d5da635fd6d2fdc9850d0d0254775468a7b601ba0d7668d4d065821570cd82a8

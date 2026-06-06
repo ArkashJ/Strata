@@ -11,13 +11,13 @@ from dataclasses import dataclass, field
 
 from .loader import LoadedRecords
 from .models import (
+    NON_SIZING_TIERS,
     AnalysisQuestion,
     Annotation,
     AtomicPrimitive,
     CompositePrimitive,
     Concept,
     Framework,
-    SourceTier,
     TAMOutput,
 )
 
@@ -64,11 +64,13 @@ class Registry:
             frameworks = await load_frameworks_from_db(session)
             promoted_tams = await load_promoted_tams_from_db(session)
 
-        # Mirror the YAML loader's signal quarantine on the prod path: a
-        # prediction-market primitive seeded into the DB must NOT reach the
-        # evaluator (Q20). Split by source tier before indexing.
-        sizing = [p for p in primitives if p.source.tier is not SourceTier.PREDICTION_MARKET]
-        signals = [p for p in primitives if p.source.tier is SourceTier.PREDICTION_MARKET]
+        # Quarantine non-sizing tiers on the prod path (Q20). A primitive whose
+        # tier is in NON_SIZING_TIERS (prediction-market OR community/social) must
+        # NOT reach the evaluator, regardless of how it landed in the DB. The same
+        # constant gates the YAML loader and the promote target, so quarantine is
+        # a property of the RECORD's tier — never of the load path it took.
+        sizing = [p for p in primitives if p.source.tier not in NON_SIZING_TIERS]
+        signals = [p for p in primitives if p.source.tier in NON_SIZING_TIERS]
         return cls(
             atomic=_index(sizing, lambda r: r.slug, "atomic_primitive"),
             composite={},

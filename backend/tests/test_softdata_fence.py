@@ -120,7 +120,9 @@ def test_committed_bank_split() -> None:
     for p in modeled:
         assert p.source.tier in _MODELED_TIERS
         assert p.needs_resourcing is True
-    assert len(modeled) == 64  # 23 community-modeled + 35 analyst-paraphrase + 6 analyst
+    # PR5 added 12 community-modeled structural-default / latent-demand inputs
+    # (each MODELED-bannered, ranged, with a resolvable anchor URL).
+    assert len(modeled) == 76  # 35 community-modeled + 35 analyst-paraphrase + 6 analyst
 
 
 # --------------------------------------------------------------------------- #

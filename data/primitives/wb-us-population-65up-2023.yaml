@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: wb-us-population-65up-2023
+schema_version: 1
+concept_slug: us-senior-digital-health
+name: US population ages 65 and above (World Bank, 2023)
+description: World Bank Open Data SP.POP.65UP.TO for the United States — total
+  resident population aged 65 and over, the addressable base for senior-focused
+  remote patient monitoring and digital-health subscriptions.
+value: 58711454.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sp-pop-65up-to-us-2023
+  tier: aggregator
+  url: https://api.worldbank.org/v2/country/USA/indicator/SP.POP.65UP.TO?format=json&date=2023
+  accessed: '2026-06-06'
+  snapshot_sha256: 48040a676e00f2bde367f21ea1b7ddcc54211679badef070fd217dffdc1cc73c

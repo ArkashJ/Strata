@@ -26,18 +26,16 @@ def _registry() -> Registry:
 
 
 def test_two_scenarios_pinned_to_expected_frameworks() -> None:
+    # PR5 added many cost-efficiency / revenue variants that also apply here, so
+    # the concept now lands >2 scenarios. The contract that matters: the two
+    # original lens-tagged frameworks are still present, each on the right lens,
+    # so the paraphrase banner cannot drift onto the wrong scenario.
     tam = size_concept(_registry(), "doc-gen-pc-insurance")
-    assert len(tam.scenarios) == 2
-    by_lens = {s.lens: s for s in tam.scenarios}
-    assert by_lens.keys() == {
-        AnalysisLens.COST_EFFICIENCY,
-        AnalysisLens.REVENUE_GENERATION,
-    }
-    # Pin scenario→framework so swapping lens tags on the framework YAMLs
-    # would fail loudly (otherwise the paraphrase banner attaches to the
-    # wrong scenario and the test still passes).
-    assert by_lens[AnalysisLens.COST_EFFICIENCY].framework == "bottoms-up-cost-efficiency"
-    assert by_lens[AnalysisLens.REVENUE_GENERATION].framework == "top-down-revenue-capture"
+    by_framework = {s.framework: s for s in tam.scenarios}
+    assert "bottoms-up-cost-efficiency" in by_framework
+    assert "top-down-revenue-capture" in by_framework
+    assert by_framework["bottoms-up-cost-efficiency"].lens == AnalysisLens.COST_EFFICIENCY
+    assert by_framework["top-down-revenue-capture"].lens == AnalysisLens.REVENUE_GENERATION
 
 
 def test_each_scenario_pins_inputs_by_snapshot_hash() -> None:
@@ -69,13 +67,16 @@ def test_tam_hash_is_stable_across_runs() -> None:
     assert a.state_hash == b.state_hash
 
 
-def test_independence_score_one_when_method_families_distinct() -> None:
+def test_independence_score_when_method_families_distinct() -> None:
+    # PR5's added variants pull in more scenarios (incl. an adoption_curve
+    # family), so the score is no longer a clean 1.0; what must hold is that the
+    # two original distinct families are still both present and contributing.
     tam = size_concept(_registry(), "doc-gen-pc-insurance")
-    assert tam.independence_score == 1.0
-    assert set(tam.method_families_used) == {
-        MethodFamily.BOTTOMS_UP_SEATS,
-        MethodFamily.TOP_DOWN_SPEND,
-    }
+    families = set(tam.method_families_used)
+    assert MethodFamily.BOTTOMS_UP_SEATS in families
+    assert MethodFamily.TOP_DOWN_SPEND in families
+    assert len(families) >= 2
+    assert 0.0 < tam.independence_score <= 1.0
 
 
 def test_inputs_used_carry_enrichment_fields() -> None:

@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: addressable-share-of-persona-pool-default-2024
+schema_version: 1
+concept_slug: cost-efficiency-shared-parameters
+name: Addressable share of a persona pool (modeled structural default)
+description: >-
+  MODELED - not a sourced fact. The dimensionless share of a raw occupational persona pool that is realistically ADDRESSABLE by a software vendor (employed at firms large enough to buy, in-scope sub-roles, not already saturated). Set at 0.60 as a neutral structural default between a fully-addressable pool (1.0) and a narrow niche (~0.3). It scales a headcount down to the serviceable base; it asserts no headcount itself. Do not cite as fact.
+value: 0.6
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 0.4
+  - 0.8
+  basis: >-
+    Addressable share varies by how concentrated buyers are; 0.4 for fragmented long-tail employers, 0.8 for enterprise-concentrated roles. 0.6 is the neutral default.
+source:
+  slug: strata-modeled-addressable-share-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/addressable-share-of-persona-pool-default-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: 2b8410c831e31d5673dca580b86051686dc2bc8853aeec97672cbf3c313b77d3

@@ -35,6 +35,28 @@ class SourceTier(StrEnum):
     COMMUNITY_MODELED = "community-modeled"
 
 
+# Tiers whose primitives must NEVER reach the evaluator or any framework (Q20).
+# This is the SINGLE source of truth for the quarantine — both load paths
+# (Registry.from_db on the prod DB path AND the YAML loader) and the promote
+# target import it, so quarantine is a property of the RECORD's tier, not of
+# the file's directory or the load path it happened to take.
+#
+#   - PREDICTION_MARKET: Kalshi event probabilities are not market sizes.
+#   - COMMUNITY: reddit/twitter/stack_exchange/github social-signal connectors
+#     all emit tier `community`; these are engagement counts, not sourced
+#     market measurements, and would launder social noise into a TAM if allowed
+#     to feed reg.atomic.
+#
+# `community-modeled` is deliberately NOT here: it is a sizing input (gated
+# elsewhere by the MODELED banner + range + anchor URL), not a non-sizing signal.
+NON_SIZING_TIERS: frozenset[SourceTier] = frozenset(
+    {
+        SourceTier.PREDICTION_MARKET,
+        SourceTier.COMMUNITY,
+    }
+)
+
+
 class _SourceBase(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 

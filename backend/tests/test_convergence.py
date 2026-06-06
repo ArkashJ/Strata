@@ -35,7 +35,10 @@ def test_multi_family_concept_has_convergence() -> None:
 
 def test_single_method_concept_has_no_convergence() -> None:
     """A concept sized by one method family must not manufacture a second."""
+    # PR5's framework expansion gave software-eng-productivity a second
+    # applicable family; accrual-ai-tax-software remains genuinely single-family,
+    # which is what this invariant is testing (no fabricated second method).
     reg = _reg()
-    tam = size_concept(reg, "software-eng-productivity")
+    tam = size_concept(reg, "accrual-ai-tax-software")
     assert len(tam.method_families_used) == 1
     assert tam.convergence is None

@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: suite-bundling-pricing-discount-default-2024
+schema_version: 1
+concept_slug: bundle-consolidation-shared-parameters
+name: Suite bundling pricing discount (modeled structural default)
+description: >-
+  MODELED - not a sourced fact. The dimensionless price discount a unified suite offers versus the sum of the standalone point-solution prices it displaces (the bundling give-back that funds consolidation). Set at 0.20 - a typical suite-vs-best-of-breed discount. Enters the formula as (1 - pricing_discount) to net displaced spend down to realized suite revenue. Do not cite as fact.
+value: 0.2
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 0.1
+  - 0.35
+  basis: >-
+    Suite bundling discounts vs standalone stacks run 10-35%; 0.20 is the central case.
+source:
+  slug: strata-modeled-bundling-discount-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/suite-bundling-pricing-discount-default-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: f29e1297673bab498030560ce45734eebf01f2a133126fe142aefaf1f54e46ae

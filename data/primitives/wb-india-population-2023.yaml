@@ -1,0 +1,28 @@
+kind: atomic_primitive
+slug: wb-india-population-2023
+schema_version: 1
+concept_slug: india-consumer-digital-lending
+name: India total population (World Bank, 2023)
+description: World Bank Open Data SP.POP.TOTL for India — total resident
+  population, the addressable base for smartphone-delivered consumer digital
+  lending. The realistic reachable share is captured downstream by a modeled
+  adoption curve (smartphone + internet penetration, credit-eligibility), not by
+  inflating this sourced headcount.
+value: 1438069596.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - IN
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: wb-sp-pop-totl-in-2023
+  tier: aggregator
+  url: https://api.worldbank.org/v2/country/IND/indicator/SP.POP.TOTL?format=json&date=2023
+  accessed: '2026-06-06'
+  snapshot_sha256: 2f99e7c21a05b8559bb97af231c483f7d8107e23bd0b55555992455f8a221249

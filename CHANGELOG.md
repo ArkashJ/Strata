@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — breadth to v1.0 (v1.0 program · PR 5)
+
+The final PR of the program — frameworks, the missing lens, the quarantine fix,
+semantic search, and concept promotion. **No fabricated numbers** (Q20): every new
+primitive is live-sourced or honestly `community-modeled` with a MODELED banner,
+a real range, and a resolvable anchor.
+
+- **Frameworks 5 → 25** — all six lenses, each a structurally distinct math shape,
+  validator-gated (no scalar defaults; every role binds a primitive slug). Includes
+  the **`latent_demand` lens** (was 0 frameworks / 0 concepts):
+  `latent-demand-adoption-curve` + `-saturating-curve` (`addressable_population *
+  logistic(adoption_rate_curve) * willingness_to_pay`) with 2 sourced L3 concepts
+  (India consumer digital lending, US senior digital health) backed by real World
+  Bank population primitives. The new L3 concepts **size a real TAM**.
+- **Fixed the community-quarantine bug (#102):** quarantine is now a property of the
+  record via one shared non-sizing-tier constant imported by **both** the YAML loader
+  and `Registry.from_db` — community/social data can no longer feed `reg.atomic` on
+  the prod DB path. New `test_quarantine_paths.py` asserts the invariant on both
+  paths.
+- **`strata test-connectors`** rewritten — enumerates all 23 typed connectors with
+  honest skip reasons; keyed connectors (alpha_vantage/reddit/twitter/nasdaq) flagged
+  BLOCKED on API keys.
+- **Semantic-embeddings search** (migration `010_pgvector`, `strata embed`, NN
+  fallback in `match_concept`; registry-first stays primary) and **concept-promotion
+  / intersection-auto-promotion** (validator-gated through the existing `/contribute`
+  queue — never a direct public write).
+- **Verified:** `strata validate ../data` 0 errors; pyright src 0; ruff clean;
+  quarantine invariant test green on both paths; `latent_demand` concepts size a TAM.
+  **BLOCKED:** live pgvector embedding population + keyed connectors (no extension /
+  API keys here — code + migration ship inert).
+
 ### Added — dashboards + Gartner charts + real PDF export (v1.0 program · PR 3)
 
 - **Gartner chart contract** (`ChartFrame` + `chart-colors`): a shared frame —
