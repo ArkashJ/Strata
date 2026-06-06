@@ -7,8 +7,9 @@ transports:
 * **stdio** (local-trust) — ``python -m strata.mcp.server --stdio`` or the
   ``strata-mcp`` console script. This is what ``claude mcp add`` launches.
 * **streamable HTTP** (hosted) — ``build_streamable_http_app()`` returns an ASGI
-  app mounted at ``/mcp`` on the FastAPI server. In prod this sits behind the
-  Wave-3 API-key middleware (AC5A.4); until then it is local-trust.
+  app mounted at ``/mcp`` on the FastAPI server, wrapped by ``McpAuthMiddleware``
+  (Phase 3 / Workstream A) so every hosted request requires an ``X-API-Key``.
+  The stdio transport above stays local-trust (it never instantiates the wrapper).
 
 The registry is loaded read-only from YAML (dev) or Postgres (prod), mirroring
 ``api.deps``.
