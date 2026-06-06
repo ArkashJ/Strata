@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — modeled numbers are loudly flagged in the UI (Track B, Phase 4 · frontend)
+- When a TAM leans on a hand-modeled estimate (rather than a number read live from
+  a source), the report now shows a **loud, can't-miss "MODELED — NOT SOURCED"
+  note** listing each estimated input — on both the `/build` workshop and the
+  shared `/tam` page. Previously some estimates (notably one tier) were flagged
+  only in the backend and stayed invisible to the reader.
+- The note is non-dismissable and accessible: the warning is spelled out in words,
+  never signalled by colour alone.
+
 ### Added — contribution flow (PR B, Phase 5)
 - **`/contribute`** page (sidebar link) — re-adds the contribution surface (removed for
   the v0.5 expert layer) on top of the existing `POST /contribute` route: a form submits a
