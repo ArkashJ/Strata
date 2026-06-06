@@ -33,7 +33,10 @@ import {
 import type { PrimitiveSummary, SourceTier } from "@/lib/schemas";
 import { isDegenerate, tamRange } from "@/lib/tam";
 
-export function GraphView() {
+// `embedded` drops this view's own <main> + page heading so it can sit inside a
+// surface that already provides them (the /explore Pyramid tab) without nesting
+// landmarks or duplicating the "Explore the…" headline.
+export function GraphView({ embedded = false }: { embedded?: boolean } = {}) {
   const [selection, setSelection] = useState<Selection>({});
   const [geo, setGeo] = useState<GeoChip>("US");
   const [time, setTime] = useState<TimeChip>("2026");
@@ -61,16 +64,22 @@ export function GraphView() {
   const onSelect = (node: PyramidNode, additive: boolean) =>
     setSelection((s) => narrow(s, node, { additive }));
 
+  const Root = embedded ? "div" : "main";
+
   return (
-    <main className="flex-1 flex flex-col">
+    <Root className="flex-1 flex flex-col">
       <div className="flex-1 px-8 py-6 max-w-[1400px] mx-auto w-full flex flex-col gap-5">
         <div className="flex flex-col gap-3">
-          <h1 className="display text-[28px] text-[var(--fg-1)]">Explore the pyramid</h1>
-          <p className="text-[13px] text-[var(--fg-2)] max-w-[640px]">
-            Three axes — Qualitative, Quantitative, Industry. Click a node to narrow the view;
-            shift-click to OR within a pillar. Incompatible siblings grey out and the right rail
-            updates.
-          </p>
+          {embedded ? null : (
+            <>
+              <h1 className="display text-[28px] text-[var(--fg-1)]">Explore the pyramid</h1>
+              <p className="text-[13px] text-[var(--fg-2)] max-w-[640px]">
+                Three axes — Qualitative, Quantitative, Industry. Click a node to narrow the view;
+                shift-click to OR within a pillar. Incompatible siblings grey out and the right rail
+                updates.
+              </p>
+            </>
+          )}
           <PyramidFilters
             geo={geo}
             time={time}
@@ -113,7 +122,7 @@ export function GraphView() {
           </div>
         )}
       </div>
-    </main>
+    </Root>
   );
 }
 
