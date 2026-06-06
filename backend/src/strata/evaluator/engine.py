@@ -29,6 +29,7 @@ from ..models import (
     FrameworkVariant,
     InputUsed,
     MethodFamily,
+    ProvenanceClass,
     Scenario,
     ScenarioBanner,
     SetOperation,
@@ -177,6 +178,10 @@ def size_concept(
         convergence=_convergence(builds),
         independence_score=_independence(builds),
         uses_synthetic_primitives=uses_synthetic,
+        # NOTE: this flags modeled *composites* specifically (a CompositePrimitive
+        # built from modeled inputs), which is distinct from a modeled atomic input
+        # — those are surfaced per-scenario via the MODELED ScenarioBanner (Phase 4
+        # extended _banners_for so every modeled tier, incl. analyst, fires one).
         uses_modeled_composites=False,
         scope=build_scope_report(registry, declared_scope, scenarios),
     )
@@ -403,6 +408,17 @@ def _banners_for(p: AtomicPrimitive) -> list[ScenarioBanner]:
             ScenarioBanner(
                 kind=BannerKind.MODELED,
                 message=f"{p.name} is community-modeled, not a sourced measurement{rng}.",
+            )
+        ]
+    # Phase 4 — any other MODELED-provenance input (notably the `analyst` tier,
+    # which fell through silently before) still gets a loud banner. provenance_class
+    # is derived from the tier, so this is the single catch-all for the fenced set.
+    if p.provenance_class is ProvenanceClass.MODELED:
+        verb = "queued for re-sourcing" if p.needs_resourcing else "modeled"
+        return [
+            ScenarioBanner(
+                kind=BannerKind.MODELED,
+                message=f"{p.name} is MODELED, not a sourced measurement ({verb}). Do not cite as fact.",
             )
         ]
     return []

@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from strata.loader import load_data_dir
 from strata.registry import Registry
 from strata.resolver import RunOptions, run
@@ -120,7 +122,9 @@ def test_step3_dispatch_failure_falls_through_to_fallback(
     mock_choose: MagicMock,
     mock_dispatch: MagicMock,
     mock_upsert: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setenv("STRATA_ALLOW_EXA_FALLBACK", "1")  # Phase 4 fence opt-in
     mock_slug.return_value = _novel()
     mock_choose.return_value = _decision()
     mock_dispatch.side_effect = RuntimeError("connector 500")

@@ -40,6 +40,7 @@ from .primitive import (
     CompositePrimitive,
     DeliveryMode,
     DistributionShape,
+    ProvenanceClass,
     SetOperation,
     Uncertainty,
 )
@@ -116,6 +117,7 @@ __all__ = [
     "MarketScope",
     "MethodFamily",
     "OpexConversionModifier",
+    "ProvenanceClass",
     "RegulatoryUnlockModifier",
     "RiskTransferModifier",
     "Scenario",

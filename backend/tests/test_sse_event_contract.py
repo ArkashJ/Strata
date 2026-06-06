@@ -33,6 +33,11 @@ FROZEN_EVENTS: frozenset[str] = frozenset(
 LEGACY_EVENTS: frozenset[str] = frozenset({"step", "done"})
 
 
+@pytest.fixture(autouse=True)
+def _allow_exa_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("STRATA_ALLOW_EXA_FALLBACK", "1")  # Phase 4 fence opt-in
+
+
 @pytest.fixture
 def app() -> FastAPI:
     return create_app()

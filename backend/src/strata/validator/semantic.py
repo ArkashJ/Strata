@@ -21,6 +21,8 @@ from ..models import (
     SHA256_PATTERN,
     AtomicPrimitive,
 )
+from ..models.primitive import ProvenanceClass
+from ..resolver.citations import INTERNAL_HOST_MARKERS, host_of
 
 _HASH_RE = re.compile(SHA256_PATTERN)
 
@@ -82,6 +84,28 @@ def _atomic_primitive_checks(primitives: list[AtomicPrimitive], today: date) -> 
                     code="semantic.nonpositive_value",
                     slug=p.slug,
                     message=f"value {p.value} not strictly positive for non-percent primitive",
+                )
+            )
+        # Phase 4 — close the hand-authored loophole (G1). The Wave-1 host guard
+        # only sits on the connector→writer path; hand-committed YAML skipped it.
+        # A committed primitive may cite the fabricated ``strata.internal`` host
+        # ONLY if it is honestly a modeled estimate; a "sourced" number citing an
+        # internal host is a fabrication and fails the build. (provenance_class is
+        # derived from source.tier, so this equivalently means: a regulator/
+        # aggregator/first-party number can never carry an internal host.)
+        if (
+            host_of(p.source.url) in INTERNAL_HOST_MARKERS
+            and p.provenance_class is not ProvenanceClass.MODELED
+        ):
+            errors.append(
+                SemanticError(
+                    code="semantic.unflagged_internal_host",
+                    slug=p.slug,
+                    message=(
+                        f"cites internal host {host_of(p.source.url)!r} but is "
+                        f"provenance_class={p.provenance_class.value} (not modeled); a "
+                        f"sourced number must never cite a fabricated/internal host"
+                    ),
                 )
             )
     return errors

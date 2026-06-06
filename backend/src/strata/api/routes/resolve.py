@@ -34,6 +34,7 @@ from strata.registry import Registry
 from strata.resolver import RunOptions, parse_query, run, search_primitive
 from strata.resolver.events import PipelineStatus, ResolverResult
 from strata.resolver.match import match_concept
+from strata.resolver.pipeline import exa_fallback_enabled
 from strata.resolver.slug import ResolvedQuery, ResolverIntent
 
 router = APIRouter(tags=["resolve"])
@@ -111,7 +112,12 @@ async def resolve_query(
                 run,
                 body.query,
                 registry=registry,
-                options=RunOptions(allow_live=False, allow_fallback=True, model=_MODEL),
+                # Phase 4 fence — the route requests the Exa fallback only when
+                # the operator has opted in (STRATA_ALLOW_EXA_FALLBACK=1); otherwise
+                # an unresolved query returns an honest 'no curated result'.
+                options=RunOptions(
+                    allow_live=False, allow_fallback=exa_fallback_enabled(), model=_MODEL
+                ),
                 slug_fn=lambda q: _registry_first_slug(q, registry),
                 parse_fn=parse_query,
                 search_fn=search_primitive,
