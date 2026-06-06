@@ -423,8 +423,12 @@ synchronous; faking streaming would be theater in a provenance-first product).
   reveal cursor is ephemeral UI; the steered tree replays deterministically from
   `BuildState`, so "watch it build" and "finished TAM" are the same artifact at different
   cursor positions. Saving ties into PR 1's workspace.
-- **Fix the React Flow `nodeTypes` inline-object warning** in `PyramidOverlays.tsx` +
-  `tam/TamDetailView.tsx` (hoist to module scope).
+- **Fix the React Flow `nodeTypes` inline-object warning:** ensure `BuildStudioGraph` reuses
+  `ScenarioGraph`'s module-scope `NODE_TYPES` (already hoisted as the exported
+  `SCENARIO_NODE_TYPES` + edge/fitView/pro option objects — never inline an object into
+  `<ReactFlow nodeTypes={{…}}>`). The original premise — `PyramidOverlays.tsx` +
+  `tam/TamDetailView.tsx` — was stale: `PyramidOverlays.tsx` renders no ReactFlow and
+  `TamDetailView.tsx` delegates to `ScenarioGraph`, whose `NODE_TYPES` was already hoisted.
 - **Open product call (flagged):** lens chosen up-front vs auto-suggested-then-confirmed;
   gate `LensPicker` to lenses with ≥1 applicable framework variant for the pinned concept.
 - **Verify:** Playwright — apex appears, role leaves appear one-by-one, `aria-live` headline

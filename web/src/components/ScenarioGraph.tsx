@@ -44,20 +44,31 @@ type StrataNode =
   | Node<FrameworkNodeData, "framework">
   | Node<PrimitiveNodeData, "primitive">;
 
-const NODE_TYPES: NodeTypes = {
+// Module-scope so React Flow never sees a fresh object across renders (the
+// "you've created a new nodeTypes object" warning). Exported as a single source
+// of truth: BuildStudioGraph (the progressive-reveal variant) imports these
+// rather than declaring its own, so the two ReactFlow surfaces can't drift.
+export const SCENARIO_NODE_TYPES: NodeTypes = {
   target: TargetCard,
   framework: FrameworkCard,
   primitive: PrimitiveCard,
 };
 
-const DEFAULT_EDGE_OPTIONS = {
+export const SCENARIO_EDGE_OPTIONS = {
   type: "smoothstep" as const,
   style: { stroke: "var(--canvas-line)", strokeWidth: 1.5 },
   animated: false,
 };
 
-const FIT_VIEW_OPTIONS = { padding: 0.18 };
-const PRO_OPTIONS = { hideAttribution: true };
+export const SCENARIO_FIT_VIEW_OPTIONS = { padding: 0.18 };
+export const SCENARIO_PRO_OPTIONS = { hideAttribution: true };
+
+// Backwards-compatible local aliases (kept so the existing ScenarioGraph body
+// reads unchanged).
+const NODE_TYPES = SCENARIO_NODE_TYPES;
+const DEFAULT_EDGE_OPTIONS = SCENARIO_EDGE_OPTIONS;
+const FIT_VIEW_OPTIONS = SCENARIO_FIT_VIEW_OPTIONS;
+const PRO_OPTIONS = SCENARIO_PRO_OPTIONS;
 
 export interface ScenarioGraphProps {
   tam: TAMOutput;
@@ -114,6 +125,17 @@ export function ScenarioGraph({ tam, onEditPrimitive, overriddenSlugs }: Scenari
 interface GraphData {
   nodes: StrataNode[];
   edges: Edge[];
+}
+
+// Exported so BuildStudioGraph builds the FULL node/edge arrays with identical
+// layout math, then slices them by the reveal cursor — the staged build and the
+// finished graph are the same topology.
+export function buildScenarioGraph(
+  tam: TAMOutput,
+  onEditPrimitive?: (input: InputUsed, frameworkSlug: string) => void,
+  overriddenSlugs?: ReadonlySet<string>,
+): GraphData {
+  return buildGraph(tam, onEditPrimitive, overriddenSlugs);
 }
 
 function buildGraph(

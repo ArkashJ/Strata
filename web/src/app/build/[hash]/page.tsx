@@ -7,14 +7,17 @@
 import { BuildHashView } from "@/components/build/BuildHashView";
 
 type Props = {
-	params: Promise<{ hash: string }>;
-	searchParams: Promise<{ s?: string | string[] }>;
+  params: Promise<{ hash: string }>;
+  searchParams: Promise<{ s?: string | string[]; mode?: string | string[] }>;
 };
 
 export default async function BuildHashPage({ params, searchParams }: Props) {
-	const { hash } = await params;
-	const { s } = await searchParams;
-	// ?s= is single-valued; if a duplicate key sneaks in, take the first.
-	const encoded = Array.isArray(s) ? (s[0] ?? null) : (s ?? null);
-	return <BuildHashView hash={hash} s={encoded} />;
+  const { hash } = await params;
+  const { s, mode } = await searchParams;
+  // ?s= is single-valued; if a duplicate key sneaks in, take the first.
+  const encoded = Array.isArray(s) ? (s[0] ?? null) : (s ?? null);
+  const m = Array.isArray(mode) ? mode[0] : mode;
+  // ?mode=studio reproduces the Build Studio reveal at this hash (a steer from
+  // inside the studio mints this URL); any other value renders the workhorse.
+  return <BuildHashView hash={hash} s={encoded} studio={m === "studio"} />;
 }

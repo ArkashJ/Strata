@@ -24,18 +24,26 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { ResolveView } from "@/components/ResolveView";
+import { BuildStudioView } from "@/components/build/BuildStudioView";
 import { GraphComposer } from "@/components/build/GraphComposer";
 import { MarketSpecStep } from "@/components/build/MarketSpecStep";
-import { ResolveView } from "@/components/ResolveView";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { conceptQuery, conceptsQuery, recomputeQuery } from "@/lib/queries";
-import { emptyMarketScope, type MarketScope } from "@/lib/schemas";
+import {
+  buildQuery,
+  conceptQuery,
+  conceptsQuery,
+  needsRecompute,
+  recomputeQuery,
+} from "@/lib/queries";
+import { type MarketScope, type TAMOutput, emptyMarketScope } from "@/lib/schemas";
 import { type BuildState, decodeState, encodeState, isScopeEmpty } from "@/lib/state-hash";
 
-type BuildMode = "spec" | "graph";
+type BuildMode = "spec" | "studio" | "graph";
 
 const MODES: { key: BuildMode; label: string }[] = [
   { key: "spec", label: "Pin the market" },
+  { key: "studio", label: "Watch it build" },
   { key: "graph", label: "Compose a graph" },
 ];
 
@@ -43,7 +51,8 @@ export function BuildView() {
   const router = useRouter();
   const params = useSearchParams();
   const query = params.get("q") ?? "";
-  const mode: BuildMode = params.get("mode") === "graph" ? "graph" : "spec";
+  const rawMode = params.get("mode");
+  const mode: BuildMode = rawMode === "graph" ? "graph" : rawMode === "studio" ? "studio" : "spec";
 
   // Switching mode preserves the in-flight query so a user who typed a market in
   // spec mode and flips to the composer doesn't lose their place.
@@ -66,7 +75,10 @@ export function BuildView() {
           <GraphComposer />
         </main>
       ) : (
-        <SpecMode query={query} />
+        // spec + studio share the MarketSpecStep gate; only the post-Size
+        // destination differs (studio renders the reveal in place; spec redirects
+        // to the workhorse). SpecMode owns that branch via `studio`.
+        <SpecMode query={query} studio={mode === "studio"} />
       )}
     </div>
   );
@@ -106,9 +118,13 @@ function ModeTabs({ mode, onSwitch }: { mode: BuildMode; onSwitch: (m: BuildMode
   );
 }
 
-// The legacy ?q= spec flow, unchanged except for living under the tablist. It owns
-// its own evaluated content region (no nested <main>; the parent provides it).
-function SpecMode({ query }: { query: string }) {
+// The ?q= spec flow. It owns its own evaluated content region (no nested <main>;
+// the parent provides it). When `studio` is set, sizing renders the Build Studio
+// reveal in place (the resolved TAM is held in component state) instead of
+// redirecting to the workhorse — the gate is identical, only the destination
+// differs. The steered tree still mints /build/<hash>?...&mode=studio from inside
+// the studio, so a reload/share reproduces it.
+function SpecMode({ query, studio = false }: { query: string; studio?: boolean }) {
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -130,9 +146,16 @@ function SpecMode({ query }: { query: string }) {
 
   const [sizing, setSizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // In studio mode the resolved TAM + state are held here so the reveal renders in
+  // place after Size (spec mode leaves this null and redirects instead).
+  const [studioResult, setStudioResult] = useState<{ tam: TAMOutput; state: BuildState } | null>(
+    null,
+  );
 
-  // Pin the market, then size: recompute with the chosen scope (priming the
-  // cache under the key BuildHashView will reuse) and redirect to its hash.
+  // Pin the market, then size. A pinned (non-empty) scope must go through
+  // /build/recompute; an empty scope can read the registry default via GET
+  // /build/{slug}. Studio mode holds the result in place; spec mode redirects to
+  // the canonical /build/<hash>?s= (priming the cache BuildHashView reuses).
   const onSize = async (scope: MarketScope) => {
     setSizing(true);
     setError(null);
@@ -149,16 +172,23 @@ function SpecMode({ query }: { query: string }) {
       primitive_overrides: {},
       scope: isScopeEmpty(scope) ? null : scope,
     };
-    // Prime the cache under the *canonical* state (sorted scope), which is exactly
-    // what BuildHashView reconstructs from ?s= — so its useQuery hits this entry
-    // instead of firing a second recompute. The encoded URL is identical either
-    // way (encodeState is canonical), so the redirect address is unchanged.
+    // Canonicalize via the encode→decode round-trip so the held/primed state is
+    // byte-identical to what BuildHashView reconstructs from ?s=.
     const state = decodeState(encodeState(draft));
     try {
-      const tam = await queryClient.fetchQuery(recomputeQuery(state));
-      router.replace(`/build/${tam.state_hash}?s=${encodeState(state)}`, {
-        scroll: false,
-      });
+      // Read the registry default when the scope is empty; recompute only when a
+      // market is pinned — same contract as BuildHashView.
+      const tam = needsRecompute(state)
+        ? await queryClient.fetchQuery(recomputeQuery(state))
+        : await queryClient.fetchQuery(buildQuery(matchedSlug));
+      if (studio) {
+        setStudioResult({ tam, state });
+        setSizing(false);
+      } else {
+        router.replace(`/build/${tam.state_hash}?s=${encodeState(state)}`, {
+          scroll: false,
+        });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not size this market.");
       setSizing(false);
@@ -171,6 +201,11 @@ function SpecMode({ query }: { query: string }) {
         Loading…
       </div>
     );
+  }
+
+  // Studio mode, post-Size: render the reveal in place with the resolved TAM.
+  if (studio && studioResult) {
+    return <BuildStudioView tam={studioResult.tam} state={studioResult.state} />;
   }
 
   // No concept matched — fall back to dynamic streaming resolution.
