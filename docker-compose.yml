@@ -46,6 +46,10 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on: [api]
+    # NEXT_PUBLIC_* are baked at build; this supplies CLERK_SECRET_KEY at runtime
+    # (the runner stage doesn't copy .env.local, so the auth middleware needs it here).
+    env_file:
+      - ./web/.env.local
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
     ports: ["3001:3000"]
