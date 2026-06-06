@@ -71,6 +71,7 @@ from .scope import (
     ScopeWarningOut,
 )
 from .source import (
+    NON_SIZING_TIERS,
     PARAPHRASE_MAX_CHARS,
     AnalystParaphraseSource,
     Source,
@@ -92,6 +93,7 @@ from .tam_output import (
 from .unit import Unit, UnitBasis, UnitDimension, UnitKind
 
 __all__ = [
+    "NON_SIZING_TIERS",
     "PARAPHRASE_MAX_CHARS",
     "REQUIRED_PRIMITIVE_ROLES",
     "SHA256_PATTERN",

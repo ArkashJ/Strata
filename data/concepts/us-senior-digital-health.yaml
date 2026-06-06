@@ -1,0 +1,32 @@
+kind: concept
+slug: us-senior-digital-health
+schema_version: 1
+name: US senior digital health (remote patient monitoring)
+definition: >-
+  Latent demand for remote-patient-monitoring and digital-health subscriptions
+  among the US population aged 65 and over. Sized as the addressable senior
+  population scaled by a logistic adoption S-curve (the market is mid-diffusion,
+  not saturated) times blended annual willingness-to-pay per adopting senior.
+  Scope is US residents 65+; the adoption curve and WTP are honestly modeled
+  (MODELED), only the population headcount is sourced (World Bank). This is a
+  latent-demand lens concept: most of the addressable base has not yet adopted,
+  so a raw headcount would over-state the market.
+analysis_lens:
+  primary: latent_demand
+modifiers: {}
+scope:
+  segment:
+    label: US residents aged 65 and over
+  geo_supply:
+  - US
+  geo_demand:
+  - US
+  product:
+  - remote-patient-monitoring
+  - senior-digital-health
+measurements:
+- wb-us-population-65up-2023
+- us-senior-digital-health-adoption-position-2024
+- us-senior-digital-health-wtp-per-person-2024
+competing_concepts: []
+requires_clearance: []

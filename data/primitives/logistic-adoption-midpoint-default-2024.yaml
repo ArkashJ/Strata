@@ -1,0 +1,39 @@
+kind: atomic_primitive
+slug: logistic-adoption-midpoint-default-2024
+schema_version: 1
+concept_slug: latent-demand-shared-parameters
+name: Logistic adoption-curve midpoint (modeled structural bound)
+description: >-
+  MODELED — not a sourced fact. The dimensionless inflection point (midpoint) of
+  the logistic adoption S-curve used by latent-demand frameworks:
+  logistic(position, midpoint, steepness). Set at 0.5 — the canonical symmetric
+  inflection of a Bass/logistic diffusion curve, where the adoption rate peaks.
+  This is a shared structural diffusion parameter, not a market-specific claim;
+  it shapes the curve, it does not assert any quantity. Do not cite as fact.
+value: 0.5
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 0.4
+  - 0.6
+  basis: >-
+    The 0.5 symmetric inflection is the textbook logistic/Bass default; markets
+    with a slow start sit higher (0.6), fast-takeoff markets lower (0.4). Range
+    spans those skews.
+source:
+  slug: strata-modeled-logistic-midpoint-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/logistic-adoption-midpoint-default-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: 592ebaa496704b5ed5141e8b07e7cdc7aff70e3f819a6be857a5f76c5a15efd4

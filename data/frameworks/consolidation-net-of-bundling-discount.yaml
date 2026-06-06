@@ -1,0 +1,116 @@
+kind: framework
+slug: consolidation-net-of-bundling-discount
+schema_version: 1
+name: Consolidation net of bundling discount
+
+# Q39 lens — bundle_consolidation. Distinct math shape from the v0.2 2-input
+# consolidation-sum-then-discount: it nets the captured spend down by the suite
+# bundling discount the vendor must give back vs the standalone stack it
+# displaces. tools_displaced (displaced spend pool) x consolidation_rate x
+# (1 - pricing_discount). NOTE: a fully role-covered variant additionally needs a
+# per-tool spend_per_tool primitive; none is sourced yet (recorded as a gap), so
+# this adds the genuinely-available pricing_discount role rather than fabricate it.
+method_family: comparable_revenue
+lens: bundle_consolidation
+inputs:
+- name: tools_displaced
+  role: base_value
+  unit_signature:
+    kind: flow
+    dimension: currency
+    currency: USD
+  required: true
+- name: consolidation_rate
+  role: base_value
+  unit_signature:
+    kind: dimensionless
+    dimension: percent
+  required: true
+- name: pricing_discount
+  role: regime_modifier
+  unit_signature:
+    kind: dimensionless
+    dimension: percent
+  required: true
+formula: tools_displaced * consolidation_rate * (1 - pricing_discount)
+output_unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+  denominator: per-year
+applicable_to:
+- workplace-suite-consolidation
+- st-labs-ai-itsm
+- echelon-servicenow-agents
+- numeral-tax-compliance
+- contrario-ai-recruiting
+- miravoice-phone-surveys
+- playerzero-code-quality
+- kaizen-labs-govtech
+- moda-ai-design
+- minerva-ai-accounting-firm
+- melius-creative-canvas
+- accrual-ai-tax-software
+variants:
+- scope: workplace-suite-consolidation
+  default_inputs:
+    tools_displaced: enterprise-workplace-point-solution-spend-2024
+    consolidation_rate: consolidation-capture-rate-2024
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+- scope: st-labs-ai-itsm
+  default_inputs:
+    tools_displaced: global-itsm-incumbent-revenue-pool-2024
+    consolidation_rate: ai-native-itsm-share-shift-rate-2024
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+- scope: echelon-servicenow-agents
+  default_inputs:
+    tools_displaced: servicenow-implementation-dev-spend-pool-2024
+    consolidation_rate: servicenow-agent-capture-rate-2027
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+- scope: numeral-tax-compliance
+  default_inputs:
+    tools_displaced: global-sales-tax-vat-compliance-software-revenue-2024
+    consolidation_rate: numeral-realistic-share-shift-capture-2024
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+- scope: contrario-ai-recruiting
+  default_inputs:
+    tools_displaced: global-recruiting-search-fees-2024
+    consolidation_rate: ai-recruiting-agent-capture-rate-2024
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+- scope: miravoice-phone-surveys
+  default_inputs:
+    tools_displaced: global-cati-phone-survey-spend-2024
+    consolidation_rate: ai-voice-survey-realistic-capture-rate-2024
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+- scope: playerzero-code-quality
+  default_inputs:
+    tools_displaced: global-observability-apm-code-quality-spend-2024
+    consolidation_rate: playerzero-ai-debug-capture-rate-2024
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+- scope: kaizen-labs-govtech
+  default_inputs:
+    tools_displaced: us-slg-resident-services-and-payments-software-spend-2024
+    consolidation_rate: kaizen-realistic-slg-consolidation-capture-rate-2024
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+- scope: moda-ai-design
+  default_inputs:
+    tools_displaced: global-brand-design-spend-pool-2024
+    consolidation_rate: ai-brand-design-agent-capture-rate-2024
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+- scope: minerva-ai-accounting-firm
+  default_inputs:
+    tools_displaced: us-smb-accounting-services-revenue-2024
+    consolidation_rate: ai-native-cpa-firm-realistic-capture-rate-2024
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+- scope: melius-creative-canvas
+  default_inputs:
+    tools_displaced: global-stock-media-plus-addressable-agency-production-spend-2024
+    consolidation_rate: ai-canvas-capture-rate-of-stock-and-agency-production-2027
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+- scope: accrual-ai-tax-software
+  default_inputs:
+    tools_displaced: us-cpa-firm-professional-tax-software-revenue-2024
+    consolidation_rate: ai-native-tax-share-shift-capture-rate-2024
+    pricing_discount: suite-bundling-pricing-discount-default-2024
+expansion_stage_parameter: false
+horizon_class: snapshot

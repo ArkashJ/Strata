@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: incumbent-replacement-rate-default-2024
+schema_version: 1
+concept_slug: cost-efficiency-shared-parameters
+name: Incumbent replacement rate (modeled structural default)
+description: >-
+  MODELED - not a sourced fact. The dimensionless fraction of an addressable persona base whose incumbent manual/legacy spend a new tool realistically REPLACES within a 3-year planning horizon (vs net-new or untouched). Set at 0.35 - a moderate displacement consistent with observed enterprise-software switching inertia. Scales the addressable base to the truly-displaced base; asserts no headcount. Do not cite as fact.
+value: 0.35
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 0.2
+  - 0.5
+  basis: >-
+    Replacement of entrenched workflows historically 20-50% over 3 years; 0.35 is the central case between sticky incumbents (0.2) and greenfield (0.5).
+source:
+  slug: strata-modeled-replacement-rate-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/incumbent-replacement-rate-default-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: 543ce5f485c7571d928df2b9498dd82779f07da9a7e07f81994e019f7587a7bc

@@ -1,0 +1,32 @@
+kind: concept
+slug: india-consumer-digital-lending
+schema_version: 1
+name: India consumer digital lending
+definition: >-
+  Latent demand for smartphone-delivered consumer digital lending in India.
+  Sized as India's total population scaled by a logistic adoption S-curve (the
+  market is early — most of the population is not yet a digital-credit borrower)
+  times net revenue per active borrower. Scope is India residents; the adoption
+  curve and per-borrower revenue are honestly modeled (MODELED), only the
+  population headcount is sourced (World Bank). Latent-demand lens: a raw
+  population headcount would massively over-state the reachable borrower base,
+  which the adoption curve corrects for.
+analysis_lens:
+  primary: latent_demand
+modifiers: {}
+scope:
+  segment:
+    label: India residents
+  geo_supply:
+  - IN
+  geo_demand:
+  - IN
+  product:
+  - consumer-digital-lending
+  - smartphone-credit
+measurements:
+- wb-india-population-2023
+- india-digital-lending-adoption-position-2024
+- india-digital-lending-wtp-per-person-2024
+competing_concepts: []
+requires_clearance: []

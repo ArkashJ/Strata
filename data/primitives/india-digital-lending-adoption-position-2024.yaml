@@ -1,0 +1,42 @@
+kind: atomic_primitive
+slug: india-digital-lending-adoption-position-2024
+schema_version: 1
+concept_slug: india-consumer-digital-lending
+name: India consumer digital-lending adoption-curve position (modeled)
+description: >-
+  MODELED — not a sourced fact. Dimensionless position of India's
+  smartphone-delivered consumer digital-lending market along its logistic
+  adoption S-curve, on a 0 (no adoption) to 1 (saturation) maturity axis. Set at
+  0.30: meaningful traction (UPI rails, ~56% internet penetration per World Bank
+  IT.NET.USER.ZS 2022, RBI digital-lending guidelines) but still early — most of
+  the population is not yet a digital-credit borrower. Fed into
+  logistic(position, midpoint, steepness); it does NOT itself assert a borrower
+  count. Do not cite as fact.
+value: 0.3
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - IN
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 0.2
+  - 0.45
+  basis: >-
+    Inferred from internet/smartphone penetration and digital-lending traction,
+    not measured. Could be 0.20 if credit-eligibility and regulation constrain
+    reach, or 0.45 if UPI-credit and account-aggregator rails accelerate uptake.
+    Range reflects that uncertainty.
+source:
+  slug: strata-modeled-india-digital-lending-adoption-position-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/india-digital-lending-adoption-position-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: 681d76de18d8304496065c14e279a0808c2ae5439441078400a15c31ca53ef05

@@ -1,0 +1,43 @@
+kind: atomic_primitive
+slug: us-senior-digital-health-wtp-per-person-2024
+schema_version: 1
+concept_slug: us-senior-digital-health
+name: US senior digital-health willingness-to-pay per person per year (modeled)
+description: >-
+  MODELED — not a sourced fact. Blended annual willingness-to-pay per adopting
+  US senior for a remote-patient-monitoring / digital-health subscription,
+  combining consumer out-of-pocket spend and the Medicare RPM reimbursement an
+  adopting beneficiary draws (CPT 99453/99454/99457 run roughly $100-160/month
+  when active). Modeled at $480/year (~$40/month blended across active and
+  intermittent users). Per ADOPTING person — the adopted share is applied
+  separately via the logistic curve. Do not cite as fact.
+value: 480.0
+unit:
+  kind: intensive
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 240.0
+  - 1200.0
+  basis: >-
+    Anchored on published Medicare RPM CPT reimbursement bands and consumer
+    digital-health subscription pricing, blended across active and intermittent
+    users. Low end ($240) = light consumer-only spend; high end ($1200) =
+    continuously-reimbursed chronic-care monitoring. Range reflects that mix
+    uncertainty.
+source:
+  slug: strata-modeled-us-senior-dh-wtp-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/us-senior-digital-health-wtp-per-person-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: 69eca2f1a58fe69f2d63bd16c82babc4d73b459a976c684a96b0bf24574e97a6

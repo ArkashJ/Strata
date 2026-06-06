@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: platform-market-share-assumption-default-2024
+schema_version: 1
+concept_slug: platform-throughput-shared-parameters
+name: Platform market-share assumption (modeled structural default)
+description: >-
+  MODELED - not a sourced fact. The dimensionless long-run market share a single platform realistically captures of a throughput/GMV pool it competes for (after incumbents and multi-homing). Set at 0.15 - a credible durable share for a leading-but-not-monopoly platform. Scales a take-rate revenue pool to a single platform's slice; asserts no GMV. Do not cite as fact.
+value: 0.15
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 0.05
+  - 0.3
+  basis: >-
+    Durable platform shares in competitive throughput markets cluster 5-30%; 0.15 is a central leader-not-monopoly case.
+source:
+  slug: strata-modeled-platform-share-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/platform-market-share-assumption-default-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: e53c0f3e701b83b623f06c93c5ccbda09120327ccd3baa468e0553d09b7e87ef

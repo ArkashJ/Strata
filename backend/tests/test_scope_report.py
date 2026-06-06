@@ -85,7 +85,11 @@ def test_each_consumed_primitive_appears_once(registry: Registry):
 # payload would change it. (It will also, correctly, change if the concept's
 # frameworks/primitives/values change — that is real state, and is what the hash
 # is for.)
-_SALES_OPS_GOLDEN_HASH = "5bafcb37383d1e1352c68cd859f98584d40c3de7f7081cbb8a8902fbcd76abf3"
+# Updated in PR5: new applicable frameworks added scenarios to this concept, so
+# the hash legitimately moved (per the note above). The scope field still does
+# NOT fold into the hash — test_scope_report_is_not_part_of_state_hash proves
+# that against this same value.
+_SALES_OPS_GOLDEN_HASH = "2779ada9b101251aa405ab32ef596fd84b132cc4a553a1b73a6211e33d2830a0"
 
 
 def test_scope_report_is_not_part_of_state_hash(registry: Registry):

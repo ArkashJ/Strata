@@ -1,0 +1,40 @@
+kind: atomic_primitive
+slug: logistic-adoption-steepness-default-2024
+schema_version: 1
+concept_slug: latent-demand-shared-parameters
+name: Logistic adoption-curve steepness (modeled structural bound)
+description: >-
+  MODELED — not a sourced fact. The dimensionless steepness coefficient of the
+  logistic adoption S-curve used by latent-demand frameworks:
+  logistic(position, midpoint, steepness). A value of 1 gives a gentle,
+  conservative S-curve so that a mid-curve position (~0.45) maps to a
+  roughly-half adopted share rather than a saturated one — deliberately cautious
+  to avoid over-stating latent demand. Shapes the curve only; asserts no
+  quantity. Do not cite as fact.
+value: 1.0
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 0.5
+  - 2.0
+  basis: >-
+    Steepness controls how abruptly adoption flips from laggard to mainstream.
+    Lower (0.5) = a long gradual ramp; higher (2.0) = a sharp tipping point.
+    Range spans plausible diffusion regimes; 1.0 is the conservative default.
+source:
+  slug: strata-modeled-logistic-steepness-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/logistic-adoption-steepness-default-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: aa5441dc829be3afd1caa1cca7cd427257c508c5672dc4df512898ec4b2437fc

@@ -1,0 +1,41 @@
+kind: atomic_primitive
+slug: us-senior-digital-health-adoption-position-2024
+schema_version: 1
+concept_slug: us-senior-digital-health
+name: US senior digital-health adoption-curve position (modeled)
+description: >-
+  MODELED — not a sourced fact. Dimensionless position of the US 65+
+  remote-patient-monitoring / digital-health market along its logistic adoption
+  S-curve, on a 0 (no adoption) to 1 (saturation) maturity axis. Set at 0.45:
+  past the early-adopter knee (Medicare RPM reimbursement live since 2019,
+  growing CPT 99454 claims) but well short of mainstream saturation. Fed into
+  logistic(position, midpoint, steepness); it does NOT itself assert an adopted
+  headcount. Do not cite as fact.
+value: 0.45
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 0.3
+  - 0.6
+  basis: >-
+    Adoption maturity is inferred from Medicare RPM claim growth and
+    senior-smartphone penetration, not measured directly. Could be as low as
+    0.30 if reimbursement tightens, or as high as 0.60 if chronic-care RPM goes
+    mainstream. Range reflects that uncertainty.
+source:
+  slug: strata-modeled-us-senior-dh-adoption-position-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/us-senior-digital-health-adoption-position-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: a7fa7e497bb377522e9422b3684841784aa1ef506bd4f528622fab54c6a53475

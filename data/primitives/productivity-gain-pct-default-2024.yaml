@@ -1,0 +1,32 @@
+kind: atomic_primitive
+slug: productivity-gain-pct-default-2024
+schema_version: 1
+concept_slug: productivity-uplift-shared-parameters
+name: Productivity gain percentage (modeled structural default)
+description: >-
+  MODELED - not a sourced fact. The dimensionless productivity uplift a tool delivers per persona (output gain as a fraction of baseline) that is available to be split between buyer and vendor. Set at 0.12 - a mid-range white-collar AI-augmentation uplift. Scales the persona base by realized value; asserts no dollar figure. Do not cite as fact.
+value: 0.12
+unit:
+  kind: dimensionless
+  dimension: percent
+as_of: '2024-12-31'
+geo:
+  level: global
+  codes:
+  - WLD
+geo_perspective: mixed
+distribution_shape: normal
+delivery_mode: n/a
+expiry: '2027-06-06'
+uncertainty:
+  range:
+  - 0.05
+  - 0.25
+  basis: >-
+    Measured AI-assistant productivity gains span ~5-25% by task; 0.12 is a conservative central estimate across a mixed persona base.
+source:
+  slug: strata-modeled-productivity-gain-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/productivity-gain-pct-default-2024.yaml
+  accessed: '2026-06-06'
+  snapshot_sha256: ead456de56c2bc3b94b416a80554dd6aedad99f6bfb1a900f795a23be3b24ce7

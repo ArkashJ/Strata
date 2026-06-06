@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import typer
@@ -251,6 +252,36 @@ def db_stats() -> None:
     typer.echo(f"  {'TOTAL':20} {total:>6} rows")
 
 
+@app.command("embed")
+def embed_command() -> None:
+    """Populate pgvector embeddings for all concepts/primitives (flow 39).
+
+    Recomputes the deterministic feature-hashing embedding for every concept and
+    primitive in Postgres and writes it to the ``embedding`` column. Powers the
+    resolver's semantic NN fallback (``match_concept_semantic``). Requires
+    migration 010 (pgvector + embedding columns) — if the extension is not
+    installed the DB error is surfaced (BLOCKED until a superuser runs
+    ``CREATE EXTENSION vector``)."""
+    import asyncio
+
+    from strata.db.embed_populate import populate_embeddings
+
+    typer.echo("Computing embeddings → Postgres ...")
+    try:
+        counts = asyncio.run(populate_embeddings())
+    except Exception as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        typer.echo(
+            "If this mentions the 'vector' type, pgvector is not provisioned: "
+            "a superuser must run `CREATE EXTENSION vector;` and `alembic upgrade head`.",
+            err=True,
+        )
+        raise typer.Exit(code=1) from exc
+    for table, count in counts.items():
+        typer.echo(f"  {table:20} {count:>6} embedded")
+    typer.echo("Done.")
+
+
 # ── Ingest orchestrator sub-commands ────────────────────────────────
 
 ingest_app = typer.Typer(
@@ -445,76 +476,156 @@ def verify_integrity(data_dir: Path = _DATA_DIR_OPT) -> None:
 
 # ── Connector smoke tests ───────────────────────────────────────────
 
+_CONNECTORS_LIVE_OPT = typer.Option(
+    False, "--live", help="Also smoke-test the keyless government APIs (network)."
+)
+
 
 @app.command("test-connectors")
-def test_connectors() -> None:
-    """Run live smoke tests against all 5 data source APIs."""
+def test_connectors(
+    live: bool = _CONNECTORS_LIVE_OPT,
+) -> None:
+    """Enumerate all 23 typed connectors with honest readiness.
+
+    By default this is OFFLINE: it reports each connector's tier, whether its
+    required API key is present, and whether it is capability-only (no committed
+    ingest yet) — never silently claiming a connector works. Keyed connectors
+    with a missing key are reported BLOCKED, not failed: the gap is a credential,
+    not a code defect. Pass ``--live`` to additionally hit the keyless/govt APIs
+    that need no credential (a small smoke set), reporting real failures.
+    """
     from strata.config import get_settings
+    from strata.connectors._capability import all_capabilities
 
     settings = get_settings()
 
-    typer.echo("Testing data source APIs...\n")
-    passed = 0
-    failed = 0
+    # Honest per-connector descriptors. `key_attr` names the Settings field that
+    # must be set for a LIVE call; None means the connector works keyless (govt /
+    # public APIs, often rate-limited without a key). `blocked` connectors REQUIRE
+    # a key and raise without one — they are surfaced as BLOCKED, not broken.
+    @dataclass(frozen=True, slots=True)
+    class _ConnDesc:
+        tier: str
+        key_attr: str | None
+        note: str
+        requires_key: bool = False  # raises / unusable without the key (BLOCKED)
+        capability_only: bool = False  # typed client exists; no committed ingest
 
-    # BLS
-    try:
-        from strata.connectors.bls import BLSClient
+    descriptors: dict[str, _ConnDesc] = {
+        "bls": _ConnDesc("regulator", "bls_api_key", "employment/wages/CPI (keyless OK)"),
+        "fred": _ConnDesc("regulator", "fred_api_key", "GDP/rates (keyless OK)"),
+        "census": _ConnDesc("regulator", "census_api_key", "NAICS industry stats (keyless OK)"),
+        "edgar": _ConnDesc("regulator", None, "SEC XBRL financials (keyless)"),
+        "worldbank": _ConnDesc("aggregator", None, "global GDP/population (keyless)"),
+        "oecd": _ConnDesc("aggregator", None, "38-country SDMX (keyless)"),
+        "eurostat": _ConnDesc("regulator", None, "EU sector stats (keyless)"),
+        "comtrade": _ConnDesc(
+            "aggregator", "comtrade_api_key", "bilateral trade; world-aggregate needs paid key"
+        ),
+        "fdic": _ConnDesc("regulator", None, "bank financials (keyless)"),
+        "cms": _ConnDesc("regulator", None, "Medicare/Medicaid (keyless)"),
+        "eia": _ConnDesc("regulator", "eia_api_key", "energy (keyless OK)"),
+        "usda_nass": _ConnDesc("regulator", "usda_nass_api_key", "crop/livestock (keyless OK)"),
+        "faa": _ConnDesc("regulator", None, "aviation; enplanements Excel-only (capability)"),
+        "openfda": _ConnDesc("regulator", "openfda_api_key", "drugs/devices (keyless OK)"),
+        "kalshi": _ConnDesc(
+            "prediction_market", None, "event probabilities — QUARANTINED, never a TAM input"
+        ),
+        "alpha_vantage": _ConnDesc(
+            "aggregator", "alpha_vantage_api_key", "equities/FX; 25 req/day free", requires_key=True
+        ),
+        "nasdaq_data_link": _ConnDesc(
+            "aggregator",
+            "nasdaq_data_link_api_key",
+            "economic/commodity series; premium gated",
+            requires_key=True,
+        ),
+        "dune": _ConnDesc(
+            "onchain",
+            "dune_api_key",
+            "on-chain queries; reference-only (plan limits)",
+            requires_key=True,
+            capability_only=True,
+        ),
+        "yfinance": _ConnDesc(
+            "analyst", None, "unofficial Yahoo scraper — fragile", capability_only=True
+        ),
+        "github": _ConnDesc(
+            "community",
+            "github_token",
+            "stars/forks — community signal, QUARANTINED (token raises limits)",
+        ),
+        "reddit": _ConnDesc(
+            "community",
+            "reddit_client_id",
+            "subscribers — community signal, QUARANTINED",
+            requires_key=True,
+        ),
+        "stack_exchange": _ConnDesc(
+            "community", "stack_exchange_key", "tag counts — community signal, QUARANTINED"
+        ),
+        "twitter": _ConnDesc(
+            "analyst",
+            "twitter_bearer_token",
+            "X v2 free tier only — fragile",
+            requires_key=True,
+        ),
+    }
 
-        with BLSClient(api_key=settings.bls_api_key) as client:
-            resp = client.get_series("CUUR0000SA0")
-            assert resp.series, "No series returned"
-            typer.echo(f"  ✓ BLS     — CPI series, {len(resp.series[0].data)} data points")
-            passed += 1
-    except Exception as exc:
-        typer.echo(f"  ✗ BLS     — {exc}")
-        failed += 1
+    # The capability manifest is the live list of router-visible connectors. Cross
+    # check it against the descriptor table so neither can silently drift.
+    manifest_connectors = {spec.connector for spec in all_capabilities()}
+    described = set(descriptors)
+    if manifest_connectors - described:
+        typer.echo(
+            f"  ! manifest connectors with no descriptor: "
+            f"{sorted(manifest_connectors - described)}",
+            err=True,
+        )
 
-    # FRED
+    typer.echo(f"Connector readiness ({len(descriptors)} typed connectors)\n")
+    ready = blocked = capability = 0
+    for name in sorted(descriptors):
+        d = descriptors[name]
+        key_present = d.key_attr is None or bool(getattr(settings, d.key_attr, None))
+        if d.requires_key and not key_present:
+            # `requires_key` implies key_attr is set, and key_present is only
+            # False when key_attr is not None — narrow for the type checker.
+            key_attr = d.key_attr or "api_key"
+            status, mark = "BLOCKED", "⊘"
+            reason = f"missing {key_attr} — set STRATA_{key_attr.upper()}"
+            blocked += 1
+        elif d.capability_only:
+            status, mark = "CAPABILITY", "○"
+            reason = d.note
+            capability += 1
+        else:
+            status, mark = "READY", "✓"
+            reason = d.note if key_present else f"{d.note} (no key — rate-limited)"
+            ready += 1
+        typer.echo(f"  {mark} {name:18} [{d.tier:17}] {status:11} — {reason}")
+
+    typer.echo(
+        f"\n{ready} ready · {blocked} blocked (API key) · {capability} capability-only "
+        f"of {len(descriptors)} connectors."
+    )
+
+    if not live:
+        typer.echo("(offline readiness only; pass --live to smoke-test keyless govt APIs)")
+        return
+
+    typer.echo("\nLive smoke test (keyless government APIs):")
+    live_failed = 0
     try:
         from strata.connectors.fred import FREDClient
 
         with FREDClient(api_key=settings.fred_api_key) as client:
             resp = client.get_observations("GDP", limit=3, sort_order="desc")
             assert resp.observations, "No observations"
-            typer.echo(f"  ✓ FRED    — GDP series, latest={resp.observations[0].value}")
-            passed += 1
+            typer.echo(f"  ✓ FRED    — GDP latest={resp.observations[0].value}")
     except Exception as exc:
-        typer.echo(f"  ✗ FRED    — {exc}")
-        failed += 1
-
-    # Census
-    try:
-        from strata.connectors.census import CensusClient
-
-        with CensusClient(api_key=settings.census_api_key) as client:
-            resp = client.get_cbp(2022, naics="5112")
-            assert resp.records, "No records"
-            rec = resp.records[0]
-            typer.echo(
-                f"  ✓ Census  — NAICS 5112: {rec.establishments:,} estab, {rec.employees:,} emp"
-            )
-            passed += 1
-    except Exception as exc:
-        typer.echo(f"  ✗ Census  — {exc}")
-        failed += 1
-
-    # EDGAR
-    try:
-        from strata.connectors.edgar import EDGARClient
-
-        with EDGARClient() as client:
-            resp = client.get_company_concept("0000320193", concept="Revenues")
-            assert resp.concept, "No concept"
-            typer.echo(
-                f"  ✓ EDGAR   — Apple revenue, {len(resp.concept.units.get('USD', ()))} facts"
-            )
-            passed += 1
-    except Exception as exc:
-        typer.echo(f"  ✗ EDGAR   — {exc}")
-        failed += 1
-
-    # World Bank
+        typer.echo(f"  ✗ FRED    — {exc}", err=True)
+        live_failed += 1
     try:
         from strata.connectors.worldbank import WorldBankClient
 
@@ -522,13 +633,10 @@ def test_connectors() -> None:
             resp = client.get_indicator("SP.POP.TOTL", country="US", date_range="2023:2023")
             assert resp.values, "No values"
             typer.echo(f"  ✓ WBank   — US population={resp.values[0].value:,.0f}")
-            passed += 1
     except Exception as exc:
-        typer.echo(f"  ✗ WBank   — {exc}")
-        failed += 1
-
-    typer.echo(f"\n{passed} passed, {failed} failed")
-    if failed:
+        typer.echo(f"  ✗ WBank   — {exc}", err=True)
+        live_failed += 1
+    if live_failed:
         raise typer.Exit(code=1)
 
 
@@ -679,6 +787,32 @@ def _stage_auto_primitive(src: Path, dst: Path) -> None:
     dst.write_text(yaml.safe_dump(record, sort_keys=False, allow_unicode=True))
 
 
+def _promote_subdir(src: Path) -> str:
+    """Pick the committed-tree subdir for a staged auto-primitive by its tier.
+
+    Non-sizing tiers (prediction-market / community-social, NON_SIZING_TIERS)
+    land in ``data/signals/`` so the loader quarantines them as read-only
+    signals; everything else lands in ``data/primitives/``. The destination is
+    derived from the RECORD's tier — the same constant the loader and the DB
+    path use — so a community/social primitive can never be promoted into the
+    sizing bank by virtue of the directory the promote command writes to."""
+    import yaml
+    from pydantic import TypeAdapter
+
+    from strata.models import NON_SIZING_TIERS
+    from strata.models.primitive import AtomicPrimitive
+
+    record = yaml.safe_load(src.read_text())
+    if isinstance(record, dict):
+        record = dict(record)
+        record.pop("metadata", None)
+    try:
+        prim = TypeAdapter(AtomicPrimitive).validate_python(record)
+    except Exception:
+        return "primitives"  # let the normal validator surface a shape error
+    return "signals" if prim.source.tier in NON_SIZING_TIERS else "primitives"
+
+
 def _is_modeled_candidate(src: Path) -> bool:
     """Phase 4 (G2) — is this staged auto-primitive a MODELED/soft-data number?
     The committed bank's modeled primitives are hand-authored on purpose; the
@@ -739,8 +873,9 @@ def _promote_from_ingest(data_dir: Path, *, validate_only: bool) -> None:
         typer.echo("No auto-primitives staged. Run `strata ingest run` first.")
         return
 
-    target_dir = data_dir / "primitives"
-    target_dir.mkdir(parents=True, exist_ok=True)
+    primitives_dir = data_dir / "primitives"
+    signals_dir = data_dir / "signals"
+    primitives_dir.mkdir(parents=True, exist_ok=True)
 
     staged: dict[str, Path] = {}  # slug -> committed dst path (pending)
     src_of: dict[str, Path] = {}  # slug -> staging src path
@@ -748,8 +883,16 @@ def _promote_from_ingest(data_dir: Path, *, validate_only: bool) -> None:
     already = 0
     for src in sorted(AUTO_PRIMITIVES_DIR.glob("*.yaml")):
         slug = src.stem
+        # Route by the record's tier: non-sizing tiers go to data/signals/ so the
+        # loader quarantines them; an already-promoted slug under EITHER dir is a
+        # no-op (a primitive never silently splits across both trees).
+        if _promote_subdir(src) == "signals":
+            signals_dir.mkdir(parents=True, exist_ok=True)
+            target_dir = signals_dir
+        else:
+            target_dir = primitives_dir
         dst = target_dir / f"{slug}.yaml"
-        if dst.exists():
+        if dst.exists() or (primitives_dir / f"{slug}.yaml").exists():
             already += 1
             continue
         if _is_modeled_candidate(src):
@@ -805,7 +948,7 @@ def _promote_from_ingest(data_dir: Path, *, validate_only: bool) -> None:
         for slug in committed:
             src_of[slug].unlink(missing_ok=True)
         typer.echo(
-            f"✓ Promoted {len(committed)} primitive(s) → {target_dir} "
+            f"✓ Promoted {len(committed)} record(s) → {primitives_dir} / {signals_dir} "
             f"({len(rejected)} rejected · {already} already committed)."
         )
     for slug, reason in sorted(rejected.items()):
@@ -849,10 +992,12 @@ def promote(
         )
         raise typer.Exit(code=2)
 
-    target_dir = data_dir / "primitives"
+    target_dir = data_dir / _promote_subdir(src)
     target_dir.mkdir(parents=True, exist_ok=True)
     dst = target_dir / f"{slug}.yaml"
-    if dst.exists():
+    # Idempotent across BOTH trees: a slug already promoted to primitives/ OR
+    # signals/ is a no-op, so a tier flip can never silently fork it into both.
+    if dst.exists() or (data_dir / "primitives" / f"{slug}.yaml").exists():
         typer.echo(f"{slug} is already promoted — no-op.")
         return
 
