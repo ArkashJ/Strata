@@ -8,6 +8,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useEffect } from "react";
 
 import { ConvergenceBanner } from "@/components/charts/ConvergenceBanner";
 import { TornadoChart } from "@/components/charts/TornadoChart";
@@ -49,6 +50,16 @@ export function TamReport({ tam }: { tam: TAMOutput }) {
     tam.uses_modeled_composites ||
     modeledInputNotes(tam).length > 0 ||
     hasUnpinnedSnapshot;
+
+  // "Download PDF" elsewhere opens this clean report with ?print=1 — auto-open
+  // the browser's print/save-as-PDF dialog so the export is the one-pager, never
+  // the dense interactive shell. One-shot, after first paint.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!new URLSearchParams(window.location.search).has("print")) return;
+    const t = window.setTimeout(() => window.print(), 600);
+    return () => window.clearTimeout(t);
+  }, []);
 
   return (
     <main className="tam-report mx-auto w-full max-w-[860px] px-8 py-10">

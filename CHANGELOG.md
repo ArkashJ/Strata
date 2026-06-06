@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — dashboards + Gartner charts + real PDF export (v1.0 program · PR 3)
+
+- **Gartner chart contract** (`ChartFrame` + `chart-colors`): a shared frame —
+  axis titles + units, on-chart annotations, a title/subtitle/**source-footnote**
+  ("source: BLS OEWS, 2024"), consistent margins, tier-ramp series. `ResolveResultChart`'s
+  hardcoded hex `LENS_COLORS` is **tokenized** to the cool lens-family CSS vars
+  (a colour means one thing).
+- **Real PDF export:** every "Download PDF" now opens the clean
+  `/tam/<hash>/report?print=1` (auto-prints the one-pager) instead of `window.print()`
+  on the dense interactive workspace — build workspace, `/tam` rail, export menu.
+- **Markdown provenance:** `tamToMarkdown` gains a Sources & provenance section
+  (input · tier · source link · honest snapshot — "not pinned (demo)" for
+  placeholders, never a fabricated hash).
+- **Dashboards:** `/dashboard` is a board surface again (library counts, saved
+  builds, audit feed); degrades gracefully signed-out. Board persistence is gated on
+  live Clerk (BLOCKED locally, same as PR 1's `/me`).
+- **Verified:** web tsc + biome clean; 188 web unit tests. (Server-side Playwright
+  print-to-PDF remains the longer-term target — the clean-report print path ships now.)
+
 ### Added — Build Studio: live, steerable TAM tree (v1.0 program · PR 2)
 
 Type a market, **watch the sourced tree assemble node-by-node**, and steer any

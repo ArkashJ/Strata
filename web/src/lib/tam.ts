@@ -1,7 +1,7 @@
 // TAM-output helpers. A TAM is a scenario tree (never a scalar + error bar —
 // Q1), so "the number" is really a low/mid/high band derived from the scenario
 // set. These read-only helpers feed the artifact view, export, and the headline.
-import { formatCompact, tierLabel } from "./format";
+import { formatCompact, formatSnapshot, tierLabel } from "./format";
 import type { Scenario, TAMOutput, TrajectoryPoint } from "./schemas";
 
 // A TAM with a single scenario, or where every scenario shares one value, has no
@@ -99,6 +99,30 @@ export function tamToMarkdown(tam: TAMOutput): string {
     lines.push("");
     for (const note of banners.keys()) {
       lines.push(`- ${note}`);
+    }
+    lines.push("");
+  }
+
+  // Sources & provenance — every sourced input behind the number, deduped by
+  // primitive. Snapshot renders honestly ("not pinned (demo)" for placeholders),
+  // never a fabricated hash. Modeled rows carry no resolvable URL.
+  const seen = new Map<string, (typeof tam.scenarios)[number]["inputs_used"][number]>();
+  for (const s of tam.scenarios) {
+    for (const iu of s.inputs_used) {
+      if (!seen.has(iu.primitive_slug)) seen.set(iu.primitive_slug, iu);
+    }
+  }
+  if (seen.size > 0) {
+    lines.push("## Sources & provenance");
+    lines.push("");
+    lines.push("| Input | Tier | Source | Snapshot |");
+    lines.push("| --- | --- | --- | --- |");
+    for (const iu of seen.values()) {
+      const tier = iu.source_tier ? tierLabel(iu.source_tier) : "composite";
+      const src = iu.source_url ? `[link](${iu.source_url})` : "—";
+      lines.push(
+        `| ${iu.name ?? iu.primitive_slug} | ${tier} | ${src} | ${formatSnapshot(iu.snapshot_sha256)} |`,
+      );
     }
     lines.push("");
   }

@@ -652,7 +652,10 @@ function Rail({
 					<Button
 						variant="ghost"
 						sm
-						onClick={() => typeof window !== "undefined" && window.print()}
+						onClick={() =>
+							typeof window !== "undefined" &&
+							window.open(`/tam/${tam.state_hash}/report?print=1`, "_blank")
+						}
 						className="justify-start"
 					>
 						Download PDF

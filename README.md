@@ -29,6 +29,32 @@
 
 ---
 
+## v1.0 program status (2026-06-06)
+
+Six sequenced PRs ([`docs/TODO_june6.md`](docs/TODO_june6.md)) turning the demo into a
+tool you'd actually use. The end-to-end flow is **live on `main`**: ask a market →
+**watch the sourced node tree assemble** → modify any node → get a report answered
+**only from sourced primitives (zero external citations)** → export a clean PDF.
+
+| PR | What it ships | Status |
+|----|---------------|--------|
+| 0 | Trust quick-wins + doc/architecture recovery | ✅ merged (#91) |
+| 4 | Curated question → sourced-only report engine (`/c/<slug>/questions`) | ✅ merged (#92) |
+| 1 | Multi-tenant per-user workspace (Clerk→backend + dual-purpose RLS) | ✅ merged (#109) |
+| 2 | Build Studio — live, steerable TAM tree (`/build?mode=studio`) | ✅ merged (#110) |
+| 3 | Dashboards + Gartner charts + real PDF export | 🔭 in review |
+| 5 | Breadth to v1.0 (25 frameworks incl. `latent_demand`, connectors, embeddings) | ⬜ queued |
+
+- **Architecture:** 41 mermaid flows in [`docs/architecture/DIAGRAMS.md`](docs/architecture/DIAGRAMS.md)
+  + [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md).
+- **Strategy:** a four-lens adversarial review →
+  [`docs/STRATEGY-REVIEW-2026-06-06.md`](docs/STRATEGY-REVIEW-2026-06-06.md) + tracked
+  issues #93–#108. Headline reframe: lead with the **verification layer for AI market
+  claims** (MCP), make the MODELED fence **graded not binary**, invest in frameworks
+  over connectors.
+
+---
+
 ## The one-line thesis
 
 Market sizing today is gated by expensive low-quality reports, when in reality the

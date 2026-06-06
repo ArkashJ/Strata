@@ -8,8 +8,10 @@
 // to the app's CSS-variable tokens so it tracks the light/dark toggle.
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts";
 
+import { ChartFrame, sourceFootnote } from "@/components/charts/ChartFrame";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import type { ChartConfig } from "@/components/ui/chart";
+import { lensColor } from "@/lib/chart-colors";
 import { formatCompact, lensLabel } from "@/lib/format";
 import type { PrimitiveUsed, ResolverResult } from "@/lib/resolver-schemas";
 
@@ -23,18 +25,6 @@ const MULTIPLICATIVE_LENSES = new Set([
   "platform_throughput",
   "productivity_uplift",
 ]);
-
-// TODO(PR3): these hardcoded hex values reuse the source-tier ramp for lenses,
-// which violates the PR#84 "a colour means one thing" contract and ignores the
-// theme. Replace with the cool lens-family CSS vars.
-const LENS_COLORS: Record<string, string> = {
-  cost_efficiency: "#5b5bd6",
-  revenue_generation: "#3fa66b",
-  latent_demand: "#c99846",
-  platform_throughput: "#2ba39a",
-  bundle_consolidation: "#d97849",
-  productivity_uplift: "#8b5cd6",
-};
 
 function unitSuffix(unit: PrimitiveUsed["unit"]): string {
   if (!unit || typeof unit !== "object") return "";
@@ -59,7 +49,10 @@ export function ResolveResultChart({ result }: { result: ResolverResult }) {
   const inputs = result.primitives_used.filter((p) => Number.isFinite(p.value) && p.value > 0);
   if (inputs.length === 0) return null;
 
-  const accent = (result.lens && LENS_COLORS[result.lens]) || "var(--accent)";
+  // Lens drives the bar colour — the COOL lens family only (chart-colors.ts),
+  // never a source-tier hue. Falls back to the indigo accent (still cool family)
+  // when no lens is known.
+  const accent = result.lens ? lensColor(result.lens) : "var(--accent)";
   const data: Datum[] = inputs.map((p) => {
     const full = primLabel(p);
     return {
@@ -79,17 +72,41 @@ export function ResolveResultChart({ result }: { result: ResolverResult }) {
     result.tam_value != null &&
     result.lens != null &&
     MULTIPLICATIVE_LENSES.has(result.lens);
-  const tamLabel = result.formatted_tam ?? (result.tam_value != null ? formatCompact(result.tam_value) : "");
+  const tamLabel =
+    result.formatted_tam ?? (result.tam_value != null ? formatCompact(result.tam_value) : "");
 
   const config: ChartConfig = {
     value: { label: result.lens ? lensLabel(result.lens) : "Value", color: accent },
   };
 
+  // Honesty-fenced source footnote: compose only from a REAL tier carried by an
+  // input. Pick the strongest-provenance input present (regulator > aggregator >
+  // analyst > …) as the representative source; null → ChartFrame renders nothing.
+  const TIER_RANK: Record<string, number> = {
+    regulator: 6,
+    first_party: 5,
+    aggregator: 4,
+    analyst: 3,
+    prediction_market: 2,
+    community: 1,
+  };
+  const strongest = inputs
+    .filter((p) => p.source_tier)
+    .sort(
+      (a, b) => (TIER_RANK[b.source_tier ?? ""] ?? 0) - (TIER_RANK[a.source_tier ?? ""] ?? 0),
+    )[0];
+  const source = sourceFootnote(strongest ? { source_tier: strongest.source_tier } : null);
+
   return (
-    <div className="mt-5 border-t border-[var(--border-1)] pt-4">
-      <div className="text-[10px] uppercase tracking-[0.04em] text-[var(--fg-3)]">
-        How this TAM is built
-      </div>
+    <ChartFrame
+      className="mt-5 border-t border-[var(--border-1)] pt-4"
+      title="How this TAM is built"
+      subtitle={
+        result.lens ? `${lensLabel(result.lens)} · each factor is a sourced input` : undefined
+      }
+      axisCaption="Input magnitude, log scale · labels carry the real value + unit"
+      source={source}
+    >
       <ChartContainer config={config} className="mt-2 aspect-auto h-[240px] w-full">
         <BarChart accessibilityLayer data={data} layout="vertical" margin={{ left: 8, right: 64 }}>
           <CartesianGrid horizontal={false} stroke="var(--border-1)" strokeDasharray="3 3" />
@@ -150,6 +167,6 @@ export function ResolveResultChart({ result }: { result: ResolverResult }) {
           <span className="font-mono font-medium text-[var(--fg-1)]">{tamLabel}</span>
         </div>
       ) : null}
-    </div>
+    </ChartFrame>
   );
 }

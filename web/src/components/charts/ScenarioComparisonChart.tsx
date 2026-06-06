@@ -8,23 +8,23 @@
 // Honesty: scenarios already span a single sourced value each — we never invent a
 // range. A single-scenario TAM renders one clear bar (not a fabricated series),
 // with a note that only one method is wired so the reader knows the spread is real.
-import { Bar, BarChart, CartesianGrid, Cell, LabelList, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  LabelList,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from "recharts";
 
+import { ChartFrame } from "@/components/charts/ChartFrame";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import type { ChartConfig } from "@/components/ui/chart";
+import { lensColor } from "@/lib/chart-colors";
 import { formatCompact, lensLabel } from "@/lib/format";
 import type { Scenario, TAMOutput } from "@/lib/schemas";
-
-// Lens drives the bar colour — tokens (single source of truth in globals.css),
-// not inline hex, so a palette change propagates everywhere at once.
-const LENS_COLORS: Record<string, string> = {
-  cost_efficiency: "var(--chart-lens-cost-efficiency)",
-  revenue_generation: "var(--chart-lens-revenue-generation)",
-  latent_demand: "var(--chart-lens-latent-demand)",
-  platform_throughput: "var(--chart-lens-platform-throughput)",
-  bundle_consolidation: "var(--chart-lens-bundle-consolidation)",
-  productivity_uplift: "var(--chart-lens-productivity-uplift)",
-};
 
 interface Datum {
   // Truncated y-axis label.
@@ -63,7 +63,9 @@ export function ScenarioComparisonChart({ tam }: { tam: TAMOutput }) {
       lensName: lensLabel(s.lens),
       value: s.value,
       display: formatCompact(s.value, s.unit),
-      fill: LENS_COLORS[s.lens] ?? "var(--accent)",
+      // Lens drives the bar colour — the COOL lens family only (chart-colors.ts),
+      // never a source-tier hue. A palette change propagates from the tokens.
+      fill: lensColor(s.lens),
     };
   });
 
@@ -72,12 +74,40 @@ export function ScenarioComparisonChart({ tam }: { tam: TAMOutput }) {
   // ten don't crush together; clamp so the card stays a sensible height.
   const height = Math.min(Math.max(scenarios.length * 44, 120), 480);
 
+  // The triangulated midpoint across methods — a Gartner-grade on-chart callout
+  // so the reader sees where independent methods converge, not just the spread.
+  // Only meaningful with ≥2 methods; single-method TAMs get no fabricated line.
+  const values = scenarios.map((s) => s.value);
+  const midpoint = scenarios.length >= 2 ? (Math.min(...values) + Math.max(...values)) / 2 : null;
+
   return (
-    <div>
+    <ChartFrame
+      title="How the methods compare"
+      subtitle={
+        scenarios.length >= 2
+          ? "Each bar is one independent method's reading of this market"
+          : "One method wired so far"
+      }
+      axisCaption="USD nominal · bar length is relative, labels carry the value"
+    >
       <ChartContainer config={config} className="aspect-auto w-full" style={{ height }}>
         <BarChart accessibilityLayer data={data} layout="vertical" margin={{ left: 8, right: 72 }}>
           <CartesianGrid horizontal={false} stroke="var(--border-1)" strokeDasharray="3 3" />
           <XAxis type="number" dataKey="value" hide />
+          {midpoint != null ? (
+            <ReferenceLine
+              x={midpoint}
+              stroke="var(--fg-3)"
+              strokeDasharray="4 3"
+              label={{
+                value: `midpoint ${formatCompact(midpoint, unit)}`,
+                position: "top",
+                fontSize: 10,
+                fill: "var(--fg-3)",
+                className: "tabular-nums",
+              }}
+            />
+          ) : null}
           <YAxis
             type="category"
             dataKey="label"
@@ -129,6 +159,6 @@ export function ScenarioComparisonChart({ tam }: { tam: TAMOutput }) {
           {formatCompact(Math.max(...scenarios.map((s) => s.value)), unit)} spread
         </p>
       )}
-    </div>
+    </ChartFrame>
   );
 }
