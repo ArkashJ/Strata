@@ -236,7 +236,7 @@ def main() -> None:
                     if hi:
                         for h in hi[:3]:  # top 3 highlights per result
                             short = h[:200].replace("\n", " ")
-                            print(f"     Highlight: \"{short}\"")
+                            print(f'     Highlight: "{short}"')
                             all_highlights.append(h)
                     else:
                         print("     (no highlights)")

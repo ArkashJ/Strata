@@ -39,8 +39,12 @@ def upgrade() -> None:
         sa.Column("distribution_shape", sa.String(32), nullable=False, server_default="normal"),
         sa.Column("delivery_mode", sa.String(32), nullable=False, server_default="n/a"),
         sa.Column("source", postgresql.JSONB(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
+        sa.Column(
+            "updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_primitives")),
         sa.UniqueConstraint("slug", name=op.f("uq_primitives_slug")),
     )
@@ -58,7 +62,9 @@ def upgrade() -> None:
         sa.Column("accessed", sa.Date(), nullable=False),
         sa.Column("snapshot_sha256", sa.String(64), nullable=False),
         sa.Column("description", sa.Text(), nullable=False, server_default=""),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_sources")),
         sa.UniqueConstraint("slug", name=op.f("uq_sources_slug")),
     )
@@ -75,7 +81,9 @@ def upgrade() -> None:
         sa.Column("modifiers", postgresql.JSONB(), nullable=False, server_default="{}"),
         sa.Column("measurements", postgresql.JSONB(), nullable=False, server_default="[]"),
         sa.Column("competing_concepts", postgresql.JSONB(), nullable=False, server_default="[]"),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_concepts")),
         sa.UniqueConstraint("slug", name=op.f("uq_concepts_slug")),
     )
@@ -93,7 +101,9 @@ def upgrade() -> None:
         sa.Column("output_unit", postgresql.JSONB(), nullable=False),
         sa.Column("applicable_to", postgresql.JSONB(), nullable=False, server_default="[]"),
         sa.Column("variants", postgresql.JSONB(), nullable=False, server_default="[]"),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
+        ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_frameworks")),
         sa.UniqueConstraint("slug", name=op.f("uq_frameworks_slug")),
     )

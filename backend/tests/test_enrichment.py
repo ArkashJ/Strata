@@ -35,23 +35,18 @@ def test_all_inputs_enriched(registry: Registry) -> None:
         for scenario in result.scenarios:
             for inp in scenario.inputs_used:
                 assert inp.value is not None, (
-                    f"{slug} / {scenario.framework}: "
-                    f"primitive {inp.primitive_slug!r} missing value"
+                    f"{slug} / {scenario.framework}: primitive {inp.primitive_slug!r} missing value"
                 )
                 assert inp.name is not None, (
-                    f"{slug} / {scenario.framework}: "
-                    f"primitive {inp.primitive_slug!r} missing name"
+                    f"{slug} / {scenario.framework}: primitive {inp.primitive_slug!r} missing name"
                 )
                 assert inp.unit is not None, (
-                    f"{slug} / {scenario.framework}: "
-                    f"primitive {inp.primitive_slug!r} missing unit"
+                    f"{slug} / {scenario.framework}: primitive {inp.primitive_slug!r} missing unit"
                 )
                 assert isinstance(inp.value, float), (
                     f"{slug}: inp.value is {type(inp.value)}, expected float"
                 )
-                assert len(inp.name) > 0, (
-                    f"{slug}: inp.name is empty for {inp.primitive_slug!r}"
-                )
+                assert len(inp.name) > 0, f"{slug}: inp.name is empty for {inp.primitive_slug!r}"
 
 
 def test_concept_name_populated(registry: Registry) -> None:
@@ -63,12 +58,8 @@ def test_concept_name_populated_all(registry: Registry) -> None:
     """concept_name must be non-empty for every concept."""
     for slug in ENRICHMENT_CONCEPTS:
         result = size_concept(registry, slug)
-        assert result.target.concept_name is not None, (
-            f"concept_name is None for {slug}"
-        )
-        assert len(result.target.concept_name) > 0, (
-            f"concept_name is empty for {slug}"
-        )
+        assert result.target.concept_name is not None, f"concept_name is None for {slug}"
+        assert len(result.target.concept_name) > 0, f"concept_name is empty for {slug}"
 
 
 def test_inputs_used_primitive_slug_matches_registry(registry: Registry) -> None:
@@ -78,9 +69,7 @@ def test_inputs_used_primitive_slug_matches_registry(registry: Registry) -> None
         for scenario in result.scenarios:
             for inp in scenario.inputs_used:
                 prim = registry.primitive(inp.primitive_slug)
-                assert prim is not None, (
-                    f"primitive {inp.primitive_slug!r} not found in registry"
-                )
+                assert prim is not None, f"primitive {inp.primitive_slug!r} not found in registry"
 
 
 def test_inputs_used_snapshot_sha256_pinned(registry: Registry) -> None:

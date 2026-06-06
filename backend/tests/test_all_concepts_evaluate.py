@@ -43,9 +43,7 @@ def test_concept_evaluates(registry: Registry, slug: str) -> None:
     # Every scenario is well-formed
     for scenario in result.scenarios:
         assert scenario.value > 0, f"scenario value not positive for {slug}"
-        assert scenario.unit.dimension.value == "currency", (
-            f"scenario unit not currency for {slug}"
-        )
+        assert scenario.unit.dimension.value == "currency", f"scenario unit not currency for {slug}"
         assert len(scenario.inputs_used) >= 1, f"no inputs_used for {slug}"
 
 

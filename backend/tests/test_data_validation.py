@@ -23,12 +23,8 @@ def test_all_data_loads() -> None:
     assert len(records.atomic_primitives) >= 14, (
         f"expected ≥14 atomic primitives, got {len(records.atomic_primitives)}"
     )
-    assert len(records.concepts) >= 6, (
-        f"expected ≥6 concepts, got {len(records.concepts)}"
-    )
-    assert len(records.frameworks) >= 5, (
-        f"expected ≥5 frameworks, got {len(records.frameworks)}"
-    )
+    assert len(records.concepts) >= 6, f"expected ≥6 concepts, got {len(records.concepts)}"
+    assert len(records.frameworks) >= 5, f"expected ≥5 frameworks, got {len(records.frameworks)}"
 
 
 def test_no_composite_primitives_yet() -> None:
@@ -111,17 +107,15 @@ def test_registry_primitive_lookup() -> None:
 def test_all_data_validates() -> None:
     """Run the structural → semantic → cross-record pipeline; expect zero errors."""
     report = validate(DATA_DIR)
-    assert report.ok, (
-        "Validation errors found:\n"
-        + "\n".join(f"  [{f.layer}/{f.code}] {f.slug}: {f.message}" for f in report.errors)
+    assert report.ok, "Validation errors found:\n" + "\n".join(
+        f"  [{f.layer}/{f.code}] {f.slug}: {f.message}" for f in report.errors
     )
 
 
 def test_validation_report_has_no_errors() -> None:
     report = validate(DATA_DIR)
-    assert len(report.errors) == 0, (
-        f"Expected 0 errors, got {len(report.errors)}: "
-        + str([(e.code, e.message) for e in report.errors])
+    assert len(report.errors) == 0, f"Expected 0 errors, got {len(report.errors)}: " + str(
+        [(e.code, e.message) for e in report.errors]
     )
 
 
@@ -153,9 +147,7 @@ def test_all_frameworks_have_inputs() -> None:
 def test_all_concepts_have_measurements() -> None:
     records = load_data_dir(DATA_DIR)
     for concept in records.concepts:
-        assert len(concept.measurements) >= 1, (
-            f"concept {concept.slug!r} has no measurements"
-        )
+        assert len(concept.measurements) >= 1, f"concept {concept.slug!r} has no measurements"
 
 
 def test_all_atomics_have_snapshot_sha256() -> None:

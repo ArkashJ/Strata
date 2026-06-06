@@ -31,7 +31,11 @@ def _write_yaml(directory: Path, slug: str, data: dict) -> Path:
 
 def populate_fred() -> list[str]:
     """FRED: GDP, employment, CPI, interest rates."""
-    from strata.connectors.fred import FREDClient, observations_to_primitive_yaml, observations_to_source_yaml
+    from strata.connectors.fred import (
+        FREDClient,
+        observations_to_primitive_yaml,
+        observations_to_source_yaml,
+    )
     from strata.config import settings
 
     results: list[str] = []
@@ -103,11 +107,15 @@ def populate_fred() -> list[str]:
 
                 series_info = info_resp.series_list[0]
                 prim = observations_to_primitive_yaml(
-                    series_info, obs_resp.observations, **q,
+                    series_info,
+                    obs_resp.observations,
+                    **q,
                 )
                 src = observations_to_source_yaml(
-                    series_info, obs_resp.observations,
-                    source_url=q["source_url"], year=q["year"],
+                    series_info,
+                    obs_resp.observations,
+                    source_url=q["source_url"],
+                    year=q["year"],
                 )
 
                 _write_yaml(PRIMITIVES_DIR, prim["slug"], prim)
@@ -122,8 +130,10 @@ def populate_fred() -> list[str]:
 def populate_census() -> list[str]:
     """Census CBP: software industry establishment/employee counts."""
     from strata.connectors.census import (
-        CensusClient, CensusNAICS,
-        industry_to_primitive_yaml, industry_to_source_yaml,
+        CensusClient,
+        CensusNAICS,
+        industry_to_primitive_yaml,
+        industry_to_source_yaml,
     )
     from strata.config import settings
 
@@ -179,7 +189,8 @@ def populate_edgar() -> list[str]:
     """EDGAR: revenue data for top tech companies + cross-company frames."""
     from strata.connectors.edgar import (
         EDGARClient,
-        concept_to_primitive_yaml, concept_to_source_yaml,
+        concept_to_primitive_yaml,
+        concept_to_source_yaml,
         frame_to_primitive_yaml,
     )
 
@@ -222,7 +233,9 @@ def populate_edgar() -> list[str]:
 
                 _write_yaml(PRIMITIVES_DIR, prim["slug"], prim)
                 _write_yaml(SOURCES_DIR, src["slug"], src)
-                results.append(f"  EDGAR {ticker} → {prim['slug']} (value=${prim['value']/1e9:,.1f}B)")
+                results.append(
+                    f"  EDGAR {ticker} → {prim['slug']} (value=${prim['value'] / 1e9:,.1f}B)"
+                )
 
             except Exception as e:
                 results.append(f"  EDGAR {ticker} FAILED: {e}")
@@ -243,7 +256,7 @@ def populate_edgar() -> list[str]:
                 _write_yaml(PRIMITIVES_DIR, prim["slug"], prim)
                 results.append(
                     f"  EDGAR frames → {prim['slug']} "
-                    f"(value=${prim['value']/1e12:,.1f}T, {len(frame_resp.frame_entries)} companies)"
+                    f"(value=${prim['value'] / 1e12:,.1f}T, {len(frame_resp.frame_entries)} companies)"
                 )
 
                 # Also count of companies
@@ -261,7 +274,9 @@ def populate_edgar() -> list[str]:
                     unit_currency=None,
                 )
                 _write_yaml(PRIMITIVES_DIR, count_prim["slug"], count_prim)
-                results.append(f"  EDGAR frames → {count_prim['slug']} (count={int(count_prim['value'])})")
+                results.append(
+                    f"  EDGAR frames → {count_prim['slug']} (count={int(count_prim['value'])})"
+                )
 
         except Exception as e:
             results.append(f"  EDGAR frames FAILED: {e}")
@@ -272,8 +287,10 @@ def populate_edgar() -> list[str]:
 def populate_worldbank() -> list[str]:
     """World Bank: GDP, population, labor force, internet penetration."""
     from strata.connectors.worldbank import (
-        WorldBankClient, WBIndicatorGroup,
-        indicator_to_primitive_yaml, indicator_to_source_yaml,
+        WorldBankClient,
+        WBIndicatorGroup,
+        indicator_to_primitive_yaml,
+        indicator_to_source_yaml,
     )
 
     results: list[str] = []
@@ -342,7 +359,9 @@ def populate_worldbank() -> list[str]:
             indicator = q.pop("indicator")
             year = q["year"]
             try:
-                resp = client.get_indicator(str(indicator), country="US", date_range=f"{year-2}:{year}")
+                resp = client.get_indicator(
+                    str(indicator), country="US", date_range=f"{year - 2}:{year}"
+                )
                 if not resp.values:
                     results.append(f"  WB {indicator}: no data")
                     continue
@@ -363,9 +382,9 @@ def populate_worldbank() -> list[str]:
 
                 val = prim["value"]
                 if val and val > 1e9:
-                    val_str = f"${val/1e9:,.1f}B"
+                    val_str = f"${val / 1e9:,.1f}B"
                 elif val and val > 1e6:
-                    val_str = f"{val/1e6:,.1f}M"
+                    val_str = f"{val / 1e6:,.1f}M"
                 else:
                     val_str = f"{val}"
                 results.append(f"  WB {indicator} → {prim['slug']} (value={val_str})")
