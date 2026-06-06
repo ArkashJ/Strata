@@ -7,6 +7,7 @@ import { ChartDownload } from "@/components/charts/ChartDownload";
 import { ConvergenceBanner } from "@/components/charts/ConvergenceBanner";
 import { TornadoChart } from "@/components/charts/TornadoChart";
 import { NetworkGraphModal } from "@/components/network/NetworkGraphModal";
+import { ProvenanceBanner } from "@/components/rail/ProvenanceBanner";
 import { ScopeRailSummary, ScopeStrip, ScopeWarnings } from "@/components/tam/ScopeCheck";
 import { TamTrajectoryChart } from "@/components/tam/TamTrajectoryChart";
 import { Button } from "@/components/ui/Button";
@@ -140,7 +141,7 @@ function TamArtifact({ tam }: { tam: TAMOutput }) {
         </div>
       </div>
 
-      <ProvenanceBanner tam={tam} />
+      <ProvenanceBanner tam={tam} className="mt-5" />
 
       <div className="mt-6 flex flex-col gap-6 lg:flex-row">
         <section className="flex min-w-0 flex-1 flex-col gap-6">
@@ -329,38 +330,6 @@ function MidScenarioCard({ tam }: { tam: TAMOutput }) {
 }
 
 // ── Provenance banner ─────────────────────────────────────────────────────────
-
-function ProvenanceBanner({ tam }: { tam: TAMOutput }) {
-  const notes: string[] = [];
-  if (tam.uses_synthetic_primitives) {
-    notes.push("uses a synthetic primitive (range-bounded, expiry-gated) — review before citing.");
-  }
-  if (tam.uses_modeled_composites) {
-    notes.push(
-      "uses a community-modeled composite — the result depends on the modeling assumption.",
-    );
-  }
-
-  // Per-input source tiers ARE now carried on inputs_used and rendered as the
-  // full breakdown in the "Source tier mix" rail section, so this banner stays
-  // focused on synthetic/modeled-composite caveats rather than a tier count.
-
-  if (notes.length === 0) return null;
-
-  return (
-    <div
-      role="note"
-      className="mt-5 flex items-start gap-3 rounded-[var(--r-3)] px-4 py-3 text-[13px] text-[var(--fg-2)]"
-      style={{
-        background: "var(--tier-analyst-tint)",
-        border: "1px solid color-mix(in srgb, var(--warning) 30%, transparent)",
-      }}
-    >
-      <span className="mt-0.5 font-medium text-[var(--warning)]">Provenance</span>
-      <span>This TAM {notes.join(" It also ")}</span>
-    </div>
-  );
-}
 
 // ── Right rail ────────────────────────────────────────────────────────────────
 
