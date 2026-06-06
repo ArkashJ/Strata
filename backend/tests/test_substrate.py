@@ -122,7 +122,23 @@ def test_cors_explicit_origins_preserved(monkeypatch) -> None:
     monkeypatch.setattr(settings, "cors_origins", ["https://strata.example"])
     prod_app = create_app()
     cors = next(m for m in prod_app.user_middleware if "CORSMiddleware" in str(m.cls))
-    assert cors.kwargs["allow_origins"] == ["https://strata.example"]
+    allowed = cors.kwargs["allow_origins"]
+    # Explicit origins are preserved, AND the canonical production frontend is
+    # always allowed in prod so the deployed site can read its own API even when
+    # the env-configured list predates that host.
+    assert "https://strata.example" in allowed
+    assert "https://stratabank.vercel.app" in allowed
+
+
+def test_cors_canonical_frontend_always_allowed_in_prod(monkeypatch) -> None:
+    # Even with a restrictive env regex that excludes it, the canonical frontend
+    # is in the explicit allow-list (Starlette ORs list with regex).
+    monkeypatch.setattr(settings, "env", "prod")
+    monkeypatch.setattr(settings, "cors_origins", ["*"])
+    monkeypatch.setattr(settings, "cors_origin_regex", r"https://strata-[a-z]+-old\.vercel\.app")
+    prod_app = create_app()
+    cors = next(m for m in prod_app.user_middleware if "CORSMiddleware" in str(m.cls))
+    assert "https://stratabank.vercel.app" in cors.kwargs["allow_origins"]
 
 
 # ── AC3.5 observability ───────────────────────────────────────────────────
