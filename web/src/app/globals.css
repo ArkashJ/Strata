@@ -64,12 +64,17 @@
   --chart-4: var(--tier-aggregator);
   --chart-5: var(--tier-prediction);
   --chart-6: var(--tier-onchain);
-  --chart-lens-cost-efficiency: var(--chart-1);
-  --chart-lens-revenue-generation: var(--chart-2);
-  --chart-lens-latent-demand: var(--chart-3);
-  --chart-lens-platform-throughput: var(--chart-4);
-  --chart-lens-bundle-consolidation: var(--chart-5);
-  --chart-lens-productivity-uplift: var(--chart-6);
+  /* Lens palette — a DEDICATED cool categorical family, deliberately decoupled
+   * from the tier hues (--chart-2..6 alias tier green/teal/ochre/violet/orange).
+   * The Provenance-Color Rule reserves each tier hue for exactly one meaning;
+   * a method (lens) must never wear a source-tier colour. Mnemonic: methods are
+   * the cool family (indigo→cyan→violet), sources keep the warm/earth hues. */
+  --chart-lens-cost-efficiency: var(--accent);
+  --chart-lens-revenue-generation: #e05c9c;
+  --chart-lens-latent-demand: #2bb3cc;
+  --chart-lens-platform-throughput: #8a6df0;
+  --chart-lens-bundle-consolidation: #5a93e6;
+  --chart-lens-productivity-uplift: #b96fd6;
   --chart-muted: var(--fg-4);
 
   /* Source-tier palette (load-bearing — see docs/03-data-model.md) */
