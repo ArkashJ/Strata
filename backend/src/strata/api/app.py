@@ -163,6 +163,17 @@ def create_app() -> FastAPI:
         # with CORS preflight failures whenever the port drifts. Allow any
         # localhost origin in non-prod only; prod stays locked to its regex.
         cors_origin_regex = r"https?://(localhost|127\.0\.0\.1)(:\d+)?"
+
+    if settings.env == "prod":
+        # Guarantee the canonical production frontend is ALWAYS allowed, even
+        # when a pre-existing env-configured origin list/regex
+        # (STRATA_CORS_ORIGIN[_REGEX]) predates this host and would otherwise
+        # leave the deployed site unable to read its own API (the
+        # "stratabank.vercel.app is empty" bug). Starlette ORs allow_origins with
+        # allow_origin_regex, so adding the exact host here wins regardless of the
+        # configured regex. Exact-host only — no wildcard, no bypass surface.
+        cors_origins = sorted({*cors_origins, "https://stratabank.vercel.app"})
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
