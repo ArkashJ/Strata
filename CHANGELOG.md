@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — deeper data bank (Track B, Phase 1 · PR #86)
+- Grew the sourced bank **214 → 279 primitives (+65)** by activating/deepening **9
+  regulator + aggregator connectors** that were only 0–2 primitives deep: OECD,
+  Eurostat, EIA, FDIC, CMS, FAA, openFDA, UN Comtrade, and USDA NASS (activated from
+  zero). Producing connectors rose from 13 to ~17.
+- Each new number is read live from the source API and pinned to a SHA-256 snapshot —
+  national GDP figures, energy and commodity prices, trade flows, Medicare enrollment,
+  drug/device counts, airport counts. Nothing is invented.
+- Added **57 market concepts** so the new numbers attach to a named market.
+- Pipeline (unchanged, no new code):
+
+  ```
+  ingest-manifest.yaml  ──►  ingest run (live APIs)  ──►  promote (validator-gated)
+       (+67 targets)              (0 failures)                 (0 rejected → +65)
+  ```
+
+- Market-data and social-signal connectors (Alpha Vantage, Nasdaq, yfinance, GitHub,
+  Stack Exchange, Reddit, Twitter, Dune) remain inactive pending a separate
+  connector-plumbing fix — see `docs/plans/OVERNIGHT-LOG.md`.
+
 ### Added — contribution flow (PR B, Phase 5)
 - **`/contribute`** page (sidebar link) — re-adds the contribution surface (removed for
   the v0.5 expert layer) on top of the existing `POST /contribute` route: a form submits a
