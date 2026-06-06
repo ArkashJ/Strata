@@ -419,7 +419,12 @@ function RightRail({ tam }: { tam: TAMOutput }) {
             </Button>
           </Link>
           <DownloadMarkdownButton tam={tam} />
-          <Button variant="ghost" sm onClick={() => window.print()} className="justify-start">
+          <Button
+            variant="ghost"
+            sm
+            onClick={() => window.open(`/tam/${tam.state_hash}/report?print=1`, "_blank")}
+            className="justify-start"
+          >
             Download PDF
           </Button>
         </div>
@@ -533,7 +538,7 @@ function ExportPopover({
         role="menuitem"
         className="rounded-[var(--r-2)] px-3 py-2 text-left text-[13px] text-[var(--fg-1)] hover:bg-[var(--bg-2)]"
         onClick={() => {
-          window.print();
+          window.open(`/tam/${tam.state_hash}/report?print=1`, "_blank");
           onClose();
         }}
       >
