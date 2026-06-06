@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — design system: lens vs source-tier colors (PR #84)
+- The method-comparison chart colored each lens with a source-tier hue, so a
+  "revenue generation" bar showed up in the same green that means "regulator
+  source" everywhere else. Lenses now use their own cool color family (indigo,
+  cyan, violet, rose); the warm/earth tier colors stay reserved for source
+  provenance, so a color always means one thing.
+
+  ```
+  before:  lens color === tier color   (green = regulator AND revenue_generation)
+  after:   methods = cool family   ·   sources = warm/earth tier hues
+  ```
+
 ### Added — contribution flow (PR B, Phase 5)
 - **`/contribute`** page (sidebar link) — re-adds the contribution surface (removed for
   the v0.5 expert layer) on top of the existing `POST /contribute` route: a form submits a
