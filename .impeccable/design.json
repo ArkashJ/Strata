@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-05T00:00:00Z",
+  "title": "Design System: Strata",
+  "extensions": {
+    "colorMeta": {
+      "accent": { "role": "primary", "displayName": "Strata Indigo", "canonical": "#5b5bd6", "tonalRamp": ["#1b1b4d", "#26266b", "#33338c", "#4242b0", "#5b5bd6", "#7c7cf0", "#a3a3f6", "#cfcffb"] },
+      "bg-0": { "role": "neutral", "displayName": "Paper", "canonical": "#fafafa", "tonalRamp": ["#0a0a0b", "#1c1c1f", "#28282d", "#52525b", "#7e7e86", "#b4b4ba", "#e9e9ec", "#fafafa"] },
+      "fg-1": { "role": "neutral", "displayName": "Ink", "canonical": "#0a0a0b", "tonalRamp": ["#0a0a0b", "#1c1c1f", "#28282d", "#52525b", "#7e7e86", "#b4b4ba", "#d4d4d8", "#f4f4f5"] },
+      "tier-regulator": { "role": "tertiary", "displayName": "Regulator Green", "canonical": "#3fa66b" },
+      "tier-aggregator": { "role": "tertiary", "displayName": "Aggregator Teal", "canonical": "#2ba39a" },
+      "tier-analyst": { "role": "tertiary", "displayName": "Analyst Ochre", "canonical": "#c99846" },
+      "tier-community": { "role": "tertiary", "displayName": "Community Gray", "canonical": "#7a7a82" },
+      "tier-onchain": { "role": "tertiary", "displayName": "On-chain Violet", "canonical": "#8b5cd6" },
+      "tier-prediction": { "role": "tertiary", "displayName": "Prediction Orange", "canonical": "#d97849" },
+      "night-bg": { "role": "neutral", "displayName": "Night Canvas", "canonical": "#080b16" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Editorial hero and section headlines (Instrument Serif)." },
+      "headline": { "displayName": "Headline / H1", "purpose": "Page titles." },
+      "body": { "displayName": "Body", "purpose": "Default working text; prose capped 65-75ch." },
+      "label": { "displayName": "Label / Eyebrow", "purpose": "Tier badges and table headers only." },
+      "mono-num": { "displayName": "Mono Number", "purpose": "The headline TAM value and all citable figures (tabular)." }
+    },
+    "shadows": [
+      { "name": "pop", "value": "0 4px 14px rgba(0,0,0,0.08), 0 1px 0 rgba(0,0,0,0.02) inset", "purpose": "Popovers, cards on hover, floating elements." },
+      { "name": "overlay", "value": "0 16px 48px rgba(0,0,0,0.14), 0 1px 0 rgba(0,0,0,0.02) inset", "purpose": "Modals and the command palette." },
+      { "name": "canvas-card-hover", "value": "0 4px 12px rgba(15,23,42,0.08), 0 0 0 1px rgba(15,23,42,0.06)", "purpose": "Hover lift on workflow-canvas cards." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Enter and hover-in." },
+      { "name": "ease-in-out", "value": "cubic-bezier(0.65, 0, 0.35, 1)", "purpose": "Route and state changes." },
+      { "name": "t-fast", "value": "120ms", "purpose": "Chip select, hover." },
+      { "name": "t-base", "value": "180ms", "purpose": "Default transition." },
+      { "name": "t-slow", "value": "240ms", "purpose": "Modal, route change." }
+    ],
+    "breakpoints": [
+      { "name": "sidebar-w", "value": "240px" },
+      { "name": "content-max", "value": "1280px" },
+      { "name": "right-rail-w", "value": "320px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action and the Size gate. Solid indigo, white text.",
+      "html": "<button class=\"ds-btn-primary\">Size the market</button>",
+      "css": ".ds-btn-primary { background: var(--accent, #5b5bd6); color: #fff; height: 36px; padding: 0 16px; border: none; border-radius: 8px; font: 500 14px/1 'Geist', system-ui, sans-serif; letter-spacing: -0.01em; cursor: pointer; transition: background 120ms cubic-bezier(0.16,1,0.3,1); } .ds-btn-primary:hover { background: #6e6ee0; } .ds-btn-primary:active { background: #4848c4; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(91,91,214,0.35); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary action. White surface, ink text, hairline border, no resting shadow.",
+      "html": "<button class=\"ds-btn-ghost\">Fork this TAM</button>",
+      "css": ".ds-btn-ghost { background: #fff; color: #0a0a0b; height: 36px; padding: 0 16px; border: 1px solid #d4d4d8; border-radius: 8px; font: 500 14px/1 'Geist', system-ui, sans-serif; letter-spacing: -0.01em; cursor: pointer; transition: background 120ms cubic-bezier(0.16,1,0.3,1); } .ds-btn-ghost:hover { background: #f4f4f5; } .ds-btn-ghost:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(91,91,214,0.35); }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Market query and field input. Hairline border, global indigo focus ring.",
+      "html": "<input class=\"ds-input-search\" type=\"text\" placeholder=\"AI sales-ops agents, US, mid-market\" />",
+      "css": ".ds-input-search { background: #fff; color: #0a0a0b; height: 36px; padding: 0 12px; border: 1px solid #d4d4d8; border-radius: 6px; font: 400 14px/1.5 'Geist', system-ui, sans-serif; width: 320px; } .ds-input-search::placeholder { color: #52525b; } .ds-input-search:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(91,91,214,0.35); }"
+    },
+    {
+      "name": "Source-Tier Badge",
+      "kind": "chip",
+      "refersTo": "tier-badge",
+      "description": "Stamps a primitive with its provenance. Hue is contractual; always paired with the tier name.",
+      "html": "<span class=\"ds-tier-badge\"><span class=\"ds-tier-dot\"></span>Regulator</span>",
+      "css": ".ds-tier-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; background: rgba(63,166,107,0.14); color: #2c7a4e; font: 500 11px/1.4 'Geist', system-ui, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; } .ds-tier-dot { width: 6px; height: 6px; border-radius: 999px; background: #3fa66b; }"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip-filter",
+      "description": "Pill filter above the pyramid. Selected uses the accent tint.",
+      "html": "<button class=\"ds-chip\" aria-pressed=\"true\">United States</button>",
+      "css": ".ds-chip { padding: 2px 8px; border: none; border-radius: 999px; background: #f4f4f5; color: #52525b; font: 500 12px/1.4 'Geist', system-ui, sans-serif; cursor: pointer; transition: background 120ms cubic-bezier(0.16,1,0.3,1); } .ds-chip[aria-pressed=\"true\"] { background: rgba(91,91,214,0.12); color: #4848c4; } .ds-chip:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(91,91,214,0.35); }"
+    },
+    {
+      "name": "Canvas Card",
+      "kind": "card",
+      "refersTo": "canvas-card",
+      "description": "Harvey-style workflow card for graph nodes and rail rows. Flat at rest, lifts on hover.",
+      "html": "<div class=\"ds-canvas-card\"><div class=\"ds-card-title\">US software developers</div><span class=\"ds-card-role\">primitive · BLS OEWS</span></div>",
+      "css": ".ds-canvas-card { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 0 0 1px rgba(15,23,42,0.04); transition: box-shadow 180ms cubic-bezier(0.16,1,0.3,1); } .ds-canvas-card:hover { box-shadow: 0 4px 12px rgba(15,23,42,0.08), 0 0 0 1px rgba(15,23,42,0.06); } .ds-card-title { font: 600 16px/1.35 'Geist', system-ui, sans-serif; color: #0a0a0b; letter-spacing: -0.01em; } .ds-card-role { display: inline-flex; margin-top: 8px; padding: 2px 8px; border-radius: 4px; background: #f1f2ef; color: #4b524b; font: 500 11px/1.4 'Geist', system-ui, sans-serif; }"
+    },
+    {
+      "name": "TAM Headline",
+      "kind": "custom",
+      "refersTo": "mono-num",
+      "description": "The signature figure. Geist Mono, tabular, counts up on load (instant under reduced motion).",
+      "html": "<div class=\"ds-tam\"><span class=\"ds-tam-num\">$31.2B</span><span class=\"ds-tam-label\">Total addressable market</span></div>",
+      "css": ".ds-tam { display: flex; flex-direction: column; gap: 4px; } .ds-tam-num { font: 600 32px/1 'Geist Mono', ui-monospace, monospace; letter-spacing: -0.005em; color: #0a0a0b; font-feature-settings: 'tnum' 1, 'lnum' 1; } .ds-tam-label { font: 500 11px/1 'Geist', system-ui, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; color: #7e7e86; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Sourced Ledger",
+    "overview": "Strata is a market-sizing engine for VCs and operators who ask, of every number, 'where did that come from?' The interface answers that by design: every figure opens to its source, and competing methods sit side by side with their disagreement named. The visual system makes a number feel audited rather than asserted. It reads closer to a finance publication than a SaaS dashboard. The register is product carried by an editorial voice: Instrument Serif on headlines, Geist for the working UI, Geist Mono for every number. The tension to hold is editorial feel, operator speed.",
+    "keyCharacteristics": [
+      "Light #FAFAFA paper, deep #0A0A0B ink, a single indigo accent used sparingly.",
+      "Editorial serif display + technical sans body + tabular mono numbers.",
+      "A load-bearing source-tier color system: every number wears its provenance.",
+      "Flat by default; shadow is a response to state, never decoration.",
+      "A separate 'night canvas' world for the signed-out marketing and auth surfaces."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "Indigo is the only brand color and appears on <=10% of any app screen. Its rarity is what makes a selected node or a primary CTA read instantly.", "section": "colors" },
+      { "name": "The Provenance-Color Rule", "body": "The six tier hues mean exactly one thing each. A green chip is always a regulator source, never a 'success' decoration. Never encode meaning in tier color alone.", "section": "colors" },
+      { "name": "The Numbers-Are-Mono Rule", "body": "Every figure a user might cite is set in Geist Mono with tabular figures. Numbers in the proportional sans is a defect.", "section": "typography" },
+      { "name": "The Serif-Is-Editorial Rule", "body": "Instrument Serif is for display and headlines only. A serif on a button, input, or data cell is forbidden.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. A shadow is a response to state (hover, float, focus), never a decoration applied to a static card.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do set every citable figure in Geist Mono with tabular figures (tnum).",
+      "Do keep indigo to <=10% of any screen; let neutrals carry the surface.",
+      "Do pair every source-tier color with its label, never rely on hue alone.",
+      "Do keep surfaces flat at rest; add the Pop shadow only on hover/float/focus.",
+      "Do cap cards at 8px radius, 12px for large hero panels only.",
+      "Do verify the #7E7E86 metadata tier hits 4.5:1 on #FAFAFA before shipping body-sized text in it.",
+      "Do give every interactive element the global 3px indigo focus ring and a reduced-motion fallback.",
+      "Do reserve Instrument Serif for display and headlines."
+    ],
+    "donts": [
+      "Don't ship the generic SaaS template: Inter-for-everything, purple-to-blue gradients, cards nested in cards, the rounded icon tile above every heading, or the hero-metric block.",
+      "Don't drift toward the legacy research report: opaque methodology, stock-photo gloss, or any number without a clickable source.",
+      "Don't ship academic/dry walls of text with no hierarchy.",
+      "Don't put numbers in the proportional sans, or a serif on a button, input, or data cell.",
+      "Don't use a colored border-left/border-right greater than 1px as an accent stripe.",
+      "Don't use gradient text or decorative glassmorphism inside the app (the night canvas is the one sanctioned glass surface).",
+      "Don't give resting cards a drop shadow, or round any card past 12px.",
+      "Don't add a tiny uppercase tracked eyebrow above every section."
+    ]
+  }
+}

@@ -17,6 +17,30 @@ Full thesis: [`docs/00-vision.md`](docs/00-vision.md).
 
 ---
 
+## Design context
+
+Frontend work is governed by the [Impeccable](https://impeccable.style) design
+skill (`.claude/skills/impeccable/`, invoked via `/impeccable`). Two root files
+carry the design contract; read both before building or changing any UI:
+
+- [`PRODUCT.md`](PRODUCT.md) — **strategic.** Register (`product`), users, brand
+  personality (editorial, considered, provenance-first), anti-references
+  (generic SaaS template · legacy research report · academic/dry), and 5 design
+  principles (provenance is the product; disagreement gets a page; honest about
+  limits; fast to a defensible answer; restraint as authority). WCAG 2.2 AA.
+- [`DESIGN.md`](DESIGN.md) — **visual** (Stitch format). North Star "The Sourced
+  Ledger": light `#FAFAFA` paper, `#0A0A0B` ink, one indigo `#5B5BD6` voice,
+  Instrument Serif display + Geist + tabular Geist Mono numbers, flat-by-default
+  elevation, the load-bearing source-tier color system, and the night-canvas
+  signed-out world. Tokens extracted verbatim from
+  [`docs/design/brand-kit.md`](docs/design/brand-kit.md), which stays canonical
+  for the full token list. `.impeccable/design.json` is the live-panel sidecar.
+
+When the visual system drifts, re-run `/impeccable document` to refresh
+`DESIGN.md` + the sidecar.
+
+---
+
 ## Repo state (as of 2026-06-03)
 
 - **In flight (PR #83 — `feat/data-bank-expansion`):** the "Plaid/Statista for AI
