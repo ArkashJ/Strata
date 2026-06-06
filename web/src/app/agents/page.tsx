@@ -1,7 +1,11 @@
 // /agents — the Strata MCP harness surface. A Server Component documenting the
 // read-only + write + live tools an AI agent can call to do sourced market
 // research against the data bank. Mirrors the catalog in backend mcp/tools.py.
+// Phase 5: also surfaces the activity/sync log (audit_events) to show every
+// agent call — the bidirectional sync between personal and shared bank.
 import type { Metadata } from "next";
+
+import { ActivityLog } from "@/components/agents/ActivityLog";
 
 export const metadata: Metadata = {
   title: "Agent harness · Strata",
@@ -206,6 +210,8 @@ STRATA_MCP_LIVE_CONNECTORS=1`}</CodeBlock>
           work for — no fabricated figures, every number traceable to a snapshot.
         </p>
       </section>
+
+      <ActivityLog />
     </main>
   );
 }

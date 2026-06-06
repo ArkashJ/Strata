@@ -24,7 +24,8 @@ setup("authenticate test user", async ({ page }) => {
     emailAddress: process.env.E2E_CLERK_USER_EMAIL ?? "strata+clerk_test@example.com",
   });
   // Prove we actually crossed the gate before trusting the session.
-  await page.goto("/dashboard");
-  await page.waitForSelector("h1:has-text('Dashboard')", { timeout: 20_000 });
+  // (/dashboard now redirects to /bank — assert on the post-restructure home.)
+  await page.goto("/bank");
+  await page.waitForSelector("h1:has-text('My Bank')", { timeout: 20_000 });
   await page.context().storageState({ path: authFile });
 });

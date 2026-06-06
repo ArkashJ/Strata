@@ -31,8 +31,8 @@ test.describe("Signals — prediction-market surface (T1)", () => {
   });
 
   test("page renders the quarantine banner and a sourced signal row", async ({ page }) => {
-    await page.goto("/signals");
-    await expect(page.getByRole("heading", { name: "Signals" })).toBeVisible({ timeout: 15_000 });
+    // Signals now lives under the Explore hub as a tab.
+    await page.goto("/explore/signals");
     // The honesty banner must lead — signals are never used to size a TAM.
     await expect(page.getByText("never used to size a TAM")).toBeVisible({ timeout: 15_000 });
     // At least one signal row links out to its source.
@@ -41,8 +41,8 @@ test.describe("Signals — prediction-market surface (T1)", () => {
     });
   });
 
-  test("sidebar exposes a Signals nav link", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.getByRole("link", { name: "Signals" })).toBeVisible({ timeout: 15_000 });
+  test("Explore exposes a Signals tab", async ({ page }) => {
+    await page.goto("/explore");
+    await expect(page.getByRole("tab", { name: "Signals" })).toBeVisible({ timeout: 15_000 });
   });
 });

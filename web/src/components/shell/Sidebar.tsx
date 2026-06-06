@@ -1,22 +1,21 @@
 "use client";
 
 /**
- * Persistent left rail. Two nav groups (top / LIBRARY) plus a branded header
- * and a contributor footer, matching docs/design/captures/02-sidebar.png.
+ * Persistent left rail. Primary nav is 8 destinations in 4 labelled groups
+ * (WORK / MY DATA / STRATA BANK / SOURCES), plus a branded header and an
+ * identity/theme footer. Help-tier links (Search, Guides, Contribute) live in
+ * the footer, out of the primary nav, so the spine stays scannable.
  *
- * LIBRARY counts are live — one query per surface via useQueries, formatted
- * with Intl.NumberFormat. TAMs has no list endpoint yet, so that count points
- * at /browse as a placeholder.
+ * The live library counts that used to ride this rail moved out with the flat
+ * LIBRARY group — they now belong to the Explore tabs.
  */
 
 import { Show, SignInButton, UserButton, useUser } from "@clerk/nextjs";
-import { useQueries } from "@tanstack/react-query";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { SimpleSignInControl } from "@/components/auth/SimpleSignIn";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { clerkEnabled } from "@/lib/clerk";
-import { conceptsQuery, frameworksQuery, primitivesQuery, signalsQuery } from "@/lib/queries";
 import { useUiStore } from "@/stores/ui-store";
 import { Logo } from "./Logo";
 import { NavItem } from "./NavItem";
@@ -24,90 +23,38 @@ import { ThemeToggle } from "./ThemeToggle";
 import { hideDecorClass, hideLabelClass } from "./collapse";
 import {
   AgentsIcon,
-  ConceptsIcon,
   ConnectorsIcon,
-  DashboardIcon,
-  FrameworksIcon,
   GuidesIcon,
   HomeIcon,
   IntegrationsIcon,
   PortfolioIcon,
-  PrimitivesIcon,
   PyramidIcon,
   SearchIcon,
-  SignalsIcon,
-  TamsIcon,
 } from "./icons";
-
-const nf = new Intl.NumberFormat("en-US");
-
-// A library count: the live integer once resolved, a 1-char skeleton while the
-// query is pending, or nothing if the value is unavailable.
-function Count({
-  value,
-  pending,
-}: {
-  value: number | undefined;
-  pending: boolean;
-}) {
-  if (pending) return <Skeleton className="h-3 w-6" />;
-  if (value === undefined) return null;
-  return <>{nf.format(value)}</>;
-}
 
 export function Sidebar() {
   const collapsed = useUiStore((s) => s.sidebarCollapsed);
-  const openPalette = useUiStore((s) => s.openPalette);
-
-  const [concepts, primitives, frameworks, signals] = useQueries({
-    queries: [conceptsQuery, primitivesQuery, frameworksQuery, signalsQuery],
-  });
 
   return (
     <div className="flex h-full flex-col bg-[var(--bg-1)] border-r border-[var(--border-1)]">
       <SidebarHeader collapsed={collapsed} />
 
       <nav className="flex-1 overflow-y-auto px-2 py-3 flex flex-col gap-1" aria-label="Primary">
+        <GroupLabel collapsed={collapsed}>Work</GroupLabel>
         <NavItem icon={<HomeIcon />} label="Home" href="/" exact />
-        <NavItem icon={<DashboardIcon />} label="Dashboard" href="/dashboard" />
-        <NavItem icon={<PyramidIcon />} label="Pyramid explorer" href="/graph" />
-        <NavItem icon={<FrameworksIcon />} label="Build a graph" href="/build/graph" />
-        <NavItem icon={<ConnectorsIcon />} label="Connectors" href="/connectors" />
+        <NavItem icon={<FrameworksLikeBuildIcon />} label="Build" href="/build" />
         <NavItem icon={<PortfolioIcon />} label="Portfolio" href="/portfolio" />
-        <NavItem icon={<IntegrationsIcon />} label="Integrations" href="/integrations" />
-        <NavItem icon={<AgentsIcon />} label="Agent harness" href="/agents" />
-        <NavItem icon={<PrimitivesIcon />} label="Contribute" href="/contribute" />
-        <NavItem icon={<GuidesIcon />} label="Guides" href="/guides" />
-        <NavItem icon={<SearchIcon />} label="Search" onClick={openPalette} />
 
-        <GroupLabel collapsed={collapsed}>Library</GroupLabel>
-        <NavItem
-          icon={<ConceptsIcon />}
-          label="Concepts"
-          href="/c"
-          count={<Count value={concepts.data?.length} pending={concepts.isPending} />}
-        />
-        <NavItem
-          icon={<PrimitivesIcon />}
-          label="Primitives"
-          href="/p"
-          count={<Count value={primitives.data?.length} pending={primitives.isPending} />}
-        />
-        <NavItem
-          icon={<FrameworksIcon />}
-          label="Frameworks"
-          href="/f"
-          count={<Count value={frameworks.data?.length} pending={frameworks.isPending} />}
-        />
-        {/* TODO(tams): no list endpoint yet — placeholder until /browse exposes a count. */}
-        <NavItem icon={<TamsIcon />} label="TAMs" href="/browse" count={nf.format(0)} />
-        {/* Prediction-market signals (Q20): read-only, never feed a TAM. */}
-        <NavItem
-          icon={<SignalsIcon />}
-          label="Signals"
-          href="/signals"
-          count={<Count value={signals.data?.length} pending={signals.isPending} />}
-        />
+        <GroupLabel collapsed={collapsed}>My data</GroupLabel>
+        <NavItem icon={<BankIcon />} label="My Bank" href="/bank" />
+        <NavItem icon={<AgentsIcon />} label="Agents" href="/agents" />
+
+        <GroupLabel collapsed={collapsed}>Strata bank</GroupLabel>
+        <NavItem icon={<PyramidIcon />} label="Explore" href="/explore" />
+
+        <GroupLabel collapsed={collapsed}>Sources</GroupLabel>
+        <NavItem icon={<ConnectorsIcon />} label="Connectors" href="/connectors" />
+        <NavItem icon={<IntegrationsIcon />} label="Integrations" href="/integrations" />
       </nav>
 
       <SidebarFooter collapsed={collapsed} />
@@ -134,18 +81,82 @@ function SidebarHeader({ collapsed }: { collapsed: boolean }) {
 
 // Identity is never fabricated: show the real Clerk user when signed in, a
 // Sign-in affordance when Clerk is configured but signed out, and an honest
-// "Guest" in the keyless deploy. (Was previously a hard-coded fake contributor.)
+// "Guest" in the keyless deploy. The secondary help links and theme sit above
+// it so the account row anchors the bottom of the rail.
 function SidebarFooter({ collapsed }: { collapsed: boolean }) {
   const hide = hideLabelClass(collapsed);
+  const openPalette = useUiStore((s) => s.openPalette);
   return (
-    <div className="shrink-0 flex items-center gap-2.5 px-3 py-3 border-t border-[var(--border-1)]">
-      {clerkEnabled ? <ClerkIdentity hide={hide} /> : <SimpleSignInControl hide={hide} />}
-      <ThemeToggle
-        className={`shrink-0 ml-auto grid place-items-center w-7 h-7 rounded-[var(--r-2)] text-[var(--fg-3)] hover:bg-[var(--bg-2)] hover:text-[var(--fg-1)] transition-colors ${hideDecorClass(
-          collapsed,
-        )}`}
-      />
+    <div className="shrink-0 border-t border-[var(--border-1)]">
+      <div className="px-2 py-2 flex flex-col gap-0.5">
+        <SecondaryItem
+          icon={<SearchIcon />}
+          label="Search"
+          onClick={openPalette}
+          shortcut="⌘K"
+          collapsed={collapsed}
+        />
+        <SecondaryItem icon={<GuidesIcon />} label="Guides" href="/guides" collapsed={collapsed} />
+        <SecondaryItem
+          icon={<ContributeIcon />}
+          label="Contribute"
+          href="/contribute"
+          collapsed={collapsed}
+        />
+      </div>
+      <div className="flex items-center gap-2.5 px-3 py-3 border-t border-[var(--border-1)]">
+        {clerkEnabled ? <ClerkIdentity hide={hide} /> : <SimpleSignInControl hide={hide} />}
+        <ThemeToggle
+          className={`shrink-0 ml-auto grid place-items-center w-7 h-7 rounded-[var(--r-2)] text-[var(--fg-3)] hover:bg-[var(--bg-2)] hover:text-[var(--fg-1)] transition-colors ${hideDecorClass(
+            collapsed,
+          )}`}
+        />
+      </div>
     </div>
+  );
+}
+
+// A quieter row than NavItem: smaller, no active accent bar — these are
+// help/account-tier links, not primary destinations.
+function SecondaryItem({
+  icon,
+  label,
+  href,
+  onClick,
+  shortcut,
+  collapsed,
+}: {
+  icon: ReactNode;
+  label: string;
+  href?: string;
+  onClick?: () => void;
+  shortcut?: string;
+  collapsed: boolean;
+}) {
+  const hide = hideLabelClass(collapsed);
+  const inner = (
+    <>
+      <span className="shrink-0 grid place-items-center w-4 h-4">{icon}</span>
+      <span className={`flex-1 truncate text-left ${hide}`}>{label}</span>
+      {shortcut && (
+        <span className={`font-mono text-[10px] text-[var(--fg-4)] ${hide}`}>{shortcut}</span>
+      )}
+    </>
+  );
+  const className =
+    "group flex items-center gap-2.5 rounded-[var(--r-2)] px-2.5 py-1.5 text-[12px] text-[var(--fg-3)] hover:bg-[var(--bg-2)] hover:text-[var(--fg-1)] transition-colors";
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={`w-full ${className}`}>
+      {inner}
+    </button>
   );
 }
 
@@ -203,5 +214,68 @@ function GroupLabel({
     >
       {children}
     </div>
+  );
+}
+
+// Build = the workshop where frameworks compose into TAMs; the layered/branching
+// glyph reads as "assemble", distinct from the registry's flat framework list.
+function FrameworksLikeBuildIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="6" cy="6" r="2" />
+      <circle cx="6" cy="18" r="2" />
+      <circle cx="18" cy="12" r="2" />
+      <path d="M8 6h4a2 2 0 0 1 2 2v2M8 18h4a2 2 0 0 0 2-2v-2" />
+    </svg>
+  );
+}
+
+// My Bank = the personal, synced store. A wallet/ledger glyph separates the
+// private tier from the shared registry's book glyph.
+function BankIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="6" width="18" height="13" rx="2" />
+      <path d="M3 10h18" />
+      <path d="M16 14h2" />
+    </svg>
+  );
+}
+
+function ContributeIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 5v14M5 12h14" />
+    </svg>
   );
 }

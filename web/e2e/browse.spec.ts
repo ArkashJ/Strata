@@ -2,8 +2,10 @@ import { expect, test } from "@playwright/test";
 
 test.describe("Browse registry", () => {
   test("renders the TAM grid from the concepts registry", async ({ page }) => {
-    await page.goto("/browse");
-    await expect(page.getByRole("heading", { name: "Browse TAMs" })).toBeVisible({
+    await page.goto("/explore/tams");
+    // The TAMs tab carries the filter control (the page heading now lives in the
+    // shared Explore layout, not per-tab).
+    await expect(page.getByPlaceholder("Filter TAMs…")).toBeVisible({
       timeout: 15_000,
     });
     // At least one registry card seeded from a concept.
@@ -13,7 +15,7 @@ test.describe("Browse registry", () => {
   });
 
   test("text filter narrows the grid", async ({ page }) => {
-    await page.goto("/browse");
+    await page.goto("/explore/tams");
     await expect(page.locator("button.canvas-card").first()).toBeVisible({
       timeout: 15_000,
     });
@@ -24,7 +26,7 @@ test.describe("Browse registry", () => {
   });
 
   test("a lens chip filters by analysis lens", async ({ page }) => {
-    await page.goto("/browse");
+    await page.goto("/explore/tams");
     await expect(page.locator("button.canvas-card").first()).toBeVisible({
       timeout: 15_000,
     });
@@ -33,7 +35,7 @@ test.describe("Browse registry", () => {
   });
 
   test("a card builds the seeded TAM", async ({ page }) => {
-    await page.goto("/browse");
+    await page.goto("/explore/tams");
     const firstCard = page.locator("button.canvas-card").first();
     await expect(firstCard).toBeVisible({ timeout: 15_000 });
     await firstCard.click();

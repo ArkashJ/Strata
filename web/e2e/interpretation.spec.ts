@@ -65,8 +65,8 @@ test.describe("Interpretation branch (/?q=)", () => {
     // Same restructured sidebar as the landing spec — assert the current labels.
     const nav = page.getByRole("navigation", { name: "Primary" });
     await expect(nav.getByRole("link", { name: "Home", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Dashboard" })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Concepts" })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Frameworks" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Build", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "My Bank" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Explore" })).toBeVisible();
   });
 });

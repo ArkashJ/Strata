@@ -13,5 +13,5 @@ test("the public landing renders with no app sidebar", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /Defensible TAM, fast/i })).toBeVisible();
   // The app nav only exists in the signed-in shell — it must be absent here.
-  await expect(page.getByRole("link", { name: "Pyramid explorer" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "My Bank" })).toHaveCount(0);
 });
