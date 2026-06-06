@@ -1,0 +1,161 @@
+{
+  "_provenance": "Captured from the PRE-Phase-2 engine (hard-coded \u220f-inputs fold) before the formula AST interpreter replaced it. The regression test asserts the new formula engine reproduces these byte-for-byte. All 5 committed frameworks are 2-input products.",
+  "hashes": {
+    "accrual-ai-tax-software": "1160ed857aec11aa83c2f8f1e0ee5ef3389600a99d2d09cdce019ed98b474b9b",
+    "ai-coding-assistants-us": "b4c20a36a243dba243f830ef4ec2e13a853cf07ccd2088af016898c5f0d4438a",
+    "ai-legal-assistants-us": "b6af61112910ba776ed5b67cc1f7ba1194af4105d3431836d0598c7f1d669298",
+    "contrario-ai-recruiting": "313cfa31c2e8864b071a496848e1a8e20f3a394b89a09a2414984410ebf03efa",
+    "demo-ai-clinical-docs-us": "ceeb541f949739fdede938b326ec4cf9b98c7d4410aaf1bc10c6264b5c83cf59",
+    "demo-ai-dev-tooling-us": "7ecf7363958d4ff96934a489b29c8642137f87146f689de05db745a68ca6b2d1",
+    "demo-ai-insurance-claims-us": "5a89d3d71a2569738f757c1b570a518a7f654e1efe9ccfad0a016f3b3d52854f",
+    "demo-ai-legal-research-us": "b888f2deb894aef9b01cf83585f55dea3b01b4fb1377efb0cd51f2778cdd6a54",
+    "demo-ai-sales-ops-us": "5bafcb37383d1e1352c68cd859f98584d40c3de7f7081cbb8a8902fbcd76abf3",
+    "doc-gen-pc-insurance": "fb1bab3e782196427c750cbc8a49124f7dbd1236e949014fd74a2f6681060541",
+    "echelon-servicenow-agents": "99976062f32544d78807b6a4623b85b83b17a0cb248f402a4b687ec813803c25",
+    "effective-ai-insurance-knowledge": "b8344b356b8ae603dc2e99a0fe9b5d66787b0ec52ad4d1b563b569a158c0537a",
+    "endeavor-mfg-back-office": "9c2fea4294c3530e7f819f2488d2821bbd9d3f47befe8d34b9735f550bacf5be",
+    "gather-customer-research": "09ee6a05b940be17c264dbe0bdd7d4cc7ab4374b8ae41d01343cc662aef10f92",
+    "gtm-ops-tooling-na": "5729120034dd4ba47653693b1b6b5f19843b5089d80277f6a852d2707cbe2903",
+    "kaizen-labs-govtech": "84c9667fc4d1116809f40411c3bafbd44d03da382351ed2059377cb7717f1e1f",
+    "kyber-pc-doc-gen": "382ec7ed4af2550b8beb507e8568aee37f0bbda50eb0c80ae01b812900b5bf93",
+    "melius-creative-canvas": "d3047f018aa512551c59df9664739eb06d3866753c25d71a5cde95675d336bab",
+    "midmarket-saas-spend-na": "e5a94540bf2c2f17f3df5bdc35fd33bf3e7941c29b87faf22770a8bbd338b2e7",
+    "minerva-ai-accounting-firm": "be97cef2688a3788fa6a6290a7114cdb63a86c4e2114e534fcb599ecebf92176",
+    "miravoice-phone-surveys": "f4af447b860cd3d05e5b10962ac2483002f9a89fd61c2e517146da2b15e2c23a",
+    "moda-ai-design": "6c2930d6a35936ad4266e5055cb1ea549bf42ade6ed50ca02851e1daab7ed007",
+    "numeral-tax-compliance": "7a3fb6585619762ceb880930a629c16377cd9d807015193bdea751c57653f3fb",
+    "payments-throughput-pc-insurance": "4a6ee82698f0d6142a7ee14972820f7af2794cd3b492655574617d3c9d51a53c",
+    "piramidal-eeg-multi-geo": "89b6682da2c22127222216f1a4ddca5c28d0bc6c254b05d7af3c50b12e59dcad",
+    "playerzero-code-quality": "0f84cc04a13ed6fff4c666787e6d70122f8a0312751c373ae65a18dd2ea5a412",
+    "sieve-multimodal-infra": "b61159c6eb491846c76dcb17f1525dd6caf201035a1a94724a3619330e608db6",
+    "signallabs-healthcare-decision-ai": "e953292939a987fdabd0ba079f4f16842fd6d633048bf48d9824eab84fa5ff9a",
+    "skyramp-qa-automation": "c4e39c3462330456e65728dd59785349e4da9f1291f8a565f4ab636e56ae8c00",
+    "software-eng-productivity": "b7695dd0caf2dc11f00b0f9d6af629bc0202000a0e812f7f27d2321af872449d",
+    "st-labs-ai-itsm": "45fc23e4b1608505ef3ef724c2c7941e573a859e6e32e6b7476d23d6557fe247",
+    "supermemory-ai-memory-infra": "1699648893833531722e55a398c54ebfc0d94976a3be51fce2b907d776551689",
+    "voice-ai-infra-global": "f88e71caf7dec30d84dcd52c6e9ce14f09549a3fe45737e9eb8780c4784ef272",
+    "workplace-suite-consolidation": "5c2c7aa6a25d192049ab02ae5e4c8cab6e5a0652ceae1c56e7dbbf04383e42d4",
+    "wraithwatch-cyber-defense": "1640b77df7c2508628d797e3858c7a8e6f05f8cd90b881740afe160a853a328a",
+    "yotta-india-cloud": "8850ece5be3c34de10bcdcd286308e1832da5802ee8bb6fce2450d1948c0e159",
+    "zerorfi-construction-rfi": "1a7f1709da6833768d7afb7eb4ec6b11404e163e0c6f48b11088583c13771939"
+  },
+  "scenario_values": {
+    "accrual-ai-tax-software": [
+      1125000000.0
+    ],
+    "ai-coding-assistants-us": [
+      900384000.0
+    ],
+    "ai-legal-assistants-us": [
+      946874400.0
+    ],
+    "contrario-ai-recruiting": [
+      16000000000.0
+    ],
+    "demo-ai-clinical-docs-us": [
+      2285100000.0,
+      2530000000.0
+    ],
+    "demo-ai-dev-tooling-us": [
+      3045780000.0,
+      34876000000.0
+    ],
+    "demo-ai-insurance-claims-us": [
+      2096250000.0,
+      2430000000.0
+    ],
+    "demo-ai-legal-research-us": [
+      3656500000.0,
+      3600000000.0
+    ],
+    "demo-ai-sales-ops-us": [
+      2044000000.0,
+      31200000000.0
+    ],
+    "doc-gen-pc-insurance": [
+      154800000.0,
+      470085000.0
+    ],
+    "echelon-servicenow-agents": [
+      3240000000.0
+    ],
+    "effective-ai-insurance-knowledge": [
+      6426000000.0
+    ],
+    "endeavor-mfg-back-office": [
+      75000000000.0
+    ],
+    "gather-customer-research": [
+      4320000000.0
+    ],
+    "gtm-ops-tooling-na": [
+      2102400000.0
+    ],
+    "kaizen-labs-govtech": [
+      1625000000.0
+    ],
+    "kyber-pc-doc-gen": [
+      3600000000.0
+    ],
+    "melius-creative-canvas": [
+      3960000000.0
+    ],
+    "midmarket-saas-spend-na": [
+      84000000000.0
+    ],
+    "minerva-ai-accounting-firm": [
+      3010000000.0000005
+    ],
+    "miravoice-phone-surveys": [
+      1140000000.0
+    ],
+    "moda-ai-design": [
+      12000000000.0
+    ],
+    "numeral-tax-compliance": [
+      665000000.0
+    ],
+    "payments-throughput-pc-insurance": [
+      1000000000.0
+    ],
+    "piramidal-eeg-multi-geo": [
+      2400000000.0
+    ],
+    "playerzero-code-quality": [
+      4800000000.0
+    ],
+    "sieve-multimodal-infra": [
+      3600000000.0
+    ],
+    "signallabs-healthcare-decision-ai": [
+      12100000000.0
+    ],
+    "skyramp-qa-automation": [
+      792000000.0
+    ],
+    "software-eng-productivity": [
+      3929940000.0
+    ],
+    "st-labs-ai-itsm": [
+      2160000000.0
+    ],
+    "supermemory-ai-memory-infra": [
+      2500000000.0
+    ],
+    "voice-ai-infra-global": [
+      13500000000.0
+    ],
+    "workplace-suite-consolidation": [
+      12750000000.0
+    ],
+    "wraithwatch-cyber-defense": [
+      45220000000.0
+    ],
+    "yotta-india-cloud": [
+      4000000000.0
+    ],
+    "zerorfi-construction-rfi": [
+      630000000.0
+    ]
+  }
+}

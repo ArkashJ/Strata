@@ -109,7 +109,8 @@ def _framework(slug: str, input_name: str, lens: AnalysisLens) -> Framework:
                 required=True,
             ),
         ),
-        formula=f"product({input_name})",
+        # Single-input identity formula (the formula is load-bearing in Phase 2).
+        formula=input_name,
         output_unit=_UNIT_USD_YEAR,
         applicable_to=("test-concept",),
         variants=(
@@ -202,9 +203,11 @@ def test_trajectory_empty_when_all_frameworks_require_later_primitives() -> None
     model by having the framework reference a primitive that doesn't exist in
     the registry.
     """
-    # Build a framework that references a missing primitive.
-    fw = _framework("fw1", "missing-primitive", AnalysisLens.COST_EFFICIENCY)
-    # candidate_slugs will contain "missing-primitive", but it's not in registry.
+    # Build a framework that references a missing primitive. The name doubles as
+    # the bound slug here, so it must be valid as both a formula identifier and a
+    # kebab slug — hence no hyphen/underscore.
+    fw = _framework("fw1", "missingprimitive", AnalysisLens.COST_EFFICIENCY)
+    # candidate_slugs will contain "missingprimitive", but it's not in registry.
     # So dates = {} (empty set) → points = [].
     reg = _registry_from([], [fw], _concept(AnalysisLens.COST_EFFICIENCY))
     result = trajectory(reg, "test-concept")
