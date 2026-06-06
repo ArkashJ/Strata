@@ -7,7 +7,7 @@ description: Net income of the single largest FDIC-insured institution by net in
   full-year 2024 (absolute USD). NOT an industry total.
 value: 52502000000.0
 unit:
-  kind: stock
+  kind: flow
   dimension: currency
   currency: USD
 as_of: '2024-12-31'

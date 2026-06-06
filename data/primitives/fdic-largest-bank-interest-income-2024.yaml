@@ -7,7 +7,7 @@ description: Total interest income of the single largest FDIC-insured institutio
   by interest income, full-year 2024 (absolute USD). NOT an industry total.
 value: 169911000000.0
 unit:
-  kind: stock
+  kind: flow
   dimension: currency
   currency: USD
 as_of: '2024-12-31'

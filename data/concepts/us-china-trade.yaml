@@ -1,0 +1,15 @@
+kind: concept
+slug: us-china-trade
+schema_version: 1
+name: US–China bilateral trade (imports into the US)
+definition: >-
+  Annual value of US imports from China across all commodities, in nominal US
+  dollars (UN Comtrade, reporter USA, partner China). A bilateral
+  trade-corridor denominator for cross-border commerce and logistics TAMs.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - ct-us-china-bilateral-2023
+competing_concepts: []
+requires_clearance: []

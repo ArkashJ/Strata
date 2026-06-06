@@ -406,8 +406,8 @@ connectors:
           unit_currency: GBP
           value_scale: 1000000
 
-  # ── Eurostat — EU national accounts (regulator, keyless). GDP is CP_MEUR
-  # (millions EUR) — noted in descriptions. ───────────────────────────────
+  # ── (continued) OECD — remaining G10 country GDP targets (national currency,
+  # millions; value_scale lifts to base units). Still under the oecd: key. ──
     - method: get_gdp
       arg_sets:
         - country: FRA
@@ -540,6 +540,10 @@ connectors:
           unit_dimension: currency
           unit_currency: MXN
           value_scale: 1000000
+
+  # ── Eurostat — EU national accounts + structural stats (regulator, keyless).
+  # Money series are CP_MEUR/MIO_EUR (millions EUR); employment is THS_PER
+  # (thousands of persons). value_scale lifts to base units. ───────────────
   eurostat:
     - method: get_gdp
       arg_sets:
@@ -967,7 +971,7 @@ connectors:
           name: Largest US insured bank - net income (2024)
           description: Net income of the single largest FDIC-insured institution by net income, full-year 2024 (absolute USD). NOT an industry total.
           source_url: https://banks.data.fdic.gov/
-          unit_kind: stock
+          unit_kind: flow
           unit_dimension: currency
           unit_currency: USD
           value_scale: 1000
@@ -981,7 +985,7 @@ connectors:
           name: Largest US insured bank - total interest income (2024)
           description: Total interest income of the single largest FDIC-insured institution by interest income, full-year 2024 (absolute USD). NOT an industry total.
           source_url: https://banks.data.fdic.gov/
-          unit_kind: stock
+          unit_kind: flow
           unit_dimension: currency
           unit_currency: USD
           value_scale: 1000

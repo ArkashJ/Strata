@@ -1,0 +1,16 @@
+kind: concept
+slug: us-electronics-imports
+schema_version: 1
+name: US imports of electrical machinery (HS 85)
+definition: >-
+  Annual value of US imports of HS chapter 85 (electrical machinery and
+  equipment, including electronics) from the world, in nominal US dollars (UN
+  Comtrade, reporter USA). A trade-flow denominator for the US import market in
+  electronics and electrical equipment.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - ct-us-imports-electronics-2023
+competing_concepts: []
+requires_clearance: []
