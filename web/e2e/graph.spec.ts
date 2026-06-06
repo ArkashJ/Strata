@@ -17,7 +17,8 @@ async function translateX(node: Locator): Promise<number> {
 }
 
 async function waitForPyramid(page: import("@playwright/test").Page) {
-  await page.goto("/graph");
+  // The pyramid now lives under the Explore hub.
+  await page.goto("/explore/pyramid");
   await expect(page.getByTestId("pyramid-canvas")).toBeVisible({
     timeout: 15_000,
   });
@@ -106,8 +107,9 @@ test.describe("Pyramid graph", () => {
       "href",
       /\/build\?q=/,
     );
-    // SOURCES panel lists the concept's primitives.
-    await expect(page.getByText(/^Sources/)).toBeVisible();
+    // SOURCES panel lists the concept's primitives. Scope to the heading — the
+    // sidebar now has a "Sources" nav group that also matches the bare text.
+    await expect(page.getByRole("heading", { name: /^Sources/ })).toBeVisible();
   });
 
   test("STAGE filter chips toggle", async ({ page }) => {

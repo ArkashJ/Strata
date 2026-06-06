@@ -29,13 +29,13 @@ test.describe("Landing page", () => {
 
   test("nav links are present", async ({ page }) => {
     await page.goto("/");
-    // The sidebar nav was restructured (Sidebar.tsx): top group + a LIBRARY
-    // group. Assert the stable rail links by their current labels.
+    // The sidebar nav was consolidated to 8 items in 4 groups (WORK / MY DATA /
+    // STRATA BANK / SOURCES). Assert the stable rail links by their current labels.
     const nav = page.getByRole("navigation", { name: "Primary" });
     await expect(nav.getByRole("link", { name: "Home", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Dashboard" })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Concepts" })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Frameworks" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Build", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "My Bank" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Explore" })).toBeVisible();
   });
 
   test("Popular concepts section renders", async ({ page }) => {
