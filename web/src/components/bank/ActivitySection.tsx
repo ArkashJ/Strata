@@ -3,25 +3,22 @@
 /**
  * ActivitySection — the personal activity log under My Bank.
  *
- * Uses auditQuery from lib/queries-personal (the resilient variant that
- * resolves to [] rather than throwing when the /audit endpoint is absent or
- * returns an error). Shows the 50 most-recent events, newest first.
- *
- * This is different from the old dashboard's AuditFeed, which imported the
- * strict auditQuery from lib/queries. Here we deliberately use the soft
- * variant so the Bank page never errors-out even on a stale backend.
+ * Uses myAuditQuery from lib/queries-personal — the server-backed, RLS-scoped
+ * `GET /me/audit` that returns ONLY the caller's own events. It is resilient:
+ * a 401 (signed out) or any error resolves to [] rather than throwing, so the
+ * Bank page renders an honest empty state instead of erroring out.
  */
 
 import { useQuery } from "@tanstack/react-query";
 
 import { Skeleton } from "@/components/ui/Skeleton";
-import { auditQuery } from "@/lib/queries-personal";
+import { myAuditQuery } from "@/lib/queries-personal";
 import type { AuditEvent } from "@/lib/schemas";
 
 // ── Section ───────────────────────────────────────────────────────────────────
 
 export function ActivitySection() {
-  const { data, isPending } = useQuery(auditQuery(50, 0));
+  const { data, isPending } = useQuery(myAuditQuery);
 
   return (
     <section aria-labelledby="bank-activity-heading">

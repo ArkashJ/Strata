@@ -47,6 +47,8 @@ When the visual system drifts, re-run `/impeccable document` to refresh
 > tool the owner would actually use: live steerable TAM tree, real per-user
 > workspace, Gartner charts + real PDF export, a ~150-question report engine, and
 > breadth to v1.0. **Stacked, never merged to `main` without review.**
+> **⚑ Strategic reframe (2026-06-06 adversarial review — [`docs/STRATEGY-REVIEW-2026-06-06.md`](docs/STRATEGY-REVIEW-2026-06-06.md), GH #93–#108):** four lenses converged: Strata is competing on the losing axis (data depth / "every number is sourced") while sitting on the winning one — the **verification layer for AI-generated market claims**, served via MCP. The honesty fence makes the *most valuable* numbers (capture/ACV/adoption — all `community-modeled`) the *least* trustworthy. Three moves: (1) own the **defensible-assumption layer**; make the MODELED fence **graded, not binary** (before PR4 hardens it); (2) re-thesis to **`verify_market_claim` via MCP** (agents are the contributor flywheel humans won't be); (3) invest in **frameworks (5→25, the real IP) + the trust fence**, divest from connectors (commodity). Company-enders to fix before real customer data: dual-purpose RLS fails *open* (#99), snapshot pin is decorative (#100), Clerk inert-default = no-auth-in-prod (#101), DB-path quarantine gap (#102), billing-blocked CI = no enforced gate (#108). Substrate rot (#97): in-memory registry frozen at boot; `user_primitives` is PG-only and invisible to the evaluator (#98).
+>
 > - **PR 0 — trust quick-wins + doc/architecture recovery (`feat/pr0-trust-and-docs`):**
 >   killed the 12 `strata.internal` placeholder URLs (modeled primitives now
 >   uniformly cite their real open-repo model-definition file; tier-keyed

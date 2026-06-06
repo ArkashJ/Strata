@@ -13,6 +13,7 @@
  */
 
 import { Show, SignInButton } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -20,6 +21,8 @@ import { FavoriteStar } from "@/components/FavoriteStar";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { type BuildHistoryEntry, readBuildHistory } from "@/lib/build-history";
 import { clerkEnabled } from "@/lib/clerk";
+import { savedTamsQuery } from "@/lib/queries-personal";
+import type { TAMOutput } from "@/lib/schemas";
 import { useHasMounted } from "@/lib/use-has-mounted";
 import { useFavoritesStore } from "@/stores/favorites-store";
 
@@ -73,6 +76,66 @@ function BuildRow({ entry }: { entry: BuildHistoryEntry }) {
         </span>
       </Link>
       <FavoriteStar entry={entry} />
+    </li>
+  );
+}
+
+// ── Saved research list (server-backed) ────────────────────────────────────────
+
+// The cross-device saved TAMs from `GET /me/tams`. Resilient query → [] when
+// signed out or empty, so we render nothing in that case (favorites + recent
+// builds below already cover the local/anonymous experience). When a signed-in
+// user has saved research, it leads the section.
+function SavedResearchList() {
+  const { data, isPending } = useQuery(savedTamsQuery);
+
+  if (isPending) {
+    return (
+      <section aria-labelledby="bank-research-heading">
+        <SectionLabel id="bank-research-heading">Saved research</SectionLabel>
+        <div className="flex flex-col gap-2">
+          {["a", "b", "c"].map((k) => (
+            <Skeleton key={k} className="h-[52px] w-full" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (!data || data.length === 0) return null;
+
+  return (
+    <section aria-labelledby="bank-research-heading">
+      <SectionLabel id="bank-research-heading">Saved research</SectionLabel>
+      <ul className="flex flex-col gap-2">
+        {data.map((tam) => (
+          <SavedTamRow key={tam.state_hash} tam={tam} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function SavedTamRow({ tam }: { tam: TAMOutput }) {
+  const label = tam.target.concept_name ?? tam.target.concept;
+  return (
+    <li>
+      <Link
+        href={`/tam/${tam.state_hash}`}
+        className="canvas-card flex items-center justify-between gap-3 border border-[var(--border-1)] p-3 transition-colors hover:border-[var(--border-2)]"
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13px] text-[var(--fg-1)]">{label}</span>
+          <span className="block truncate font-mono text-[11px] text-[var(--fg-3)]">
+            {tam.target.concept}
+            {" · "}
+            <span className="tam-num text-[11px]">{tam.state_hash.slice(0, 10)}</span>
+          </span>
+        </span>
+        <span className="shrink-0 text-[11px] text-[var(--fg-3)]">
+          {relativeTime(tam.created_at)}
+        </span>
+      </Link>
     </li>
   );
 }
@@ -177,6 +240,7 @@ function GatedBuilds() {
 export function SavedBuildsSection() {
   return (
     <>
+      <SavedResearchList />
       <FavoritesList />
       <GatedBuilds />
     </>

@@ -8,9 +8,9 @@
 // Components, so this page is a Client Component.
 //
 // Three panels, in reading order:
-//   1. My primitives  — private table synced via CLI/MCP (myPrimitivesQuery)
-//   2. Saved builds   — favorites + recent build history (localStorage)
-//   3. Activity       — audit feed (auditQuery from queries-personal, soft)
+//   1. My primitives  — private server store, GET /me/primitives (myPrimitivesQuery)
+//   2. Saved builds   — saved research (GET /me/tams) + local favorites/history
+//   3. Activity       — per-user audit feed, GET /me/audit (myAuditQuery)
 import dynamic from "next/dynamic";
 
 const BankView = dynamic(() => import("./BankView").then((m) => m.BankView), {

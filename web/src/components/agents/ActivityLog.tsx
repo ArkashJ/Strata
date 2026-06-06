@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { auditQuery } from "@/lib/queries-personal";
+import { myAuditQuery } from "@/lib/queries-personal";
 import type { AuditEvent } from "@/lib/schemas";
 
 /**
@@ -16,7 +16,7 @@ import type { AuditEvent } from "@/lib/schemas";
  * Design: tabular, editorial, mono-timestamp, honest empty/error states.
  */
 export function ActivityLog() {
-  const q = useQuery(auditQuery(50, 0));
+  const q = useQuery(myAuditQuery);
 
   return (
     <section className="flex flex-col gap-3">
