@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security — the agent API now requires a key (Track B, Phase 3 · Workstream A)
+- The hosted MCP endpoint (`/mcp`) — how an external AI agent talks to Strata —
+  was open to anyone. It now **requires an API key** on every request, with the
+  same per-tenant rate limiting and usage metering as the rest of the API. A
+  missing or wrong key gets a clean 401; over-limit gets a 429. A malformed
+  request can't run up the usage meter.
+- The local desktop connection (`claude mcp add strata`) is **unchanged** — it
+  stays local-trust and needs no key.
+
+  ```
+  external agent ─ X-API-Key ─▶ /mcp ─┬─ no/bad key ─▶ 401
+                                      ├─ over limit  ─▶ 429
+                                      └─ ok ─▶ tools (metered once)
+  local stdio ─ no key needed ─▶ tools (local-trust)
+  ```
+
+- Groundwork only: letting agents *compose and save* a TAM, and a generated
+  client library, are the remaining parts of this phase.
+
 ### Added — contribution flow (PR B, Phase 5)
 - **`/contribute`** page (sidebar link) — re-adds the contribution surface (removed for
   the v0.5 expert layer) on top of the existing `POST /contribute` route: a form submits a
