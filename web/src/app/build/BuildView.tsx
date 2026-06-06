@@ -22,7 +22,7 @@
 // the in-flight ?q=, and each mode keeps its own evaluated <main>.
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { ResolveView } from "@/components/ResolveView";
 import { BuildStudioView } from "@/components/build/BuildStudioView";
@@ -208,16 +208,24 @@ function SpecMode({ query, studio = false }: { query: string; studio?: boolean }
     return <BuildStudioView tam={studioResult.tam} state={studioResult.state} />;
   }
 
-  // No concept matched — fall back to dynamic streaming resolution.
+  // No concept matched — fall back to dynamic streaming resolution. The switcher
+  // stays on top so the user can retarget instead of being stuck on whatever the
+  // last query resolved to.
   if (!matchedSlug) {
-    return <ResolveView query={query} />;
+    return (
+      <div className="flex flex-1 flex-col">
+        <MarketSwitcher current={query} studio={studio} />
+        <ResolveView query={query} />
+      </div>
+    );
   }
 
   const conceptName = concept.data?.name ?? matchedSlug.replace(/-/g, " ");
   const initialScope = concept.data?.scope ?? emptyMarketScope();
 
   return (
-    <>
+    <div className="flex flex-1 flex-col">
+      <MarketSwitcher current={conceptName} studio={studio} />
       {error ? (
         <div className="mx-auto w-full max-w-[var(--content-max)] px-8 pt-6">
           <ErrorState
@@ -233,6 +241,56 @@ function SpecMode({ query, studio = false }: { query: string; studio?: boolean }
         onSize={onSize}
         sizing={sizing}
       />
-    </>
+    </div>
+  );
+}
+
+// A free-text market picker pinned above the spec form. Bare /build defaults to
+// the first concept alphabetically (an empty query matches every concept name),
+// which left no way to size a DIFFERENT market without going back to the home
+// search. Typing here routes to /build?q=<market>: a curated market loads its
+// declared scope to pin; anything else resolves live from sourced data.
+function MarketSwitcher({ current, studio }: { current: string; studio: boolean }) {
+  const router = useRouter();
+  const [value, setValue] = useState(current);
+  // Keep the input in sync when the resolved market changes without a remount
+  // (same-page route to /build?q=…): useState's initializer only runs on mount.
+  useEffect(() => setValue(current), [current]);
+
+  const go = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = value.trim();
+    if (!q) return;
+    router.push(`/build?q=${encodeURIComponent(q)}${studio ? "&mode=studio" : ""}`);
+  };
+
+  return (
+    <form onSubmit={go} className="mx-auto w-full max-w-[var(--content-max)] px-8 pt-6">
+      <label
+        htmlFor="market-switcher"
+        className="text-[10px] uppercase tracking-[0.14em] text-[var(--fg-3)]"
+      >
+        Size a different market
+      </label>
+      <div className="mt-2 flex gap-2">
+        <input
+          id="market-switcher"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="e.g. AI coding assistants for enterprise developers US"
+          className="h-10 flex-1 rounded-[var(--r-2)] border border-[var(--border-2)] bg-[var(--bg-1)] px-3 text-[14px] text-[var(--fg-1)] outline-none placeholder:text-[var(--fg-3)] focus:border-[var(--accent)]"
+        />
+        <button
+          type="submit"
+          className="h-10 shrink-0 rounded-[var(--r-2)] bg-[var(--accent)] px-4 text-[13px] font-medium text-[var(--accent-fg-on)] transition-colors hover:bg-[var(--accent-hover)]"
+        >
+          Size →
+        </button>
+      </div>
+      <p className="mt-1.5 text-[11px] text-[var(--fg-3)]">
+        A curated market loads its scope to pin; anything else resolves live from sourced data (with
+        a "synthesized — verify before citing" banner).
+      </p>
+    </form>
   );
 }

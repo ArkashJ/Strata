@@ -19,6 +19,8 @@ export function RadarChart({
   series,
   colors = DEFAULT_PALETTE,
   height = 260,
+  // Disable for print/PDF — see DonutChart.
+  animate = true,
 }: {
   // One row per axis; each row holds `axis` plus a numeric value per series key.
   data: Array<{ axis: string } & Record<string, string | number>>;
@@ -26,6 +28,7 @@ export function RadarChart({
   series: string[];
   colors?: string[];
   height?: number;
+  animate?: boolean;
 }) {
   if (data.length === 0 || series.length === 0) return null;
 
@@ -37,7 +40,17 @@ export function RadarChart({
         <PolarAngleAxis dataKey="axis" tick={{ fontSize: 12, fill: "currentColor" }} />
         {series.map((s, i) => {
           const c = colors[i % colors.length];
-          return <Radar key={s} dataKey={s} stroke={c} fill={c} fillOpacity={0.25} strokeWidth={2} />;
+          return (
+            <Radar
+              key={s}
+              dataKey={s}
+              stroke={c}
+              fill={c}
+              fillOpacity={0.25}
+              strokeWidth={2}
+              isAnimationActive={animate}
+            />
+          );
         })}
       </RechartsRadar>
     </ResponsiveContainer>

@@ -83,13 +83,14 @@ export function ReportCharts({ report }: { report: ConceptQuestionReport }) {
             centerValue={`${coveragePct}%`}
             centerLabel="coverage"
             height={200}
+            animate={false}
           />
         </ChartCard>
 
         {/* Coverage by category */}
         <ChartCard title="Coverage by category">
           {radarData.length >= 3 ? (
-            <RadarChart data={radarData} series={["coverage"]} height={200} />
+            <RadarChart data={radarData} series={["coverage"]} height={200} animate={false} />
           ) : (
             <Empty />
           )}
@@ -103,6 +104,7 @@ export function ReportCharts({ report }: { report: ConceptQuestionReport }) {
               centerValue={String([...tierCounts.values()].reduce((s, n) => s + n, 0))}
               centerLabel="sources"
               height={200}
+              animate={false}
             />
           ) : (
             <Empty />
