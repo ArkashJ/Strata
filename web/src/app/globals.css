@@ -410,3 +410,45 @@ body {
   --accent-fg-on: #0a0a0b;
   --accent-tint: rgba(124, 124, 240, 0.18);
 }
+
+/* ── Print ─────────────────────────────────────────────────────────────
+   The app shell pins itself to one viewport (`h-dvh`) and clips overflow so
+   the screen scrolls inside `main`. In print that clipping truncates the whole
+   document to a SINGLE page — the classic "PDF is one page" bug. When printing,
+   unclip every shell container so content flows naturally across pages, drop
+   the app chrome (sidebar/topbar marked `data-print-hide`), and let each report
+   block honor its own page-break rules. */
+@media print {
+  [data-print-hide] {
+    display: none !important;
+  }
+  .grid-canvas {
+    display: none !important;
+  }
+  /* Neutralize the shell's viewport pinning + scroll clipping. These Tailwind
+     utility classes are the load-bearing ancestors of every page's content. */
+  .h-dvh {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  .overflow-hidden,
+  .overflow-y-auto,
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  /* Keep cards/sections whole across the page break where possible. */
+  .canvas-card,
+  .report-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  @page {
+    margin: 14mm;
+  }
+}

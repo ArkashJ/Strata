@@ -80,8 +80,10 @@ function FullShell({ children }: { children: ReactNode }) {
   // becomes a drawer. The `sidebarCollapsed` flag forces the rail at lg+ too.
   return (
     <div className="grid h-dvh grid-cols-[auto_1fr] overflow-hidden">
-      {/* Inline sidebar (md and up). */}
+      {/* Inline sidebar (md and up). Hidden in print — app chrome never belongs
+          in a printed report. */}
       <aside
+        data-print-hide
         className={`hidden overflow-hidden md:block w-[var(--sidebar-w-collapsed)] ${
           collapsed ? "" : "lg:w-[var(--sidebar-w)]"
         }`}
@@ -95,7 +97,9 @@ function FullShell({ children }: { children: ReactNode }) {
       </MobileDrawer>
 
       <div className="flex min-w-0 flex-col overflow-hidden">
-        <TopBar />
+        <div data-print-hide>
+          <TopBar />
+        </div>
         <main className="flex flex-1 flex-col overflow-y-auto bg-[var(--bg-0)]">{children}</main>
       </div>
 
