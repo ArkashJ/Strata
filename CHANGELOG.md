@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Build Studio: live, steerable TAM tree (v1.0 program · PR 2)
+
+Type a market, **watch the sourced tree assemble node-by-node**, and steer any
+branch — over a single `/build/recompute` payload (no fake streaming; the program's
+honesty principle forbids theater).
+
+- **`/build?mode=studio`** — `BuildStudioView` reveals the apex TAM then each role
+  leaf in turn, with a live count-up headline (`aria-live`) and a "BUILDING N/N"
+  ledger rail. `deriveBuildSteps(tam, lens, state)` (pure, 14 unit tests) sequences
+  the reveal; `prefers-reduced-motion` (and any existing override) renders the whole
+  tree instantly — never a forced animation.
+- **Source at every node** (#107): each role card shows its tier dot
+  (provenance ramp), a clickable `source ↗`, and honest snapshot state
+  ("not pinned (demo)" when unpinned) — the steerable tree carries its provenance.
+- **Steer it:** reuses `OverridePanel` (swap / what-if → `/build/recompute` →
+  re-mints `/build/<hash>`); editing resumes the reveal at the changed role. The
+  steered tree rides the URL — sharing the link reproduces exactly what you see.
+- **`LensPicker`** auto-suggests the concept's primary lens (pre-selected,
+  confirmable), gated to lenses with ≥1 applicable framework variant (cool lens
+  family, never the tier ramp).
+- Reuses `ScenarioGraph`'s module-scope node types (the React Flow `nodeTypes`
+  warning is a pre-existing React-Flow-v11 + React-19-StrictMode dev-only artifact —
+  0 in a production build; not a regression).
+- **Verified:** web tsc + biome clean; 188 web unit tests (incl. 14 build-studio);
+  authed Playwright shows the studio rendering with source-at-node + honesty labels.
+
 ### Added — real multi-tenant per-user workspace (v1.0 program · PR 1)
 
 Saved research, audit history, and personal primitives become real, server-backed,

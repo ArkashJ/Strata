@@ -110,3 +110,8 @@ Work queue, dependency-ordered:
   "job not started: recent account payments have failed / spending limit." No
   code fix; user must resolve Actions billing (Settings → Billing & plans), then
   re-run. CI-green is unreachable until then; per-PR bar is "open + locally green."
+
+### 2026-06-06 · PR 1 — multi-tenant workspace — DONE (merged #109)
+- Clerk→backend JWKS bridge (inert/keyless-safe), migrations 008 (dual-purpose tam_outputs RLS) + 009 (user_primitives/boards), /me CRUD + saved TAMs + audit + lineage, frontend bearer wiring. 922 tests incl. cross-tenant RLS isolation. BLOCKED: live-prod Clerk JWKS. Known limits: #98, #99.
+- Strategic adversarial review → docs/STRATEGY-REVIEW-2026-06-06.md + GH #93–#108.
+- Merged: PR0 #91, PR4 #92, PR1 #109. Remaining: PR2 (this branch), PR3, PR5.
