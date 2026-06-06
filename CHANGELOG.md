@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — soft-data fence (Track B, Phase 4)
+- Honest labeling of estimates. About a third of the bank's numbers are
+  hand-modeled estimates (capture rates, paraphrased figures) rather than numbers
+  read live from a regulator. They are now **flagged "MODELED, not sourced"**
+  everywhere they feed a TAM — including a tier that was previously silent — so a
+  reader always knows which figures are estimates. Nothing is deleted; the policy
+  is **fence + re-source**, not hide.
+- A real number can no longer wear a fake source. Twelve estimates cited a
+  fabricated internal address that slipped past the connector-side guard because
+  they were hand-written. A new check **rejects any committed number citing the
+  internal address unless it is honestly marked modeled** — and a test enforces it
+  on every build, not just on demand.
+- The AI web-search fallback is now **off by default**. The resolver only reaches
+  for an AI-synthesized number when an operator explicitly opts in
+  (`STRATA_ALLOW_EXA_FALLBACK=1`); otherwise an unresolved query honestly says "no
+  curated result." A synthesized number can never be promoted, persisted, or
+  written into the bank.
+
+  ```
+  committed number ─┬─ cites internal address & not "modeled" ─▶ BUILD FAILS
+                    └─ modeled estimate ─▶ kept + loud "MODELED" banner everywhere
+  AI fallback ─ off unless opted in ─ result is ephemeral, never enters the bank
+  ```
+
+- `strata stats` now shows a sourced / modeled / queued breakdown; new
+  `strata resource-status` lists the estimates queued for re-sourcing.
+
 ### Added — contribution flow (PR B, Phase 5)
 - **`/contribute`** page (sidebar link) — re-adds the contribution surface (removed for
   the v0.5 expert layer) on top of the existing `POST /contribute` route: a form submits a
