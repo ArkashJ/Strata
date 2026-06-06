@@ -4,9 +4,17 @@ Living architecture map, recovered from a full-codebase synthesis (every claim t
 `file:line` in the backend/frontend). Diagrams are grouped: **system → data → flows →
 subsystems → frontend**. Render in any Mermaid-aware viewer (GitHub, VS Code, Obsidian).
 
-> Sibling docs: [`charts-and-dashboards.md`](charts-and-dashboards.md) (PR 3 chart system),
+> Sibling docs: [`DIAGRAMS.md`](DIAGRAMS.md) (the full 41-flow set, incl. the v1.0
+> additions — flows 27–41: Clerk→backend auth + dual-purpose RLS, Build Studio reveal,
+> dashboards, the question→report assembler, latent_demand, the program graph),
+> [`charts-and-dashboards.md`](charts-and-dashboards.md) (PR 3 chart system),
 > the v1.0 program in [`../plans/2026-06-06-v1-program.md`](../plans/2026-06-06-v1-program.md),
+> the strategic review in [`../STRATEGY-REVIEW-2026-06-06.md`](../STRATEGY-REVIEW-2026-06-06.md),
 > and the question bank in [`../questions/README.md`](../questions/README.md).
+>
+> **v1.0 surfaces now on `main`:** `/c/<slug>/questions` (PR 4 sourced-only report),
+> `/me/*` + dual-purpose RLS (PR 1 multi-tenant), `/build?mode=studio` (PR 2 live tree),
+> `/dashboard` + Gartner charts + real PDF (PR 3). See DIAGRAMS.md for each flow.
 
 ---
 
