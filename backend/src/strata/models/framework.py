@@ -11,7 +11,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ._common import AnalysisLens, Slug
 from .unit import Unit
@@ -27,6 +27,12 @@ class MethodFamily(StrEnum):
     COMPARABLE_REVENUE = "comparable_revenue"
     ANALOG_PENETRATION = "analog_penetration"
     VALUE_CHAIN = "value_chain"
+    # Phase 2 — structurally-distinct families the formula engine enables:
+    # adoption-curve (latent_demand S-curve) and weighted-blend (min/max
+    # triangulation of two same-unit estimates). They score as independent
+    # method families for convergence/independence (engine.py).
+    ADOPTION_CURVE = "adoption_curve"
+    WEIGHTED_BLEND = "weighted_blend"
 
 
 class InputRole(StrEnum):
@@ -91,6 +97,26 @@ class Framework(BaseModel):
 
     expansion_stage_parameter: bool = False
     horizon_class: HorizonClass = HorizonClass.SNAPSHOT
+
+    @model_validator(mode="after")
+    def _formula_parses(self) -> Framework:
+        """Phase 2: the formula is load-bearing, so a syntactically broken or
+        unknown-identifier formula must fail at construction — i.e. whenever the
+        framework is loaded from YAML or Postgres, not just under ``strata
+        validate``. The deeper unit-coherence check stays in the cross-record
+        validator. Imported lazily (the parser has no model dependency; the
+        ``formula`` package's unit algebra imports this module)."""
+        from ..evaluator.formula import identifiers
+        from ..evaluator.formula.parser import parse
+
+        ast = parse(self.formula)  # raises FormulaSyntaxError on bad text
+        declared = {inp.name for inp in self.inputs}
+        unknown = sorted(identifiers(ast) - declared)
+        if unknown:
+            raise ValueError(
+                f"framework {self.slug!r} formula references undeclared input(s): {unknown}"
+            )
+        return self
 
     def variant_for(self, scope: str) -> FrameworkVariant | None:
         for v in self.variants:

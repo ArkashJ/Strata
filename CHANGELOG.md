@@ -27,6 +27,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Stack Exchange, Reddit, Twitter, Dune) remain inactive pending a separate
   connector-plumbing fix — see `docs/plans/OVERNIGHT-LOG.md`.
 
+### Changed — real formula engine (Track B, Phase 2)
+- Framework recipes now compute from a real, **checkable formula** instead of a
+  hard-coded "multiply everything" rule. Each framework's `formula` (e.g.
+  `tools_displaced * consolidation_rate * (1 - pricing_discount)`) is parsed into
+  a small, **closed** expression and evaluated over the sourced inputs — so the
+  written recipe and the math can no longer disagree.
+- The math is safe by construction: the engine never runs arbitrary code (no
+  `eval`), only `+ − ×`, a few named functions (`min`, `max`, `clamp`, and bounded
+  adoption curves), and the inputs the framework declares. A nonsense or
+  tampered formula is rejected the moment a framework loads.
+- **Nothing existing moved:** the five shipped frameworks produce byte-for-byte
+  identical TAM numbers and permalinks — a frozen regression check fails the build
+  on any drift.
+
+  ```
+  Framework.formula (text)  ──parse──▶  closed expression  ──walk over inputs──▶  TAM value
+       (now load-bearing)                 (no eval, unit-checked at load)
+  ```
+
+- Groundwork for richer recipes (sum-then-discount, adoption S-curves, min/max
+  blends, the `latent_demand` lens) is in place; the new framework catalog itself
+  lands once the data bank holds the primitives those recipes need.
+
 ### Added — contribution flow (PR B, Phase 5)
 - **`/contribute`** page (sidebar link) — re-adds the contribution surface (removed for
   the v0.5 expert layer) on top of the existing `POST /contribute` route: a form submits a

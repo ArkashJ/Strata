@@ -1,9 +1,13 @@
 """Framework → scenario tree.
 
-For v0.2 the evaluator is intentionally narrow: every supported framework is
-multiplicative across its declared inputs. Variants bind input names to
-primitive slugs; the evaluator multiplies the bound primitive values and emits
-a ``Scenario`` per applicable framework, pinned by primitive ``snapshot_sha256``.
+Variants bind input names to primitive slugs; the evaluator resolves each bound
+primitive to a value and then computes the scenario value by walking the
+framework's ``formula`` through the closed AST interpreter in ``.formula``
+(Phase 2 — the formula string is load-bearing, not decorative). The five legacy
+frameworks are pure ``a * b`` products, so the walk reproduces the old
+multiplicative fold byte-for-byte; new frameworks may use ``+``, ``min``/``max``,
+a sum-then-discount idiom, or a bounded adoption ``curve``/``logistic``. Each
+scenario is pinned by primitive ``snapshot_sha256``.
 
 Per Q1, the TAM is a scenario tree, never a scalar.
 """
@@ -45,6 +49,8 @@ from ..models import (
 from ..models.scope import MarketScope
 from ..registry import Registry, RegistryError
 from ..scope import build_scope_report
+from .formula import eval_node, parse
+from .formula.errors import FormulaError
 
 
 class EvaluatorError(RuntimeError):
@@ -281,6 +287,26 @@ def _resolve_input(registry: Registry, slug: str) -> _ResolvedInput:
     return _ResolvedInput(value, snapshot, comp.name, comp.unit, banners, comp_tier)
 
 
+def _eval_formula(fw: Framework, variant: FrameworkVariant, env: dict[str, float]) -> float:
+    """Compute the scenario value by walking the framework's parsed formula AST
+    over the resolved input values. The formula string is now load-bearing (the
+    old hard-coded ``∏ inputs`` fold is gone). For a pure product like
+    ``a * b`` the walk returns the identical IEEE-754 result the fold did."""
+    try:
+        value = eval_node(parse(fw.formula), env)
+    except FormulaError as exc:
+        raise EvaluatorError(
+            f"framework {fw.slug!r} variant scope={variant.scope!r} formula "
+            f"{fw.formula!r} failed: {exc}"
+        ) from exc
+    if not math.isfinite(value):
+        raise EvaluatorError(
+            f"framework {fw.slug!r} variant scope={variant.scope!r} produced a "
+            f"non-finite value from formula {fw.formula!r}"
+        )
+    return value
+
+
 def _build_scenario(
     registry: Registry,
     fw: Framework,
@@ -288,7 +314,7 @@ def _build_scenario(
     lens: AnalysisLens,
     overrides: EvalOverrides | None = None,
 ) -> _ScenarioBuild:
-    value = 1.0
+    env: dict[str, float] = {}
     inputs_used: list[InputUsed] = []
     banners: list[ScenarioBanner] = []
     uses_synthetic = False
@@ -332,13 +358,7 @@ def _build_scenario(
                     ),
                 )
             ]
-        value *= input_value
-        if not math.isfinite(value):
-            raise EvaluatorError(
-                f"framework {fw.slug!r} variant scope={variant.scope!r} produced "
-                f"non-finite value after multiplying primitive {primitive_slug!r} "
-                f"(value={input_value!r})"
-            )
+        env[input_def.name] = input_value
         inputs_used.append(
             InputUsed(
                 role_name=input_def.name,
@@ -353,6 +373,8 @@ def _build_scenario(
             )
         )
         banners.extend(input_banners)
+
+    value = _eval_formula(fw, variant, env)
 
     return _ScenarioBuild(
         framework=fw,
@@ -493,7 +515,7 @@ def _build_scenario_as_of(
     Returns None if any required input is missing at that date so the caller
     can skip this framework for this point rather than raising.
     """
-    value = 1.0
+    env: dict[str, float] = {}
     inputs_used: list[InputUsed] = []
     banners: list[ScenarioBanner] = []
 
@@ -517,9 +539,7 @@ def _build_scenario_as_of(
             return None
 
         resolved = _resolve_input(registry, primitive_slug)
-        value *= resolved.value
-        if not math.isfinite(value):
-            return None
+        env[input_def.name] = resolved.value
         inputs_used.append(
             InputUsed(
                 role_name=input_def.name,
@@ -534,6 +554,13 @@ def _build_scenario_as_of(
             )
         )
         banners.extend(resolved.banners)
+
+    # Same formula walk as the live path; a malformed/non-finite result skips
+    # this point rather than raising (time-travel is best-effort).
+    try:
+        value = _eval_formula(fw, variant, env)
+    except EvaluatorError:
+        return None
 
     return _ScenarioBuild(
         framework=fw,

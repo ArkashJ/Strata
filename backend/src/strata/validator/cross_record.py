@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from ..evaluator.engine import EvaluatorError, size_concept
+from ..evaluator.formula import FormulaSyntaxError, FormulaUnitError, identifiers, infer_unit, parse
 from ..models import Unit
 from ..registry import Registry, RegistryError
 
@@ -56,8 +57,60 @@ def cross_record_check(registry: Registry) -> list[CrossRecordIssue]:
     issues.extend(_concept_measurement_links(registry))
     issues.extend(_framework_variant_checks(registry))
     issues.extend(_framework_role_coverage(registry))
+    issues.extend(_framework_formula_coherence(registry))
     issues.extend(_secondary_lens_overlap_warning(registry))
     return issues
+
+
+def _framework_formula_coherence(registry: Registry) -> list[CrossRecordIssue]:
+    """Phase 2: the ``Framework.formula`` is load-bearing, so validate it at load.
+
+    Per framework: parse the formula (closed AST — never ``eval``), assert every
+    identifier is a declared ``FrameworkInput.name``, and run the unit algebra.
+    The dimensional output-unit match is deferred: a bare ``unit_signature``
+    omits the implicit per-X denominator on intensive inputs, so a sound product
+    dimension can't be derived yet (the unit algebra still rejects ``+``/``min``
+    over mismatched units and ``logistic``/``curve`` over non-dimensionless
+    operands)."""
+    out: list[CrossRecordIssue] = []
+    for fw in registry.frameworks.values():
+        try:
+            ast = parse(fw.formula)
+        except FormulaSyntaxError as exc:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.formula_syntax_error",
+                    severity=CrossRecordSeverity.ERROR,
+                    slug=fw.slug,
+                    message=f"formula {fw.formula!r} did not parse: {exc}",
+                )
+            )
+            continue
+        declared = {inp.name for inp in fw.inputs}
+        unknown = sorted(identifiers(ast) - declared)
+        if unknown:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.formula_unknown_identifier",
+                    severity=CrossRecordSeverity.ERROR,
+                    slug=fw.slug,
+                    message=f"formula references undeclared input(s): {unknown}",
+                )
+            )
+            continue
+        inputs_by_name = {inp.name: inp for inp in fw.inputs}
+        try:
+            infer_unit(ast, inputs_by_name, fw.formula)
+        except FormulaUnitError as exc:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.formula_unit_incoherent",
+                    severity=CrossRecordSeverity.ERROR,
+                    slug=fw.slug,
+                    message=str(exc),
+                )
+            )
+    return out
 
 
 def _concept_measurement_links(registry: Registry) -> list[CrossRecordIssue]:
