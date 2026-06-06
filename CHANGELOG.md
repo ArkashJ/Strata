@@ -28,6 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             └─no─▶ STRATA_ALLOW_EXA_FALLBACK on? ─yes─▶ Exa-sourced TAM (banner)
                                                   └─no──▶ "not enough data" (old behavior)
   ```
+- **Dynamic TAM finds an answer far more often.** When a market isn't pre-built,
+  the live search used to throw away any source that didn't return a highlighted
+  snippet — so it often came up one number short and said "not enough data". It
+  now also reads each source's summary, so real sources stop being discarded
+  (e.g. "robotic lawn mowers in France" now returns a TAM where it previously
+  failed). Numbers still come only from real, host-verified sources.
 
 ### Added — breadth to v1.0 (v1.0 program · PR 5)
 

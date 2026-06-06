@@ -67,17 +67,31 @@ def search_primitive(
             prim.search_query,
             type="auto",
             num_results=5,
-            contents={"highlights": True},
+            # Request highlights AND summaries: Exa frequently returns results
+            # with empty highlights, which used to drop the factor to None (the
+            # single biggest source of "not enough primitives" fallback misses).
+            # A summary/title is still real Exa-returned content from a
+            # host-verified URL, so the extract stays honest.
+            contents={"highlights": True, "summary": True},
         )
         if not results.results:
             return None
 
         top_url = results.results[0].url
+        # Build extract context from whatever each top result actually carries:
+        # highlights first, then the summary, then the title — so a result with
+        # no highlights still contributes real content the LLM can extract from.
         highlights_text = ""
-        for r in results.results[:3]:
+        for r in results.results[:4]:
+            title = getattr(r, "title", None) or ""
             if r.highlights:
                 for h in r.highlights:
-                    highlights_text += f"[{r.title}] {h}\n"
+                    highlights_text += f"[{title}] {h}\n"
+            summary = getattr(r, "summary", None)
+            if summary:
+                highlights_text += f"[{title}] {summary}\n"
+            elif not r.highlights and title:
+                highlights_text += f"[{title}] {getattr(r, 'url', '')}\n"
         if not highlights_text:
             return None
 
