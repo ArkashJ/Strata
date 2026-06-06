@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-CMP-008
+prompt: "What pricing discount vs the displaced incumbent stack is sourced (the share-of-wallet the bundle wins)?"
+category: competition_share
+lenses: [bundle_consolidation]
+applies_when: { lens_in: [bundle_consolidation], requires_role: [pricing_discount] }
+answer: { strategy: primitive_role, roles: [pricing_discount], aggregation: value }
+narrative_template: "The bundle prices at a {value} discount to the incumbent stack ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced pricing_discount primitive is bound — the share-of-wallet won against incumbents on price is unstated."
+resource_target: "edgar:company_facts"
+schema_version: 1

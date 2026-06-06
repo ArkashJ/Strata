@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 
 from .loader import LoadedRecords
 from .models import (
+    AnalysisQuestion,
     Annotation,
     AtomicPrimitive,
     CompositePrimitive,
@@ -42,6 +43,9 @@ class Registry:
     # Read-only prediction-market / non-sizing signals (Q20). Never consumed by
     # the evaluator or any framework — exposed for display only.
     signals: dict[str, AtomicPrimitive] = field(default_factory=dict[str, AtomicPrimitive])
+    # Curated analysis-question records (PR4). YAML-only, like composites and
+    # annotations — not a DB table on the prod path.
+    questions: dict[str, AnalysisQuestion] = field(default_factory=dict[str, AnalysisQuestion])
 
     @classmethod
     async def from_db(cls) -> Registry:
@@ -73,6 +77,9 @@ class Registry:
             annotations={},
             tam_outputs=_index(promoted_tams, lambda r: r.state_hash, "tam_output"),
             signals=_index(signals, lambda r: r.slug, "signal"),
+            # Analysis questions are curated YAML, not a DB table in PR4 (mirrors
+            # composite={} and annotations={} on the prod path).
+            questions={},
         )
 
     @classmethod
@@ -85,6 +92,9 @@ class Registry:
             annotations=_index(records.annotations, lambda r: r.slug, "annotation"),
             tam_outputs=_index(records.tam_outputs, lambda r: r.state_hash, "tam_output"),
             signals=_index(records.signals, lambda r: r.slug, "signal"),
+            questions=_index(
+                records.analysis_questions, lambda r: r.question_id, "analysis_question"
+            ),
         )
 
     def primitive(self, slug: str) -> AtomicPrimitive | CompositePrimitive:
@@ -105,6 +115,12 @@ class Registry:
             return self.concepts[slug]
         except KeyError as exc:
             raise RegistryError(f"concept {slug!r} not found") from exc
+
+    def get_question(self, qid: str) -> AnalysisQuestion:
+        try:
+            return self.questions[qid]
+        except KeyError as exc:
+            raise RegistryError(f"analysis_question {qid!r} not found") from exc
 
     def get_framework(self, slug: str) -> Framework:
         try:

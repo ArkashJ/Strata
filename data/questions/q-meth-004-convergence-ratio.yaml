@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-METH-004
+prompt: "When two or more method families size this market, how tightly do they converge?"
+category: methodology
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: convergence_ratio }
+narrative_template: "Convergence ratio: {value} (lower {low}, higher {high}). A ratio near 1 means independent methods land on the same number; a wide ratio means they disagree and the headline is a midpoint, not a consensus."
+gap_text: "Fewer than two method families are sized, so there is nothing to converge — convergence is null for a single-method concept."
+resource_target: null
+schema_version: 1

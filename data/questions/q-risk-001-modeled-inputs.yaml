@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-RISK-001
+prompt: "Which inputs are MODELED rather than sourced, and how exposed is the TAM to them?"
+category: risks
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: uses_modeled_inputs }
+narrative_template: "Modeled-input dependence: {value}. A TAM that leans on a modeled (community-modeled / synthetic) input is an estimate, not a fully sourced claim — treat that input as the first thing to corroborate."
+gap_text: "No computed TAM for this concept yet, so its modeled-input exposure can't be assessed — size it first (POST /build/recompute)."
+resource_target: null
+schema_version: 1

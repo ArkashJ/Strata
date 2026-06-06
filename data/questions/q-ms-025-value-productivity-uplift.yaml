@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-025
+prompt: "What value-split-to-vendor does this productivity-uplift play turn on?"
+category: market_size
+lenses: [productivity_uplift]
+applies_when: { lens_in: [productivity_uplift], requires_role: [value_split_to_vendor] }
+answer: { strategy: primitive_role, roles: [value_split_to_vendor], aggregation: value }
+narrative_template: "The value-split-to-vendor is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced value-split-to-vendor primitive bound — the vendor share of productivity value is unsourced for this concept."
+resource_target: null
+schema_version: 1

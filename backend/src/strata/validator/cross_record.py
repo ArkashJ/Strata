@@ -59,6 +59,7 @@ def cross_record_check(registry: Registry) -> list[CrossRecordIssue]:
     issues.extend(_framework_role_coverage(registry))
     issues.extend(_framework_formula_coherence(registry))
     issues.extend(_secondary_lens_overlap_warning(registry))
+    issues.extend(_question_answers_resolvable(registry))
     return issues
 
 
@@ -312,6 +313,101 @@ def _secondary_lens_overlap_warning(registry: Registry) -> list[CrossRecordIssue
                         f"({secondary_lens.value}={s:,.0f}) scenarios within "
                         f"{int(SECONDARY_LENS_OVERLAP_THRESHOLD * 100)}% of each other; "
                         f"secondary lens may not be doing real strategic work"
+                    ),
+                )
+            )
+    return out
+
+
+def _question_answers_resolvable(registry: Registry) -> list[CrossRecordIssue]:
+    """PR4 question fence + reachability.
+
+    Two structural guarantees over the curated analysis-question bank:
+
+    (a) THE Q20 FENCE — ERROR ``cross.question_resolves_to_signal``. No question's
+        answer may resolve to a quarantined ``registry.signals`` primitive (a
+        prediction-market number that must NEVER feed a sized answer). A
+        ``concept_measurement`` answer reads ``concept.measurements`` slugs; a
+        ``primitive_role`` answer resolves to framework-variant-bound primitive
+        slugs. If any such slug is a signal, reject.
+
+    (b) REACHABILITY — WARNING ``cross.question_never_resolves``. A question that
+        resolves to a non-gap answer for no concept in the registry is dead
+        wiring (a role no applicable framework binds, a measurement no concept
+        declares). Surfaced as a warning so the bank can be authored ahead of
+        the data it needs, while still flagging permanent typos.
+    """
+    from ..models import (
+        ConceptMeasurementAnswer,
+        PrimitiveRoleAnswer,
+        QualitativeAnswer,
+        TamFieldAnswer,
+    )
+    from ..report.assembler import assemble_report
+
+    out: list[CrossRecordIssue] = []
+    if not registry.questions:
+        return out
+    signal_slugs = set(registry.signals)
+
+    # Pre-index every framework-variant-bound primitive slug, grouped by the
+    # role name it binds — so a primitive_role answer's reach can be checked
+    # without re-running the evaluator.
+    role_to_slugs: dict[str, set[str]] = {}
+    for fw in registry.iter_frameworks():
+        for variant in fw.variants:
+            for role_name, prim_slug in variant.default_inputs.items():
+                role_to_slugs.setdefault(role_name, set()).add(prim_slug)
+
+    # Assemble each concept's report ONCE, then collect the set of question ids
+    # that resolved to a non-gap answer anywhere — reachability is membership.
+    resolved_anywhere: set[str] = set()
+    for concept in registry.concepts.values():
+        report = assemble_report(registry, concept.slug)
+        for ans in report.answers:
+            if ans.status == "answered":
+                resolved_anywhere.add(ans.question_id)
+
+    for q in registry.questions.values():
+        answer = q.answer
+        # (a) Q20 fence — does any reachable target point into the signal quarantine?
+        leaked: set[str] = set()
+        if isinstance(answer, PrimitiveRoleAnswer):
+            for role in answer.roles:
+                leaked |= role_to_slugs.get(role, set()) & signal_slugs
+        elif isinstance(answer, ConceptMeasurementAnswer):
+            for concept in registry.concepts.values():
+                leaked |= set(concept.measurements) & signal_slugs
+        if leaked:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.question_resolves_to_signal",
+                    severity=CrossRecordSeverity.ERROR,
+                    slug=q.question_id,
+                    message=(
+                        f"question {q.question_id!r} could resolve to quarantined "
+                        f"signal primitive(s) {sorted(leaked)}; a prediction-market "
+                        f"number must never feed a sized answer (Q20)"
+                    ),
+                )
+            )
+
+        # (b) Reachability — tam_field/qualitative answers are concept-data
+        # independent (always resolvable in principle), so only the registry-
+        # binding strategies are checked for dead wiring.
+        if not isinstance(answer, PrimitiveRoleAnswer | ConceptMeasurementAnswer):
+            assert isinstance(answer, TamFieldAnswer | QualitativeAnswer)
+            continue
+        if q.question_id not in resolved_anywhere:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.question_never_resolves",
+                    severity=CrossRecordSeverity.WARNING,
+                    slug=q.question_id,
+                    message=(
+                        f"question {q.question_id!r} resolves to a gap for every "
+                        f"concept; its role/measurement target is not bound by any "
+                        f"applicable framework variant or concept (dead wiring)"
                     ),
                 )
             )

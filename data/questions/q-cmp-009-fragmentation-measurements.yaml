@@ -1,0 +1,8 @@
+kind: analysis_question
+question_id: Q-CMP-009
+prompt: "How fragmented is the market — do competing measurements disagree enough that a single share assumption is meaningless?"
+category: competition_share
+answer: { strategy: concept_measurement, aggregation: spread }
+narrative_template: "Competing measurements span {low} to {high} (spread {spread}); a single market-share assumption masks that disagreement."
+gap_text: "Fewer than two competing measurements are attached to this concept — fragmentation can't be assessed from the bank, so no share judgement is made."
+schema_version: 1

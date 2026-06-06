@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-CMP-005
+prompt: "What share of the addressable segment does the revenue model assume it captures, and is it cited?"
+category: competition_share
+lenses: [revenue_generation]
+applies_when: { lens_in: [revenue_generation], requires_role: [capture_rate] }
+answer: { strategy: primitive_role, roles: [capture_rate], aggregation: value }
+narrative_template: "The revenue build assumes a capture of {value} of the target segment ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced capture_rate primitive is bound — the share won against incumbents is unstated, so it is excluded by design."
+resource_target: "edgar:company_facts"
+schema_version: 1

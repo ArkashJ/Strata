@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-UE-003
+prompt: "How sensitive is TAM to the per-unit price assumption (the spread it drives)?"
+category: unit_economics
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: range_spread_ratio }
+narrative_template: "Across methods TAM spans {low} to {high} — a {ratio} spread, much of it driven by the per-unit price assumption. Reproducible at /tam/<hash>."
+gap_text: "No computed TAM for this concept yet — size it first (POST /build/recompute) before testing per-unit price sensitivity."
+resource_target: null
+schema_version: 1

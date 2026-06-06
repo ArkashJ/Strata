@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-UE-012
+prompt: "What productivity-gain percentage does the productivity-uplift unit economics rest on?"
+category: unit_economics
+lenses: [productivity_uplift]
+applies_when: { lens_in: [productivity_uplift], requires_role: [productivity_gain_pct] }
+answer: { strategy: primitive_role, roles: [productivity_gain_pct], aggregation: value }
+narrative_template: "The sourced productivity gain is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced productivity_gain_pct primitive bound — the per-persona uplift the value pool rests on is unsourced for this concept."
+resource_target: null
+schema_version: 1

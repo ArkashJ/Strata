@@ -1,0 +1,19 @@
+kind: analysis_question
+question_id: Q-REG-003
+prompt: "Does this market require regulatory clearance to serve, and is that clearance sourced?"
+category: regulation
+lenses: []
+# Cross-cutting: a concept may declare requires_clearance gates. No modifier or
+# role is required to ASK; the gap path fires when nothing is declared.
+answer:
+  strategy: qualitative
+  source: definition
+narrative_template: >-
+  Regulatory clearance is part of this market's definition ({source_name}); the
+  served population is bounded to cleared providers.
+gap_text: >-
+  No clearance requirement is declared on this concept (requires_clearance is
+  empty). If serving this market is gated by a license, approval, or
+  certification, record it so the served base is not overstated.
+resource_target: "regulation:requires-clearance"
+schema_version: 1

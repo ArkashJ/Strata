@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-006
+prompt: "What share of the persona pool is in-scope (addressable) for this segment?"
+category: segmentation
+lenses: [cost_efficiency]
+applies_when: { lens_in: [cost_efficiency], requires_role: [addressable_share] }
+answer: { strategy: primitive_role, roles: [addressable_share], aggregation: value }
+narrative_template: "The in-scope (addressable) share of the persona pool is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced addressable-share primitive bound for this cost-efficiency variant — the in-scope fraction of the persona pool is unsourced."
+resource_target: "bls:occupation_share_by_industry"
+schema_version: 1

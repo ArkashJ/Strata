@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-012
+prompt: "What share of the addressable segment adopts along the sourced adoption curve?"
+category: segmentation
+lenses: [latent_demand]
+applies_when: { lens_in: [latent_demand], requires_role: [adoption_rate_curve] }
+answer: { strategy: primitive_role, roles: [adoption_rate_curve], aggregation: value }
+narrative_template: "The sourced adoption-rate curve gives {value} ({source_name}, {source_tier}, {as_of}), bounding the adopting share of the addressable segment. Snapshot {snapshot}."
+gap_text: "No sourced adoption-rate-curve primitive bound for this latent-demand variant — the adopting share of the segment is unsourced."
+resource_target: "analyst:segment_adoption_curve"
+schema_version: 1

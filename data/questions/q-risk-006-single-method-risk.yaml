@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-RISK-006
+prompt: "Is the estimate exposed to single-method risk (too few independent families agreeing)?"
+category: risks
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: method_families_count }
+narrative_template: "The TAM rests on {value} independent method family(ies). One family is an unchecked estimate; the risk falls as independent methods agree. Reproducible at /tam/<hash>."
+gap_text: "No computed TAM for this concept yet, so method-family count can't be assessed — size it first (POST /build/recompute)."
+resource_target: null
+schema_version: 1

@@ -1,0 +1,21 @@
+kind: analysis_question
+question_id: Q-REG-007
+prompt: "What take rate does the model apply, and is it within regulated caps?"
+category: regulation
+lenses: [platform_throughput]
+applies_when:
+  lens_in: [platform_throughput]
+  requires_role: [take_rate]
+answer:
+  strategy: primitive_role
+  roles: [take_rate]
+  aggregation: value
+narrative_template: >-
+  The applied take rate is {value} ({source_name}, {source_tier}, {as_of}),
+  which must sit within any statutory cap on the route. Snapshot {snapshot}.
+gap_text: >-
+  No sourced take_rate primitive is bound for this platform_throughput market.
+  Interchange, payment, and exchange routes are often rate-capped by regulators
+  — source the take rate and check it against the cap, never assume it.
+resource_target: "regulation:statutory-rate-cap"
+schema_version: 1

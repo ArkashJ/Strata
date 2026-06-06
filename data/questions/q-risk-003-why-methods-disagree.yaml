@@ -1,0 +1,16 @@
+kind: analysis_question
+question_id: Q-RISK-003
+prompt: "Why do the competing measurements disagree — what does the spread across sources reveal?"
+category: risks
+lenses: []
+# Cross-cutting: any concept carrying >=2 competing measurements exposes a
+# source-level spread that explains WHY the methods land apart. "Disagreement
+# gets a page, not a footnote."
+applies_when: {}
+answer:
+  strategy: concept_measurement
+  aggregation: spread
+narrative_template: "The concept carries competing measurements that span {low} to {high} — a {spread} gap. The disagreement is shown per source ({source_tier}, {as_of}) so you can judge which definition fits your scope, rather than being handed one number."
+gap_text: "Fewer than two sourced measurements on this concept, so there is no source-level disagreement to explain. Needs a second, independently-sourced measurement of the same quantity."
+resource_target: "census:cbp_by_naics"
+schema_version: 1

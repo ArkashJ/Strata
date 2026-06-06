@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-GEO-002
+prompt: "Is the number supply-side or demand-side — what do geo_supply and geo_demand cover?"
+category: geography
+lenses: []
+applies_when: {}
+answer: { strategy: qualitative, source: definition }
+narrative_template: "{value}"
+gap_text: "No declared geo scope on the concept — geo_supply and geo_demand are both empty, so the number's geographic perspective is unstated."
+resource_target: null
+schema_version: 1

@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-GEO-004
+prompt: "What geography does the persona pool actually cover, and is that base sourced per-geo?"
+category: geography
+lenses: [cost_efficiency]
+applies_when: { lens_in: [cost_efficiency], requires_role: [persona_pool] }
+answer: { strategy: primitive_role, roles: [persona_pool], aggregation: value }
+narrative_template: "The persona pool is {value} ({source_name}, {source_tier}, {as_of}) — its geographic coverage is fixed by that source's scope. Snapshot {snapshot}."
+gap_text: "No sourced persona-pool primitive bound — its geographic coverage is unverifiable without a per-geo headcount ingest (BLS/Census/Eurostat)."
+resource_target: "census:cbp_by_state"
+schema_version: 1

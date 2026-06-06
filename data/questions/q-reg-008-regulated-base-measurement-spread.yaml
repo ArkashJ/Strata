@@ -1,0 +1,21 @@
+kind: analysis_question
+question_id: Q-REG-008
+prompt: "Do the regulatory and statistical sources for the in-scope base disagree, and by how much?"
+category: regulation
+lenses: []
+# Cross-cutting: any concept carrying >=2 competing measurements of the same
+# quantity (e.g. a regulator headcount vs a statistical-agency headcount) yields
+# a sourced spread — "disagreement gets a page, not a footnote".
+answer:
+  strategy: concept_measurement
+  aggregation: spread
+narrative_template: >-
+  The in-scope base disagrees across sources: low {low}, high {high} (spread
+  {spread}). The regulator figure and the statistical-agency figure define
+  different boundaries — both are shown, neither is averaged away.
+gap_text: >-
+  Fewer than two competing measurements of the in-scope base are attached to
+  this concept, so no regulator-vs-statistical spread can be shown. Add a second
+  sourced measurement of the same quantity to surface the disagreement.
+resource_target: "regulation:second-sourced-measurement"
+schema_version: 1

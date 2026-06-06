@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-UE-001
+prompt: "What is the sourced spend-per-target / cost-per-persona this market turns on?"
+category: unit_economics
+lenses: []
+applies_when: { requires_role: [cost_per_persona] }
+answer: { strategy: primitive_role, roles: [cost_per_persona, spend_per_target, willingness_to_pay, spend_per_tool], aggregation: value }
+narrative_template: "The sourced per-target unit economics is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced spend-per-target / cost-per-persona primitive bound — the per-unit economics are unsourced for this concept."
+resource_target: null
+schema_version: 1

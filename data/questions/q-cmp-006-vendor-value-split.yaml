@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-CMP-006
+prompt: "What share of the productivity value accrues to the vendor vs the customer (value split)?"
+category: competition_share
+lenses: [productivity_uplift]
+applies_when: { lens_in: [productivity_uplift], requires_role: [value_split_to_vendor] }
+answer: { strategy: primitive_role, roles: [value_split_to_vendor], aggregation: value }
+narrative_template: "The vendor captures {value} of the productivity value created ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced value_split_to_vendor primitive is bound — the vendor-vs-customer split is unstated, so the share is excluded by design."
+resource_target: "bls:oews_series"
+schema_version: 1

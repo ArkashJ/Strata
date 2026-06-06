@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-002
+prompt: "Which segment carries the most defensible (most-sourced) number?"
+category: segmentation
+lenses: []
+applies_when: {}
+answer: { strategy: concept_measurement, aggregation: list }
+narrative_template: "{count} segment measurements are attached; the most defensible is the one whose source is {source_tier} ({source_name}, as of {as_of}). Snapshot {snapshot}."
+gap_text: "Only one (or no) sourced segment measurement on this concept — no comparison of defensibility is possible until a competing segment figure is ingested."
+resource_target: "census:annual_business_survey_by_firmsize"
+schema_version: 1

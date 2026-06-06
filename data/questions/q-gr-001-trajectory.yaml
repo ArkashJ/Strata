@@ -1,0 +1,17 @@
+kind: analysis_question
+question_id: Q-GR-001
+prompt: "What growth trajectory does the bank's adoption data imply over 3-5 years?"
+category: growth_rate
+# Cross-cutting on lenses that carry a sourced adoption/penetration input. Empty
+# `lenses` keeps it offered everywhere; `applies_when` is the real gate.
+applies_when:
+  lens_in: [cost_efficiency, latent_demand]
+  requires_role: [addressable_share]
+answer:
+  strategy: primitive_role
+  roles: [addressable_share, adoption_rate_curve]
+  aggregation: value
+narrative_template: "The sourced adoption input reads {value} ({source_name}, {source_tier}, {as_of}); the bank holds a level, not a multi-year series, so any 3-5y trajectory is a projection off this point, not a sourced growth rate. Snapshot {snapshot}."
+gap_text: "No sourced adoption-rate / penetration primitive bound to this concept, so the bank cannot imply a trajectory. The honest answer is a single-point level at best, never a fabricated CAGR."
+resource_target: "fred:series_growth"
+schema_version: 1

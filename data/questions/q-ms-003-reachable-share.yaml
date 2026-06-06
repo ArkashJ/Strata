@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-003
+prompt: "What share of that base is realistically reachable (in-scope vs total)?"
+category: market_size
+lenses: []
+applies_when: { requires_role: [addressable_share] }
+answer: { strategy: primitive_role, roles: [addressable_share, capture_rate, consolidation_rate], aggregation: value }
+narrative_template: "The realistically reachable share is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced addressable-share primitive bound — the in-scope fraction is unsourced for this concept."
+resource_target: null
+schema_version: 1

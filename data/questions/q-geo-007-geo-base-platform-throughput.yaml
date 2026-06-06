@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-GEO-007
+prompt: "What geography does the GMV / transaction volume cover, and is that base sourced per-geo?"
+category: geography
+lenses: [platform_throughput]
+applies_when: { lens_in: [platform_throughput], requires_role: [gmv_or_volume] }
+answer: { strategy: primitive_role, roles: [gmv_or_volume], aggregation: value }
+narrative_template: "The GMV / volume base is {value} ({source_name}, {source_tier}, {as_of}) — its geographic coverage is fixed by that source's scope. Snapshot {snapshot}."
+gap_text: "No sourced GMV/volume primitive bound — its geographic coverage is unverifiable without a per-geo throughput ingest (FRED/regulator filings)."
+resource_target: "fred:transaction_volume_by_region"
+schema_version: 1

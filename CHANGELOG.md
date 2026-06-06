@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — curated question → sourced-only report engine (v1.0 program · PR 4)
+
+Ask analytical TAM/market questions and get them answered **only** from the data
+bank — a sourced primitive, a concept-measurement spread, or a triangulated
+TAM-field synthesis — or an honest "no data in bank" gap. **Never an LLM-projected
+number, never an external citation.**
+
+- **New record kind `analysis_question`** (`models/question.py`): an `AnswerSpec`
+  discriminated union (`primitive_role | concept_measurement | tam_field |
+  qualitative`) that can *only* bind registry objects — a literal number is
+  structurally impossible. Wired into the loader + registry.
+- **Report assembler** (`report/assembler.py`, pure — no LLM, no network):
+  `assemble_report(reg, concept) → MarketReport`. `ResolvedAnswer` has a validator
+  that forbids a numeric value without provenance or synthesis. A new
+  `cross_record` check **rejects** any question that would resolve to a
+  quarantined `reg.signals` entry (Q20 fence) and warns on questions authored
+  ahead of their data (those carry honest `gap_text`).
+- **Surfaces:** `GET /report/{concept_slug}`, `strata report <concept>` CLI, and
+  the `/c/<slug>/questions` page (Sourced-Ledger styling, KPI strip, per-category
+  answers, reproducible `/tam/<hash>` links, honest gaps).
+- **109 curated questions** across all 10 categories (market_size, growth_rate,
+  segmentation, geography, competition_share, regulation, adoption,
+  unit_economics, risks, methodology). On the flagship concept the report answers
+  27 questions from sourced primitives and shows 37 honest gaps — zero external
+  citations.
+- **Verified:** `strata validate` 0 errors (84 by-design "authored-ahead-of-data"
+  warnings); 871 backend tests (incl. a provenance-fence test asserting every
+  numeric answer has provenance/synthesis, and a signal-rejection test); pyright
+  src 0; web tsc + biome clean; live `/report` endpoint sourced-only.
+- Architecture: 41-diagram mermaid set added at `docs/architecture/DIAGRAMS.md`.
+
 ### Fixed — trust quick-wins + doc/architecture recovery (v1.0 program · PR 0)
 
 First of the 6 sequenced v1.0 PRs (`docs/TODO_june6.md`). Stops "fake sources" on

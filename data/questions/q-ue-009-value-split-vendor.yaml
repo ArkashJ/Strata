@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-UE-009
+prompt: "What value-split-to-vendor does this productivity-uplift play apply, and is it cited?"
+category: unit_economics
+lenses: [productivity_uplift]
+applies_when: { lens_in: [productivity_uplift], requires_role: [value_split_to_vendor] }
+answer: { strategy: primitive_role, roles: [value_split_to_vendor], aggregation: value }
+narrative_template: "The vendor captures {value} of the productivity value created ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced value_split_to_vendor primitive bound — the vendor-vs-customer split is unstated, so it is excluded by design (no scalar defaults, Q15)."
+resource_target: "bls:oews_series"
+schema_version: 1

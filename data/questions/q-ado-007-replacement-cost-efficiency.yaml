@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-ADO-007
+prompt: "For this cost-efficiency play, what replacement rate of the human persona does the data support?"
+category: adoption
+lenses: [cost_efficiency]
+applies_when: { lens_in: [cost_efficiency], requires_role: [replacement_rate] }
+answer: { strategy: primitive_role, roles: [replacement_rate], aggregation: value }
+narrative_template: "The sourced replacement rate of the persona is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced replacement_rate primitive is bound on this cost-efficiency concept — the share of persona work the product actually displaces is unsourced; do not assume full automation."
+resource_target: "bls:displacement-by-occupation"
+schema_version: 1

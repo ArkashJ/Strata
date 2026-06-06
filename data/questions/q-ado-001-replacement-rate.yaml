@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-ADO-001
+prompt: "What replacement/displacement rate against incumbents does the sourced data support?"
+category: adoption
+lenses: []
+applies_when: { requires_role: [replacement_rate] }
+answer: { strategy: primitive_role, roles: [replacement_rate], aggregation: value }
+narrative_template: "The sourced replacement/displacement rate is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced replacement_rate primitive is bound — the displacement of the incumbent workflow is unsourced for this concept; source the achievable rate rather than assuming full replacement."
+resource_target: "bls:displacement-by-occupation"
+schema_version: 1

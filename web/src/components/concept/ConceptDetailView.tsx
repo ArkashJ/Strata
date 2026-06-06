@@ -112,6 +112,13 @@ export function ConceptDetailView({ slug }: { slug: string }) {
             <Button className="w-full justify-center">Build a TAM</Button>
           </Link>
 
+          <Link
+            href={`/c/${c.slug}/questions`}
+            className="block text-center text-[13px] text-[var(--fg-3)] underline decoration-dotted underline-offset-2 transition-colors hover:text-[var(--accent)]"
+          >
+            Question report →
+          </Link>
+
           <Button
             variant="ghost"
             className="w-full justify-center"

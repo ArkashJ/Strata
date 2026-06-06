@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-RISK-011
+prompt: "Is the consolidation-rate input sourced or modeled, and how exposed is the bundle TAM to it?"
+category: risks
+lenses: [bundle_consolidation]
+applies_when: { lens_in: [bundle_consolidation], requires_role: [consolidation_rate] }
+answer: { strategy: primitive_role, roles: [consolidation_rate], aggregation: value }
+narrative_template: "The consolidation rate is {value} ({source_name}, {source_tier}, {as_of}). A bundle-consolidation TAM hinges on how much displaced spend actually consolidates, so a modeled rate is the dominant risk — corroborate it first. Snapshot {snapshot}."
+gap_text: "No consolidation-rate primitive bound for this bundle_consolidation concept — without it the share of displaced spend that consolidates is unsourced and the TAM is exposed."
+resource_target: null
+schema_version: 1

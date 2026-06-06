@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-ADO-006
+prompt: "Does adoption expand the pie (new spend) or reallocate spend off incumbents?"
+category: adoption
+lenses: [bundle_consolidation]
+applies_when: { lens_in: [bundle_consolidation], requires_role: [consolidation_rate] }
+answer: { strategy: primitive_role, roles: [consolidation_rate], aggregation: value }
+narrative_template: "The sourced consolidation rate is {value} ({source_name}, {source_tier}, {as_of}) — adoption here reallocates that share of existing tool spend rather than creating it. Snapshot {snapshot}."
+gap_text: "No sourced consolidation_rate primitive is bound — whether adoption is new spend or displaced spend is unsourced for this concept."
+resource_target: null
+schema_version: 1

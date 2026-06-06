@@ -1,0 +1,21 @@
+kind: analysis_question
+question_id: Q-REG-004
+prompt: "Under the current regulatory scope, what share of the persona pool is actually addressable?"
+category: regulation
+lenses: [cost_efficiency]
+applies_when:
+  lens_in: [cost_efficiency]
+  requires_role: [addressable_share]
+answer:
+  strategy: primitive_role
+  roles: [addressable_share]
+  aggregation: value
+narrative_template: >-
+  The regulator-bounded addressable share is {value} ({source_name},
+  {source_tier}, {as_of}). Snapshot {snapshot}.
+gap_text: >-
+  No sourced addressable_share primitive is bound for this cost_efficiency
+  market. A regulated scope (clearance, license) typically narrows the pool —
+  source the in-scope share rather than assuming 100%.
+resource_target: "census:in-scope-share-by-naics"
+schema_version: 1

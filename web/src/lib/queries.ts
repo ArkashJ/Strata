@@ -5,17 +5,20 @@ import type { SensitivityResponse } from "@/components/charts/TornadoChart";
 import { api } from "./api-client";
 import {
   type AuditEvent,
+  type ConceptQuestionReport,
   type ConceptSummary,
   type Connector,
   type FrameworkSummary,
   type PortfolioResponse,
   type PrimitiveSummary,
+  type QuestionSummary,
   type RecomputeRequest,
   type SignalSummary,
   type TAMOutput,
   type TamTrajectory,
   auditEventSchema,
   conceptDetailSchema,
+  conceptQuestionReportSchema,
   conceptSummarySchema,
   connectorSchema,
   frameworkDetailSchema,
@@ -23,6 +26,7 @@ import {
   portfolioResponseSchema,
   primitiveDetailSchema,
   primitiveSummarySchema,
+  questionSummarySchema,
   signalSummarySchema,
   tamOutputSchema,
   tamTrajectorySchema,
@@ -210,6 +214,28 @@ export const tamQuery = (stateHash: string) =>
     },
     enabled: !!stateHash,
     staleTime: Number.POSITIVE_INFINITY,
+  });
+
+// Question-driven market report (PR4). The catalog of analysis questions, and
+// the assembled report for one concept — both validated through the schemas
+// exactly like conceptQuery / tamQuery. Every figure in the report response is
+// registry-sourced or TAM-field-synthesised; the UI never fabricates a number.
+export const questionsQuery = queryOptions({
+  queryKey: ["questions"],
+  queryFn: async (): Promise<QuestionSummary[]> => {
+    const data = await api("/report");
+    return validated(z.array(questionSummarySchema), data);
+  },
+  staleTime: 5 * 60_000,
+});
+
+export const questionReportQuery = (conceptSlug: string) =>
+  queryOptions({
+    queryKey: ["question-report", conceptSlug],
+    queryFn: async (): Promise<ConceptQuestionReport> =>
+      validated(conceptQuestionReportSchema, await api(`/report/${conceptSlug}`)),
+    enabled: !!conceptSlug,
+    staleTime: 5 * 60_000,
   });
 
 // Paginated audit feed (newest-first) for the dashboard. The backend already

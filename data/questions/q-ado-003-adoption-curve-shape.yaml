@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-ADO-003
+prompt: "What adoption-curve shape (S-curve params) does the bank support, if any is sourced?"
+category: adoption
+lenses: [latent_demand]
+applies_when: { lens_in: [latent_demand], requires_role: [adoption_rate_curve] }
+answer: { strategy: primitive_role, roles: [adoption_rate_curve], aggregation: value }
+narrative_template: "The bound adoption-rate-curve input reads {value} ({source_name}, {source_tier}, {as_of}); the curve shape is whatever that sourced input states, never an assumed S-curve. Snapshot {snapshot}."
+gap_text: "No sourced adoption_rate_curve primitive is bound — curve shape and timing are unknown. A modeled curve would need an explicit range and a 12-month expiry, never a bare projection (Q20)."
+resource_target: "worldbank:adoption_curve"
+schema_version: 1

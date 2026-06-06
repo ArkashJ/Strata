@@ -24,6 +24,7 @@ from strata.api.routes import (
     integrations,
     portfolio,
     primitives,
+    report,
     resolve,
     signals,
     usage,
@@ -42,6 +43,10 @@ OPENAPI_TAGS: list[dict[str, str]] = [
     {
         "name": "concepts",
         "description": "Curated market concepts and their competing measurements.",
+    },
+    {
+        "name": "report",
+        "description": "Question-driven market reports — sourced or TAM-derived answers to curated analysis questions, never LLM-authored.",
     },
     {
         "name": "primitives",
@@ -191,6 +196,7 @@ def create_app() -> FastAPI:
 
     app.include_router(healthz.router)
     app.include_router(concepts.router)
+    app.include_router(report.router)
     app.include_router(primitives.router)
     app.include_router(signals.router)
     app.include_router(frameworks.router)

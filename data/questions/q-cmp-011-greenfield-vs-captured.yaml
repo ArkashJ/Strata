@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-CMP-011
+prompt: "What fraction of the contestable throughput is the model claiming vs leaving to incumbents?"
+category: competition_share
+lenses: [platform_throughput]
+applies_when: { lens_in: [platform_throughput], requires_role: [market_share_assumption, gmv_or_volume] }
+answer: { strategy: primitive_role, roles: [market_share_assumption, gmv_or_volume], aggregation: list }
+narrative_template: "Across {count} sourced inputs the model claims a share of the throughput base ({source_name}, {source_tier}, {as_of}); the remainder is conceded to incumbents. Snapshot {snapshot}."
+gap_text: "The throughput base and/or the share assumption is unsourced, so the captured-vs-incumbent split can't be drawn without inventing one side."
+resource_target: "edgar:company_facts"
+schema_version: 1

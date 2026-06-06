@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-015
+prompt: "How many personas does this productivity-uplift play serve?"
+category: market_size
+lenses: [productivity_uplift]
+applies_when: { lens_in: [productivity_uplift], requires_role: [persona_count] }
+answer: { strategy: primitive_role, roles: [persona_count], aggregation: value }
+narrative_template: "The persona count is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced persona-count primitive bound — needs a BLS/Census headcount ingest."
+resource_target: bls:occupational_employment
+schema_version: 1

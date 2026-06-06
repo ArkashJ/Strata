@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-UE-007
+prompt: "What spend-per-tool does this bundle-consolidation play's unit economics rest on?"
+category: unit_economics
+lenses: [bundle_consolidation]
+applies_when: { lens_in: [bundle_consolidation], requires_role: [spend_per_tool] }
+answer: { strategy: primitive_role, roles: [spend_per_tool], aggregation: value }
+narrative_template: "The spend-per-tool is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced spend_per_tool primitive bound — the per-tool spend the consolidation displaces is unsourced for this concept."
+resource_target: null
+schema_version: 1

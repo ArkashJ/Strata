@@ -1,0 +1,16 @@
+kind: analysis_question
+question_id: Q-GR-005
+prompt: "What adoption-curve growth does the latent-demand input support, and is the curve itself sourced?"
+category: growth_rate
+lenses: [latent_demand]
+applies_when:
+  lens_in: [latent_demand]
+  requires_role: [adoption_rate_curve]
+answer:
+  strategy: primitive_role
+  roles: [adoption_rate_curve]
+  aggregation: value
+narrative_template: "The bound adoption-rate-curve input reads {value} ({source_name}, {source_tier}, {as_of}); growth over time is whatever that sourced curve states, never an assumed S-curve. Snapshot {snapshot}."
+gap_text: "No sourced adoption-rate-curve primitive bound on this latent-demand concept, so curve shape and growth are unknown. A modeled curve would need a range and an expiry, never a bare projection."
+resource_target: "worldbank:adoption_curve"
+schema_version: 1

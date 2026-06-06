@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-003
+prompt: "What share of the segment is capturable given the sourced capture rate?"
+category: segmentation
+lenses: [revenue_generation]
+applies_when: { lens_in: [revenue_generation], requires_role: [capture_rate] }
+answer: { strategy: primitive_role, roles: [capture_rate], aggregation: value }
+narrative_template: "The sourced capture rate is {value} ({source_name}, {source_tier}, {as_of}), bounding the share of the segment realistically winnable. Snapshot {snapshot}."
+gap_text: "No sourced capture-rate primitive bound for this revenue-generation framework variant — capturable share cannot be claimed without it."
+resource_target: "edgar:segment_revenue_share"
+schema_version: 1

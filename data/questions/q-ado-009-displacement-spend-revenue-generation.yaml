@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-ADO-009
+prompt: "For this revenue-generation play, what share of segment spend is the product positioned to capture as it is adopted?"
+category: adoption
+lenses: [revenue_generation]
+applies_when: { lens_in: [revenue_generation], requires_role: [capture_rate] }
+answer: { strategy: primitive_role, roles: [capture_rate], aggregation: value }
+narrative_template: "The sourced capture rate as adoption ramps is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced capture_rate primitive is bound on this revenue-generation concept — the share of segment spend won as the product is adopted is unsourced."
+resource_target: null
+schema_version: 1

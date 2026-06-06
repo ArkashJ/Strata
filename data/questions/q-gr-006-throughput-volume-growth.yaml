@@ -1,0 +1,16 @@
+kind: analysis_question
+question_id: Q-GR-006
+prompt: "What volume/GMV level anchors throughput growth, and how recent is that figure?"
+category: growth_rate
+lenses: [platform_throughput]
+applies_when:
+  lens_in: [platform_throughput]
+  requires_role: [gmv_or_volume]
+answer:
+  strategy: primitive_role
+  roles: [gmv_or_volume]
+  aggregation: value
+narrative_template: "Throughput is anchored on a sourced volume/GMV of {value} ({source_name}, {source_tier}, {as_of}); growth is read against this dated level, not a fabricated run-rate. Snapshot {snapshot}."
+gap_text: "No sourced GMV-or-volume primitive bound on this platform-throughput concept, so there is no anchor for a growth read. Needs a regulator or first-party volume ingest."
+resource_target: "fred:volume_series"
+schema_version: 1

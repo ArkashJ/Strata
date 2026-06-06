@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-ADO-010
+prompt: "Does the adoption math lean on MODELED inputs rather than sourced ones?"
+category: adoption
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: uses_modeled_inputs }
+narrative_template: "Whether the computed TAM leans on modeled adoption inputs reads {value}; any modeled input carries a range and a banner downstream, never a bare number."
+gap_text: "No computed TAMOutput is available for this concept, so whether adoption rests on modeled inputs cannot be determined yet."
+resource_target: null
+schema_version: 1

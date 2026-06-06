@@ -1,0 +1,15 @@
+kind: analysis_question
+question_id: Q-RISK-005
+prompt: "Are any inputs stale — past their freshness SLA?"
+category: risks
+lenses: []
+# Cross-cutting: each measurement carries an as_of date and source_tier, so
+# staleness is read off the dated snapshots rather than asserted.
+applies_when: {}
+answer:
+  strategy: concept_measurement
+  aggregation: list
+narrative_template: "The concept's {count} measurements are listed with their {as_of} date and {source_tier}, so any input past its freshness window is visible by inspection rather than assumed current. A stale-but-best number is shown, never silently dropped."
+gap_text: "No sourced, dated measurement on this concept, so freshness can't be checked. Needs at least one snapshotted measurement with an as_of date."
+resource_target: "fred:series_observations"
+schema_version: 1

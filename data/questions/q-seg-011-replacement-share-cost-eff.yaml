@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-011
+prompt: "What share of the addressable segment is realistically displaceable at the sourced replacement rate?"
+category: segmentation
+lenses: [cost_efficiency]
+applies_when: { lens_in: [cost_efficiency], requires_role: [replacement_rate] }
+answer: { strategy: primitive_role, roles: [replacement_rate], aggregation: value }
+narrative_template: "The sourced replacement rate is {value} ({source_name}, {source_tier}, {as_of}), bounding the displaceable share of the addressable segment. Snapshot {snapshot}."
+gap_text: "No sourced replacement-rate primitive bound for this cost-efficiency variant — the displaceable share of the segment is unsourced."
+resource_target: "analyst:incumbent_replacement_rate"
+schema_version: 1

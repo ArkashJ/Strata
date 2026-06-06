@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-RISK-008
+prompt: "Is the take-rate assumption sourced or modeled, and how exposed is the throughput TAM to it?"
+category: risks
+lenses: [platform_throughput]
+applies_when: { lens_in: [platform_throughput], requires_role: [take_rate] }
+answer: { strategy: primitive_role, roles: [take_rate], aggregation: value }
+narrative_template: "The take-rate is {value} ({source_name}, {source_tier}, {as_of}). A throughput TAM is linear in take-rate, so a modeled (uncited) take-rate is the dominant risk — confirm it against a first-party schedule. Snapshot {snapshot}."
+gap_text: "No take-rate primitive bound for this platform_throughput concept — the throughput TAM cannot be defended without a sourced take-rate."
+resource_target: null
+schema_version: 1

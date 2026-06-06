@@ -10,8 +10,9 @@ from dotenv import load_dotenv
 from strata import __version__
 from strata.evaluator import EvaluatorError, size_concept
 from strata.loader import LoaderError
-from strata.models import TAMOutput, Unit
+from strata.models import QuestionCategory, ResolvedAnswer, TAMOutput, Unit
 from strata.registry import RegistryError
+from strata.report import assemble_report
 from strata.sizing.cli import portfolio_app
 from strata.validator import Severity, ValidationFinding
 from strata.validator import validate as run_validate
@@ -37,6 +38,10 @@ _DATA_DIR_ARG = typer.Argument(
 _CONCEPT_SLUG_ARG = typer.Argument(..., help="Concept slug to size.")
 _DATA_DIR_OPT = typer.Option(
     Path("data"), "--data-dir", "-d", help="Data directory (defaults to ./data)."
+)
+_REPORT_CONCEPT_ARG = typer.Argument(..., help="Concept slug to assemble the question report for.")
+_REPORT_CATEGORY_OPT = typer.Option(
+    None, "--category", "-c", help="Only show answers in this question category."
 )
 
 
@@ -136,6 +141,71 @@ def _unit_label(unit: Unit) -> str:
     if unit.denominator:
         label += f" {unit.denominator}"
     return label
+
+
+@app.command("report")
+def report_cmd(
+    concept_slug: str = _REPORT_CONCEPT_ARG,
+    data_dir: Path = _DATA_DIR_OPT,
+    category: QuestionCategory | None = _REPORT_CATEGORY_OPT,
+) -> None:
+    """Assemble the analysis-question report for a concept and print each answer.
+
+    Runs the three-layer validator first (refusing on errors, exactly like
+    ``size``), then resolves every applicable question purely from the registry
+    and the in-process evaluator. Gaps are shown honestly, never hidden.
+    """
+    try:
+        validation = run_validate(data_dir)
+    except LoaderError as exc:
+        typer.echo(f"ERROR loader: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    if validation.errors:
+        typer.echo(
+            f"ERROR data has {len(validation.errors)} validation error(s); "
+            f"run `strata validate {data_dir}` for details.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    if validation.registry is None:
+        typer.echo("ERROR validator did not return a registry", err=True)
+        raise typer.Exit(code=1)
+    registry = validation.registry
+    try:
+        report = assemble_report(registry, concept_slug)
+    except RegistryError as exc:
+        typer.echo(f"ERROR registry: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    answers = report.answers
+    if category is not None:
+        answers = tuple(a for a in answers if a.category == category)
+
+    typer.echo(f"Market report: {report.concept_name} [{report.concept_slug}]")
+    typer.echo(f"  {len(answers)} question(s)\n")
+    if not answers:
+        typer.echo("  (no applicable questions)")
+        return
+    for ans in answers:
+        _render_answer(ans)
+
+
+def _render_answer(ans: ResolvedAnswer) -> None:
+    if ans.status == "gap":
+        typer.echo(f"⊘ [{ans.category.value}] {ans.prompt}")
+        typer.echo(f"    {ans.narrative}")
+        if ans.resource_target:
+            typer.echo(f"    → fill via {ans.resource_target}")
+        typer.echo("")
+        return
+    typer.echo(f"✓ [{ans.category.value}] {ans.prompt}")
+    typer.echo(f"    {ans.narrative}")
+    if ans.synthesis:
+        typer.echo(f"    synthesis: {ans.synthesis}")
+    for prov in ans.provenance:
+        tier = f" ({prov.source_tier})" if prov.source_tier else ""
+        typer.echo(f"    ← {prov.primitive_slug}{tier} (snapshot {prov.snapshot_sha256[:12]}…)")
+    typer.echo("")
 
 
 # ── Database sub-commands ────────────────────────────────────────────

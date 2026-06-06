@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-007
+prompt: "What share of fragmented point-solution spend consolidates into this segment?"
+category: segmentation
+lenses: [bundle_consolidation]
+applies_when: { lens_in: [bundle_consolidation], requires_role: [consolidation_rate] }
+answer: { strategy: primitive_role, roles: [consolidation_rate], aggregation: value }
+narrative_template: "The sourced consolidation rate is {value} ({source_name}, {source_tier}, {as_of}), bounding the share of fragmented spend that migrates into the consolidated segment. Snapshot {snapshot}."
+gap_text: "No sourced consolidation-rate primitive bound for this bundle-consolidation variant — the migrating share is unsourced."
+resource_target: "analyst:consolidation_capture_rate"
+schema_version: 1

@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-005
+prompt: "How many target firms are in the addressed segment (the segment count the build rests on)?"
+category: segmentation
+lenses: [revenue_generation]
+applies_when: { lens_in: [revenue_generation], requires_role: [target_segment_count] }
+answer: { strategy: primitive_role, roles: [target_segment_count], aggregation: value }
+narrative_template: "The addressed segment holds {value} target firms ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced target-segment-count primitive bound — needs a Census firm-count-by-segment ingest before the segment can be sized."
+resource_target: "census:firm_count_by_segment"
+schema_version: 1

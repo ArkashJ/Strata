@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-UE-004
+prompt: "What cost-per-persona does this cost-efficiency play's unit economics rest on?"
+category: unit_economics
+lenses: [cost_efficiency]
+applies_when: { lens_in: [cost_efficiency], requires_role: [cost_per_persona] }
+answer: { strategy: primitive_role, roles: [cost_per_persona], aggregation: value }
+narrative_template: "The cost-per-persona is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced cost_per_persona primitive bound — the per-seat unit economics are unsourced for this concept."
+resource_target: "bls:oews_series"
+schema_version: 1

@@ -1,0 +1,14 @@
+kind: analysis_question
+question_id: Q-GR-003
+prompt: "Which input is growing fastest, and is its source recent enough to trust?"
+category: growth_rate
+# Cross-cutting: any concept with competing measurements can be inspected for the
+# most-recently-snapshotted (hence most credibly "fresh and moving") number.
+applies_when: {}
+answer:
+  strategy: concept_measurement
+  aggregation: list
+narrative_template: "The concept carries {count} competing measurements; each is shown with its {as_of} date and {source_tier} so the freshest, fastest-moving input is visible rather than asserted. The bank ranks by recency, never by an invented growth figure."
+gap_text: "Fewer than one sourced measurement on this concept, so there is nothing to rank by growth or recency. Needs at least one dated, snapshotted measurement first."
+resource_target: "bls:latest_series"
+schema_version: 1
