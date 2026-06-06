@@ -118,6 +118,40 @@ view over `audit_events` on `/agents`.
 
 ---
 
+## 3.5 Design methodology — three skills, composed (no overlap)
+
+Execution is governed by three design skills with a clean division of labour by
+surface, so they reinforce instead of fighting:
+
+```
+SURFACE                                     GOVERNED BY
+───────                                     ──────────
+app / product UI  (build · portfolio ·      impeccable  (product register — already this
+ explore · bank · agents · sources · the      repo's contract via PRODUCT.md / DESIGN.md;
+ sidebar shell, tables, forms, graph)         the taste-skill explicitly excludes dense
+                                              product UI, §13, so impeccable owns these)
+marketing / landing  (signed-out / ,        design-taste-frontend  (anti-slop discipline,
+ about, /sign-in /sign-up night-canvas)       hero/IA/motion for the persuasion surfaces)
+every existing surface, before any change   redesign-existing-projects  (Scan → Diagnose →
+                                              Fix: work within the stack, no rewrites,
+                                              fix-priority order, full state coverage)
+```
+
+Per-phase loop (every phase below runs this):
+
+```
+1. SCAN/DIAGNOSE  redesign-existing-projects audit of the surfaces in scope
+2. BUILD          impeccable (product) or design-taste-frontend (marketing),
+                  on the EXISTING stack (Next 16 · Tailwind v4 · Motion · Geist) — no rewrites
+3. VERIFY         /impeccable critique + audit on the changed surface; headed Playwright;
+                  tsc + biome clean; e2e updated
+```
+
+Hard constraints carried from all three: keep the existing stack (no framework
+swap), AA contrast, reduced-motion honoured, the source-tier color contract
+(Provenance-Color Rule) intact, no AI-slop tells, every interactive state
+(loading/empty/error) present.
+
 ## 4. Execution — phased, plan-first, each phase its own PR
 
 Frontend IA first (the urgent pain). Personal-bank/sync depth follows once the
