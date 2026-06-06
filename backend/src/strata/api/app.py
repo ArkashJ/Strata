@@ -144,6 +144,14 @@ def create_app() -> FastAPI:
     if settings.env == "prod" and cors_origins == ["*"]:
         log.warning("strata.cors.wildcard_blocked_in_prod")
         cors_origins = []
+        # An unconfigured prod deploy would otherwise fail closed and block the
+        # deployed frontend entirely (the "stratabank.vercel.app is empty" bug:
+        # the API has data but the browser can't read it without an allow-origin
+        # header). Default to the canonical Strata Vercel domains — the named
+        # production app and any ``strata-<hash>`` preview deploy. Still fully
+        # overridable via STRATA_CORS_ORIGIN / STRATA_CORS_ORIGIN_REGEX.
+        if not cors_origin_regex:
+            cors_origin_regex = r"https://(stratabank|strata-[a-z0-9-]+)\.vercel\.app"
     elif settings.env != "prod" and not cors_origin_regex:
         # Dev/test: `next dev` grabs whatever localhost port is free (3000,
         # 3001, 3008, ...), so an exact-origin list silently breaks the app
