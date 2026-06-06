@@ -15,6 +15,7 @@
 // than a fabricated breakdown.
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts";
 
+import { ChartFrame, sourceFootnote } from "@/components/charts/ChartFrame";
 import { SourcedNumber } from "@/components/ui/SourcedNumber";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import type { ChartConfig } from "@/components/ui/chart";
@@ -84,8 +85,30 @@ export function CompositionChart({ scenario }: { scenario: Scenario }) {
   const config: ChartConfig = { value: { label: "Input" } };
   const height = Math.min(Math.max(shown.length * 44, 120), 420);
 
+  // Honesty-fenced source footnote from the strongest-provenance sized input
+  // (composite/modeled inputs carry no tier → null → no footnote rendered).
+  const TIER_RANK: Record<string, number> = {
+    regulator: 6,
+    first_party: 5,
+    aggregator: 4,
+    analyst: 3,
+    prediction_market: 2,
+    community: 1,
+  };
+  const strongest = [...sized]
+    .filter((i) => i.source_tier)
+    .sort(
+      (a, b) => (TIER_RANK[b.source_tier ?? ""] ?? 0) - (TIER_RANK[a.source_tier ?? ""] ?? 0),
+    )[0];
+  const source = sourceFootnote(strongest ?? null);
+
   return (
-    <div>
+    <ChartFrame
+      title="How this scenario composes"
+      subtitle="Each bar is one input's own magnitude — the factors multiply, they don't sum"
+      axisCaption="Input magnitude, log scale · labels carry the real value + unit"
+      source={source}
+    >
       <ChartContainer config={config} className="aspect-auto w-full" style={{ height }}>
         <BarChart accessibilityLayer data={shown} layout="vertical" margin={{ left: 8, right: 80 }}>
           <CartesianGrid horizontal={false} stroke="var(--border-1)" strokeDasharray="3 3" />
@@ -151,6 +174,6 @@ export function CompositionChart({ scenario }: { scenario: Scenario }) {
           {formatCompact(scenario.value, scenario.unit)}
         </span>
       </div>
-    </div>
+    </ChartFrame>
   );
 }

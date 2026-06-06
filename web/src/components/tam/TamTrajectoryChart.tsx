@@ -22,6 +22,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { ChartFrame } from "@/components/charts/ChartFrame";
 import { formatCompact } from "@/lib/format";
 import type { TamTrajectory, TrajectoryPoint, Unit } from "@/lib/schemas";
 import { trajectoryDelta } from "@/lib/tam";
@@ -97,48 +98,57 @@ export function TamTrajectoryChart({ trajectory }: Props) {
         {delta ? <DeltaCallout delta={delta} /> : null}
       </div>
 
-      <ResponsiveContainer width="100%" height={260}>
-        <ComposedChart data={data} margin={{ top: 12, right: 24, bottom: 8, left: 8 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
-          <XAxis
-            dataKey="as_of"
-            tick={{ fontSize: 11, fill: "var(--fg-3)" }}
-            axisLine={{ stroke: "var(--border-1)" }}
-            tickLine={false}
-          />
-          <YAxis
-            tickFormatter={(v: number) => formatCompact(v, unit)}
-            tick={{ fontSize: 11, fill: "var(--fg-3)" }}
-            axisLine={false}
-            tickLine={false}
-            width={72}
-          />
-          {/* Low–high spread, drawn first so the mid line and dots sit on top.
-					    `band` is a [low, high] tuple — Recharts renders that as a range area. */}
-          <Area
-            type="monotone"
-            dataKey="band"
-            stroke="var(--border-2)"
-            strokeWidth={1}
-            fill="var(--bg-2)"
-            fillOpacity={0.7}
-            isAnimationActive
-            animationDuration={600}
-            activeDot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="mid"
-            stroke="var(--accent)"
-            strokeWidth={2}
-            isAnimationActive
-            animationDuration={600}
-            dot={<TrajectoryDot />}
-            activeDot={{ r: 5, fill: "var(--accent)", stroke: "var(--bg-1)" }}
-          />
-          <Tooltip content={<TrajectoryTooltip unit={unit} />} />
-        </ComposedChart>
-      </ResponsiveContainer>
+      <ChartFrame
+        title="TAM trajectory"
+        subtitle="Mid line is the triangulated estimate; the band is the low–high method spread"
+        axisCaption="USD nominal over source as-of dates"
+      >
+        {({ reduceMotion }) => (
+          <ResponsiveContainer width="100%" height={260}>
+            <ComposedChart data={data} margin={{ top: 12, right: 24, bottom: 8, left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-1)" vertical={false} />
+              <XAxis
+                dataKey="as_of"
+                tick={{ fontSize: 11, fill: "var(--fg-3)" }}
+                axisLine={{ stroke: "var(--border-1)" }}
+                tickLine={false}
+              />
+              <YAxis
+                tickFormatter={(v: number) => formatCompact(v, unit)}
+                tick={{ fontSize: 11, fill: "var(--fg-3)" }}
+                axisLine={false}
+                tickLine={false}
+                width={72}
+              />
+              {/* Low–high spread, drawn first so the mid line and dots sit on top.
+                  `band` is a [low, high] tuple — Recharts renders that as a range area.
+                  Animation is gated on prefers-reduced-motion (passed by ChartFrame). */}
+              <Area
+                type="monotone"
+                dataKey="band"
+                stroke="var(--border-2)"
+                strokeWidth={1}
+                fill="var(--bg-2)"
+                fillOpacity={0.7}
+                isAnimationActive={!reduceMotion}
+                animationDuration={600}
+                activeDot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="mid"
+                stroke="var(--accent)"
+                strokeWidth={2}
+                isAnimationActive={!reduceMotion}
+                animationDuration={600}
+                dot={<TrajectoryDot />}
+                activeDot={{ r: 5, fill: "var(--accent)", stroke: "var(--bg-1)" }}
+              />
+              <Tooltip content={<TrajectoryTooltip unit={unit} />} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        )}
+      </ChartFrame>
     </div>
   );
 }

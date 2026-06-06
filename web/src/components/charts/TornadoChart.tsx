@@ -1,5 +1,6 @@
 "use client";
 
+import { ChartFrame } from "@/components/charts/ChartFrame";
 import type { ChartConfig } from "@/components/ui/chart";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { formatCompact } from "@/lib/format";
@@ -9,7 +10,7 @@ import { formatCompact } from "@/lib/format";
 //
 // The data prep (`toTornadoData`) is a pure function so the sort contract is
 // unit-testable without rendering recharts.
-import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, XAxis, YAxis } from "recharts";
 
 export interface SensitivityRow {
   primitive_slug: string;
@@ -81,12 +82,32 @@ export function TornadoChart({ data }: { data: SensitivityResponse }) {
   const maxImpact = Math.max(...rows.map((r) => Math.abs(r.impact)), 1);
   const barOpacity = (impact: number) => 0.45 + 0.55 * (Math.abs(impact) / maxImpact);
 
+  // "Defend first" callout — the base value of the most load-bearing assumption
+  // (rows[0], already sorted by |impact| desc). A vertical baseline anchors the
+  // eye on the figure whose accuracy moves the TAM the most.
+  const defendFirst = rows[0].base;
+
   return (
-    <div>
+    <ChartFrame
+      title="Sensitivity · which assumption to defend first"
+      subtitle="Each bar is the TAM swing when that one input moves; longest = most load-bearing"
+      axisCaption={`TAM swing ${pctLabel} · USD nominal`}
+    >
       <ChartContainer config={config} className="aspect-auto w-full" style={{ height }}>
         <BarChart accessibilityLayer data={rows} layout="vertical" margin={{ left: 8, right: 64 }}>
           <CartesianGrid horizontal={false} stroke="var(--border-1)" strokeDasharray="3 3" />
           <XAxis type="number" dataKey="hi" hide domain={["dataMin", "dataMax"]} />
+          <ReferenceLine
+            x={defendFirst}
+            stroke="var(--fg-3)"
+            strokeDasharray="4 3"
+            label={{
+              value: "defend first",
+              position: "top",
+              fontSize: 10,
+              fill: "var(--fg-3)",
+            }}
+          />
           <YAxis
             type="category"
             dataKey="label"
@@ -128,6 +149,6 @@ export function TornadoChart({ data }: { data: SensitivityResponse }) {
       <p className="mt-2 text-[12px] text-[var(--fg-3)]">
         Each bar is the TAM swing when that input moves {pctLabel} · sorted by impact.
       </p>
-    </div>
+    </ChartFrame>
   );
 }
