@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — frontend navigation consolidated (PR #85)
+- The left navigation went from 16 flat items to 8, grouped into four sections
+  so the core path (size a market, get a defensible number) stops drowning. The
+  groups map to a simple idea: your work, your data, the shared bank, and where
+  data comes from.
+
+  ```
+  WORK         Home · Build · Portfolio
+  MY DATA      My Bank · Agents
+  STRATA BANK  Explore
+  SOURCES      Connectors · Integrations
+  ```
+
+- **Explore** is one place to browse the shared Strata bank (concepts,
+  primitives, frameworks, signals, the pyramid, and TAMs) as tabs. The old
+  separate pages still work — they forward to the new tabs.
+- **My Bank** replaces the old Dashboard: your saved builds and favorites, plus
+  a "my primitives" table — the private side of the two-tier model (your own
+  data vs the shared bank). The old Dashboard link forwards here.
+- **Build** now hosts the graph composer as a mode of the same page instead of a
+  separate "Build a graph" route.
+- **Agents** now shows an activity log of agent/CLI calls.
+- Guides and Contribute moved to the footer; an unused data page was removed.
+
 ### Added — contribution flow (PR B, Phase 5)
 - **`/contribute`** page (sidebar link) — re-adds the contribution surface (removed for
   the v0.5 expert layer) on top of the existing `POST /contribute` route: a form submits a
