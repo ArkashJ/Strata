@@ -1,20 +1,27 @@
-/**
- * My Bank — the personal tier. Stub so the sidebar link resolves; the real
- * surface (synced primitives, saved builds/graphs/TAMs/macros) lands later.
- */
+"use client";
+
+// My Bank — the user's personal data tier.
+//
+// Rendered client-only for the same reason as /dashboard: localStorage build
+// history + Zustand favorites are browser-only, and SSR-ing them causes
+// hydration mismatches. Next 16 forbids ssr:false dynamic() in Server
+// Components, so this page is a Client Component.
+//
+// Three panels, in reading order:
+//   1. My primitives  — private table synced via CLI/MCP (myPrimitivesQuery)
+//   2. Saved builds   — favorites + recent build history (localStorage)
+//   3. Activity       — audit feed (auditQuery from queries-personal, soft)
+import dynamic from "next/dynamic";
+
+const BankView = dynamic(() => import("./BankView").then((m) => m.BankView), {
+  ssr: false,
+  loading: () => (
+    <main className="flex-1 flex items-center justify-center text-[13px] text-[var(--fg-3)]">
+      Loading…
+    </main>
+  ),
+});
 
 export default function BankPage() {
-  return (
-    <main className="flex flex-1 flex-col">
-      <header className="px-8 pt-7 pb-6 border-b border-[var(--border-1)]">
-        <h1 className="display text-[26px] leading-tight text-[var(--fg-1)] text-balance">
-          My Bank
-        </h1>
-        <p className="mt-1.5 max-w-[68ch] text-[14px] text-[var(--fg-2)]">
-          Your private primitives, builds, graphs, TAMs, and macros — synced via the CLI/MCP.
-        </p>
-      </header>
-      {/* TODO(bank-agent): real content */}
-    </main>
-  );
+  return <BankView />;
 }
