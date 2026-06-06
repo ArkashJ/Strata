@@ -10,11 +10,18 @@
 // as code + label chips, seeded from the concept. `product` is display-only (the
 // guard emits no PRODUCT warning yet) so it is not collected here.
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { codedTagLabel } from "@/lib/format";
 import { type CodedTag, emptyMarketScope, type FirmSizeBand, type MarketScope } from "@/lib/schemas";
+import {
+  ISO_SUGGESTIONS,
+  labelForCode,
+  suggestionsFor,
+  validateCode,
+  validateIso,
+} from "@/lib/taxonomy";
 
 // Geo defaults to US (design): a fresh, geo-less concept still pins a concrete
 // market. Existing geo on the concept is honoured as-is.
@@ -276,11 +283,22 @@ function CodedTagField({
 }) {
   const [code, setCode] = useState("");
   const [label, setLabel] = useState("");
+  const listId = useId();
+  const suggestions = suggestionsFor(system);
+  const codeError = validateCode(system, code);
+
+  // Picking a known code from the typeahead auto-fills its label, so a user can
+  // recognise "Software Developers" instead of recalling "15-1252".
+  const onCodeChange = (next: string) => {
+    setCode(next);
+    const known = labelForCode(system, next);
+    if (known && !label.trim()) setLabel(known);
+  };
 
   const add = () => {
     const c = code.trim();
     const l = label.trim();
-    if (!c || !l) return;
+    if (!c || !l || codeError) return;
     if (tags.some((t) => t.code === c)) return;
     onChange([...tags, { system, code: c, label: l }]);
     setCode("");
@@ -303,23 +321,46 @@ function CodedTagField({
         ) : null}
         <div className="flex flex-wrap items-center gap-2">
           <input
-            className={`${inputClass} w-24`}
+            className={`${inputClass} w-28 ${codeError ? "border-[var(--danger)]" : ""}`}
             placeholder={`${system} code`}
+            list={listId}
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            aria-invalid={codeError ? true : undefined}
+            aria-label={`${system} code`}
+            onChange={(e) => onCodeChange(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && add()}
           />
+          <datalist id={listId}>
+            {suggestions.map((s) => (
+              <option key={s.code} value={s.code} label={`${s.code} — ${s.label}`} />
+            ))}
+          </datalist>
           <input
             className={`${inputClass} min-w-[12rem] flex-1`}
             placeholder="Label"
+            aria-label={`${title} label`}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && add()}
           />
-          <Button variant="ghost" sm onClick={add} disabled={!code.trim() || !label.trim()}>
+          <Button
+            variant="ghost"
+            sm
+            onClick={add}
+            disabled={!code.trim() || !label.trim() || codeError !== null}
+          >
             Add
           </Button>
         </div>
+        {codeError ? (
+          <span className="text-[12px] text-[var(--danger-ink)]" role="alert">
+            {codeError}
+          </span>
+        ) : (
+          <span className="text-[11px] text-[var(--fg-3)]">
+            Start typing to search common codes, or enter your own.
+          </span>
+        )}
       </div>
     </Field>
   );
@@ -381,28 +422,45 @@ function GeoRow({
   onChange: (codes: string[]) => void;
 }) {
   const [draft, setDraft] = useState("");
+  const listId = useId();
+  const isoError = validateIso(draft);
   const add = () => {
     const c = draft.trim().toUpperCase();
-    if (!c || codes.includes(c)) return;
+    if (!c || isoError || codes.includes(c)) return;
     onChange([...codes, c]);
     setDraft("");
   };
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="w-16 shrink-0 text-[12px] text-[var(--fg-3)]">{label}</span>
-      {codes.map((c) => (
-        <Chip key={c} label={c} onRemove={() => onChange(codes.filter((x) => x !== c))} />
-      ))}
-      <input
-        className={`${inputClass} w-20`}
-        placeholder="ISO"
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && add()}
-      />
-      <Button variant="ghost" sm onClick={add} disabled={!draft.trim()}>
-        Add
-      </Button>
+    <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="w-16 shrink-0 text-[12px] text-[var(--fg-3)]">{label}</span>
+        {codes.map((c) => (
+          <Chip key={c} label={c} onRemove={() => onChange(codes.filter((x) => x !== c))} />
+        ))}
+        <input
+          className={`${inputClass} w-28 ${isoError ? "border-[var(--danger)]" : ""}`}
+          placeholder="ISO"
+          list={listId}
+          value={draft}
+          aria-invalid={isoError ? true : undefined}
+          aria-label={`${label} geography (ISO code)`}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+        />
+        <datalist id={listId}>
+          {ISO_SUGGESTIONS.map((s) => (
+            <option key={s.code} value={s.code} label={`${s.code} — ${s.label}`} />
+          ))}
+        </datalist>
+        <Button variant="ghost" sm onClick={add} disabled={!draft.trim() || isoError !== null}>
+          Add
+        </Button>
+      </div>
+      {isoError ? (
+        <span className="pl-[4.5rem] text-[12px] text-[var(--danger-ink)]" role="alert">
+          {isoError}
+        </span>
+      ) : null}
     </div>
   );
 }

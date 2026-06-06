@@ -59,12 +59,14 @@ export function ConvergenceBanner({ convergence }: { convergence: Convergence })
           </div>
         </div>
 
-        {/* Headline: the agreement multiple, counted up. */}
-        <div className="mt-3 flex items-baseline gap-2">
-          <span className="display text-[40px] leading-none text-[var(--fg-1)]">
+        {/* Headline: the agreement multiple, counted up. The figure is the trust
+            signal, so it leads at display scale — and in mono (Numbers-Are-Mono),
+            never the serif: a ratio is data, not an editorial headline. */}
+        <div className="mt-3 flex items-baseline gap-2.5">
+          <span className="tam-num text-[52px] leading-none text-[var(--fg-1)]">
             <CountUp value={ratio} format={(n) => `${n.toFixed(1)}×`} durationMs={750} />
           </span>
-          <span className="text-[13px] text-[var(--fg-3)]">
+          <span className="text-[13px] leading-snug text-[var(--fg-3)]">
             spread between two independent methods
           </span>
         </div>
@@ -83,7 +85,7 @@ export function ConvergenceBanner({ convergence }: { convergence: Convergence })
             <Marker side="right" token={token} />
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-4">
+          <div className="mt-4 grid grid-cols-2 gap-4">
             {/* Role is the positional fact (lower vs higher estimate), always
                 true by construction; the actual method is named beneath it, so a
                 non-standard family pair is never mislabelled "bottoms-up". */}
@@ -155,7 +157,7 @@ function MethodPill({
           {position}
         </span>
       </div>
-      <div className="mt-0.5 text-[20px] font-medium tabular-nums text-[var(--fg-1)]">
+      <div className="tam-num mt-1 text-[22px] text-[var(--fg-1)]">
         <CountUp value={value} format={unitFmt} durationMs={750} />
       </div>
       <div className="text-[11px] text-[var(--fg-3)]">{family}</div>

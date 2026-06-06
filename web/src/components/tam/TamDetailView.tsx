@@ -201,7 +201,7 @@ function ScenarioTree({ tam }: { tam: TAMOutput }) {
 
   return (
     <div className="tam-scenario-tree">
-      <style>{`${ringSelector}{box-shadow:0 0 0 2px var(--accent-ring),var(--card-shadow);}`}</style>
+      <style>{`${ringSelector}{box-shadow:0 0 0 2px var(--accent),var(--card-shadow);background:color-mix(in srgb,var(--accent) 5%,var(--card-bg));}`}</style>
       <h2 className="display text-[24px] text-[var(--fg-1)]">Scenario tree</h2>
       <p className="mt-1 text-[13px] text-[var(--fg-3)]">
         {tam.scenarios.length} definitional {tam.scenarios.length === 1 ? "choice" : "choices"}

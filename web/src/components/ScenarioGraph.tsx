@@ -271,11 +271,25 @@ function PrimitiveCard({ data }: NodeProps<PrimitiveNodeData>) {
       <div className="mt-0.5 flex items-center justify-between gap-1">
         <span className="text-[10px] text-[var(--fg-3)]">{input.role.replace(/_/g, " ")}</span>
         {editable ? (
-          <span className="text-[10px] text-[var(--accent)]">{overridden ? "edited" : "edit"}</span>
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--accent-active)]">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M4 20h4L18 10l-4-4L4 16v4Z M14 6l4 4"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {overridden ? "edited" : "edit"}
+          </span>
         ) : null}
       </div>
     </>
   );
+
+  const editLabel = `Edit assumption: ${input.name ?? input.primitive_slug.replace(/-/g, " ")}${
+    overridden ? " (currently overridden)" : ""
+  }. Opens the override panel to swap the primitive or set a what-if value.`;
 
   const ring = overridden
     ? "ring-2 ring-[var(--accent)]"
@@ -297,6 +311,7 @@ function PrimitiveCard({ data }: NodeProps<PrimitiveNodeData>) {
           onClick={() => onEdit?.(input, frameworkSlug)}
           className={className}
           style={{ borderRadius: "var(--r-3)" }}
+          aria-label={editLabel}
           title="Edit this assumption — swap the primitive or set a what-if value"
         >
           {content}

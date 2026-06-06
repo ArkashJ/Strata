@@ -18,13 +18,15 @@ import { tierLabel } from "@/lib/format";
 import { connectorsQuery } from "@/lib/queries";
 import type { Connector } from "@/lib/schemas";
 
+// Provenance-Color Rule: a tier badge wears its own load-bearing tier hue, never
+// the brand indigo or a semantic colour. These are the contractual --tier-* tokens.
 const TIER_TOKEN: Record<string, string> = {
-  regulator: "var(--success)",
-  aggregator: "var(--accent)",
-  analyst: "var(--warning)",
-  "analyst-paraphrase": "var(--warning)",
-  prediction_market: "var(--warning)",
-  community: "var(--fg-3)",
+  regulator: "var(--tier-regulator)",
+  aggregator: "var(--tier-aggregator)",
+  analyst: "var(--tier-analyst)",
+  "analyst-paraphrase": "var(--tier-analyst)",
+  prediction_market: "var(--tier-prediction)",
+  community: "var(--tier-community)",
 };
 
 export default function ConnectorsPage() {
@@ -108,7 +110,7 @@ export default function ConnectorsPage() {
             </div>
 
             <SectionLabel className="mt-9">
-              Wired, not yet ingested · {wired.length} connectors
+              Ready to ingest · {wired.length} connectors
             </SectionLabel>
             <p className="mt-1 text-[12px] text-[var(--fg-3)]">
               Typed and ready; no primitives in the current bank yet. We never synthesize a sample —

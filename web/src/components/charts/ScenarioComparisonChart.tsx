@@ -15,14 +15,15 @@ import type { ChartConfig } from "@/components/ui/chart";
 import { formatCompact, lensLabel } from "@/lib/format";
 import type { Scenario, TAMOutput } from "@/lib/schemas";
 
-// Lens drives the bar colour — matches ScenarioBarChart / ResolveResultChart / chips.
+// Lens drives the bar colour — tokens (single source of truth in globals.css),
+// not inline hex, so a palette change propagates everywhere at once.
 const LENS_COLORS: Record<string, string> = {
-  cost_efficiency: "#5b5bd6",
-  revenue_generation: "#3fa66b",
-  latent_demand: "#c99846",
-  platform_throughput: "#2ba39a",
-  bundle_consolidation: "#d97849",
-  productivity_uplift: "#8b5cd6",
+  cost_efficiency: "var(--chart-lens-cost-efficiency)",
+  revenue_generation: "var(--chart-lens-revenue-generation)",
+  latent_demand: "var(--chart-lens-latent-demand)",
+  platform_throughput: "var(--chart-lens-platform-throughput)",
+  bundle_consolidation: "var(--chart-lens-bundle-consolidation)",
+  productivity_uplift: "var(--chart-lens-productivity-uplift)",
 };
 
 interface Datum {
@@ -83,7 +84,7 @@ export function ScenarioComparisonChart({ tam }: { tam: TAMOutput }) {
             width={160}
             tickLine={false}
             axisLine={false}
-            tick={{ fontSize: 11, fill: "var(--fg-3)" }}
+            tick={{ fontSize: 13, fill: "var(--fg-2)" }}
           />
           <ChartTooltip
             cursor={false}
@@ -112,17 +113,17 @@ export function ScenarioComparisonChart({ tam }: { tam: TAMOutput }) {
               dataKey="display"
               position="right"
               className="fill-[var(--fg-2)]"
-              fontSize={11}
+              fontSize={13}
             />
           </Bar>
         </BarChart>
       </ChartContainer>
       {scenarios.length === 1 ? (
-        <p className="mt-2 text-[11px] text-[var(--fg-3)]">
+        <p className="mt-2 text-[12px] text-[var(--fg-3)]">
           One method wired for this concept · the spread fills in as competing frameworks attach.
         </p>
       ) : (
-        <p className="mt-2 text-[11px] text-[var(--fg-3)]">
+        <p className="mt-2 text-[12px] text-[var(--fg-3)]">
           {scenarios.length} methods ·{" "}
           {formatCompact(Math.min(...scenarios.map((s) => s.value)), unit)} –{" "}
           {formatCompact(Math.max(...scenarios.map((s) => s.value)), unit)} spread

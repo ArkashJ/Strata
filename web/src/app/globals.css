@@ -18,7 +18,7 @@
   /* Ink */
   --fg-1: #0a0a0b;
   --fg-2: #52525b;
-  --fg-3: #7e7e86;
+  --fg-3: #6b6b73; /* AA: 5.06:1 on #FAFAFA (was #7e7e86 → 3.86, failed body) */
   --fg-4: #b4b4ba;
 
   /* Borders / dividers */
@@ -39,6 +39,38 @@
   --warning: #c99846;
   --danger: #e5484d;
   --info: #3b7bd9;
+
+  /* Soft semantic fills — tinted backgrounds for kind badges / status chips.
+   * Match the tier-tint convention (low-alpha wash of the semantic hue). */
+  --accent-soft: var(--accent-tint);
+  --ok-soft: rgba(63, 166, 107, 0.14);
+  --warn-soft: rgba(201, 152, 70, 0.14);
+  --danger-soft: rgba(229, 72, 77, 0.13);
+
+  /* Semantic "ink" — darkened hues for TEXT sitting on the *-soft tints above.
+   * The base --success/--warning are too light to read as text on their own
+   * wash (1.6–2.4:1). These pass AA on the soft fill (>=4.5:1). Light theme only;
+   * html.dark re-points them to the base hue (light text on dark tint reads). */
+  --success-ink: #157235;
+  --warning-ink: #7a5616;
+  --danger-ink: #b3262b;
+
+  /* Chart palette — single source of truth for recharts fills. These alias the
+   * existing tier/accent hues (no new colors); tokenizing them just gives one
+   * place to change a fill and keeps charts off inline hex. */
+  --chart-1: var(--accent);
+  --chart-2: var(--tier-regulator);
+  --chart-3: var(--tier-analyst);
+  --chart-4: var(--tier-aggregator);
+  --chart-5: var(--tier-prediction);
+  --chart-6: var(--tier-onchain);
+  --chart-lens-cost-efficiency: var(--chart-1);
+  --chart-lens-revenue-generation: var(--chart-2);
+  --chart-lens-latent-demand: var(--chart-3);
+  --chart-lens-platform-throughput: var(--chart-4);
+  --chart-lens-bundle-consolidation: var(--chart-5);
+  --chart-lens-productivity-uplift: var(--chart-6);
+  --chart-muted: var(--fg-4);
 
   /* Source-tier palette (load-bearing — see docs/03-data-model.md) */
   --tier-regulator: #3fa66b;
@@ -143,6 +175,17 @@ html.dark {
   --accent-tint: rgba(124, 124, 240, 0.18);
   --accent-ring: rgba(124, 124, 240, 0.45);
 
+  /* Soft semantic fills — a touch stronger so they read on the dark canvas. */
+  --accent-soft: var(--accent-tint);
+  --ok-soft: rgba(63, 166, 107, 0.2);
+  --warn-soft: rgba(201, 152, 70, 0.2);
+  --danger-soft: rgba(229, 72, 77, 0.2);
+
+  /* On dark tints the base (light) semantic hues already read as text. */
+  --success-ink: var(--success);
+  --warning-ink: var(--warning);
+  --danger-ink: var(--danger);
+
   /* Workflow-canvas + cards */
   --canvas-bg: #16171a;
   --canvas-line: #2a2b2f;
@@ -176,6 +219,15 @@ html.dark {
   --font-ui: var(--font-ui), -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-display: var(--font-display), Georgia, serif;
   --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {

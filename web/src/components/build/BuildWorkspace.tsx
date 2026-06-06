@@ -34,6 +34,7 @@ import { TamTrajectoryChart } from "@/components/tam/TamTrajectoryChart";
 import { Button } from "@/components/ui/Button";
 import { IndependenceDonut } from "@/components/ui/IndependenceDonut";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { Pulse } from "@/components/ui/motion";
 import { formatCompact, lensLabel, tierLabel } from "@/lib/format";
 import { trajectoryQuery } from "@/lib/queries";
 import type { InputUsed, Scenario, ScopeReport, TAMOutput, Unit } from "@/lib/schemas";
@@ -422,12 +423,25 @@ function HeadlineCard({
 						</span>
 					) : null}
 				</div>
-				<div
-					className="tam-num mt-1 text-[44px] leading-[1] text-[var(--fg-1)] transition-opacity"
-					style={{ opacity: recomputing ? 0.5 : 1 }}
-				>
-					{formatCompact(range.mid, mid.unit)}
-				</div>
+				{/* Pulse-ring the headline on every recompute (keyed by the evaluated
+				    hash) so an override's effect on the number is visible, not just
+				    the rail. Reduced-motion-gated inside Pulse. */}
+				<Pulse pulseKey={tam.state_hash} className="tam-num mt-1 inline-block">
+					<span
+						className="text-[44px] leading-[1] text-[var(--fg-1)] transition-opacity"
+						style={{ opacity: recomputing ? 0.5 : 1 }}
+					>
+						{formatCompact(range.mid, mid.unit)}
+					</span>
+				</Pulse>
+				{/* Screen-reader announcement: the visual recompute is opacity-only, so
+				    AT users get no signal the number changed. This polite live region
+				    speaks the recompute and the new value. */}
+				<span className="sr-only" aria-live="polite">
+					{recomputing
+						? "Recomputing market size"
+						: `Market size ${formatCompact(range.mid, mid.unit)}`}
+				</span>
 				{degenerate ? (
 					// No real spread — present a point estimate, never a fabricated range.
 					<div className="mt-2 text-[13px] text-[var(--fg-3)]">
@@ -534,8 +548,8 @@ function Rail({
 									role="switch"
 									aria-checked={on}
 									onClick={() => onToggleFramework(slug)}
-									className="canvas-card flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
-									style={{ borderRadius: "var(--r-2)", opacity: on ? 1 : 0.45 }}
+									className="canvas-card flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-opacity"
+									style={{ borderRadius: "var(--r-2)", opacity: on ? 1 : 0.55 }}
 								>
 									<span className="flex min-w-0 flex-col gap-0.5">
 										<span className="truncate text-[13px] text-[var(--fg-1)]">
@@ -547,7 +561,10 @@ function Rail({
 											</span>
 										) : null}
 									</span>
-									<span className="text-[12px] text-[var(--fg-3)]">
+									<span
+										className="text-[11px] font-medium uppercase tracking-[0.04em]"
+										style={{ color: on ? "var(--accent-active)" : "var(--fg-4)" }}
+									>
 										{on ? "on" : "off"}
 									</span>
 								</button>

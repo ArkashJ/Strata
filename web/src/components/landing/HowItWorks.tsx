@@ -34,13 +34,21 @@ export function HowItWorks() {
           How it works
         </h2>
       </Reveal>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* A numbered ledger sequence, not a feature-card grid: the step numbers
+          are a connected spine on a hairline rule (editorial, flat-by-default),
+          so the eye reads ask → compute → edit as one process, not three
+          isolated boxes. Stacks on mobile. */}
+      <div className="grid grid-cols-1 gap-8 border-t border-[var(--border-1)] pt-6 md:grid-cols-3 md:gap-6">
         {STEPS.map((s, i) => (
           <Reveal key={s.n} delay={i * 0.07}>
-            <div className="canvas-card h-full p-5">
-              <span className="tam-num text-[13px] text-[var(--accent)]">{s.n}</span>
-              <h3 className="mt-2 text-[15px] font-medium text-[var(--fg-1)]">{s.title}</h3>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fg-2)]">{s.body}</p>
+            <div className="flex flex-col">
+              <div className="flex items-baseline gap-2.5">
+                <span className="tam-num text-[24px] leading-none text-[var(--accent)]">{s.n}</span>
+                <h3 className="text-[15px] font-medium text-[var(--fg-1)]">{s.title}</h3>
+              </div>
+              <p className="mt-2.5 max-w-[34ch] text-[13px] leading-relaxed text-[var(--fg-2)]">
+                {s.body}
+              </p>
             </div>
           </Reveal>
         ))}

@@ -17,10 +17,12 @@ import { formatUSD } from "@/lib/format";
 import { portfolioQuery } from "@/lib/queries";
 import type { PortfolioCompany } from "@/lib/schemas";
 
-const STATUS_TOKEN: Record<string, string> = {
-  sized: "var(--success)",
-  unsized: "var(--fg-3)",
-  unsizable: "var(--warning)",
+// Status badge: AA-legible text "ink" on the soft tint (the bare semantic hues
+// read at only 1.6–2.4:1 on their own wash — see /impeccable audit).
+const STATUS_BADGE: Record<string, { text: string; bg: string }> = {
+  sized: { text: "var(--success-ink)", bg: "var(--ok-soft)" },
+  unsized: { text: "var(--fg-2)", bg: "var(--bg-3)" },
+  unsizable: { text: "var(--warning-ink)", bg: "var(--warn-soft)" },
 };
 
 export default function PortfolioPage() {
@@ -56,10 +58,10 @@ export default function PortfolioPage() {
             shared, sourced market concept; the TAM is the median of that market&apos;s satisfiable
             scenarios. Every figure is pre-computed offline and hash-pinned — this page never calls
             an LLM. Companies we cannot defensibly size are shown as{" "}
-            <span className="text-[var(--warning)]">unsizable</span>, with the reason: we refuse to
-            invent a number.
+            <span className="font-medium text-[var(--warning-ink)]">unsizable</span>, with the
+            reason: we refuse to invent a number.
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[11px] text-[var(--fg-3)]">
+          <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[11px] text-[var(--fg-2)]">
             {["company", "market concept", "sourced primitives", "framework", "TAM"].map(
               (step, i) => (
                 <span key={step} className="flex items-center gap-2">
@@ -86,18 +88,21 @@ export default function PortfolioPage() {
           <EmptyState title="No companies" description="The portfolio is empty." />
         ) : (
           <>
-            <div className="mb-4 flex flex-wrap gap-4 font-mono text-[11px] text-[var(--fg-3)]">
+            <div className="mb-4 flex flex-wrap gap-4 font-mono text-[11px] text-[var(--fg-2)]">
               <Stat label="total" value={counts.total ?? 0} />
-              <Stat label="sized" value={counts.sized ?? 0} token="var(--success)" />
-              <Stat label="unsizable" value={counts.unsizable ?? 0} token="var(--warning)" />
+              <Stat label="sized" value={counts.sized ?? 0} token="var(--success-ink)" />
+              <Stat label="unsizable" value={counts.unsizable ?? 0} token="var(--warning-ink)" />
             </div>
 
             <SectionLabel>Sized · {sized.length}</SectionLabel>
-            <div className="mt-3 overflow-hidden rounded-[var(--r-3)] border border-[var(--border-2)]">
+            <ul
+              aria-label="Sized companies"
+              className="mt-3 overflow-hidden rounded-[var(--r-3)] border border-[var(--border-2)]"
+            >
               {sized.map((c) => (
                 <CompanyRow key={c.domain || c.name} company={c} />
               ))}
-            </div>
+            </ul>
 
             {unsizable.length > 0 ? (
               <>
@@ -108,11 +113,14 @@ export default function PortfolioPage() {
                   We have no sourced framework for these markets yet, so we refuse to fabricate a
                   TAM. Each reason is a proven gap that drives which lens we build next.
                 </p>
-                <div className="mt-3 overflow-hidden rounded-[var(--r-3)] border border-[var(--border-2)]">
+                <ul
+                  aria-label="Unsizable companies"
+                  className="mt-3 overflow-hidden rounded-[var(--r-3)] border border-[var(--border-2)]"
+                >
                   {unsizable.map((c) => (
                     <CompanyRow key={c.domain || c.name} company={c} />
                   ))}
-                </div>
+                </ul>
               </>
             ) : null}
           </>
@@ -144,21 +152,22 @@ function SectionLabel({ children, className }: { children: React.ReactNode; clas
 }
 
 function CompanyRow({ company: c }: { company: PortfolioCompany }) {
-  const token = STATUS_TOKEN[c.status] ?? "var(--fg-3)";
+  const badge = STATUS_BADGE[c.status] ?? { text: "var(--fg-2)", bg: "var(--bg-3)" };
   const sized = c.status === "sized" && c.market_concept_slug;
+  // The market slug (sized) / reason (unsizable): shown in the side column on
+  // sm+; on mobile it reflows under the name so the row never *drops* it (the
+  // reason is the whole point of an unsizable row).
+  const aside = sized ? c.market_concept_slug : c.reason;
 
   const inner = (
-    <div className="flex items-center gap-4 border-b border-[var(--border-1)] bg-[var(--bg-1)] px-4 py-3 last:border-b-0 hover:bg-[var(--bg-2)]">
+    <div className="flex min-h-[52px] items-center gap-4 border-b border-[var(--border-1)] bg-[var(--bg-1)] px-4 py-3 last:border-b-0 hover:bg-[var(--bg-2)]">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate text-[14px] font-medium text-[var(--fg-1)]">{c.name}</span>
           {c.has_analyst_input ? (
             <span
               className="rounded-[var(--r-round)] px-1.5 py-0.5 font-mono text-[9px] uppercase"
-              style={{
-                color: "var(--warning)",
-                background: "color-mix(in srgb, var(--warning) 14%, transparent)",
-              }}
+              style={{ color: "var(--warning-ink)", background: "var(--warn-soft)" }}
               title="Contains unverified analyst inputs"
             >
               analyst
@@ -169,14 +178,24 @@ function CompanyRow({ company: c }: { company: PortfolioCompany }) {
           {c.domain}
           {c.vertical ? ` · ${c.vertical}` : ""}
         </div>
+        {/* Mobile fallback for the aside (sm:hidden so it never duplicates). */}
+        {aside ? (
+          <div
+            className={`mt-1 text-[11px] leading-snug sm:hidden ${
+              sized ? "font-mono text-[var(--accent-active)]" : "text-[var(--fg-2)]"
+            }`}
+          >
+            {aside}
+          </div>
+        ) : null}
       </div>
 
       {sized ? (
-        <div className="hidden font-mono text-[11px] text-[var(--accent)] sm:block">
+        <div className="hidden font-mono text-[11px] text-[var(--accent-active)] sm:block">
           {c.market_concept_slug}
         </div>
       ) : (
-        <div className="hidden max-w-[440px] text-[11px] leading-snug text-[var(--fg-3)] sm:block">
+        <div className="hidden max-w-[440px] text-[11px] leading-snug text-[var(--fg-2)] sm:block">
           {c.reason}
         </div>
       )}
@@ -189,10 +208,7 @@ function CompanyRow({ company: c }: { company: PortfolioCompany }) {
         ) : (
           <span
             className="rounded-[var(--r-round)] px-2 py-0.5 font-mono text-[10px] uppercase"
-            style={{
-              color: token,
-              background: "color-mix(in srgb, currentColor 14%, transparent)",
-            }}
+            style={{ color: badge.text, background: badge.bg }}
           >
             {c.status}
           </span>
@@ -203,11 +219,19 @@ function CompanyRow({ company: c }: { company: PortfolioCompany }) {
 
   // Sized rows link to the interactive build for their market (always renders
   // for a registry concept); unsizable rows are not links.
-  return sized ? (
-    <Link href={`/build/${c.market_concept_slug}`} className="block">
-      {inner}
-    </Link>
-  ) : (
-    inner
+  return (
+    <li>
+      {sized ? (
+        <Link
+          href={`/build/${c.market_concept_slug}`}
+          className="block"
+          aria-label={`${c.name} — open ${c.market_concept_slug} market build`}
+        >
+          {inner}
+        </Link>
+      ) : (
+        inner
+      )}
+    </li>
   );
 }

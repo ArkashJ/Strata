@@ -83,10 +83,23 @@ const KIND_LABEL: Record<ToolKind, string> = {
   live: "Live",
 };
 
+// Kind badge: the soft semantic fill + its AA-passing "ink" text token (the
+// base success/warning hues are too light to read as text on their own wash).
+// Read is the brand indigo; Write/Live use the semantic palette as a safety
+// signal — mutation vs an external live call — not decoration.
 const KIND_CLASS: Record<ToolKind, string> = {
-  read: "bg-[var(--accent-soft)] text-[var(--accent)]",
-  write: "bg-[var(--warn-soft,#3a2a12)] text-[var(--warn,#e0a44a)]",
-  live: "bg-[var(--ok-soft,#13301f)] text-[var(--ok,#5fbf85)]",
+  read: "bg-[var(--accent-soft)] text-[var(--accent-active)]",
+  write: "bg-[var(--warn-soft)] text-[var(--warning-ink)]",
+  live: "bg-[var(--ok-soft)] text-[var(--success-ink)]",
+};
+
+// Tools grouped by kind so the 12-tool catalog reads as three intents
+// (read the bank · write to your org · pull live) rather than one flat grid.
+const KIND_ORDER: ToolKind[] = ["read", "write", "live"];
+const KIND_HINT: Record<ToolKind, string> = {
+  read: "Query the sourced data bank — no side effects.",
+  write: "Persist to your org (portfolio links, sized companies).",
+  live: "Fetch a fresh number from a connector's live API.",
 };
 
 function CodeBlock({ children }: { children: string }) {
@@ -127,26 +140,35 @@ export default function AgentsPage() {
         </div>
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-6">
         <h2 className="display text-[20px] text-[var(--fg-1)]">Tools</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {TOOLS.map((t) => (
-            <div
-              key={t.name}
-              className="flex flex-col gap-2 rounded-[12px] border border-[var(--border-1)] bg-[var(--bg-1)] p-4"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <code className="text-[13px] text-[var(--fg-1)]">{t.name}</code>
+        {KIND_ORDER.map((kind) => {
+          const tools = TOOLS.filter((t) => t.kind === kind);
+          if (tools.length === 0) return null;
+          return (
+            <div key={kind} className="flex flex-col gap-3">
+              <div className="flex items-baseline gap-2.5">
                 <span
-                  className={`rounded-[6px] px-2 py-0.5 text-[10px] uppercase tracking-[0.06em] ${KIND_CLASS[t.kind]}`}
+                  className={`rounded-[6px] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] ${KIND_CLASS[kind]}`}
                 >
-                  {KIND_LABEL[t.kind]}
+                  {KIND_LABEL[kind]}
                 </span>
+                <span className="text-[12px] text-[var(--fg-3)]">{KIND_HINT[kind]}</span>
               </div>
-              <p className="text-[12.5px] text-[var(--fg-3)]">{t.blurb}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {tools.map((t) => (
+                  <div
+                    key={t.name}
+                    className="flex flex-col gap-1.5 rounded-[12px] border border-[var(--border-1)] bg-[var(--bg-1)] p-4"
+                  >
+                    <code className="text-[14px] text-[var(--fg-1)]">{t.name}</code>
+                    <p className="text-[12.5px] leading-relaxed text-[var(--fg-3)]">{t.blurb}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </section>
 
       <section className="flex flex-col gap-3">

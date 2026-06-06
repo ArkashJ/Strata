@@ -78,7 +78,7 @@ export function ScopeWarnings({ report }: { report: ScopeReport }) {
               {inp.warnings.map((w) => (
                 <div
                   key={`${inp.primitive_slug}-${w.dimension}`}
-                  className="flex items-start gap-2 text-[13px] text-[var(--fg-2)]"
+                  className="flex items-start gap-2 text-[13px] leading-relaxed text-[var(--fg-2)]"
                 >
                   <span
                     aria-hidden="true"
@@ -112,7 +112,7 @@ export function ScopeRailSummary({ report }: { report: ScopeReport }) {
       <span
         aria-hidden="true"
         className="size-2 shrink-0 rounded-full"
-        style={{ background: report.ok ? "var(--tier-regulator)" : "var(--warning)" }}
+        style={{ background: report.ok ? "var(--success)" : "var(--warning)" }}
       />
       <span className="text-[var(--fg-2)]">
         {report.ok
