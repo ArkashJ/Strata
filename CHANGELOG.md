@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed — report charts, multi-page PDF, dynamic TAM unblock
 
+- **The deployed site shows data again.** The live frontend
+  (`stratabank.vercel.app`) looked empty ("No concepts loaded yet") even though
+  the API had data: the production server wasn't allowing the website's address,
+  so the browser blocked every data request. Production now allows the Strata
+  website (and its preview links) by default, so the bank, concepts, and
+  featured TAMs load. Other sites are still blocked.
+
+  ```
+  browser (stratabank.vercel.app) ─▶ API  ─ before: no allow-origin → blocked → empty
+                                          └─ after:  allow-origin set → data loads
+  ```
 - **Size any market straight from /build.** Bare `/build` used to lock onto one
   default market ("Accrual") with no way to change it — so it looked like nothing
   worked. There's now a "Size a different market" box at the top of Build: type
