@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Literal, cast
@@ -89,7 +90,10 @@ class RunOptions:
     """Pipeline knobs. CLI flags + env vars surface through this struct."""
 
     allow_live: bool = True
-    allow_fallback: bool = True
+    # Phase 4 — the Exa/LLM fallback is fenced: default OFF on the committed
+    # surface, and even when a caller opts in (allow_fallback=True) Step 4 only
+    # fires when STRATA_ALLOW_EXA_FALLBACK=1 is also set (see exa_fallback_enabled).
+    allow_fallback: bool = False
     expansion_budget: int = 6
     primitive_only: bool = False
     model: str = "claude-sonnet-4-6"
@@ -122,6 +126,14 @@ def _summarize_primitives(registry: Registry) -> list[PrimitiveSummary]:
         )
         for p in registry.atomic.values()
     ]
+
+
+def exa_fallback_enabled() -> bool:
+    """Phase 4 fence — the Exa/LLM Step-4 fallback fires only when the operator
+    explicitly opts in with ``STRATA_ALLOW_EXA_FALLBACK=1`` (in addition to a
+    caller passing ``allow_fallback=True``). Without it the resolver returns an
+    honest 'no curated result' rather than a synthesized, non-citable number."""
+    return os.environ.get("STRATA_ALLOW_EXA_FALLBACK") == "1"
 
 
 def _emit(state: _RunState, event: PipelineEvent) -> None:
@@ -703,7 +715,7 @@ def run(
         if result is not None:
             return result
 
-    if options.allow_fallback:
+    if options.allow_fallback and exa_fallback_enabled():
         return _step4_fallback(state, query, options, parse_fn=parse_fn, search_fn=search_fn)
 
     return ResolverResult(

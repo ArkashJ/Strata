@@ -17,8 +17,23 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from ._common import Slug
 from .geo import Geo, GeoPerspective
 from .scope import MarketScope
-from .source import Source
+from .source import Source, SourceTier
 from .unit import Unit, UnitDimension
+
+
+class ProvenanceClass(StrEnum):
+    """Phase 4 — whether a committed number is a real sourced measurement or a
+    hand-seeded estimate. Derived from ``source.tier`` so the two can never
+    disagree (the soft tiers are modeled; everything else is sourced)."""
+
+    SOURCED = "sourced"
+    MODELED = "modeled"
+
+
+# The three soft tiers that are estimates, not sourced measurements (Q40).
+_MODELED_TIERS: frozenset[SourceTier] = frozenset(
+    {SourceTier.COMMUNITY_MODELED, SourceTier.ANALYST_PARAPHRASE, SourceTier.ANALYST}
+)
 
 
 class DistributionShape(StrEnum):
@@ -97,6 +112,32 @@ class AtomicPrimitive(BaseModel):
     # banner downstream. ``org_id`` is set only on private primitives.
     visibility: Literal["public", "private"] = "public"
     org_id: str | None = None
+
+    # Phase 4 — soft-data fence. ``provenance_class`` and ``needs_resourcing``
+    # are DERIVED from ``source.tier`` (see ``_derive_provenance``) so a hand-
+    # authored YAML can never label a modeled estimate as sourced. They are
+    # governance/display metadata — NOT part of the state hash. ``resource_target``
+    # is the optional re-sourcing candidate (``connector:method``); ``None`` = an
+    # honest gap with no public source (kept, flagged, never fabricated — Q20).
+    provenance_class: ProvenanceClass = ProvenanceClass.SOURCED
+    needs_resourcing: bool = False
+    resource_target: str | None = None
+
+    @model_validator(mode="after")
+    def _derive_provenance(self) -> Self:
+        expected = (
+            ProvenanceClass.MODELED
+            if self.source.tier in _MODELED_TIERS
+            else ProvenanceClass.SOURCED
+        )
+        # Frozen model: bypass with object.__setattr__ to keep the derived fields
+        # authoritative regardless of what (if anything) the YAML declared.
+        if self.provenance_class is not expected:
+            object.__setattr__(self, "provenance_class", expected)
+        want_resourcing = expected is ProvenanceClass.MODELED
+        if self.needs_resourcing is not want_resourcing:
+            object.__setattr__(self, "needs_resourcing", want_resourcing)
+        return self
 
     @model_validator(mode="after")
     def _value_must_be_finite(self) -> Self:

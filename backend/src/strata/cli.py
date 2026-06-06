@@ -317,6 +317,47 @@ def stats(data_dir: Path = _DATA_DIR_OPT) -> None:
     for lens, count in sorted(by_lens.items(), key=lambda x: -x[1]):
         typer.echo(f"  {lens:24} {count:>4}")
 
+    # Phase 4 — sourced vs modeled (the soft-data fence). provenance_class is
+    # derived from source.tier so this can never drift from the tier breakdown.
+    from strata.models.primitive import ProvenanceClass
+
+    sourced = sum(1 for p in reg.atomic.values() if p.provenance_class is ProvenanceClass.SOURCED)
+    modeled = sum(1 for p in reg.atomic.values() if p.provenance_class is ProvenanceClass.MODELED)
+    queued = sum(1 for p in reg.atomic.values() if p.needs_resourcing)
+    typer.echo("\nProvenance:")
+    typer.echo(f"  {'sourced':24} {sourced:>6}")
+    typer.echo(f"  {'modeled':24} {modeled:>6}")
+    typer.echo(f"  {'queued for re-sourcing':24} {queued:>6}")
+
+
+@app.command("resource-status")
+def resource_status(data_dir: Path = _DATA_DIR_OPT) -> None:
+    """Report re-sourcing progress over the fenced (modeled) primitives:
+    how many carry a candidate connector target vs. are honest gaps."""
+    from strata.loader import load_data_dir
+    from strata.models.primitive import ProvenanceClass
+    from strata.registry import Registry
+
+    try:
+        records = load_data_dir(data_dir)
+    except LoaderError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    reg = Registry.from_loaded(records)
+    modeled = [p for p in reg.atomic.values() if p.provenance_class is ProvenanceClass.MODELED]
+    with_target = [p for p in modeled if p.resource_target]
+    unmapped = [p for p in modeled if not p.resource_target]
+    typer.echo("Re-sourcing queue (modeled primitives):")
+    typer.echo(f"  {'total modeled':28} {len(modeled):>6}")
+    typer.echo(f"  {'mapped to a connector target':28} {len(with_target):>6}")
+    # resource_target=None means "not yet mapped" — NOT necessarily an honest gap.
+    # Classifying each unmapped primitive as resourceable vs honest-gap is the
+    # re-source-execution follow-up (§6); until then they are simply unmapped.
+    typer.echo(f"  {'unmapped (target TBD)':28} {len(unmapped):>6}")
+    for p in sorted(with_target, key=lambda x: x.slug):
+        typer.echo(f"    → {p.slug}  ⇒  {p.resource_target}")
+
 
 @app.command("verify-integrity")
 def verify_integrity(data_dir: Path = _DATA_DIR_OPT) -> None:
@@ -568,6 +609,27 @@ def _stage_auto_primitive(src: Path, dst: Path) -> None:
     dst.write_text(yaml.safe_dump(record, sort_keys=False, allow_unicode=True))
 
 
+def _is_modeled_candidate(src: Path) -> bool:
+    """Phase 4 (G2) — is this staged auto-primitive a MODELED/soft-data number?
+    The committed bank's modeled primitives are hand-authored on purpose; the
+    *promote* path is for connector-sourced output, so a modeled candidate
+    reaching it is refused. provenance_class is derived from source.tier."""
+    import yaml
+    from pydantic import TypeAdapter
+
+    from strata.models.primitive import AtomicPrimitive, ProvenanceClass
+
+    record = yaml.safe_load(src.read_text())
+    if isinstance(record, dict):
+        record = dict(record)
+        record.pop("metadata", None)
+    try:
+        prim = TypeAdapter(AtomicPrimitive).validate_python(record)
+    except Exception:
+        return False  # let the normal validator surface a shape error
+    return prim.provenance_class is ProvenanceClass.MODELED
+
+
 def _attribute_errors(errors: list[ValidationFinding], staged: set[str]) -> set[str]:
     """Map validator errors back to the staged slug(s) that caused them.
 
@@ -612,12 +674,16 @@ def _promote_from_ingest(data_dir: Path, *, validate_only: bool) -> None:
 
     staged: dict[str, Path] = {}  # slug -> committed dst path (pending)
     src_of: dict[str, Path] = {}  # slug -> staging src path
+    rejected_modeled: list[str] = []  # Phase 4 — soft-data candidates, never promoted
     already = 0
     for src in sorted(AUTO_PRIMITIVES_DIR.glob("*.yaml")):
         slug = src.stem
         dst = target_dir / f"{slug}.yaml"
         if dst.exists():
             already += 1
+            continue
+        if _is_modeled_candidate(src):
+            rejected_modeled.append(slug)
             continue
         _stage_auto_primitive(src, dst)
         staged[slug] = dst
@@ -674,7 +740,11 @@ def _promote_from_ingest(data_dir: Path, *, validate_only: bool) -> None:
         )
     for slug, reason in sorted(rejected.items()):
         typer.echo(f"  ✗ {slug}: {reason}", err=True)
-    if rejected and not committed:
+    for slug in sorted(rejected_modeled):
+        typer.echo(
+            f"  ⊘ {slug}: refused — MODELED/soft-data, not promotable (Phase 4 fence)", err=True
+        )
+    if (rejected or rejected_modeled) and not committed:
         raise typer.Exit(code=1)
 
 
@@ -715,6 +785,16 @@ def promote(
     if dst.exists():
         typer.echo(f"{slug} is already promoted — no-op.")
         return
+
+    # Phase 4 (G2): the promote path is for sourced connector output; refuse a
+    # MODELED/soft-data candidate before it can enter the committed bank.
+    if _is_modeled_candidate(src):
+        typer.echo(
+            f"ERROR: refusing to promote {slug} — it is MODELED/soft-data, not a "
+            f"sourced measurement (Phase 4 fence).",
+            err=True,
+        )
+        raise typer.Exit(code=1)
 
     # Stage, then run the validator on data_dir. Roll back on reject.
     _stage_auto_primitive(src, dst)

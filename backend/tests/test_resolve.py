@@ -19,6 +19,13 @@ from strata.resolver.parse import ParsedQuery
 from strata.resolver.search import PrimitiveHit
 
 
+@pytest.fixture(autouse=True)
+def _allow_exa_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Phase 4 fences Exa Step-4 behind STRATA_ALLOW_EXA_FALLBACK=1; these resolver
+    # tests exercise the synthesis path, so opt in. (allow_fallback=False stays off.)
+    monkeypatch.setenv("STRATA_ALLOW_EXA_FALLBACK", "1")
+
+
 @pytest.fixture
 def app() -> FastAPI:
     return create_app()

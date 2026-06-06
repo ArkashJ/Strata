@@ -22,7 +22,7 @@ from typing import Any
 import yaml
 from pydantic import TypeAdapter
 
-from ..models import AtomicPrimitive
+from ..models import AtomicPrimitive, ProvenanceClass
 from .citations import CONNECTOR_HOSTS, assert_real_host
 
 AUTO_PRIMITIVES_DIR: Path = Path.home() / ".strata" / "auto-primitives"
@@ -53,7 +53,16 @@ def upsert_primitive(
     """
 
     # Schema validate via Pydantic at the writer chokepoint.
-    TypeAdapter(AtomicPrimitive).validate_python(primitive_yaml)
+    prim = TypeAdapter(AtomicPrimitive).validate_python(primitive_yaml)
+
+    # Phase 4 (G2): the writer is for SOURCED connector output only. A modeled /
+    # analyst / paraphrase tier derives provenance_class=modeled — refuse it here
+    # so a soft-data number can never enter the bank through the connector path.
+    if prim.provenance_class is ProvenanceClass.MODELED:
+        raise ValueError(
+            f"writer refuses MODELED primitive {prim.slug!r} "
+            f"(tier={prim.source.tier.value}); the writer is for sourced output only"
+        )
 
     # AC1.1: a connector must never write a primitive citing a fabricated /
     # internal host — catch it at the writer boundary, before it can reach the
