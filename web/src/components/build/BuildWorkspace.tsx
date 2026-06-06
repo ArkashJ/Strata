@@ -25,6 +25,7 @@ import { OverridePanel } from "@/components/build/OverridePanel";
 import { AccordionSection } from "@/components/rail/AccordionSection";
 import {
 	ProvenanceBanner,
+	modeledInputNotes,
 	provenanceNotes,
 } from "@/components/rail/ProvenanceBanner";
 import { ScenarioGraph } from "@/components/ScenarioGraph";
@@ -505,7 +506,10 @@ function Rail({
 }) {
 	const [lineageOpen, setLineageOpen] = useState(false);
 	const selectedSet = new Set(selected);
-	const banners = provenanceNotes(tam);
+	// Phase 4: the Banners section must also open for per-scenario MODELED inputs,
+	// not only the two rolled-up flags — else a modeled/paraphrased input that sets
+	// neither flag would be hidden on /build.
+	const bannerCount = provenanceNotes(tam).length + modeledInputNotes(tam).length;
 
 	return (
 		<aside className="flex w-full flex-col gap-3 lg:w-[var(--right-rail-w)] lg:shrink-0">
@@ -632,13 +636,10 @@ function Rail({
 				</button>
 			</AccordionSection>
 
-			{/* BANNERS — only when the data layer flagged something (U2). */}
-			{banners.length > 0 ? (
-				<AccordionSection
-					title="Banners"
-					badge={`${banners.length}`}
-					defaultOpen
-				>
+			{/* BANNERS — when the data layer flagged something: rolled-up flags OR a
+			    per-scenario MODELED input (U2). */}
+			{bannerCount > 0 ? (
+				<AccordionSection title="Banners" badge={`${bannerCount}`} defaultOpen>
 					<ProvenanceBanner tam={tam} />
 				</AccordionSection>
 			) : null}
