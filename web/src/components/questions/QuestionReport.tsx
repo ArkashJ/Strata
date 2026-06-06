@@ -12,6 +12,7 @@
 
 import Link from "next/link";
 
+import { ReportCharts } from "@/components/questions/ReportCharts";
 import { Button } from "@/components/ui/Button";
 import { SourcedNumber } from "@/components/ui/SourcedNumber";
 import { formatSnapshot, tierLabel } from "@/lib/format";
@@ -113,6 +114,9 @@ export function QuestionReport({ report }: { report: ConceptQuestionReport }) {
           }
         />
       </section>
+
+      {/* Visual summary — derived from the answered/gap + provenance data. */}
+      <ReportCharts report={report} />
 
       {report.answers.length === 0 ? (
         <p className="report-block mt-8 text-[13px] text-[var(--fg-3)]">
