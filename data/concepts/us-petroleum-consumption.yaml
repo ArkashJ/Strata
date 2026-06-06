@@ -1,0 +1,15 @@
+kind: concept
+slug: us-petroleum-consumption
+schema_version: 1
+name: US petroleum consumption
+definition: >-
+  The volume of petroleum products supplied to the US market, a standard
+  proxy for US petroleum consumption. A throughput denominator for fuel,
+  logistics, and energy-transition TAMs.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - eia-petroleum-consumption-us
+competing_concepts: []
+requires_clearance: []

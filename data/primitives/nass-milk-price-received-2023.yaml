@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: nass-milk-price-received-2023
+schema_version: 1
+concept_slug: us-milk-price
+name: US milk price received (2023, $/cwt)
+description: US national average price received by farmers for milk, 2023 (USD per
+  hundredweight).
+value: 20.3
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: nass-milk-price-received-us-2023
+  tier: regulator
+  url: https://quickstats.nass.usda.gov/
+  accessed: '2026-06-06'
+  snapshot_sha256: b319e67e36c6ffb192feeb2dfe3157709d5016d075ae077ed97927cedda24a28

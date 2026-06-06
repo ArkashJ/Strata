@@ -1,0 +1,16 @@
+kind: concept
+slug: us-germany-trade
+schema_version: 1
+name: US–Germany bilateral trade (imports into the US)
+definition: >-
+  Annual value of US imports from Germany across all commodities, in
+  nominal US dollars (UN Comtrade, reporter USA, partner Germany). A
+  bilateral trade-corridor denominator for cross-border commerce and
+  logistics TAMs.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - ct-us-germany-bilateral-2023
+competing_concepts: []
+requires_clearance: []

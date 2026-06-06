@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: ct-us-imports-mineral-fuels-2023
+schema_version: 1
+concept_slug: us-mineral-fuel-imports
+name: US imports of mineral fuels and oils (HS 27), 2023
+description: US (reporter 842) import value of HS chapter 27 (mineral fuels, oils,
+  distillation products) from the world, 2023, UN Comtrade preview API.
+value: 266592032220.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: year
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - USA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: ct-none-none-m-27-2023
+  tier: aggregator
+  url: https://comtrade.un.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: ddddfbfbe4a3dffbe3cadec6420d0b47fde2ec46d51d5901f1ff4da2a926de39

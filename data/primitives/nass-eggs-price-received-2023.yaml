@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: nass-eggs-price-received-2023
+schema_version: 1
+concept_slug: us-egg-price
+name: US egg price received (2023, $/dozen)
+description: US national average price received by farmers for eggs, 2023 (USD per
+  dozen).
+value: 1.75
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: nass-eggs-price-received-us-2023
+  tier: regulator
+  url: https://quickstats.nass.usda.gov/
+  accessed: '2026-06-06'
+  snapshot_sha256: 1500bc731fecd110292b7b49d587612595a2a562f4be41384b6b9ebe10695207

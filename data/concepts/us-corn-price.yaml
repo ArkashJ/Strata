@@ -1,0 +1,15 @@
+kind: concept
+slug: us-corn-price
+schema_version: 1
+name: US corn price received
+definition: >-
+  The US national average price received by farmers for corn (maize) in US
+  dollars per bushel (USDA NASS QuickStats). A commodity cost-per-unit
+  anchor for agriculture and food-supply TAMs.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+  - nass-corn-price-received-2023
+competing_concepts: []
+requires_clearance: []

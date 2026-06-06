@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: nass-cotton-price-received-2023
+schema_version: 1
+concept_slug: us-cotton-price
+name: US cotton price received (2023, $/pound)
+description: US national average price received by farmers for upland cotton, 2023
+  (USD per pound).
+value: 0.812
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: nass-cotton-price-received-us-2023
+  tier: regulator
+  url: https://quickstats.nass.usda.gov/
+  accessed: '2026-06-06'
+  snapshot_sha256: bd27d5c40033a9c3f128f382c8ff2946221afe5991fa7cfdc5d66320a8372454

@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: fdic-largest-bank-interest-income-2024
+schema_version: 1
+concept_slug: us-bank-deposits
+name: Largest US insured bank - total interest income (2024)
+description: Total interest income of the single largest FDIC-insured institution
+  by interest income, full-year 2024 (absolute USD). NOT an industry total.
+value: 169911000000.0
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fdic-628-intinc-20241231
+  tier: regulator
+  url: https://banks.data.fdic.gov/
+  accessed: '2026-06-06'
+  snapshot_sha256: 959aa9bad953af4780aaa3469236864388ccebfcf06a678605be239e0d8f4f00

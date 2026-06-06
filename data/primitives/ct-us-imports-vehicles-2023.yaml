@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: ct-us-imports-vehicles-2023
+schema_version: 1
+concept_slug: us-vehicle-imports
+name: US imports of vehicles, excluding railway (HS 87), 2023
+description: US (reporter 842) import value of HS chapter 87 (vehicles other than
+  railway/tramway) from the world, 2023, UN Comtrade preview API.
+value: 381037566330.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: year
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - USA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: ct-none-none-m-87-2023
+  tier: aggregator
+  url: https://comtrade.un.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: 0d403db11ef2a0cd9c90137837dac6f2d3a20b04028e4585cc3618eeeff14686

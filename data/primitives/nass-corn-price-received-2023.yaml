@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: nass-corn-price-received-2023
+schema_version: 1
+concept_slug: us-corn-price
+name: US corn price received (2023, $/bushel)
+description: US national average price received by farmers for corn, 2023 (USD per
+  bushel) - commodity cost-per-unit input for ag-tech / food-supply TAMs.
+value: 5.95
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: nass-corn-price-received-us-2023
+  tier: regulator
+  url: https://quickstats.nass.usda.gov/
+  accessed: '2026-06-06'
+  snapshot_sha256: 2740d9c65b767f0e0e3ba3e70ae1163ce4328f13894d53e93d3b8ad07e8dcd0f

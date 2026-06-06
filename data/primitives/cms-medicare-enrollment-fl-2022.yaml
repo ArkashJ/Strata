@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: cms-medicare-enrollment-fl-2022
+schema_version: 1
+concept_slug: us-medicare-enrollment
+name: Florida Medicare enrollment (2022)
+description: Total Medicare beneficiaries in Florida, 2022.
+value: 4921208
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: subnational
+  codes:
+  - FL
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: cms-enrollment-fl-2022
+  tier: regulator
+  url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
+  accessed: '2026-06-06'
+  snapshot_sha256: 6c09975a9a50980c9101dfe0735dc55a6ff1f4d535307f34766be995628448a1

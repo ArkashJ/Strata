@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: eurostat-va-ict-fr-2022
+schema_version: 1
+concept_slug: eurostat-ict-value-added-fr
+name: France ICT-sector gross value added (Eurostat nama_10_a64, NACE J)
+description: France gross value added of information and communication (NACE Rev.2
+  J), absolute EUR (Eurostat nama_10_a64 B1G as CP_MEUR/millions; value_scale lifts
+  to base units).
+value: 131672500000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - FRA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: es-nama-10-a64-fr-2022
+  tier: regulator
+  url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table
+  accessed: '2026-06-06'
+  snapshot_sha256: 00b2fc825033c569b38c664b76bb57e48aadcb02bd59f9736ad39b05ba0eb747

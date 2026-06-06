@@ -1,0 +1,15 @@
+kind: concept
+slug: us-drug-catalog
+schema_version: 1
+name: US marketed-drug catalog size
+definition: >-
+  The count of distinct drug products in the US market as registered in
+  the FDA National Drug Code (NDC) directory. A supply-side denominator
+  for the breadth of the US pharmaceutical catalog.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - fda-ndc-product-count
+competing_concepts: []
+requires_clearance: []

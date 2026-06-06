@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: faa-ny-airport-count
+schema_version: 1
+concept_slug: us-air-travel
+name: New York airport/facility count (FAA AIS)
+description: Count of all FAA-listed aviation facilities in New York on the FAA AIS
+  Airports feature layer - state-level supply denominator.
+value: 493
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2026-06-06'
+geo:
+  level: subnational
+  codes:
+  - NY
+geo_perspective: supply
+distribution_shape: other
+delivery_mode: n/a
+source:
+  slug: faa-airport-count-ny
+  tier: regulator
+  url: https://www.faa.gov/air_traffic/flight_info/aeronav
+  accessed: '2026-06-06'
+  snapshot_sha256: 93ac22fba3a5525b86c96c46ac27bad6576f863d78e5bdebbac61228475f7103

@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: cms-medicare-enrollment-tx-2022
+schema_version: 1
+concept_slug: us-medicare-enrollment
+name: Texas Medicare enrollment (2022)
+description: Total Medicare beneficiaries in Texas, 2022.
+value: 4507579
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: subnational
+  codes:
+  - TX
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: cms-enrollment-tx-2022
+  tier: regulator
+  url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
+  accessed: '2026-06-06'
+  snapshot_sha256: eb24ad7658d2d1317a36f723d09dd519d8c17e4fbb77f5b38e3b3a0e035af4e9

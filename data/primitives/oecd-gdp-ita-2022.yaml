@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: oecd-gdp-ita-2022
+schema_version: 1
+concept_slug: oecd-gdp-ita
+name: Italy GDP, expenditure approach (OECD national accounts)
+description: Italy GDP at current prices, absolute EUR (OECD DSD_NAMAIN10 B1GQ in
+  millions; value_scale lifts to base units).
+value: 1998072600000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - ITA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: oecd-oecd-sdd-nad-dsd-namain10-df-table1-expenditure-ita-2022
+  tier: aggregator
+  url: https://data.oecd.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: 720e7c30605d2343138966e53c2c9bfb8c8e3f52e44ddf932c9b1841d6a61ef4

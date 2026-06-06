@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: nass-rice-price-received-2023
+schema_version: 1
+concept_slug: us-rice-price
+name: US rice price received (2023, $/cwt)
+description: US national average price received by farmers for rice, 2023 (USD per
+  hundredweight).
+value: 19.3
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: nass-rice-price-received-us-2023
+  tier: regulator
+  url: https://quickstats.nass.usda.gov/
+  accessed: '2026-06-06'
+  snapshot_sha256: fb11ebe73ffeb1019c8090b7c2bdeca07acc8959b02326fba170749c227fb96c

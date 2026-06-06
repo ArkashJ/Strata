@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: fda-drug-label-count
+schema_version: 1
+concept_slug: us-drug-labels
+name: FDA drug labels (total across administration routes)
+description: Total count of FDA structured drug-product labels summed across administration
+  routes, openFDA drug/label count endpoint - size of the labeled-drug universe.
+value: 87506
+unit:
+  kind: stock
+  dimension: events
+as_of: '2026-06-06'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: other
+delivery_mode: n/a
+source:
+  slug: fda-drug-events-drug-label-routes
+  tier: regulator
+  url: https://api.fda.gov/drug/label.json
+  accessed: '2026-06-06'
+  snapshot_sha256: 0be7f7c1fbdd90c36a3c3ced44a9584208d8858531a5fc41b7a7669b4f7b75d1

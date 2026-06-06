@@ -1,0 +1,15 @@
+kind: concept
+slug: us-crude-oil-price
+schema_version: 1
+name: US crude oil price (WTI)
+definition: >-
+  The spot price of West Texas Intermediate (WTI) crude oil, the US
+  benchmark grade, in US dollars per barrel. A benchmark energy cost-per-
+  unit input.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+  - eia-wti-crude-price-us
+competing_concepts: []
+requires_clearance: []

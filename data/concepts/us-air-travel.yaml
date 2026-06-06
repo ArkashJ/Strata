@@ -1,0 +1,20 @@
+kind: concept
+slug: us-air-travel
+schema_version: 1
+name: US aviation infrastructure (airport counts)
+definition: >-
+  Counts of US aviation facilities — airports, heliports, seaplane bases —
+  on the FAA AIS Airports layer, nationally and by state. A supply-side
+  infrastructure denominator for aviation-services TAMs.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - faa-us-airport-count
+  - faa-ca-airport-count
+  - faa-us-heliport-count
+  - faa-us-seaplane-base-count
+  - faa-tx-airport-count
+  - faa-ny-airport-count
+competing_concepts: []
+requires_clearance: []

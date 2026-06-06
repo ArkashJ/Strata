@@ -1,0 +1,15 @@
+kind: concept
+slug: us-vehicle-imports
+schema_version: 1
+name: US imports of vehicles, excluding railway (HS 87)
+definition: >-
+  Annual value of US imports of vehicles, excluding railway (HS 87) from
+  the world, in nominal US dollars (UN Comtrade, reporter USA). A trade-
+  flow denominator for the US import market in this category.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - ct-us-imports-vehicles-2023
+competing_concepts: []
+requires_clearance: []

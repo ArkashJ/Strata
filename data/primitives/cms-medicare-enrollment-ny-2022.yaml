@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: cms-medicare-enrollment-ny-2022
+schema_version: 1
+concept_slug: us-medicare-enrollment
+name: New York Medicare enrollment (2022)
+description: Total Medicare beneficiaries in New York, 2022.
+value: 3761501
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: subnational
+  codes:
+  - NY
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: cms-enrollment-ny-2022
+  tier: regulator
+  url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
+  accessed: '2026-06-06'
+  snapshot_sha256: 769523a25af16b403f92a3afd5c4dd7dddc8b13ffeca0a6cefbdb7f9c68b32f3

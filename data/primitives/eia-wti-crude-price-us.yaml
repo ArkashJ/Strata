@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: eia-wti-crude-price-us
+schema_version: 1
+concept_slug: us-crude-oil-price
+name: WTI crude oil spot price (annual)
+description: West Texas Intermediate crude oil spot price, latest annual period (USD
+  per barrel) - benchmark energy cost input.
+value: 65.39
+unit:
+  kind: intensive
+  dimension: currency
+  denominator: barrel
+  currency: USD
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: eia-petroleum-wti-price-ycuok-2025
+  tier: regulator
+  url: https://www.eia.gov/petroleum/
+  accessed: '2026-06-06'
+  snapshot_sha256: 741cf2a463c1d01a3e9a3fa028bf8a27c62e0eca113fa70da227227ff0592e1f

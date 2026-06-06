@@ -1,0 +1,16 @@
+kind: concept
+slug: oecd-gdp-gbr
+schema_version: 1
+name: United Kingdom GDP (OECD national accounts)
+definition: >-
+  Gross domestic product of United Kingdom at current market prices
+  (transaction B1GQ), measured in national currency (GBP). The total
+  annual output of the United Kingdom economy — a top-level denominator
+  for any United Kingdom-scoped market-sizing model.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - oecd-gdp-gbr-2022
+competing_concepts: []
+requires_clearance: []

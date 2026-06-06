@@ -1,0 +1,16 @@
+kind: concept
+slug: eurostat-health-spending-fr
+schema_version: 1
+name: France total health expenditure (Eurostat SHA)
+definition: >-
+  Current healthcare expenditure in France across all financing schemes
+  (Eurostat hlth_sha11_hf, TOT_HF), in euro. The national health-spend
+  pool — a demand denominator for health-IT and care-delivery TAMs scoped
+  to France.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - eurostat-health-spending-fr-2022
+competing_concepts: []
+requires_clearance: []

@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: oecd-gdp-can-2022
+schema_version: 1
+concept_slug: oecd-gdp-can
+name: Canada GDP, expenditure approach (OECD national accounts)
+description: Canada GDP at current prices, absolute CAD (OECD DSD_NAMAIN10 B1GQ in
+  millions of national currency; value_scale lifts to base units).
+value: 2864159000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: CAD
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - CAN
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: oecd-oecd-sdd-nad-dsd-namain10-df-table1-expenditure-can-2022
+  tier: aggregator
+  url: https://data.oecd.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: 657e61d46b138238a2c46c015d528227dcb79f1d5c3083d68b0e11ecd4abeb8f

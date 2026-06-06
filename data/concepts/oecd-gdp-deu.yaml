@@ -1,0 +1,16 @@
+kind: concept
+slug: oecd-gdp-deu
+schema_version: 1
+name: Germany GDP (OECD national accounts)
+definition: >-
+  Gross domestic product of Germany at current market prices (transaction
+  B1GQ), measured in national currency (EUR). The total annual output of
+  the Germany economy — a top-level denominator for any Germany-scoped
+  market-sizing model.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - oecd-gdp-deu-2022
+competing_concepts: []
+requires_clearance: []

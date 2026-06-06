@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: oecd-gdp-mex-2022
+schema_version: 1
+concept_slug: oecd-gdp-mex
+name: Mexico GDP, expenditure approach (OECD national accounts)
+description: Mexico GDP at current prices, absolute MXN (OECD DSD_NAMAIN10 B1GQ in
+  millions of national currency; value_scale lifts to base units).
+value: 29525508620000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: MXN
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - MEX
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: oecd-oecd-sdd-nad-dsd-namain10-df-table1-expenditure-mex-2022
+  tier: aggregator
+  url: https://data.oecd.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: ce54239a6c2ef9a14edddf8d58e29efd6858e1629b6eb329b9ff58590975157c

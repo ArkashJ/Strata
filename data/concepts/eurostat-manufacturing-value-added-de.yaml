@@ -1,0 +1,15 @@
+kind: concept
+slug: eurostat-manufacturing-value-added-de
+schema_version: 1
+name: Germany manufacturing gross value added (Eurostat)
+definition: >-
+  Gross value added of the German manufacturing sector (NACE Rev.2 section
+  C) at current prices (Eurostat nama_10_a64, B1G), in euro. A sector
+  denominator for industrial-software and automation TAMs.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - eurostat-va-manufacturing-de-2022
+competing_concepts: []
+requires_clearance: []

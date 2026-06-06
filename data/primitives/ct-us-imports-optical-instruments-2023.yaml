@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: ct-us-imports-optical-instruments-2023
+schema_version: 1
+concept_slug: us-optical-instrument-imports
+name: US imports of optical, medical and precision instruments (HS 90), 2023
+description: US (reporter 842) import value of HS chapter 90 (optical, photographic,
+  medical, precision instruments) from the world, 2023, UN Comtrade preview API.
+value: 118320237701.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: year
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - USA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: ct-none-none-m-90-2023
+  tier: aggregator
+  url: https://comtrade.un.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: 833c57d467b1a0ca48f03c3088e2111f073a69ba716b0eb7e958e677e0b0a2a9

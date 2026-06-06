@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: eurostat-household-consumption-fr-2022
+schema_version: 1
+concept_slug: eurostat-household-consumption-fr
+name: France household final consumption, all purposes (Eurostat nama_10_co3_p3)
+description: France final consumption expenditure of households across all COICOP
+  purposes, absolute EUR (Eurostat nama_10_co3_p3 as CP_MEUR/millions; value_scale
+  lifts to base units).
+value: 1377070000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - FRA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: es-nama-10-co3-p3-fr-2022
+  tier: regulator
+  url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_co3_p3/default/table
+  accessed: '2026-06-06'
+  snapshot_sha256: 0c8ed10284caa3ab321323d8ddffebb4ea20e9183dc2b4eb24caafc47adaf7ac

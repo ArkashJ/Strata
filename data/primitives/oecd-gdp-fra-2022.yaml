@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: oecd-gdp-fra-2022
+schema_version: 1
+concept_slug: oecd-gdp-fra
+name: France GDP, expenditure approach (OECD national accounts)
+description: France GDP at current prices, absolute EUR (OECD DSD_NAMAIN10 B1GQ in
+  millions; value_scale lifts to base units).
+value: 2653997200000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - FRA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: oecd-oecd-sdd-nad-dsd-namain10-df-table1-expenditure-fra-2022
+  tier: aggregator
+  url: https://data.oecd.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: 3909333a6b7e3ac9fdf814d08085fc3a795abd2fcec5906561618aae39f3f2e9

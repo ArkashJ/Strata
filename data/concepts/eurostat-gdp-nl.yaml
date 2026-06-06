@@ -1,0 +1,16 @@
+kind: concept
+slug: eurostat-gdp-nl
+schema_version: 1
+name: Netherlands GDP (Eurostat national accounts)
+definition: >-
+  Gross domestic product of Netherlands at current market prices
+  (transaction B1GQ), measured in national currency (EUR). The total
+  annual output of the Netherlands economy — a top-level denominator for
+  any Netherlands-scoped market-sizing model.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - eurostat-gdp-nl-2023
+competing_concepts: []
+requires_clearance: []

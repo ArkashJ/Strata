@@ -1,0 +1,16 @@
+kind: concept
+slug: oecd-gdp-mex
+schema_version: 1
+name: Mexico GDP (OECD national accounts)
+definition: >-
+  Gross domestic product of Mexico at current market prices (transaction
+  B1GQ), measured in national currency (MXN). The total annual output of
+  the Mexico economy — a top-level denominator for any Mexico-scoped
+  market-sizing model.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - oecd-gdp-mex-2022
+competing_concepts: []
+requires_clearance: []

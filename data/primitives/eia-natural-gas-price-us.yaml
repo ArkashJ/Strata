@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: eia-natural-gas-price-us
+schema_version: 1
+concept_slug: us-natural-gas-price
+name: US natural gas price (Henry Hub / citygate)
+description: US natural gas price, latest annual period (USD per thousand cubic feet,
+  $/MCF) - fuel cost-per-unit input.
+value: 12.96
+unit:
+  kind: intensive
+  dimension: currency
+  denominator: mcf
+  currency: USD
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: eia-natural-gas-price-sak-2025
+  tier: regulator
+  url: https://www.eia.gov/naturalgas/
+  accessed: '2026-06-06'
+  snapshot_sha256: 912a10b9294fc9cf1d165fbe67e011636cb521a7528f6af3ec8dca3c7edc8a7b

@@ -1,0 +1,15 @@
+kind: concept
+slug: us-electricity-price
+schema_version: 1
+name: US retail electricity price
+definition: >-
+  The average price paid by US end-users for retail electricity, in cents
+  per kilowatt-hour, across all consuming sectors. A cost-per-unit input
+  for energy-spend and electrification TAMs, not a market total.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+  - eia-electricity-price-us-all
+competing_concepts: []
+requires_clearance: []

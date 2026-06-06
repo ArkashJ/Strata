@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: bls-oews-software-developers-employment
+schema_version: 1
+concept_slug: us-software-developer-labor
+name: US software developers — national employment (OEWS 15-1252)
+description: National employment of software developers — persona headcount for AI-coding-assistant
+  TAMs.
+value: 1897000.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: bls-oeun000000000000015125201-2024
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes151252.htm
+  accessed: '2026-06-03'
+  snapshot_sha256: 0045ba37fb0d944ac9bb2f512bc3ae5aafeaa77e25cf7f1a86d87cdf3cf17801

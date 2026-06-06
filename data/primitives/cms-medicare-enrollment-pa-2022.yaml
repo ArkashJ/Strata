@@ -1,0 +1,24 @@
+kind: atomic_primitive
+slug: cms-medicare-enrollment-pa-2022
+schema_version: 1
+concept_slug: us-medicare-enrollment
+name: Pennsylvania Medicare enrollment (2022)
+description: Total Medicare beneficiaries in Pennsylvania, 2022.
+value: 2845259
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: subnational
+  codes:
+  - PA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: cms-enrollment-pa-2022
+  tier: regulator
+  url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
+  accessed: '2026-06-06'
+  snapshot_sha256: 1efa093ead5e7d60077e2f3bea7ba2cef22be21daf451565dd02bdd15ae82685

@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: bls-oews-software-developers-mean-wage
+schema_version: 1
+concept_slug: us-software-developer-labor
+name: US software developers — national annual mean wage (OEWS 15-1252)
+description: National annual mean wage of software developers — cost-per-persona input
+  for AI-coding cost-efficiency TAMs.
+value: 148100.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: year
+  currency: USD
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: bls-oeun000000000000015125204-2025
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes151252.htm
+  accessed: '2026-06-03'
+  snapshot_sha256: 2cd0ca2219addb87cca3f8846415cb19f869153fc63afe897add7a4b55a5cf45

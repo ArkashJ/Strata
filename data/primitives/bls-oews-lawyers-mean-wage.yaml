@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: bls-oews-lawyers-mean-wage
+schema_version: 1
+concept_slug: us-lawyer-labor
+name: US lawyers — national annual mean wage (OEWS 23-1011)
+description: National annual mean wage of lawyers — cost-per-persona input for AI-legal
+  cost-efficiency TAMs.
+value: 185840.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: year
+  currency: USD
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: bls-oeun000000000000023101104-2025
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes231011.htm
+  accessed: '2026-06-03'
+  snapshot_sha256: 07e0883ee7e28b0b3dc31b196ad63120bb81828613a08236f12d95be3a7c1821

@@ -1,0 +1,19 @@
+kind: concept
+slug: us-medicare-enrollment
+schema_version: 1
+name: US Medicare enrollment
+definition: >-
+  The number of Medicare beneficiaries enrolled in a given US state (CMS
+  summary statistics). A demand-side population denominator for Medicare-
+  facing health TAMs.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - cms-medicare-enrollment-ca-2022
+  - cms-medicare-enrollment-tx-2022
+  - cms-medicare-enrollment-fl-2022
+  - cms-medicare-enrollment-ny-2022
+  - cms-medicare-enrollment-pa-2022
+competing_concepts: []
+requires_clearance: []

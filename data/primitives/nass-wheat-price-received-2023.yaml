@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: nass-wheat-price-received-2023
+schema_version: 1
+concept_slug: us-wheat-price
+name: US wheat price received (2023, $/bushel)
+description: US national average price received by farmers for wheat, 2023 (USD per
+  bushel).
+value: 7.67
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: nass-wheat-price-received-us-2023
+  tier: regulator
+  url: https://quickstats.nass.usda.gov/
+  accessed: '2026-06-06'
+  snapshot_sha256: 6290dd6c08a8b7aa61d640260396990cf1ad1e9ebdefbf4f8f2bf6f1153f9e44

@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: eurostat-gdp-it-2023
+schema_version: 1
+concept_slug: eurostat-gdp-it
+name: Italy GDP at market prices (Eurostat nama_10_gdp, B1GQ)
+description: Italy GDP at current prices, absolute EUR (Eurostat nama_10_gdp B1GQ
+  as CP_MEUR/millions; value_scale lifts to base units).
+value: 2142744400000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - ITA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: es-nama-10-gdp-it-2023
+  tier: regulator
+  url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
+  accessed: '2026-06-06'
+  snapshot_sha256: b8bff95e842bd2e0a7e2c73c0fc31451297704cfbfeac59ca8a58335f06fee6d

@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: eurostat-gdp-nl-2023
+schema_version: 1
+concept_slug: eurostat-gdp-nl
+name: Netherlands GDP at market prices (Eurostat nama_10_gdp, B1GQ)
+description: Netherlands GDP at current prices, absolute EUR (Eurostat nama_10_gdp
+  B1GQ as CP_MEUR/millions; value_scale lifts to base units).
+value: 1050133000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - NLD
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: es-nama-10-gdp-nl-2023
+  tier: regulator
+  url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
+  accessed: '2026-06-06'
+  snapshot_sha256: 000b2d267eeda281f332679cfef42c357c01db5401473d99901eb02fc3c6a63b

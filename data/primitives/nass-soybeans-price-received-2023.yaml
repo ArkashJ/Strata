@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: nass-soybeans-price-received-2023
+schema_version: 1
+concept_slug: us-soybean-price
+name: US soybean price received (2023, $/bushel)
+description: US national average price received by farmers for soybeans, 2023 (USD
+  per bushel).
+value: 14.1
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: nass-soybeans-price-received-us-2023
+  tier: regulator
+  url: https://quickstats.nass.usda.gov/
+  accessed: '2026-06-06'
+  snapshot_sha256: fe23f6b9a44177e0c9d14dd1755f9e2e68ac850e141f8db6246167faa4b54a35

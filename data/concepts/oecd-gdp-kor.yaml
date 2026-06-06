@@ -1,0 +1,16 @@
+kind: concept
+slug: oecd-gdp-kor
+schema_version: 1
+name: South Korea GDP (OECD national accounts)
+definition: >-
+  Gross domestic product of South Korea at current market prices
+  (transaction B1GQ), measured in national currency (KRW). The total
+  annual output of the South Korea economy — a top-level denominator for
+  any South Korea-scoped market-sizing model.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - oecd-gdp-kor-2022
+competing_concepts: []
+requires_clearance: []

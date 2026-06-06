@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: oecd-gdp-usa-2022
+schema_version: 1
+concept_slug: oecd-gdp-usa
+name: United States GDP, expenditure approach (OECD national accounts)
+description: US GDP at current prices, absolute USD (OECD DSD_NAMAIN10 B1GQ in millions;
+  value_scale lifts to base units).
+value: 26054614000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: USD
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - USA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: oecd-oecd-sdd-nad-dsd-namain10-df-table1-expenditure-usa-2022
+  tier: aggregator
+  url: https://data.oecd.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: bc26d09eee8738004d3b22520f58936cb41b17215d5019324df8c1c8f78e4618

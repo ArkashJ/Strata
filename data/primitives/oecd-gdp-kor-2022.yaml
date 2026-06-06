@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: oecd-gdp-kor-2022
+schema_version: 1
+concept_slug: oecd-gdp-kor
+name: Korea GDP, expenditure approach (OECD national accounts)
+description: South Korea GDP at current prices, absolute KRW (OECD DSD_NAMAIN10 B1GQ
+  in millions of national currency; value_scale lifts to base units).
+value: 2323781500000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: KRW
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - KOR
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: oecd-oecd-sdd-nad-dsd-namain10-df-table1-expenditure-kor-2022
+  tier: aggregator
+  url: https://data.oecd.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: ebbb6bfebc752314807a60305ae5f755cb4b7343af3bfb1471254fdf17cf6200

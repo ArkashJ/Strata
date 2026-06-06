@@ -408,6 +408,138 @@ connectors:
 
   # ── Eurostat — EU national accounts (regulator, keyless). GDP is CP_MEUR
   # (millions EUR) — noted in descriptions. ───────────────────────────────
+    - method: get_gdp
+      arg_sets:
+        - country: FRA
+          year: 2022
+          concept_slug: oecd-gdp-fra
+          primitive_slug: oecd-gdp-fra-2022
+          name: France GDP, expenditure approach (OECD national accounts)
+          description: France GDP at current prices, absolute EUR (OECD DSD_NAMAIN10 B1GQ in millions; value_scale lifts to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [FRA]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - country: ITA
+          year: 2022
+          concept_slug: oecd-gdp-ita
+          primitive_slug: oecd-gdp-ita-2022
+          name: Italy GDP, expenditure approach (OECD national accounts)
+          description: Italy GDP at current prices, absolute EUR (OECD DSD_NAMAIN10 B1GQ in millions; value_scale lifts to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [ITA]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - country: ESP
+          year: 2022
+          concept_slug: oecd-gdp-esp
+          primitive_slug: oecd-gdp-esp-2022
+          name: Spain GDP, expenditure approach (OECD national accounts)
+          description: Spain GDP at current prices, absolute EUR (OECD DSD_NAMAIN10 B1GQ in millions; value_scale lifts to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [ESP]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - country: NLD
+          year: 2022
+          concept_slug: oecd-gdp-nld
+          primitive_slug: oecd-gdp-nld-2022
+          name: Netherlands GDP, expenditure approach (OECD national accounts)
+          description: Netherlands GDP at current prices, absolute EUR (OECD DSD_NAMAIN10 B1GQ in millions; value_scale lifts to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [NLD]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - country: USA
+          year: 2022
+          concept_slug: oecd-gdp-usa
+          primitive_slug: oecd-gdp-usa-2022
+          name: United States GDP, expenditure approach (OECD national accounts)
+          description: US GDP at current prices, absolute USD (OECD DSD_NAMAIN10 B1GQ in millions; value_scale lifts to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [USA]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: USD
+          value_scale: 1000000
+        - country: JPN
+          year: 2022
+          concept_slug: oecd-gdp-jpn
+          primitive_slug: oecd-gdp-jpn-2022
+          name: Japan GDP, expenditure approach (OECD national accounts)
+          description: Japan GDP at current prices, absolute JPY (OECD DSD_NAMAIN10 B1GQ in millions of national currency; value_scale lifts to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [JPN]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: JPY
+          value_scale: 1000000
+        - country: CAN
+          year: 2022
+          concept_slug: oecd-gdp-can
+          primitive_slug: oecd-gdp-can-2022
+          name: Canada GDP, expenditure approach (OECD national accounts)
+          description: Canada GDP at current prices, absolute CAD (OECD DSD_NAMAIN10 B1GQ in millions of national currency; value_scale lifts to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [CAN]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: CAD
+          value_scale: 1000000
+        - country: KOR
+          year: 2022
+          concept_slug: oecd-gdp-kor
+          primitive_slug: oecd-gdp-kor-2022
+          name: Korea GDP, expenditure approach (OECD national accounts)
+          description: South Korea GDP at current prices, absolute KRW (OECD DSD_NAMAIN10 B1GQ in millions of national currency; value_scale lifts to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [KOR]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: KRW
+          value_scale: 1000000
+        - country: AUS
+          year: 2022
+          concept_slug: oecd-gdp-aus
+          primitive_slug: oecd-gdp-aus-2022
+          name: Australia GDP, expenditure approach (OECD national accounts)
+          description: Australia GDP at current prices, absolute AUD (OECD DSD_NAMAIN10 B1GQ in millions of national currency; value_scale lifts to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [AUS]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: AUD
+          value_scale: 1000000
+        - country: MEX
+          year: 2022
+          concept_slug: oecd-gdp-mex
+          primitive_slug: oecd-gdp-mex-2022
+          name: Mexico GDP, expenditure approach (OECD national accounts)
+          description: Mexico GDP at current prices, absolute MXN (OECD DSD_NAMAIN10 B1GQ in millions of national currency; value_scale lifts to base units).
+          source_url: https://data.oecd.org/
+          geo_codes: [MEX]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: MXN
+          value_scale: 1000000
   eurostat:
     - method: get_gdp
       arg_sets:
@@ -439,6 +571,214 @@ connectors:
           value_scale: 1000000
 
   # ── EIA — US energy (regulator). Key: STRATA_EIA_API_KEY. ──────────────
+    - method: get_gdp
+      arg_sets:
+        - geo: IT
+          start_year: 2023
+          end_year: 2023
+          year: 2023
+          concept_slug: eurostat-gdp-it
+          primitive_slug: eurostat-gdp-it-2023
+          name: Italy GDP at market prices (Eurostat nama_10_gdp, B1GQ)
+          description: Italy GDP at current prices, absolute EUR (Eurostat nama_10_gdp B1GQ as CP_MEUR/millions; value_scale lifts to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
+          geo_codes: [ITA]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - geo: ES
+          start_year: 2023
+          end_year: 2023
+          year: 2023
+          concept_slug: eurostat-gdp-es
+          primitive_slug: eurostat-gdp-es-2023
+          name: Spain GDP at market prices (Eurostat nama_10_gdp, B1GQ)
+          description: Spain GDP at current prices, absolute EUR (Eurostat nama_10_gdp B1GQ as CP_MEUR/millions; value_scale lifts to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
+          geo_codes: [ESP]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - geo: NL
+          start_year: 2023
+          end_year: 2023
+          year: 2023
+          concept_slug: eurostat-gdp-nl
+          primitive_slug: eurostat-gdp-nl-2023
+          name: Netherlands GDP at market prices (Eurostat nama_10_gdp, B1GQ)
+          description: Netherlands GDP at current prices, absolute EUR (Eurostat nama_10_gdp B1GQ as CP_MEUR/millions; value_scale lifts to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
+          geo_codes: [NLD]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - geo: PL
+          start_year: 2023
+          end_year: 2023
+          year: 2023
+          concept_slug: eurostat-gdp-pl
+          primitive_slug: eurostat-gdp-pl-2023
+          name: Poland GDP at market prices (Eurostat nama_10_gdp, B1GQ)
+          description: Poland GDP at current prices, absolute EUR (Eurostat nama_10_gdp B1GQ as CP_MEUR/millions; value_scale lifts to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
+          geo_codes: [POL]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+    - method: get_employment
+      arg_sets:
+        - geo: DE
+          start_year: 2022
+          end_year: 2022
+          year: 2022
+          concept_slug: eurostat-employment-de
+          primitive_slug: eurostat-employment-de-2022
+          name: Germany total employment, ages 15-64 (Eurostat lfsa_egan2)
+          description: Total employed persons aged 15-64 in Germany, all NACE activities (Eurostat lfsa_egan2, THS_PER/thousands; value_scale lifts to persons).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/lfsa_egan2/default/table
+          geo_codes: [DEU]
+          geo_level: country
+          unit_kind: stock
+          unit_dimension: people
+          value_scale: 1000
+        - geo: FR
+          start_year: 2022
+          end_year: 2022
+          year: 2022
+          concept_slug: eurostat-employment-fr
+          primitive_slug: eurostat-employment-fr-2022
+          name: France total employment, ages 15-64 (Eurostat lfsa_egan2)
+          description: Total employed persons aged 15-64 in France, all NACE activities (Eurostat lfsa_egan2, THS_PER/thousands; value_scale lifts to persons).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/lfsa_egan2/default/table
+          geo_codes: [FRA]
+          geo_level: country
+          unit_kind: stock
+          unit_dimension: people
+          value_scale: 1000
+    - method: get_health_spending
+      arg_sets:
+        - geo: DE
+          start_year: 2022
+          end_year: 2022
+          year: 2022
+          concept_slug: eurostat-health-spending-de
+          primitive_slug: eurostat-health-spending-de-2022
+          name: Germany total health expenditure (Eurostat hlth_sha11_hf, all schemes)
+          description: Germany current health expenditure across all financing schemes, absolute EUR (Eurostat hlth_sha11_hf TOT_HF as MIO_EUR/millions; value_scale lifts to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/hlth_sha11_hf/default/table
+          geo_codes: [DEU]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - geo: FR
+          start_year: 2022
+          end_year: 2022
+          year: 2022
+          concept_slug: eurostat-health-spending-fr
+          primitive_slug: eurostat-health-spending-fr-2022
+          name: France total health expenditure (Eurostat hlth_sha11_hf, all schemes)
+          description: France current health expenditure across all financing schemes, absolute EUR (Eurostat hlth_sha11_hf TOT_HF as MIO_EUR/millions; value_scale lifts to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/hlth_sha11_hf/default/table
+          geo_codes: [FRA]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+    - method: get_value_added_by_sector
+      arg_sets:
+        - geo: DE
+          nace_r2: C
+          start_year: 2022
+          end_year: 2022
+          year: 2022
+          concept_slug: eurostat-manufacturing-value-added-de
+          primitive_slug: eurostat-va-manufacturing-de-2022
+          name: Germany manufacturing gross value added (Eurostat nama_10_a64, NACE C)
+          description: Germany gross value added of manufacturing (NACE Rev.2 C), absolute EUR (Eurostat nama_10_a64 B1G as CP_MEUR/millions; value_scale lifts to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table
+          geo_codes: [DEU]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - geo: FR
+          nace_r2: J
+          start_year: 2022
+          end_year: 2022
+          year: 2022
+          concept_slug: eurostat-ict-value-added-fr
+          primitive_slug: eurostat-va-ict-fr-2022
+          name: France ICT-sector gross value added (Eurostat nama_10_a64, NACE J)
+          description: France gross value added of information and communication (NACE Rev.2 J), absolute EUR (Eurostat nama_10_a64 B1G as CP_MEUR/millions; value_scale lifts to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table
+          geo_codes: [FRA]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - geo: DE
+          nace_r2: K
+          start_year: 2022
+          end_year: 2022
+          year: 2022
+          concept_slug: eurostat-finance-value-added-de
+          primitive_slug: eurostat-va-finance-de-2022
+          name: Germany financial-services gross value added (Eurostat nama_10_a64, NACE K)
+          description: Germany gross value added of financial and insurance activities (NACE Rev.2 K), absolute EUR (Eurostat nama_10_a64 B1G as CP_MEUR/millions; value_scale lifts to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_a64/default/table
+          geo_codes: [DEU]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+    - method: get_household_consumption
+      arg_sets:
+        - geo: DE
+          coicop: TOTAL
+          start_year: 2022
+          end_year: 2022
+          year: 2022
+          concept_slug: eurostat-household-consumption-de
+          primitive_slug: eurostat-household-consumption-de-2022
+          name: Germany household final consumption, all purposes (Eurostat nama_10_co3_p3)
+          description: Germany final consumption expenditure of households across all COICOP purposes, absolute EUR (Eurostat nama_10_co3_p3 as CP_MEUR/millions; value_scale lifts to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_co3_p3/default/table
+          geo_codes: [DEU]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
+        - geo: FR
+          coicop: TOTAL
+          start_year: 2022
+          end_year: 2022
+          year: 2022
+          concept_slug: eurostat-household-consumption-fr
+          primitive_slug: eurostat-household-consumption-fr-2022
+          name: France household final consumption, all purposes (Eurostat nama_10_co3_p3)
+          description: France final consumption expenditure of households across all COICOP purposes, absolute EUR (Eurostat nama_10_co3_p3 as CP_MEUR/millions; value_scale lifts to base units).
+          source_url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_co3_p3/default/table
+          geo_codes: [FRA]
+          geo_level: country
+          unit_kind: flow
+          unit_dimension: currency
+          unit_currency: EUR
+          value_scale: 1000000
   eia:
     - method: get_electricity_sales
       arg_sets:
@@ -468,6 +808,105 @@ connectors:
   # ── FDIC — US banking (regulator, keyless). Only get_financials is
   # dispatchable; it returns the single largest bank by the sort field, NOT an
   # industry total (descriptions say so). ─────────────────────────────────
+    - method: get_electricity_sales
+      arg_sets:
+        - state: US
+          sector: ALL
+          frequency: annual
+          route: electricity/retail-sales
+          concept_slug: us-electricity-retail-sales
+          primitive_slug: eia-electricity-retail-sales-us-all
+          name: US retail electricity sales (all sectors)
+          description: Total US retail electricity sales volume, all sectors, latest annual period (million kWh).
+          source_url: https://www.eia.gov/electricity/data.php
+          unit_kind: flow
+          unit_dimension: transactions
+        - state: US
+          sector: COM
+          frequency: annual
+          route: electricity/retail-sales
+          concept_slug: us-electricity-retail-sales
+          primitive_slug: eia-electricity-retail-sales-us-commercial
+          name: US commercial retail electricity sales
+          description: US commercial-sector retail electricity sales volume, latest annual period (million kWh).
+          source_url: https://www.eia.gov/electricity/data.php
+          unit_kind: flow
+          unit_dimension: transactions
+        - state: US
+          sector: RES
+          frequency: annual
+          route: electricity/retail-sales
+          concept_slug: us-electricity-retail-sales
+          primitive_slug: eia-electricity-retail-sales-us-residential
+          name: US residential retail electricity sales
+          description: US residential-sector retail electricity sales volume, latest annual period (million kWh) - household demand denominator.
+          source_url: https://www.eia.gov/electricity/data.php
+          unit_kind: flow
+          unit_dimension: transactions
+        - state: US
+          sector: IND
+          frequency: annual
+          route: electricity/retail-sales
+          concept_slug: us-electricity-retail-sales
+          primitive_slug: eia-electricity-retail-sales-us-industrial
+          name: US industrial retail electricity sales
+          description: US industrial-sector retail electricity sales volume, latest annual period (million kWh) - industrial energy-demand denominator.
+          source_url: https://www.eia.gov/electricity/data.php
+          unit_kind: flow
+          unit_dimension: transactions
+    - method: get_electricity_prices
+      arg_sets:
+        - state: US
+          sector: ALL
+          frequency: annual
+          route: electricity/retail-price
+          concept_slug: us-electricity-price
+          primitive_slug: eia-electricity-price-us-all
+          name: US average retail electricity price (all sectors)
+          description: US average retail electricity price, all sectors, latest annual period (cents per kWh) - energy cost-per-unit input.
+          source_url: https://www.eia.gov/electricity/data.php
+          unit_kind: intensive
+          unit_dimension: currency
+          unit_currency: USD
+          unit_denominator: kwh
+    - method: get_natural_gas_prices
+      arg_sets:
+        - frequency: annual
+          route: natural-gas/price
+          concept_slug: us-natural-gas-price
+          primitive_slug: eia-natural-gas-price-us
+          name: US natural gas price (Henry Hub / citygate)
+          description: US natural gas price, latest annual period (USD per thousand cubic feet, $/MCF) - fuel cost-per-unit input.
+          source_url: https://www.eia.gov/naturalgas/
+          unit_kind: intensive
+          unit_dimension: currency
+          unit_currency: USD
+          unit_denominator: mcf
+    - method: get_petroleum_prices
+      arg_sets:
+        - product: EPCWTI
+          frequency: annual
+          route: petroleum/wti-price
+          concept_slug: us-crude-oil-price
+          primitive_slug: eia-wti-crude-price-us
+          name: WTI crude oil spot price (annual)
+          description: West Texas Intermediate crude oil spot price, latest annual period (USD per barrel) - benchmark energy cost input.
+          source_url: https://www.eia.gov/petroleum/
+          unit_kind: intensive
+          unit_dimension: currency
+          unit_currency: USD
+          unit_denominator: barrel
+    - method: get_petroleum_consumption
+      arg_sets:
+        - frequency: annual
+          route: petroleum/consumption
+          concept_slug: us-petroleum-consumption
+          primitive_slug: eia-petroleum-consumption-us
+          name: US petroleum products supplied (consumption)
+          description: US petroleum products supplied (a proxy for consumption), latest annual period (thousand barrels per day basis) - petroleum-demand denominator.
+          source_url: https://www.eia.gov/petroleum/
+          unit_kind: flow
+          unit_dimension: transactions
   fdic:
     - method: get_financials
       arg_sets:
@@ -488,6 +927,64 @@ connectors:
 
   # ── CMS — Medicare (regulator, keyless). NHE excluded (converter/method
   # type mismatch). State row passed for determinism. ─────────────────────
+    - method: get_financials
+      arg_sets:
+        - report_date: "20241231"
+          limit: 1
+          sort_by: ASSET
+          sort_order: DESC
+          field: ASSET
+          concept_slug: us-bank-total-assets
+          primitive_slug: fdic-largest-bank-assets-2024
+          name: Largest US insured bank - total assets (2024-12-31)
+          description: Total assets of the single largest FDIC-insured institution by assets, year-end 2024 (absolute USD). NOT an industry total.
+          source_url: https://banks.data.fdic.gov/
+          unit_kind: stock
+          unit_dimension: currency
+          unit_currency: USD
+          value_scale: 1000
+        - report_date: "20241231"
+          limit: 1
+          sort_by: DEP
+          sort_order: DESC
+          field: DEP
+          concept_slug: us-bank-deposits
+          primitive_slug: fdic-largest-bank-deposits-2024
+          name: Largest US insured bank - total deposits (2024-12-31)
+          description: Total deposits of the single largest FDIC-insured institution by deposits, year-end 2024 (absolute USD). NOT an industry total.
+          source_url: https://banks.data.fdic.gov/
+          unit_kind: stock
+          unit_dimension: currency
+          unit_currency: USD
+          value_scale: 1000
+        - report_date: "20241231"
+          limit: 1
+          sort_by: NETINC
+          sort_order: DESC
+          field: NETINC
+          concept_slug: us-bank-deposits
+          primitive_slug: fdic-largest-bank-net-income-2024
+          name: Largest US insured bank - net income (2024)
+          description: Net income of the single largest FDIC-insured institution by net income, full-year 2024 (absolute USD). NOT an industry total.
+          source_url: https://banks.data.fdic.gov/
+          unit_kind: stock
+          unit_dimension: currency
+          unit_currency: USD
+          value_scale: 1000
+        - report_date: "20241231"
+          limit: 1
+          sort_by: INTINC
+          sort_order: DESC
+          field: INTINC
+          concept_slug: us-bank-deposits
+          primitive_slug: fdic-largest-bank-interest-income-2024
+          name: Largest US insured bank - total interest income (2024)
+          description: Total interest income of the single largest FDIC-insured institution by interest income, full-year 2024 (absolute USD). NOT an industry total.
+          source_url: https://banks.data.fdic.gov/
+          unit_kind: stock
+          unit_dimension: currency
+          unit_currency: USD
+          value_scale: 1000
   cms:
     - method: get_enrollment
       arg_sets:
@@ -510,6 +1007,68 @@ connectors:
   # NO enplanement or operations columns, so we size airport COUNTS (a supply
   # denominator), never passenger figures (which FAA only publishes as Excel
   # files, not a queryable API). ──────────────────────────────────────────
+    - method: get_enrollment
+      arg_sets:
+        - year: 2022
+          state: CA
+          limit: 500
+          concept_slug: us-medicare-enrollment
+          primitive_slug: cms-medicare-enrollment-ca-2022
+          name: California Medicare enrollment (2022)
+          description: Total Medicare beneficiaries in California, 2022.
+          source_url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
+          geo_codes: ["US-CA"]
+          geo_level: subnational
+          unit_kind: stock
+          unit_dimension: people
+        - year: 2022
+          state: TX
+          limit: 500
+          concept_slug: us-medicare-enrollment
+          primitive_slug: cms-medicare-enrollment-tx-2022
+          name: Texas Medicare enrollment (2022)
+          description: Total Medicare beneficiaries in Texas, 2022.
+          source_url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
+          geo_codes: ["US-TX"]
+          geo_level: subnational
+          unit_kind: stock
+          unit_dimension: people
+        - year: 2022
+          state: FL
+          limit: 500
+          concept_slug: us-medicare-enrollment
+          primitive_slug: cms-medicare-enrollment-fl-2022
+          name: Florida Medicare enrollment (2022)
+          description: Total Medicare beneficiaries in Florida, 2022.
+          source_url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
+          geo_codes: ["US-FL"]
+          geo_level: subnational
+          unit_kind: stock
+          unit_dimension: people
+        - year: 2022
+          state: NY
+          limit: 500
+          concept_slug: us-medicare-enrollment
+          primitive_slug: cms-medicare-enrollment-ny-2022
+          name: New York Medicare enrollment (2022)
+          description: Total Medicare beneficiaries in New York, 2022.
+          source_url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
+          geo_codes: ["US-NY"]
+          geo_level: subnational
+          unit_kind: stock
+          unit_dimension: people
+        - year: 2022
+          state: PA
+          limit: 500
+          concept_slug: us-medicare-enrollment
+          primitive_slug: cms-medicare-enrollment-pa-2022
+          name: Pennsylvania Medicare enrollment (2022)
+          description: Total Medicare beneficiaries in Pennsylvania, 2022.
+          source_url: https://data.cms.gov/summary-statistics-on-beneficiary-enrollment
+          geo_codes: ["US-PA"]
+          geo_level: subnational
+          unit_kind: stock
+          unit_dimension: people
   faa:
     - method: get_airport_count
       arg_sets:
@@ -530,6 +1089,50 @@ connectors:
 
   # ── openFDA — life-sciences (regulator, keyless). drug_name is a converter
   # label feeding the source slug/sha, not a query arg. ───────────────────
+    - method: get_airport_count
+      arg_sets:
+        - airport_type: AD
+          concept_slug: us-air-travel
+          primitive_slug: faa-us-airport-count
+          name: US airport count (FAA AIS, type AD)
+          description: Count of US landplane airports (TYPE_CODE='AD') on the FAA AIS Airports feature layer - supply-side facility denominator for aviation-services TAMs.
+          source_url: https://www.faa.gov/air_traffic/flight_info/aeronav
+          geo_level: country
+        - state: CA
+          concept_slug: us-air-travel
+          primitive_slug: faa-ca-airport-count
+          name: California airport/facility count (FAA AIS)
+          description: Count of all FAA-listed aviation facilities (airports, heliports, seaplane bases) in California on the FAA AIS Airports feature layer.
+          source_url: https://www.faa.gov/air_traffic/flight_info/aeronav
+          geo_level: subnational
+        - airport_type: HP
+          concept_slug: us-air-travel
+          primitive_slug: faa-us-heliport-count
+          name: US heliport count (FAA AIS, type HP)
+          description: Count of US heliports (TYPE_CODE='HP') on the FAA AIS Airports feature layer - rotorcraft-infrastructure denominator.
+          source_url: https://www.faa.gov/air_traffic/flight_info/aeronav
+          geo_level: country
+        - airport_type: SP
+          concept_slug: us-air-travel
+          primitive_slug: faa-us-seaplane-base-count
+          name: US seaplane base count (FAA AIS, type SP)
+          description: Count of US seaplane bases (TYPE_CODE='SP') on the FAA AIS Airports feature layer - seaplane-infrastructure denominator.
+          source_url: https://www.faa.gov/air_traffic/flight_info/aeronav
+          geo_level: country
+        - state: TX
+          concept_slug: us-air-travel
+          primitive_slug: faa-tx-airport-count
+          name: Texas airport/facility count (FAA AIS)
+          description: Count of all FAA-listed aviation facilities in Texas on the FAA AIS Airports feature layer - state-level supply denominator.
+          source_url: https://www.faa.gov/air_traffic/flight_info/aeronav
+          geo_level: subnational
+        - state: NY
+          concept_slug: us-air-travel
+          primitive_slug: faa-ny-airport-count
+          name: New York airport/facility count (FAA AIS)
+          description: Count of all FAA-listed aviation facilities in New York on the FAA AIS Airports feature layer - state-level supply denominator.
+          source_url: https://www.faa.gov/air_traffic/flight_info/aeronav
+          geo_level: subnational
   openfda:
     - method: get_clearance_count_by_year
       arg_sets:
@@ -550,6 +1153,46 @@ connectors:
 
   # ── UN Comtrade — global trade. Key: STRATA_COMTRADE_API_KEY
   # (subscription_key). reporter/partner = M49 codes; cmd_code = HS chapter. ─
+    - method: get_clearance_count_by_year
+      arg_sets:
+        - drug_name: device-510k-clearances
+          concept_slug: us-medical-device-clearances
+          primitive_slug: fda-510k-clearances-total
+          name: FDA 510(k) device clearances (total across years)
+          description: Total count of FDA device 510(k) clearances summed across all decision years, openFDA device/510k count endpoint.
+          source_url: https://api.fda.gov/device/510k.json
+    - method: get_drug_recall_count_by_class
+      arg_sets:
+        - drug_name: drug-recalls-by-class
+          concept_slug: us-drug-safety
+          primitive_slug: fda-drug-recalls-total-by-class
+          name: FDA drug recalls (total across severity classes)
+          description: Total count of FDA drug enforcement recalls summed across Class I/II/III, openFDA drug/enforcement count endpoint.
+          source_url: https://api.fda.gov/drug/enforcement.json
+    - method: get_ndc_count
+      arg_sets:
+        - drug_name: drug-ndc-catalog
+          concept_slug: us-drug-catalog
+          primitive_slug: fda-ndc-product-count
+          name: US drug catalog size (NDC products, total across routes)
+          description: Total count of NDC drug products summed across administration routes, openFDA drug/ndc count endpoint - size of the US marketed-drug catalog.
+          source_url: https://api.fda.gov/drug/ndc.json
+    - method: get_approval_count_by_year
+      arg_sets:
+        - drug_name: device-pma-approvals
+          concept_slug: us-medical-device-approvals
+          primitive_slug: fda-pma-approvals-total
+          name: FDA PMA device approvals (total across years)
+          description: Total count of FDA premarket-approval (PMA) device decisions summed across all decision dates, openFDA device/pma count endpoint - high-risk device throughput.
+          source_url: https://api.fda.gov/device/pma.json
+    - method: get_label_count_by_route
+      arg_sets:
+        - drug_name: drug-label-routes
+          concept_slug: us-drug-labels
+          primitive_slug: fda-drug-label-count
+          name: FDA drug labels (total across administration routes)
+          description: Total count of FDA structured drug-product labels summed across administration routes, openFDA drug/label count endpoint - size of the labeled-drug universe.
+          source_url: https://api.fda.gov/drug/label.json
   comtrade:
     # NOTE: the keyless public preview endpoint does NOT support the World
     # reporter (reporterCode=0 returns zero rows). Use a concrete reporter
@@ -581,3 +1224,156 @@ connectors:
           source_url: https://comtrade.un.org/
           geo_codes: ["USA"]
           unit_currency: USD
+    - method: get_world_imports
+      arg_sets:
+        - cmd_code: "84"
+          period: 2023
+          reporter: "842"
+          year: 2023
+          concept_slug: us-machinery-imports
+          primitive_slug: ct-us-imports-machinery-2023
+          name: US imports of machinery and mechanical appliances (HS 84), 2023
+          description: US (reporter 842) import value of HS chapter 84 (machinery, computers, mechanical appliances) from the world, 2023, UN Comtrade preview API.
+          source_url: https://comtrade.un.org/
+          geo_codes: ["USA"]
+          unit_currency: USD
+        - cmd_code: "30"
+          period: 2023
+          reporter: "842"
+          year: 2023
+          concept_slug: us-pharmaceutical-imports
+          primitive_slug: ct-us-imports-pharma-2023
+          name: US imports of pharmaceutical products (HS 30), 2023
+          description: US (reporter 842) import value of HS chapter 30 (pharmaceutical products) from the world, 2023, UN Comtrade preview API.
+          source_url: https://comtrade.un.org/
+          geo_codes: ["USA"]
+          unit_currency: USD
+        - cmd_code: "87"
+          period: 2023
+          reporter: "842"
+          year: 2023
+          concept_slug: us-vehicle-imports
+          primitive_slug: ct-us-imports-vehicles-2023
+          name: US imports of vehicles, excluding railway (HS 87), 2023
+          description: US (reporter 842) import value of HS chapter 87 (vehicles other than railway/tramway) from the world, 2023, UN Comtrade preview API.
+          source_url: https://comtrade.un.org/
+          geo_codes: ["USA"]
+          unit_currency: USD
+        - cmd_code: "27"
+          period: 2023
+          reporter: "842"
+          year: 2023
+          concept_slug: us-mineral-fuel-imports
+          primitive_slug: ct-us-imports-mineral-fuels-2023
+          name: US imports of mineral fuels and oils (HS 27), 2023
+          description: US (reporter 842) import value of HS chapter 27 (mineral fuels, oils, distillation products) from the world, 2023, UN Comtrade preview API.
+          source_url: https://comtrade.un.org/
+          geo_codes: ["USA"]
+          unit_currency: USD
+        - cmd_code: "90"
+          period: 2023
+          reporter: "842"
+          year: 2023
+          concept_slug: us-optical-instrument-imports
+          primitive_slug: ct-us-imports-optical-instruments-2023
+          name: US imports of optical, medical and precision instruments (HS 90), 2023
+          description: US (reporter 842) import value of HS chapter 90 (optical, photographic, medical, precision instruments) from the world, 2023, UN Comtrade preview API.
+          source_url: https://comtrade.un.org/
+          geo_codes: ["USA"]
+          unit_currency: USD
+        - cmd_code: "29"
+          period: 2023
+          reporter: "842"
+          year: 2023
+          concept_slug: us-organic-chemical-imports
+          primitive_slug: ct-us-imports-organic-chemicals-2023
+          name: US imports of organic chemicals (HS 29), 2023
+          description: US (reporter 842) import value of HS chapter 29 (organic chemicals) from the world, 2023, UN Comtrade preview API.
+          source_url: https://comtrade.un.org/
+          geo_codes: ["USA"]
+          unit_currency: USD
+    - method: get_hs6_trade
+      arg_sets:
+        - cmd_code_hs6: "854231"
+          reporter: "842"
+          period: 2023
+          year: 2023
+          concept_slug: us-semiconductor-imports
+          primitive_slug: ct-us-imports-processors-hs854231-2023
+          name: US imports of electronic integrated-circuit processors/controllers (HS 854231), 2023
+          description: US (reporter 842) import value of HS 854231 (electronic integrated circuits - processors and controllers) from the world, 2023, UN Comtrade preview API.
+          source_url: https://comtrade.un.org/
+          geo_codes: ["USA"]
+          unit_currency: USD
+    - method: get_bilateral_trade
+      arg_sets:
+        - reporter: "842"
+          partner: "276"
+          period: 2023
+          year: 2023
+          concept_slug: us-germany-trade
+          primitive_slug: ct-us-germany-bilateral-2023
+          name: US imports from Germany, all commodities, 2023
+          description: Bilateral import value into the US (reporter 842) from Germany (partner 276), all commodities, 2023, UN Comtrade preview API.
+          source_url: https://comtrade.un.org/
+          geo_codes: ["USA"]
+          unit_currency: USD
+  usda_nass:
+    - method: get_prices
+      arg_sets:
+        - commodity: CORN
+          year: 2023
+          concept_slug: us-corn-price
+          primitive_slug: nass-corn-price-received-2023
+          name: US corn price received (2023, $/bushel)
+          description: US national average price received by farmers for corn, 2023 (USD per bushel) - commodity cost-per-unit input for ag-tech / food-supply TAMs.
+          source_url: https://quickstats.nass.usda.gov/
+        - commodity: SOYBEANS
+          year: 2023
+          concept_slug: us-soybean-price
+          primitive_slug: nass-soybeans-price-received-2023
+          name: US soybean price received (2023, $/bushel)
+          description: US national average price received by farmers for soybeans, 2023 (USD per bushel).
+          source_url: https://quickstats.nass.usda.gov/
+        - commodity: WHEAT
+          year: 2023
+          concept_slug: us-wheat-price
+          primitive_slug: nass-wheat-price-received-2023
+          name: US wheat price received (2023, $/bushel)
+          description: US national average price received by farmers for wheat, 2023 (USD per bushel).
+          source_url: https://quickstats.nass.usda.gov/
+        - commodity: COTTON
+          year: 2023
+          concept_slug: us-cotton-price
+          primitive_slug: nass-cotton-price-received-2023
+          name: US cotton price received (2023, $/pound)
+          description: US national average price received by farmers for upland cotton, 2023 (USD per pound).
+          source_url: https://quickstats.nass.usda.gov/
+        - commodity: RICE
+          year: 2023
+          concept_slug: us-rice-price
+          primitive_slug: nass-rice-price-received-2023
+          name: US rice price received (2023, $/cwt)
+          description: US national average price received by farmers for rice, 2023 (USD per hundredweight).
+          source_url: https://quickstats.nass.usda.gov/
+        - commodity: HOGS
+          year: 2023
+          concept_slug: us-hog-price
+          primitive_slug: nass-hogs-price-received-2023
+          name: US hog price received (2023, $/cwt)
+          description: US national average price received by farmers for hogs, 2023 (USD per hundredweight liveweight).
+          source_url: https://quickstats.nass.usda.gov/
+        - commodity: MILK
+          year: 2023
+          concept_slug: us-milk-price
+          primitive_slug: nass-milk-price-received-2023
+          name: US milk price received (2023, $/cwt)
+          description: US national average price received by farmers for milk, 2023 (USD per hundredweight).
+          source_url: https://quickstats.nass.usda.gov/
+        - commodity: EGGS
+          year: 2023
+          concept_slug: us-egg-price
+          primitive_slug: nass-eggs-price-received-2023
+          name: US egg price received (2023, $/dozen)
+          description: US national average price received by farmers for eggs, 2023 (USD per dozen).
+          source_url: https://quickstats.nass.usda.gov/

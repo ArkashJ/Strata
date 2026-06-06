@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: eurostat-gdp-pl-2023
+schema_version: 1
+concept_slug: eurostat-gdp-pl
+name: Poland GDP at market prices (Eurostat nama_10_gdp, B1GQ)
+description: Poland GDP at current prices, absolute EUR (Eurostat nama_10_gdp B1GQ
+  as CP_MEUR/millions; value_scale lifts to base units).
+value: 751931700000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - POL
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: es-nama-10-gdp-pl-2023
+  tier: regulator
+  url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
+  accessed: '2026-06-06'
+  snapshot_sha256: c10ea87a1b61d2885d461827c9042b044d4848b4dbde62a2268d60363eae861c

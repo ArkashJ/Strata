@@ -1,0 +1,15 @@
+kind: concept
+slug: us-medical-device-approvals
+schema_version: 1
+name: US high-risk medical device approvals
+definition: >-
+  The cumulative count of FDA premarket-approval (PMA) decisions for high-
+  risk (Class III) medical devices. A regulatory-throughput denominator
+  for the high-risk device pipeline.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - fda-pma-approvals-total
+competing_concepts: []
+requires_clearance: []

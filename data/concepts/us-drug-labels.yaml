@@ -1,0 +1,15 @@
+kind: concept
+slug: us-drug-labels
+schema_version: 1
+name: US labeled-drug universe
+definition: >-
+  The count of structured FDA drug-product labels across administration
+  routes. A supply-side denominator for the universe of labeled drug
+  products in the US.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - fda-drug-label-count
+competing_concepts: []
+requires_clearance: []

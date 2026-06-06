@@ -1,0 +1,16 @@
+kind: concept
+slug: oecd-gdp-esp
+schema_version: 1
+name: Spain GDP (OECD national accounts)
+definition: >-
+  Gross domestic product of Spain at current market prices (transaction
+  B1GQ), measured in national currency (EUR). The total annual output of
+  the Spain economy — a top-level denominator for any Spain-scoped market-
+  sizing model.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - oecd-gdp-esp-2022
+competing_concepts: []
+requires_clearance: []

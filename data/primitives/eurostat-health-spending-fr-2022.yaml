@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: eurostat-health-spending-fr-2022
+schema_version: 1
+concept_slug: eurostat-health-spending-fr
+name: France total health expenditure (Eurostat hlth_sha11_hf, all schemes)
+description: France current health expenditure across all financing schemes, absolute
+  EUR (Eurostat hlth_sha11_hf TOT_HF as MIO_EUR/millions; value_scale lifts to base
+  units).
+value: 314108420000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - FRA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: es-hlth-sha11-hf-fr-2022
+  tier: regulator
+  url: https://ec.europa.eu/eurostat/databrowser/view/hlth_sha11_hf/default/table
+  accessed: '2026-06-06'
+  snapshot_sha256: df24290d2a6e51ec8d99b3ba38f00a0148ba843487bcef4bf36d94465277f25d

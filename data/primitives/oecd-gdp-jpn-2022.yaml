@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: oecd-gdp-jpn-2022
+schema_version: 1
+concept_slug: oecd-gdp-jpn
+name: Japan GDP, expenditure approach (OECD national accounts)
+description: Japan GDP at current prices, absolute JPY (OECD DSD_NAMAIN10 B1GQ in
+  millions of national currency; value_scale lifts to base units).
+value: 584900600000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: JPY
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - JPN
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: oecd-oecd-sdd-nad-dsd-namain10-df-table1-expenditure-jpn-2022
+  tier: aggregator
+  url: https://data.oecd.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: 8ba56350a478dc2bac3bd205740b5ea2b7d32f62c7cd7484e8a94ca7aeb66d8f

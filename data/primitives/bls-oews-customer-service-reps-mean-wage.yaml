@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: bls-oews-customer-service-reps-mean-wage
+schema_version: 1
+concept_slug: us-customer-service-rep-labor
+name: US customer service representatives — national annual mean wage (OEWS 43-4051)
+description: National annual mean wage of customer service reps — cost-per-persona
+  input for AI-support-deflection TAMs.
+value: 46590.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: year
+  currency: USD
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: bls-oeun000000000000043405104-2025
+  tier: regulator
+  url: https://www.bls.gov/oes/current/oes434051.htm
+  accessed: '2026-06-03'
+  snapshot_sha256: 274b2b0c097bd909ef7c2ebb24c7b8f38161b6564ebe60628758796dd73cb71b

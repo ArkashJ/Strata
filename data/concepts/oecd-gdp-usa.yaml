@@ -1,0 +1,16 @@
+kind: concept
+slug: oecd-gdp-usa
+schema_version: 1
+name: United States GDP (OECD national accounts)
+definition: >-
+  Gross domestic product of United States at current market prices
+  (transaction B1GQ), measured in national currency (USD). The total
+  annual output of the United States economy — a top-level denominator for
+  any United States-scoped market-sizing model.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - oecd-gdp-usa-2022
+competing_concepts: []
+requires_clearance: []

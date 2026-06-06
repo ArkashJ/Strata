@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: fdic-largest-bank-net-income-2024
+schema_version: 1
+concept_slug: us-bank-deposits
+name: Largest US insured bank - net income (2024)
+description: Net income of the single largest FDIC-insured institution by net income,
+  full-year 2024 (absolute USD). NOT an industry total.
+value: 52502000000.0
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2024-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: fdic-628-netinc-20241231
+  tier: regulator
+  url: https://banks.data.fdic.gov/
+  accessed: '2026-06-06'
+  snapshot_sha256: 5e539add9092bce77d2c6db0cd43828ef114887262439f91fe4b8c4da7dea96f

@@ -1,0 +1,15 @@
+kind: concept
+slug: us-drug-safety
+schema_version: 1
+name: US drug safety recalls
+definition: >-
+  The count of FDA drug enforcement recalls across severity classes
+  (I/II/III). A throughput signal for drug-safety and pharmacovigilance
+  TAMs.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - fda-drug-recalls-total-by-class
+competing_concepts: []
+requires_clearance: []

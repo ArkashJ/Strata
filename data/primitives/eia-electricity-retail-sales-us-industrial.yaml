@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: eia-electricity-retail-sales-us-industrial
+schema_version: 1
+concept_slug: us-electricity-retail-sales
+name: US industrial retail electricity sales
+description: US industrial-sector retail electricity sales volume, latest annual period
+  (million kWh) - industrial energy-demand denominator.
+value: 1042216.91519
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: eia-electricity-retail-sales-us-2025
+  tier: regulator
+  url: https://www.eia.gov/electricity/data.php
+  accessed: '2026-06-06'
+  snapshot_sha256: e70e96bca9db8f4df13134ed501d138d5567d412f2472a49d7f032c0b7af3894

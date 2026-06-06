@@ -1,0 +1,15 @@
+kind: concept
+slug: eurostat-ict-value-added-fr
+schema_version: 1
+name: France ICT-sector gross value added (Eurostat)
+definition: >-
+  Gross value added of the French information and communication sector
+  (NACE Rev.2 section J) at current prices (Eurostat nama_10_a64, B1G), in
+  euro. A sector denominator for software and digital-services TAMs.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - eurostat-va-ict-fr-2022
+competing_concepts: []
+requires_clearance: []

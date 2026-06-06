@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: nass-hogs-price-received-2023
+schema_version: 1
+concept_slug: us-hog-price
+name: US hog price received (2023, $/cwt)
+description: US national average price received by farmers for hogs, 2023 (USD per
+  hundredweight liveweight).
+value: 62.0
+unit:
+  kind: stock
+  dimension: currency
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: nass-hogs-price-received-us-2023
+  tier: regulator
+  url: https://quickstats.nass.usda.gov/
+  accessed: '2026-06-06'
+  snapshot_sha256: 95b713af9874ed7b8f0d77f3facd3408669482ca51d4ced1f380e5679dfebc7c

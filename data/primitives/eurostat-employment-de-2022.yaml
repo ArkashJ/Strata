@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: eurostat-employment-de-2022
+schema_version: 1
+concept_slug: eurostat-employment-de
+name: Germany total employment, ages 15-64 (Eurostat lfsa_egan2)
+description: Total employed persons aged 15-64 in Germany, all NACE activities (Eurostat
+  lfsa_egan2, THS_PER/thousands; value_scale lifts to persons).
+value: 40401700.0
+unit:
+  kind: stock
+  dimension: people
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - DEU
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: es-lfsa-egan2-de-2022
+  tier: regulator
+  url: https://ec.europa.eu/eurostat/databrowser/view/lfsa_egan2/default/table
+  accessed: '2026-06-06'
+  snapshot_sha256: 054f8b7235bc8a8ce6437de1e798c9854e466ed4499b4fd1bb66b99b746ca0a5

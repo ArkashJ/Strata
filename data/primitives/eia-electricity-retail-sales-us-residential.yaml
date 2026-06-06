@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: eia-electricity-retail-sales-us-residential
+schema_version: 1
+concept_slug: us-electricity-retail-sales
+name: US residential retail electricity sales
+description: US residential-sector retail electricity sales volume, latest annual
+  period (million kWh) - household demand denominator.
+value: 1514993.23035
+unit:
+  kind: flow
+  dimension: transactions
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: eia-electricity-retail-sales-us-2025
+  tier: regulator
+  url: https://www.eia.gov/electricity/data.php
+  accessed: '2026-06-06'
+  snapshot_sha256: 30375ce521996174c498b6fdc418d51f92bb10165a813cc7c5966345070cca99

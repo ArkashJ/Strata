@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: eia-electricity-price-us-all
+schema_version: 1
+concept_slug: us-electricity-price
+name: US average retail electricity price (all sectors)
+description: US average retail electricity price, all sectors, latest annual period
+  (cents per kWh) - energy cost-per-unit input.
+value: 13.63
+unit:
+  kind: intensive
+  dimension: currency
+  denominator: kwh
+  currency: USD
+as_of: '2025-12-31'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: eia-electricity-retail-price-us-2025
+  tier: regulator
+  url: https://www.eia.gov/electricity/data.php
+  accessed: '2026-06-06'
+  snapshot_sha256: 1283cb54cd3567477a28856d9f9605ed6aa6113551d41af1398c21cc97837efc

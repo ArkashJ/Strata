@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: eurostat-household-consumption-de-2022
+schema_version: 1
+concept_slug: eurostat-household-consumption-de
+name: Germany household final consumption, all purposes (Eurostat nama_10_co3_p3)
+description: Germany final consumption expenditure of households across all COICOP
+  purposes, absolute EUR (Eurostat nama_10_co3_p3 as CP_MEUR/millions; value_scale
+  lifts to base units).
+value: 1876818000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - DEU
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: es-nama-10-co3-p3-de-2022
+  tier: regulator
+  url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_co3_p3/default/table
+  accessed: '2026-06-06'
+  snapshot_sha256: 8a1271b63b4fe0ff889fac94f35759a414a16bd8bfa218953f7fd7ee347746f6

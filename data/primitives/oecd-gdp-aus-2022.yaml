@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: oecd-gdp-aus-2022
+schema_version: 1
+concept_slug: oecd-gdp-aus
+name: Australia GDP, expenditure approach (OECD national accounts)
+description: Australia GDP at current prices, absolute AUD (OECD DSD_NAMAIN10 B1GQ
+  in millions of national currency; value_scale lifts to base units).
+value: 2577013000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: AUD
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - AUS
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: oecd-oecd-sdd-nad-dsd-namain10-df-table1-expenditure-aus-2022
+  tier: aggregator
+  url: https://data.oecd.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: 2ba4b2c6c3bc58f9eaa59f352f32978fb4df5087cafde85dc69d7e63dce523f2

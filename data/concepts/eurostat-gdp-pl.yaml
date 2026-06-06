@@ -1,0 +1,16 @@
+kind: concept
+slug: eurostat-gdp-pl
+schema_version: 1
+name: Poland GDP (Eurostat national accounts)
+definition: >-
+  Gross domestic product of Poland at current market prices (transaction
+  B1GQ), measured in national currency (EUR). The total annual output of
+  the Poland economy — a top-level denominator for any Poland-scoped
+  market-sizing model.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - eurostat-gdp-pl-2023
+competing_concepts: []
+requires_clearance: []

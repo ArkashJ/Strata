@@ -1,0 +1,15 @@
+kind: concept
+slug: eurostat-household-consumption-de
+schema_version: 1
+name: Germany household final consumption (Eurostat)
+definition: >-
+  Final consumption expenditure of households in Germany across all COICOP
+  purposes (Eurostat nama_10_co3_p3) at current prices, in euro. The total
+  German consumer wallet — a demand denominator for consumer-facing TAMs.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - eurostat-household-consumption-de-2022
+competing_concepts: []
+requires_clearance: []

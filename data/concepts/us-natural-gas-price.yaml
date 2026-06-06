@@ -1,0 +1,15 @@
+kind: concept
+slug: us-natural-gas-price
+schema_version: 1
+name: US natural gas price
+definition: >-
+  The US price of natural gas in US dollars per thousand cubic feet
+  ($/MCF). A fuel cost-per-unit input for energy and industrial-cost TAMs;
+  a national average.
+analysis_lens:
+  primary: cost_efficiency
+modifiers: {}
+measurements:
+  - eia-natural-gas-price-us
+competing_concepts: []
+requires_clearance: []

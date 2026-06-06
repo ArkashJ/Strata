@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: eurostat-gdp-es-2023
+schema_version: 1
+concept_slug: eurostat-gdp-es
+name: Spain GDP at market prices (Eurostat nama_10_gdp, B1GQ)
+description: Spain GDP at current prices, absolute EUR (Eurostat nama_10_gdp B1GQ
+  as CP_MEUR/millions; value_scale lifts to base units).
+value: 1497761000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - ESP
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: es-nama-10-gdp-es-2023
+  tier: regulator
+  url: https://ec.europa.eu/eurostat/databrowser/view/nama_10_gdp/default/table
+  accessed: '2026-06-06'
+  snapshot_sha256: 7da111eba3a0660a253536c79f88dd22f11f5a85da228b71b6cc3558e387cad1

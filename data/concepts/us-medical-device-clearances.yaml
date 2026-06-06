@@ -1,0 +1,15 @@
+kind: concept
+slug: us-medical-device-clearances
+schema_version: 1
+name: US medical device clearances (510k)
+definition: >-
+  The cumulative count of FDA 510(k) device clearances across decision
+  years. A regulatory-throughput denominator for the moderate-risk device
+  pipeline.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - fda-510k-clearances-total
+competing_concepts: []
+requires_clearance: []

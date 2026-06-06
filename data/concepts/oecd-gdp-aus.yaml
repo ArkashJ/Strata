@@ -1,0 +1,16 @@
+kind: concept
+slug: oecd-gdp-aus
+schema_version: 1
+name: Australia GDP (OECD national accounts)
+definition: >-
+  Gross domestic product of Australia at current market prices
+  (transaction B1GQ), measured in national currency (AUD). The total
+  annual output of the Australia economy — a top-level denominator for any
+  Australia-scoped market-sizing model.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - oecd-gdp-aus-2022
+competing_concepts: []
+requires_clearance: []

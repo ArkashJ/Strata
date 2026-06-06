@@ -1,0 +1,16 @@
+kind: concept
+slug: eurostat-employment-de
+schema_version: 1
+name: Germany total employment, ages 15-64 (Eurostat)
+definition: >-
+  Total number of employed persons aged 15-64 in Germany across all NACE
+  Rev.2 activities (Eurostat lfsa_egan2). A national labour-force
+  denominator for persona-count and productivity-uplift models scoped to
+  Germany.
+analysis_lens:
+  primary: productivity_uplift
+modifiers: {}
+measurements:
+  - eurostat-employment-de-2022
+competing_concepts: []
+requires_clearance: []

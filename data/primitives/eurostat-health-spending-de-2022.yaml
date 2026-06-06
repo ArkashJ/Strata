@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: eurostat-health-spending-de-2022
+schema_version: 1
+concept_slug: eurostat-health-spending-de
+name: Germany total health expenditure (Eurostat hlth_sha11_hf, all schemes)
+description: Germany current health expenditure across all financing schemes, absolute
+  EUR (Eurostat hlth_sha11_hf TOT_HF as MIO_EUR/millions; value_scale lifts to base
+  units).
+value: 492139000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - DEU
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: es-hlth-sha11-hf-de-2022
+  tier: regulator
+  url: https://ec.europa.eu/eurostat/databrowser/view/hlth_sha11_hf/default/table
+  accessed: '2026-06-06'
+  snapshot_sha256: f72df1563ceb0eaff68ac0e2921a1a96d48c60cea12fa8bbccf9ee52c65de2d0

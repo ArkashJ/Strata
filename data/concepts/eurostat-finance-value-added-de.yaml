@@ -1,0 +1,15 @@
+kind: concept
+slug: eurostat-finance-value-added-de
+schema_version: 1
+name: Germany financial-services gross value added (Eurostat)
+definition: >-
+  Gross value added of German financial and insurance activities (NACE
+  Rev.2 section K) at current prices (Eurostat nama_10_a64, B1G), in euro.
+  A sector denominator for fintech and insurtech TAMs.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - eurostat-va-finance-de-2022
+competing_concepts: []
+requires_clearance: []

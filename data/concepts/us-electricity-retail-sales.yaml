@@ -1,0 +1,18 @@
+kind: concept
+slug: us-electricity-retail-sales
+schema_version: 1
+name: US retail electricity sales
+definition: >-
+  The volume of retail electricity sold to US end-users (million kWh), by
+  sector. A throughput denominator for grid, metering, and energy-software
+  TAMs.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - eia-electricity-retail-sales-us-all
+  - eia-electricity-retail-sales-us-commercial
+  - eia-electricity-retail-sales-us-residential
+  - eia-electricity-retail-sales-us-industrial
+competing_concepts: []
+requires_clearance: []

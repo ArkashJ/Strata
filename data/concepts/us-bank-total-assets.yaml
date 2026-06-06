@@ -1,0 +1,15 @@
+kind: concept
+slug: us-bank-total-assets
+schema_version: 1
+name: US bank total assets (largest-institution extreme)
+definition: >-
+  Total assets of the single largest FDIC-insured US institution by
+  assets. A per-institution maximum for benchmarking — explicitly NOT an
+  industry total.
+analysis_lens:
+  primary: revenue_generation
+modifiers: {}
+measurements:
+  - fdic-largest-bank-assets-2024
+competing_concepts: []
+requires_clearance: []

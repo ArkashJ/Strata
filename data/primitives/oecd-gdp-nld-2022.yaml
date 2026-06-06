@@ -1,0 +1,26 @@
+kind: atomic_primitive
+slug: oecd-gdp-nld-2022
+schema_version: 1
+concept_slug: oecd-gdp-nld
+name: Netherlands GDP, expenditure approach (OECD national accounts)
+description: Netherlands GDP at current prices, absolute EUR (OECD DSD_NAMAIN10 B1GQ
+  in millions; value_scale lifts to base units).
+value: 993820000000.0
+unit:
+  kind: flow
+  dimension: currency
+  currency: EUR
+as_of: '2022-12-31'
+geo:
+  level: country
+  codes:
+  - NLD
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: oecd-oecd-sdd-nad-dsd-namain10-df-table1-expenditure-nld-2022
+  tier: aggregator
+  url: https://data.oecd.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: b904951d9b6a17c20bcf81ce903edf5b87e16d55daca3568a5ecc28c9ced240f

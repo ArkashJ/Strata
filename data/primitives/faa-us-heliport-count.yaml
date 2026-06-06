@@ -1,0 +1,25 @@
+kind: atomic_primitive
+slug: faa-us-heliport-count
+schema_version: 1
+concept_slug: us-air-travel
+name: US heliport count (FAA AIS, type HP)
+description: Count of US heliports (TYPE_CODE='HP') on the FAA AIS Airports feature
+  layer - rotorcraft-infrastructure denominator.
+value: 5653
+unit:
+  kind: stock
+  dimension: organizations
+as_of: '2026-06-06'
+geo:
+  level: country
+  codes:
+  - US
+geo_perspective: supply
+distribution_shape: other
+delivery_mode: n/a
+source:
+  slug: faa-airport-count-us
+  tier: regulator
+  url: https://www.faa.gov/air_traffic/flight_info/aeronav
+  accessed: '2026-06-06'
+  snapshot_sha256: bc9e8d107d24c9982745b89f36b7797124e2be397b882351158eff3bd670556b

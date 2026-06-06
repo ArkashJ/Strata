@@ -1,0 +1,27 @@
+kind: atomic_primitive
+slug: ct-us-germany-bilateral-2023
+schema_version: 1
+concept_slug: us-germany-trade
+name: US imports from Germany, all commodities, 2023
+description: Bilateral import value into the US (reporter 842) from Germany (partner
+  276), all commodities, 2023, UN Comtrade preview API.
+value: 162959184239.0
+unit:
+  kind: flow
+  dimension: currency
+  denominator: year
+  currency: USD
+as_of: '2023-12-31'
+geo:
+  level: country
+  codes:
+  - USA
+geo_perspective: supply
+distribution_shape: normal
+delivery_mode: n/a
+source:
+  slug: ct-none-none-m-total-2023
+  tier: aggregator
+  url: https://comtrade.un.org/
+  accessed: '2026-06-06'
+  snapshot_sha256: 43460e4680324238649eee14e9a5df443dddaa45d3626d1cf09b6ca6bc69336a

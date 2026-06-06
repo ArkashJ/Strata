@@ -1,0 +1,16 @@
+kind: concept
+slug: us-optical-instrument-imports
+schema_version: 1
+name: US imports of optical, medical and precision instruments (HS 90)
+definition: >-
+  Annual value of US imports of optical, medical and precision instruments
+  (HS 90) from the world, in nominal US dollars (UN Comtrade, reporter
+  USA). A trade-flow denominator for the US import market in this
+  category.
+analysis_lens:
+  primary: platform_throughput
+modifiers: {}
+measurements:
+  - ct-us-imports-optical-instruments-2023
+competing_concepts: []
+requires_clearance: []
