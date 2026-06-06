@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — report charts, multi-page PDF, dynamic TAM unblock
+
+- **Analysis report now has charts.** Three charts at the top of every report,
+  all built only from numbers already in the report (no new figures invented):
+  an answered-vs-gaps donut, a coverage-by-category radar, and a source-tier
+  mix donut.
+- **"Print / Save as PDF" now spans the whole report.** It used to stop after
+  one page because the app frame was locked to one screen height. Print now
+  drops the sidebar/top bar, unlocks the scroll frame, and lets the report flow
+  across pages (a sample report prints as 13 pages).
+- **Dynamic TAM answers any market again (config).** Typing a market that isn't
+  pre-built returned "Could not find enough market data" because the live
+  fallback was switched off on the server. With it on, the fallback finds real
+  sourced numbers and computes a TAM, clearly banner-marked "synthesized via
+  fallback — do not cite without manual verification".
+
+  ```
+  query ─▶ in the bank?  ─yes─▶ sourced TAM
+            └─no─▶ STRATA_ALLOW_EXA_FALLBACK on? ─yes─▶ Exa-sourced TAM (banner)
+                                                  └─no──▶ "not enough data" (old behavior)
+  ```
+
 ### Added — breadth to v1.0 (v1.0 program · PR 5)
 
 The final PR of the program — frameworks, the missing lens, the quarantine fix,
