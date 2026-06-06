@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-METH-001
+prompt: "How many independent method families agree on this market size (the independence score)?"
+category: methodology
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: independence_score }
+narrative_template: "Independence score: {value}. The higher it is, the less the agreeing methods share a common input — independent corroboration, not the same number counted twice."
+gap_text: "No computed TAM for this concept yet, so independence can't be scored — size it first (POST /build/recompute)."
+resource_target: null
+schema_version: 1

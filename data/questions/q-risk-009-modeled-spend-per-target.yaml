@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-RISK-009
+prompt: "Is the spend-per-target input sourced or modeled, and how exposed is the revenue TAM to it?"
+category: risks
+lenses: [revenue_generation]
+applies_when: { lens_in: [revenue_generation], requires_role: [spend_per_target] }
+answer: { strategy: primitive_role, roles: [spend_per_target], aggregation: value }
+narrative_template: "The spend-per-target is {value} ({source_name}, {source_tier}, {as_of}). A revenue-generation TAM scales directly with this figure, so a modeled (uncited) ACV is the dominant risk — corroborate it first. Snapshot {snapshot}."
+gap_text: "No spend-per-target primitive bound for this revenue_generation concept — the revenue TAM cannot be defended without a sourced per-target spend."
+resource_target: null
+schema_version: 1

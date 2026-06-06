@@ -488,3 +488,75 @@ export const auditEventSchema = z.object({
   meta: z.record(z.unknown()).nullable().optional(),
 });
 export type AuditEvent = z.infer<typeof auditEventSchema>;
+
+// --- Question-driven market report (PR4) ----------------------------------
+// Mirrors backend strata.models.question field-for-field. Verified against
+// /openapi.json (GET /report, GET /report/{concept_slug}). Every numeric answer
+// is registry-sourced (provenance) or TAM-field synthesis — never authored.
+
+export const questionCategorySchema = z.enum([
+  "market_size",
+  "growth_rate",
+  "segmentation",
+  "geography",
+  "competition_share",
+  "regulation",
+  "adoption",
+  "unit_economics",
+  "risks",
+  "methodology",
+]);
+export type QuestionCategory = z.infer<typeof questionCategorySchema>;
+
+export const answerStrategySchema = z.enum([
+  "primitive_role",
+  "concept_measurement",
+  "tam_field",
+  "qualitative",
+]);
+export type AnswerStrategy = z.infer<typeof answerStrategySchema>;
+
+// One provenance row behind a resolved answer (InputUsed shape semantics).
+// source_url / source_tier are null for composites (a union has no single
+// source of its own) — honest, never fabricated.
+export const answerProvenanceSchema = z.object({
+  primitive_slug: z.string(),
+  source_url: z.string().nullable().optional(),
+  source_tier: z.string().nullable().optional(),
+  snapshot_sha256: z.string(),
+  as_of: z.string().nullable().optional(),
+});
+export type AnswerProvenance = z.infer<typeof answerProvenanceSchema>;
+
+// The assembler's runtime output (the Q20 fence). A numeric `value` is only
+// present when backed by `provenance` or a reproducible `synthesis`.
+export const resolvedAnswerSchema = z.object({
+  question_id: z.string(),
+  prompt: z.string(),
+  category: questionCategorySchema,
+  status: z.enum(["answered", "gap"]),
+  value: z.number().nullable().optional(),
+  display: z.string().nullable().optional(),
+  narrative: z.string(),
+  provenance: z.array(answerProvenanceSchema),
+  synthesis: z.string().nullable().optional(),
+  resource_target: z.string().nullable().optional(),
+});
+export type ResolvedAnswer = z.infer<typeof resolvedAnswerSchema>;
+
+// The assembled report for one concept: meta + resolved answers.
+export const conceptQuestionReportSchema = z.object({
+  concept_slug: z.string(),
+  concept_name: z.string(),
+  answers: z.array(resolvedAnswerSchema),
+});
+export type ConceptQuestionReport = z.infer<typeof conceptQuestionReportSchema>;
+
+// One row of the question catalog (GET /report).
+export const questionSummarySchema = z.object({
+  question_id: z.string(),
+  prompt: z.string(),
+  category: questionCategorySchema,
+  lenses: z.array(z.string()),
+});
+export type QuestionSummary = z.infer<typeof questionSummarySchema>;

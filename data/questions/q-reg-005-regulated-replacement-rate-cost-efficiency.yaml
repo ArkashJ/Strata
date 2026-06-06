@@ -1,0 +1,21 @@
+kind: analysis_question
+question_id: Q-REG-005
+prompt: "What replacement rate does the data support once regulatory constraints on automation are applied?"
+category: regulation
+lenses: [cost_efficiency]
+applies_when:
+  lens_in: [cost_efficiency]
+  requires_role: [replacement_rate]
+answer:
+  strategy: primitive_role
+  roles: [replacement_rate]
+  aggregation: value
+narrative_template: >-
+  The sourced replacement rate, net of regulatory constraints on automation, is
+  {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}.
+gap_text: >-
+  No sourced replacement_rate primitive is bound. In regulated workflows a human
+  sign-off may cap automation; source the achievable replacement rather than
+  assuming full displacement.
+resource_target: "regulation:automation-cap-by-workflow"
+schema_version: 1

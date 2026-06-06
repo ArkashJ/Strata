@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-ADO-004
+prompt: "What current adoption/penetration level is sourced versus the addressable ceiling?"
+category: adoption
+lenses: []
+applies_when: { requires_role: [adoption_rate_curve] }
+answer: { strategy: primitive_role, roles: [adoption_rate_curve, addressable_share, capture_rate], aggregation: value }
+narrative_template: "The sourced current-penetration input is {value} ({source_name}, {source_tier}, {as_of}); the remaining headroom is everything between that and full addressable reach. Snapshot {snapshot}."
+gap_text: "No sourced penetration or addressable-share primitive is bound — today's adoption level against the ceiling is unmeasured for this concept."
+resource_target: "census:annual_business_survey"
+schema_version: 1

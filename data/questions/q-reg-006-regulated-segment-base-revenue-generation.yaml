@@ -1,0 +1,21 @@
+kind: analysis_question
+question_id: Q-REG-006
+prompt: "How many target firms remain in scope after regulatory eligibility is applied?"
+category: regulation
+lenses: [revenue_generation]
+applies_when:
+  lens_in: [revenue_generation]
+  requires_role: [target_segment_count]
+answer:
+  strategy: primitive_role
+  roles: [target_segment_count]
+  aggregation: value
+narrative_template: >-
+  The regulator-eligible target-firm count is {value} ({source_name},
+  {source_tier}, {as_of}). Snapshot {snapshot}.
+gap_text: >-
+  No sourced target_segment_count primitive is bound for this
+  revenue_generation market. A licensing or registration regime usually shrinks
+  the eligible firm base — source the count of regulated firms, not all firms.
+resource_target: "regulation:registered-entity-count"
+schema_version: 1

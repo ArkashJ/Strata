@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-RISK-002
+prompt: "What is the spread between the low and high method, and how wide is the disagreement?"
+category: risks
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: range_spread_ratio }
+narrative_template: "The method families disagree by {ratio} (low {low}, high {high}). A wide spread is the headline risk: the answer you quote depends on which method you believe."
+gap_text: "Only one method family is sized, so there is no low-vs-high spread to report — the TAM is single-method and that is itself the risk."
+resource_target: null
+schema_version: 1

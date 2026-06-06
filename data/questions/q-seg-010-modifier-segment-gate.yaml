@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-010
+prompt: "Is any segment of this market gated by a sourced modifier (regulated / subsidized / restricted)?"
+category: segmentation
+lenses: []
+applies_when: {}
+answer: { strategy: qualitative, source: modifier, modifier_kind: regulated }
+narrative_template: "A sourced modifier marks part of this market as gated; the affected segment and its basis are read from the modifier, never inferred."
+gap_text: "No segment-gating modifier on this concept — no sourced basis to treat any segment as regulated, subsidized, or restricted."
+resource_target: null
+schema_version: 1

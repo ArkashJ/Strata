@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-METH-006
+prompt: "How many scenarios does the method tree resolve to (the breadth of the estimate)?"
+category: methodology
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: scenario_count }
+narrative_template: "The method tree resolves to {value} scenarios. TAMs are scenario trees, not a single number with an error bar — more scenarios means the spread is enumerated and reproducible at /tam/<hash>, not assumed."
+gap_text: "No computed TAM for this concept yet, so there is no scenario tree to count — size it first (POST /build/recompute)."
+resource_target: null
+schema_version: 1

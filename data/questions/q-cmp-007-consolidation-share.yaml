@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-CMP-007
+prompt: "What share of incumbent tools does the consolidation model assume it displaces?"
+category: competition_share
+lenses: [bundle_consolidation]
+applies_when: { lens_in: [bundle_consolidation], requires_role: [consolidation_rate] }
+answer: { strategy: primitive_role, roles: [consolidation_rate], aggregation: value }
+narrative_template: "The bundle displaces {value} of incumbent tool spend ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced consolidation_rate primitive is bound — the displacement share over incumbents is unstated, so it is excluded by design."
+resource_target: "edgar:company_facts"
+schema_version: 1

@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-013
+prompt: "What gross volume/GMV flows through this platform-throughput market?"
+category: market_size
+lenses: [platform_throughput]
+applies_when: { lens_in: [platform_throughput], requires_role: [gmv_or_volume] }
+answer: { strategy: primitive_role, roles: [gmv_or_volume], aggregation: value }
+narrative_template: "The gross volume/GMV is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced GMV/volume primitive bound — needs a regulator/aggregator throughput ingest."
+resource_target: fred:flow_of_funds
+schema_version: 1

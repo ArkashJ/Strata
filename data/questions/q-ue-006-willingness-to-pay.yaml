@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-UE-006
+prompt: "What willingness-to-pay does this latent-demand play's unit economics rest on?"
+category: unit_economics
+lenses: [latent_demand]
+applies_when: { lens_in: [latent_demand], requires_role: [willingness_to_pay] }
+answer: { strategy: primitive_role, roles: [willingness_to_pay], aggregation: value }
+narrative_template: "The sourced willingness-to-pay is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced willingness_to_pay primitive bound — the per-user price the market clears at is unsourced for this concept."
+resource_target: null
+schema_version: 1

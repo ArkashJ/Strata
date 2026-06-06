@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-010
+prompt: "How large is the persona pool this cost-efficiency play serves?"
+category: market_size
+lenses: [cost_efficiency]
+applies_when: { lens_in: [cost_efficiency], requires_role: [persona_pool] }
+answer: { strategy: primitive_role, roles: [persona_pool], aggregation: value }
+narrative_template: "The persona pool is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced persona-pool primitive bound — needs a BLS/Census headcount ingest."
+resource_target: bls:occupational_employment
+schema_version: 1

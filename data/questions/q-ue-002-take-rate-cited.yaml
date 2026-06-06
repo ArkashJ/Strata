@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-UE-002
+prompt: "What take-rate or value-split does the model apply, and is it cited?"
+category: unit_economics
+lenses: []
+applies_when: { requires_role: [take_rate] }
+answer: { strategy: primitive_role, roles: [take_rate, value_split_to_vendor, pricing_discount], aggregation: value }
+narrative_template: "The applied take / value-split is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced take_rate / value_split primitive bound — the model applies no cited split, so it is excluded by design (no scalar defaults, Q15)."
+resource_target: "edgar:company_facts"
+schema_version: 1

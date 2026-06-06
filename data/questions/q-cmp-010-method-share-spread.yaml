@@ -1,0 +1,8 @@
+kind: analysis_question
+question_id: Q-CMP-010
+prompt: "By how much do the method families disagree on market size (the spread a share claim must survive)?"
+category: competition_share
+answer: { strategy: tam_field, field: range_spread_ratio }
+narrative_template: "The methods disagree by {ratio} (low {low}, high {high}); any incumbent-share claim must hold across that range."
+gap_text: "Only one method family is sized, so there is no spread to test a share assumption against — the TAM is single-method."
+schema_version: 1

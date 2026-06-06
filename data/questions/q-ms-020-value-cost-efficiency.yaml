@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-020
+prompt: "What is the sourced cost-per-persona this cost-efficiency play turns on?"
+category: market_size
+lenses: [cost_efficiency]
+applies_when: { lens_in: [cost_efficiency], requires_role: [cost_per_persona] }
+answer: { strategy: primitive_role, roles: [cost_per_persona], aggregation: value }
+narrative_template: "The cost-per-persona is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced cost-per-persona primitive bound — the per-seat economics are unsourced for this concept."
+resource_target: null
+schema_version: 1

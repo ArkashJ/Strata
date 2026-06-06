@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-CMP-003
+prompt: "What is the value split between the platform and its participants (take rate)?"
+category: competition_share
+lenses: [platform_throughput]
+applies_when: { lens_in: [platform_throughput], requires_role: [take_rate] }
+answer: { strategy: primitive_role, roles: [take_rate], aggregation: value }
+narrative_template: "The platform captures a take of {value} of throughput ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced take_rate primitive is bound — the platform-vs-participant split is unknown until a first-party fee schedule lands."
+resource_target: "edgar:company_facts"
+schema_version: 1

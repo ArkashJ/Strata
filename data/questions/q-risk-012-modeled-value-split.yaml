@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-RISK-012
+prompt: "Is the vendor value-split input sourced or modeled, and how exposed is the productivity TAM to it?"
+category: risks
+lenses: [productivity_uplift]
+applies_when: { lens_in: [productivity_uplift], requires_role: [value_split_to_vendor] }
+answer: { strategy: primitive_role, roles: [value_split_to_vendor], aggregation: value }
+narrative_template: "The vendor value-split is {value} ({source_name}, {source_tier}, {as_of}). A productivity-uplift TAM depends entirely on what share of created value the vendor captures, so a modeled split is the leading risk — corroborate it first. Snapshot {snapshot}."
+gap_text: "No value-split-to-vendor primitive bound for this productivity_uplift concept — without it the captured share of created value is unsourced and the TAM is exposed."
+resource_target: null
+schema_version: 1

@@ -1,0 +1,15 @@
+kind: analysis_question
+question_id: Q-GR-002
+prompt: "What is the current adoption/penetration level versus the addressable ceiling?"
+category: growth_rate
+applies_when:
+  lens_in: [cost_efficiency]
+  requires_role: [addressable_share]
+answer:
+  strategy: primitive_role
+  roles: [addressable_share]
+  aggregation: value
+narrative_template: "Current sourced penetration of the addressable base is {value} ({source_name}, {source_tier}, {as_of}); the remaining headroom to a fully-addressed ceiling is 1 minus that share. Snapshot {snapshot}."
+gap_text: "No sourced addressable-share primitive bound, so penetration versus ceiling is unknown. Needs a Census/BLS adoption ingest before the gap can be quantified."
+resource_target: "census:adoption_share"
+schema_version: 1

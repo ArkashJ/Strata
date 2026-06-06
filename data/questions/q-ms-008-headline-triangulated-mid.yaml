@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-008
+prompt: "What single triangulated headline TAM figure should lead the report?"
+category: market_size
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: triangulated_mid }
+narrative_template: "The triangulated headline TAM is {value}, the midpoint of {n_methods} method families. Reproducible at /tam/<hash>."
+gap_text: "No computed TAM for this concept yet — size it first (POST /build/recompute)."
+resource_target: null
+schema_version: 1

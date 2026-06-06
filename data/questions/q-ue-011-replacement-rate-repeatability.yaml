@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-UE-011
+prompt: "What replacement rate vs incumbents does the cost-efficiency unit economics assume?"
+category: unit_economics
+lenses: [cost_efficiency]
+applies_when: { lens_in: [cost_efficiency], requires_role: [replacement_rate] }
+answer: { strategy: primitive_role, roles: [replacement_rate], aggregation: value }
+narrative_template: "The assumed replacement rate is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced replacement_rate primitive bound — the share of incumbent cost the product can displace is unsourced for this concept."
+resource_target: null
+schema_version: 1

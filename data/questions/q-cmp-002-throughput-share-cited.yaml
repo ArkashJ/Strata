@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-CMP-002
+prompt: "What market-share assumption does the throughput model use, and is it cited?"
+category: competition_share
+lenses: [platform_throughput]
+applies_when: { lens_in: [platform_throughput], requires_role: [market_share_assumption] }
+answer: { strategy: primitive_role, roles: [market_share_assumption], aggregation: value }
+narrative_template: "The throughput build applies a {value} share assumption, cited to {source_name} ({source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "The throughput lens needs a market_share_assumption binding; none is sourced, so the share is uncited and excluded by design."
+resource_target: "edgar:company_facts"
+schema_version: 1

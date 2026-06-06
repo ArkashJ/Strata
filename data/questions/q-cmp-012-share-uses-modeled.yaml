@@ -1,0 +1,8 @@
+kind: analysis_question
+question_id: Q-CMP-012
+prompt: "Does the market-share / take assumption rest on MODELED inputs rather than sourced ones?"
+category: competition_share
+answer: { strategy: tam_field, field: uses_modeled_inputs }
+narrative_template: "Modeled-input dependence: {value}. A share assumption riding on a modeled input is an estimate, not a sourced claim."
+gap_text: "No computed TAM is available for this concept, so whether the share rests on modeled inputs can't be assessed."
+schema_version: 1

@@ -1,0 +1,13 @@
+kind: analysis_question
+question_id: Q-GR-004
+prompt: "Is the market expanding the pie or reallocating existing spend?"
+category: growth_rate
+# Pure narrative: whether growth is net-new demand or substitution is a property
+# of the concept definition / modifiers, never a number.
+applies_when: {}
+answer:
+  strategy: qualitative
+  source: definition
+narrative_template: "Whether this market grows the pie or reshuffles existing spend is read from the concept's sourced definition and modifiers, not from a projected number; the {source_tier} narrative states the displacement-versus-new-demand framing directly."
+gap_text: "The concept definition does not state whether growth is net-new demand or substitution, so the pie-versus-reallocation question is unanswerable from the bank. Needs a sourced modifier or definition note."
+schema_version: 1

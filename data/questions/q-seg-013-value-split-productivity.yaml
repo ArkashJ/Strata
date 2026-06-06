@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-013
+prompt: "What share of the segment's productivity value accrues to the vendor (the capturable split)?"
+category: segmentation
+lenses: [productivity_uplift]
+applies_when: { lens_in: [productivity_uplift], requires_role: [value_split_to_vendor] }
+answer: { strategy: primitive_role, roles: [value_split_to_vendor], aggregation: value }
+narrative_template: "The sourced vendor value split is {value} ({source_name}, {source_tier}, {as_of}), the share of the segment's productivity value the vendor captures. Snapshot {snapshot}."
+gap_text: "No sourced value-split-to-vendor primitive bound for this productivity-uplift variant — the vendor-capturable share of segment value is unsourced."
+resource_target: "analyst:vendor_value_split"
+schema_version: 1

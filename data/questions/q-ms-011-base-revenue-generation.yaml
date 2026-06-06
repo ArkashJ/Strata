@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-011
+prompt: "How many target accounts/segments does this revenue-generation play serve?"
+category: market_size
+lenses: [revenue_generation]
+applies_when: { lens_in: [revenue_generation], requires_role: [target_segment_count] }
+answer: { strategy: primitive_role, roles: [target_segment_count], aggregation: value }
+narrative_template: "The target-segment count is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced target-segment-count primitive bound — needs a Census firm-count ingest."
+resource_target: census:annual_business_survey
+schema_version: 1

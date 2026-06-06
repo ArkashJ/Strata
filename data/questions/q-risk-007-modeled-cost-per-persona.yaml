@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-RISK-007
+prompt: "Is the cost-per-persona input sourced or modeled, and how wide is its range?"
+category: risks
+lenses: [cost_efficiency]
+applies_when: { lens_in: [cost_efficiency], requires_role: [cost_per_persona] }
+answer: { strategy: primitive_role, roles: [cost_per_persona], aggregation: value }
+narrative_template: "The cost-per-persona is {value} ({source_name}, {source_tier}, {as_of}). If the tier is community-modeled rather than first-party/regulator, this is the input most likely to swing the TAM — corroborate it first. Snapshot {snapshot}."
+gap_text: "No cost-per-persona primitive bound for this cost_efficiency concept — without it the per-seat economics are unsourced and the TAM is exposed."
+resource_target: "bls:oews_wage"
+schema_version: 1

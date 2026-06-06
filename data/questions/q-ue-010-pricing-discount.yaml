@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-UE-010
+prompt: "What pricing discount does the bundle apply vs the standalone tools it consolidates?"
+category: unit_economics
+lenses: [bundle_consolidation]
+applies_when: { lens_in: [bundle_consolidation], requires_role: [pricing_discount] }
+answer: { strategy: primitive_role, roles: [pricing_discount], aggregation: value }
+narrative_template: "The bundle prices at a {value} discount to the standalone tools ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced pricing_discount primitive bound — the bundle-vs-standalone price gap is unsourced for this concept."
+resource_target: null
+schema_version: 1

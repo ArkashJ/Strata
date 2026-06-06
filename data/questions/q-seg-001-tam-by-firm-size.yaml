@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-001
+prompt: "How does the TAM split by firm-size band (SMB / mid-market / enterprise)?"
+category: segmentation
+lenses: []
+applies_when: {}
+answer: { strategy: concept_measurement, aggregation: spread }
+narrative_template: "Across the concept's competing measurements the firm-size band splits from {low} to {high} (spread {spread}); a band carrying its own sourced figure is shown, not inferred. Snapshot {snapshot}."
+gap_text: "No firm-size-banded measurement on this concept — needs a Census SUSB / Annual Business Survey firm-size-by-employment ingest."
+resource_target: "census:annual_business_survey_by_firmsize"
+schema_version: 1

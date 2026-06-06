@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-METH-005
+prompt: "Does the methodology lean on MODELED inputs, or is every input a sourced primitive?"
+category: methodology
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: uses_modeled_inputs }
+narrative_template: "Modeled-input reliance: {value}. A method built on a modeled input is an estimate with a stated range, not a fully sourced claim — the report flags it rather than hiding it in the math."
+gap_text: "No computed TAM for this concept yet, so whether the method relies on modeled inputs can't be assessed — size it first (POST /build/recompute)."
+resource_target: null
+schema_version: 1

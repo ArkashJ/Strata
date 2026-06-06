@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-005
+prompt: "How does the bottoms-up build compare to the top-down build, and by how much?"
+category: market_size
+lenses: []
+applies_when: {}
+answer: { strategy: concept_measurement, aggregation: spread }
+narrative_template: "The methods disagree {low} vs {high} — a {spread} gap. Disagreement gets a page, not a footnote."
+gap_text: "Fewer than two competing measurements on this concept — no bottoms-up vs top-down comparison to draw."
+resource_target: null
+schema_version: 1

@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-METH-002
+prompt: "Is this estimate triangulated across method families, or single-method?"
+category: methodology
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: method_families_count }
+narrative_template: "{value} method families are sized for this concept. Two or more is triangulated; one is single-method and should be read as a point estimate, not a corroborated range."
+gap_text: "No computed TAM for this concept yet, so it can't be classed as triangulated or single-method — size it first (POST /build/recompute)."
+resource_target: null
+schema_version: 1

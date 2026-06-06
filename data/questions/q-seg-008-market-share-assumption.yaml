@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-008
+prompt: "What market-share assumption does the throughput model apply to this segment, and is it cited?"
+category: segmentation
+lenses: [platform_throughput]
+applies_when: { lens_in: [platform_throughput], requires_role: [market_share_assumption] }
+answer: { strategy: primitive_role, roles: [market_share_assumption], aggregation: value }
+narrative_template: "The segment market-share assumption is {value} ({source_name}, {source_tier}, {as_of}) — cited, not assumed. Snapshot {snapshot}."
+gap_text: "No sourced market-share-assumption primitive bound for this platform-throughput variant — any share applied to the segment would be uncited."
+resource_target: "edgar:segment_market_share"
+schema_version: 1

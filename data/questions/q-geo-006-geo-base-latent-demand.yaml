@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-GEO-006
+prompt: "What geography does the addressable population cover, and is that base sourced per-geo?"
+category: geography
+lenses: [latent_demand]
+applies_when: { lens_in: [latent_demand], requires_role: [addressable_population] }
+answer: { strategy: primitive_role, roles: [addressable_population], aggregation: value }
+narrative_template: "The addressable population is {value} ({source_name}, {source_tier}, {as_of}) — its geographic coverage is fixed by that source's scope. Snapshot {snapshot}."
+gap_text: "No sourced addressable-population primitive bound — its geographic coverage is unverifiable without a per-geo population ingest (World Bank/Census)."
+resource_target: "worldbank:population_by_country"
+schema_version: 1

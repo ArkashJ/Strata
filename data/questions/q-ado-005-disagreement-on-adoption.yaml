@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-ADO-005
+prompt: "Do the competing measurements disagree on how adopted this market already is?"
+category: adoption
+lenses: []
+applies_when: {}
+answer: { strategy: concept_measurement, aggregation: spread }
+narrative_template: "Competing adoption measurements span {low} to {high} (a {spread} spread across {count} sourced numbers) — the disagreement gets a page, not a footnote."
+gap_text: "Fewer than two competing measurements are attached to this concept, so there is no adoption-level disagreement to surface — the figure is single-sourced."
+resource_target: null
+schema_version: 1

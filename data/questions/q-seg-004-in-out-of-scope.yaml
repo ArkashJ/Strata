@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-SEG-004
+prompt: "Which sub-markets are explicitly in vs out of scope (and why)?"
+category: segmentation
+lenses: []
+applies_when: {}
+answer: { strategy: qualitative, source: definition }
+narrative_template: "The concept definition pins what is in vs out of scope; included and excluded sub-markets are read verbatim from it, never inferred."
+gap_text: "The concept definition does not enumerate explicit scope inclusions/exclusions — the in/out boundary is undocumented for this market."
+resource_target: null
+schema_version: 1

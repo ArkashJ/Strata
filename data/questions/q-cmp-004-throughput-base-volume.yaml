@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-CMP-004
+prompt: "What is the gross throughput (GMV/volume) base the share assumption is applied against?"
+category: competition_share
+lenses: [platform_throughput]
+applies_when: { lens_in: [platform_throughput], requires_role: [gmv_or_volume] }
+answer: { strategy: primitive_role, roles: [gmv_or_volume], aggregation: value }
+narrative_template: "The contestable throughput base is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced gmv_or_volume primitive is bound — without the throughput base, the share assumption applies to nothing concrete."
+resource_target: "fred:series_observations"
+schema_version: 1

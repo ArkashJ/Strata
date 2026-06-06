@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-ADO-008
+prompt: "For this latent-demand play, what willingness-to-pay underpins adoption?"
+category: adoption
+lenses: [latent_demand]
+applies_when: { lens_in: [latent_demand], requires_role: [willingness_to_pay] }
+answer: { strategy: primitive_role, roles: [willingness_to_pay], aggregation: value }
+narrative_template: "The sourced willingness-to-pay driving latent demand is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced willingness_to_pay primitive is bound on this latent-demand concept — the price the latent population will actually pay is unmeasured; needs a survey-sourced primitive."
+resource_target: "survey:willingness-to-pay"
+schema_version: 1

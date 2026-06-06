@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-UE-014
+prompt: "Do the methods that price off different per-unit drivers converge on the same TAM?"
+category: unit_economics
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: convergence_ratio }
+narrative_template: "Independent per-unit-driven methods converge from {low} to {high} — a {ratio} agreement band. Reproducible at /tam/<hash>."
+gap_text: "Only one method family sizes this concept — no second per-unit-driven method to converge against. Seed a counterpart build."
+resource_target: null
+schema_version: 1

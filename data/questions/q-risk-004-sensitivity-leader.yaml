@@ -1,0 +1,18 @@
+kind: analysis_question
+question_id: Q-RISK-004
+prompt: "Which single assumption most moves the answer (the sensitivity leader)?"
+category: risks
+lenses: []
+applies_when: {}
+# There is no sourced sensitivity-ranking field on the loadable record set, so
+# this question resolves to an honest gap rather than an asserted leader. The
+# tornado sensitivity ranking is computed live on /tam/<hash>, not carried as a
+# bank primitive — so the bank declines to name a leader from authored data.
+answer:
+  strategy: qualitative
+  source: annotation
+  modifier_kind: sensitivity
+narrative_template: "The most-impactful assumption is read from the live sensitivity tornado on /tam/<hash>, not from a bank figure. Where a sourced annotation flags a known-fragile input it is shown here; otherwise the bank declines to name a leader rather than invent one."
+gap_text: "No sourced sensitivity annotation on this concept — the assumption that most moves the answer is computed live on /tam/<hash> (POST /build/sensitivity), not stored as a bank primitive."
+resource_target: null
+schema_version: 1

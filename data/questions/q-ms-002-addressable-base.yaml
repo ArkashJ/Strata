@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-002
+prompt: "How large is the addressable population/persona base this product serves?"
+category: market_size
+lenses: []
+applies_when: { requires_role: [persona_pool] }
+answer: { strategy: primitive_role, roles: [persona_pool, persona_count, addressable_population, target_segment_count], aggregation: value }
+narrative_template: "The addressable base is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced base-population primitive bound — needs a BLS/Census headcount ingest."
+resource_target: census:annual_business_survey
+schema_version: 1

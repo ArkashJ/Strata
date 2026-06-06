@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-ADO-002
+prompt: "What willingness-to-pay is sourced, and from whom?"
+category: adoption
+lenses: []
+applies_when: { requires_role: [willingness_to_pay] }
+answer: { strategy: primitive_role, roles: [willingness_to_pay], aggregation: value }
+narrative_template: "Sourced willingness-to-pay is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced willingness_to_pay primitive is bound — adoption depends on price tolerance that nobody has measured here; needs a survey or first-party pricing primitive."
+resource_target: "survey:willingness-to-pay"
+schema_version: 1

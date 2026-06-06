@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-GEO-008
+prompt: "What geography does the displaced-tools spend base cover, and is that base sourced per-geo?"
+category: geography
+lenses: [bundle_consolidation]
+applies_when: { lens_in: [bundle_consolidation], requires_role: [tools_displaced] }
+answer: { strategy: primitive_role, roles: [tools_displaced], aggregation: value }
+narrative_template: "The displaced-tools base is {value} ({source_name}, {source_tier}, {as_of}) — its geographic coverage is fixed by that source's scope. Snapshot {snapshot}."
+gap_text: "No sourced tools-displaced primitive bound — its geographic coverage is unverifiable without a per-geo software-spend ingest (analyst/first-party)."
+resource_target: "census:software_spend_by_region"
+schema_version: 1

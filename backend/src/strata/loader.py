@@ -17,6 +17,7 @@ import yaml
 from pydantic import ValidationError
 
 from .models import (
+    AnalysisQuestion,
     Annotation,
     AtomicPrimitive,
     CompositePrimitive,
@@ -36,6 +37,7 @@ KNOWN_KINDS: frozenset[str] = frozenset(
         "framework",
         "annotation",
         "tam_output",
+        "analysis_question",
         "source_registry",
         "opt_out_registry",
     }
@@ -65,6 +67,8 @@ class LoadedRecords:
     frameworks: list[Framework] = field(default_factory=list[Framework])
     annotations: list[Annotation] = field(default_factory=list[Annotation])
     tam_outputs: list[TAMOutput] = field(default_factory=list[TAMOutput])
+    # Curated analysis-question records (PR4). YAML-only — not a DB table.
+    analysis_questions: list[AnalysisQuestion] = field(default_factory=list[AnalysisQuestion])
     # Raw YAML payloads for source / opt-out registries (no Pydantic model yet).
     source_registries: list[tuple[Path, dict[str, Any]]] = field(
         default_factory=list[tuple[Path, dict[str, Any]]]
@@ -147,6 +151,8 @@ def _dispatch(
                 out.annotations.append(Annotation.model_validate(raw))
             case "tam_output":
                 out.tam_outputs.append(TAMOutput.model_validate(raw))
+            case "analysis_question":
+                out.analysis_questions.append(AnalysisQuestion.model_validate(raw))
             case "source_registry":
                 out.source_registries.append((path, raw))
             case "opt_out_registry":

@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-GEO-001
+prompt: "How does the triangulated TAM split across the in-scope geographies?"
+category: geography
+lenses: []
+applies_when: {}
+answer: { strategy: tam_field, field: triangulated_mid }
+narrative_template: "Across the in-scope geographies the triangulated TAM is {value} (synthesis: {n_methods} method families). A per-geo decomposition is only as honest as the per-geo sourcing behind it."
+gap_text: "No computed TAM to split by geography — the concept has no sized framework variant yet."
+resource_target: "worldbank:gdp_by_country"
+schema_version: 1

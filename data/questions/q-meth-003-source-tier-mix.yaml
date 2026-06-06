@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-METH-003
+prompt: "Are the competing measurements first-party/regulator-grade, or do they lean on aggregator and analyst-paraphrase sources?"
+category: methodology
+lenses: []
+applies_when: {}
+answer: { strategy: concept_measurement, aggregation: list }
+narrative_template: "{count} competing measurements are attached, each carrying its own source and tier — the report lists them so a regulator-grade number isn't averaged with an analyst paraphrase as if they were equals."
+gap_text: "Fewer than two competing measurements are attached to this concept, so there is no source-tier mix to weigh — the figure is single-sourced."
+resource_target: null
+schema_version: 1

@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-GEO-005
+prompt: "What geography does the target-segment count cover, and is that base sourced per-geo?"
+category: geography
+lenses: [revenue_generation]
+applies_when: { lens_in: [revenue_generation], requires_role: [target_segment_count] }
+answer: { strategy: primitive_role, roles: [target_segment_count], aggregation: value }
+narrative_template: "The target-segment count is {value} ({source_name}, {source_tier}, {as_of}) — its geographic coverage is fixed by that source's scope. Snapshot {snapshot}."
+gap_text: "No sourced target-segment-count primitive bound — its geographic coverage is unverifiable without a per-geo firm-count ingest (Census SUSB/Eurostat)."
+resource_target: "census:susb_by_state"
+schema_version: 1

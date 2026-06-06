@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-RISK-010
+prompt: "Is the willingness-to-pay input sourced or modeled, and how exposed is the latent-demand TAM to it?"
+category: risks
+lenses: [latent_demand]
+applies_when: { lens_in: [latent_demand], requires_role: [willingness_to_pay] }
+answer: { strategy: primitive_role, roles: [willingness_to_pay], aggregation: value }
+narrative_template: "The willingness-to-pay is {value} ({source_name}, {source_tier}, {as_of}). Latent-demand TAMs are most fragile here — WTP is the hardest input to source honestly, so a modeled value is the leading risk. Snapshot {snapshot}."
+gap_text: "No willingness-to-pay primitive bound for this latent_demand concept — without a sourced WTP the demand TAM is an unsupported projection."
+resource_target: null
+schema_version: 1

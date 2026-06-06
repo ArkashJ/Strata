@@ -1,0 +1,21 @@
+kind: analysis_question
+question_id: Q-REG-002
+prompt: "Is any part of the TAM gated behind a regulated transition (subsidy, mandate)?"
+category: regulation
+lenses: []
+applies_when:
+  requires_modifier: [regulatory_unlock]
+answer:
+  strategy: qualitative
+  source: modifier
+  modifier_kind: regulatory_unlock
+narrative_template: >-
+  Part of this TAM is contingent on a regulated transition: the
+  regulatory_unlock driver {source_name} gates it, effective {as_of}. Treat
+  pre-transition demand and post-transition demand as distinct.
+gap_text: >-
+  No regulatory-transition gate is declared. The current figures assume no
+  subsidy or mandate dependency; if one exists, model it as a regulatory_unlock
+  modifier rather than folding it silently into a primitive.
+resource_target: "regulation:driver-and-effective-date"
+schema_version: 1

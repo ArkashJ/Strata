@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-014
+prompt: "How many tools does this bundle-consolidation play displace?"
+category: market_size
+lenses: [bundle_consolidation]
+applies_when: { lens_in: [bundle_consolidation], requires_role: [tools_displaced] }
+answer: { strategy: primitive_role, roles: [tools_displaced], aggregation: value }
+narrative_template: "The number of tools displaced is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced tools-displaced primitive bound — the consolidation surface is unsourced for this concept."
+resource_target: null
+schema_version: 1

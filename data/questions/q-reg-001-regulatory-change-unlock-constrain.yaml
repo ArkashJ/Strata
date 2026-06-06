@@ -1,0 +1,22 @@
+kind: analysis_question
+question_id: Q-REG-001
+prompt: "What regulatory change could unlock or constrain this market, and when?"
+category: regulation
+# Cross-cutting: any lens can carry a regulatory_unlock modifier.
+lenses: []
+applies_when:
+  requires_modifier: [regulatory_unlock]
+answer:
+  strategy: qualitative
+  source: modifier
+  modifier_kind: regulatory_unlock
+narrative_template: >-
+  A regulatory_unlock driver is declared on this market ({source_name}); the
+  unlock takes effect on {as_of}. The figures hold only on the far side of that
+  transition.
+gap_text: >-
+  No regulatory_unlock modifier declared on this concept. If a mandate, subsidy,
+  or approval gates this market, attach a regulatory_unlock driver + effective
+  date so the timing is sourced, not asserted.
+resource_target: "regulation:driver-and-effective-date"
+schema_version: 1

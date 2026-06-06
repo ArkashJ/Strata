@@ -1,0 +1,11 @@
+kind: analysis_question
+question_id: Q-MS-004
+prompt: "What's the per-unit economic value (spend/seat, ACV, take) the market turns on?"
+category: market_size
+lenses: []
+applies_when: { requires_role: [cost_per_persona] }
+answer: { strategy: primitive_role, roles: [cost_per_persona, spend_per_target, willingness_to_pay, spend_per_tool, take_rate], aggregation: value }
+narrative_template: "The per-unit economic value is {value} ({source_name}, {source_tier}, {as_of}). Snapshot {snapshot}."
+gap_text: "No sourced per-unit value primitive bound — spend/seat (or ACV / take) is unsourced for this concept."
+resource_target: null
+schema_version: 1
