@@ -1,16 +1,12 @@
 "use client";
 
 /**
- * MyPrimitivesSection — the personal primitive table ("my CRM").
+ * MyPrimitivesSection — the personal primitive table.
  *
- * Data: myPrimitivesQuery from lib/queries-personal. Today that endpoint
- * returns the org's portfolio companies (visibility=private) as the closest
- * available stand-in for a personal primitive list — per the TODO comment in
- * queries-personal.ts. When a dedicated /my-primitives endpoint lands, only
- * the query needs updating; this component's shape is already correct.
- *
- * Empty state: honest. Sync via CLI/MCP is the advertised path. We never
- * fabricate rows.
+ * Data: myPrimitivesQuery → `GET /me/primitives`, the caller's PRIVATE,
+ * tenant-isolated primitive store (server-backed via the Clerk→Principal bridge).
+ * The query is resilient: signed out (401) or empty resolves to [], so we render
+ * the honest "sync via CLI/MCP" empty state. We never fabricate rows.
  */
 
 import { useQuery } from "@tanstack/react-query";
@@ -18,7 +14,7 @@ import Link from "next/link";
 
 import { Skeleton } from "@/components/ui/Skeleton";
 import { myPrimitivesQuery } from "@/lib/queries-personal";
-import type { PortfolioCompany } from "@/lib/schemas";
+import type { UserPrimitive } from "@/lib/schemas";
 
 // ── Section ───────────────────────────────────────────────────────────────────
 
@@ -54,21 +50,21 @@ export function MyPrimitivesSection() {
 
 // ── Table ─────────────────────────────────────────────────────────────────────
 
-function PrimitivesTable({ rows }: { rows: PortfolioCompany[] }) {
+function PrimitivesTable({ rows }: { rows: UserPrimitive[] }) {
   return (
     <div className="canvas-card overflow-hidden border border-[var(--border-1)]">
       <table className="w-full border-collapse text-[13px]" aria-label="My primitives">
         <thead>
           <tr className="border-b border-[var(--border-1)]">
             <Th>Name</Th>
-            <Th>Market</Th>
-            <Th right>TAM</Th>
-            <Th>Status</Th>
+            <Th>Slug</Th>
+            <Th right>Value</Th>
+            <Th>Source</Th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--border-1)]">
           {rows.map((row) => (
-            <PrimitiveRow key={row.domain} row={row} />
+            <PrimitiveRow key={row.id} row={row} />
           ))}
         </tbody>
       </table>
@@ -76,52 +72,35 @@ function PrimitivesTable({ rows }: { rows: PortfolioCompany[] }) {
   );
 }
 
-function PrimitiveRow({ row }: { row: PortfolioCompany }) {
-  const tamDisplay = row.tam_value !== null ? formatTam(row.tam_value) : null;
+function PrimitiveRow({ row }: { row: UserPrimitive }) {
+  const { name, value, unit, source } = row.payload;
+  const valueDisplay = value !== undefined ? formatValue(value, unit?.currency ?? null) : null;
+  const tier = source?.tier ?? null;
 
   return (
     <tr className="group transition-colors hover:bg-[var(--bg-2)]">
-      {/* Name + domain */}
+      {/* Name */}
       <td className="px-4 py-2.5">
-        <span className="font-medium text-[var(--fg-1)]">{row.name}</span>
-        <span className="ml-2 font-mono text-[11px] text-[var(--fg-3)]">{row.domain}</span>
+        <span className="font-medium text-[var(--fg-1)]">{name ?? row.slug}</span>
       </td>
 
-      {/* Market concept — link to its build if we have one */}
-      <td className="px-4 py-2.5 text-[var(--fg-2)]">
-        {row.market_concept_slug ? (
-          <Link
-            href={`/build/${row.market_concept_slug}`}
-            className="text-[var(--accent)] underline-offset-2 hover:underline"
-          >
-            {row.market_concept_slug}
-          </Link>
-        ) : (
-          <span className="text-[var(--fg-4)]">—</span>
-        )}
+      {/* Slug — the stable id of the private primitive */}
+      <td className="px-4 py-2.5">
+        <span className="font-mono text-[11px] text-[var(--fg-3)]">{row.slug}</span>
       </td>
 
-      {/* TAM value — mono, right-aligned */}
+      {/* Value — mono, right-aligned */}
       <td className="px-4 py-2.5 text-right">
-        {tamDisplay !== null ? (
-          row.state_hash ? (
-            <Link
-              href={`/tam/${row.state_hash}`}
-              className="tam-num text-[13px] text-[var(--fg-1)] underline-offset-2 hover:text-[var(--accent)] hover:underline"
-            >
-              {tamDisplay}
-            </Link>
-          ) : (
-            <span className="tam-num text-[13px] text-[var(--fg-1)]">{tamDisplay}</span>
-          )
+        {valueDisplay !== null ? (
+          <span className="tam-num text-[13px] text-[var(--fg-1)]">{valueDisplay}</span>
         ) : (
           <span className="tam-num text-[13px] text-[var(--fg-3)]">—</span>
         )}
       </td>
 
-      {/* Status chip */}
+      {/* Source tier chip */}
       <td className="px-4 py-2.5">
-        <StatusChip status={row.status} />
+        {tier ? <TierChip tier={tier} /> : <span className="text-[var(--fg-4)]">—</span>}
       </td>
     </tr>
   );
@@ -140,19 +119,23 @@ function Th({ children, right }: { children: React.ReactNode; right?: boolean })
   );
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  sized: "bg-[var(--tier-regulator-tint,rgba(63,166,107,0.1))] text-[var(--tier-regulator)]",
-  unsizable: "bg-[var(--bg-2)] text-[var(--fg-3)]",
-  pending: "bg-[var(--bg-2)] text-[var(--fg-3)]",
+// Source-tier chips reuse the load-bearing tier color tokens (DESIGN.md). An
+// unknown tier falls back to the neutral surface — never an invented color.
+const TIER_STYLES: Record<string, string> = {
+  first_party: "bg-[var(--bg-2)] text-[var(--tier-first-party,var(--fg-2))]",
+  regulator: "bg-[var(--tier-regulator-tint,rgba(63,166,107,0.1))] text-[var(--tier-regulator)]",
+  aggregator: "bg-[var(--bg-2)] text-[var(--tier-aggregator,var(--fg-2))]",
+  analyst: "bg-[var(--bg-2)] text-[var(--tier-analyst,var(--fg-2))]",
+  community: "bg-[var(--bg-2)] text-[var(--tier-community,var(--fg-3))]",
 };
 
-function StatusChip({ status }: { status: string }) {
-  const cls = STATUS_STYLES[status] ?? "bg-[var(--bg-2)] text-[var(--fg-3)]";
+function TierChip({ tier }: { tier: string }) {
+  const cls = TIER_STYLES[tier] ?? "bg-[var(--bg-2)] text-[var(--fg-3)]";
   return (
     <span
       className={`inline-flex items-center rounded-[var(--r-1)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${cls}`}
     >
-      {status}
+      {tier.replace(/_/g, " ")}
     </span>
   );
 }
@@ -220,13 +203,22 @@ function ErrorCard() {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const currencyFmt = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
+const countFmt = new Intl.NumberFormat("en-US", {
   notation: "compact",
   maximumFractionDigits: 1,
 });
 
-function formatTam(value: number): string {
-  return currencyFmt.format(value);
+// A private primitive can carry money OR a plain count (headcount, units). Use a
+// currency format only when the unit declares a currency; otherwise a compact
+// count, so a "12.3M employees" row isn't mislabeled as dollars.
+function formatValue(value: number, currency: string | null): string {
+  if (currency) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value);
+  }
+  return countFmt.format(value);
 }

@@ -228,10 +228,11 @@ async def resolve_query(
             },
         )
         await record_audit_safe(
-            actor=None,
+            actor=principal.user_id,
             action="resolve",
             target=result.concept_name or body.query[:128],
             meta={"query": body.query, "lens": result.lens, "tam_value": tam_value},
+            org_id=principal.org_id,
         )
         yield _sse("done", {})
 

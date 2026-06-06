@@ -11,6 +11,7 @@ from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import (
+    Boolean,
     Date,
     DateTime,
     Float,
@@ -113,12 +114,15 @@ class AuditEventRow(Base):
 
     One row per user-visible action (resolve / recompute / promote). ``actor``
     is the Clerk user id or ``'anon'`` when unauthenticated; ``meta`` carries
-    free-form JSON context (query text, hash, etc.).
+    free-form JSON context (query text, hash, etc.). ``org_id`` (migration 008,
+    PR 1) is the tenant the event belongs to; the table's strict closed RLS
+    policy keys on it, so an anonymous event has no persisted home.
     """
 
     __tablename__ = "audit_events"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    org_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
     actor: Mapped[str | None] = mapped_column(String(128), nullable=True, default="anon")
     action: Mapped[str] = mapped_column(String(64), nullable=False)
     target: Mapped[str | None] = mapped_column(String(256), nullable=True)
@@ -172,18 +176,59 @@ class TamOutputRow(Base):
     paste into a memo — an in-process FIFO cache 404s after eviction/restart,
     which defeats the thesis. The full ``TAMOutput`` is stored as JSONB keyed by
     its ``state_hash`` (Q38); equivalent states collide, so a re-build upserts.
+
+    PR 1 (migration 008) makes this table dual-purpose: ``org_id IS NULL`` rows
+    are anonymous world-readable permalinks, ``org_id = <tenant>`` rows are a
+    tenant's saved research (RLS-isolated). The old single ``UNIQUE(state_hash)``
+    is replaced by two PARTIAL unique indexes (KTD-2) — one global per hash, one
+    per ``(org_id, state_hash)`` — so the SAME content hash can exist once as a
+    permalink AND once per tenant-save. Hence ``unique=True`` is dropped here.
     """
 
     __tablename__ = "tam_outputs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    # unique=True already creates the lookup index — no separate index needed.
-    state_hash: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    # Uniqueness is enforced by the two partial indexes in migration 008
+    # (uq_tam_outputs_state_hash_public / _org), NOT a column-level constraint.
+    state_hash: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    # NULL → anonymous global permalink; set → a tenant's saved row (RLS-scoped).
+    org_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    created_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    title: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_saved: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_promoted: Mapped[bool] = mapped_column(default=False, nullable=False, index=True)
     payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class UserPrimitiveRow(Base):
+    """A tenant's PRIVATE primitive store (migration 009, PR 1 / U6).
+
+    The full ``AtomicPrimitive`` is stored as JSONB in ``payload`` so a tenant
+    can keep its own numbers without touching the shared seed bank. ``org_id`` is
+    NOT NULL and the table carries the STRICT 006-style closed RLS policy — never
+    world-readable — so a session sees only its own ``app.org_id`` rows.
+    ``(org_id, slug)`` is unique: a tenant can't shadow its own slug, while two
+    tenants may each own the same slug. Server forces ``visibility='private'``;
+    going public is only via the ``/contribute`` review queue, never a direct
+    write here (honesty fence, KTD-5).
+    """
+
+    __tablename__ = "user_primitives"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    org_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    created_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    slug: Mapped[str] = mapped_column(String(128), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    visibility: Mapped[str] = mapped_column(String(16), nullable=False, default="private")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (Index("uq_user_primitives_org_slug", "org_id", "slug", unique=True),)
 
 
 class CompanyRow(Base):

@@ -53,6 +53,15 @@ class Settings(BaseSettings):
     # Token-bucket rate limit per key on LLM/compute routes.
     rate_limit_rpm: int = Field(default=60, ge=1)
 
+    # ── Clerk session-JWT bridge (PR 1 / KTD-3) ────────────────────────
+    # When ``clerk_jwks_url`` is None (default), the Clerk verifier is INERT —
+    # it returns None with no network call, so anonymous permalinks resolve with
+    # no 401 storm. Set it to the Clerk instance's JWKS endpoint to enable Bearer
+    # auth. ``clerk_issuer`` / ``clerk_audience`` are verified only when set.
+    clerk_jwks_url: str | None = None
+    clerk_issuer: str | None = None
+    clerk_audience: str | None = None
+
     # Regex for additional allowed origins — used for Vercel preview deploys whose
     # subdomain carries a per-deploy hash (so an exact-origin list can't enumerate
     # them). e.g. ``https://strata-[a-z0-9-]+-arkashjs-projects\.vercel\.app``.

@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — real multi-tenant per-user workspace (v1.0 program · PR 1)
+
+Saved research, audit history, and personal primitives become real, server-backed,
+and tenant-isolated — the foundation the dashboards (PR 3) build on.
+
+- **Clerk → backend bridge** (`api/clerk_auth.py`): verifies the Clerk session JWT
+  against JWKS (cached, kid-refresh), fail-open in dev / fail-closed in prod, never
+  500s, and **inert when `STRATA_CLERK_*` is unset** (keyless degradation preserved —
+  anonymous `/tam/<hash>` permalinks still resolve, no 401 storm). `Principal` gains
+  `user_id`; a Bearer branch resolves before the API-key branch.
+- **Dual-purpose RLS on `tam_outputs`** (migration 008): `USING/WITH CHECK (org_id IS
+  NULL OR org_id = current_setting('app.org_id', true))` — anonymous content-addressed
+  permalinks stay world-readable while tenant saves isolate; the single
+  `UNIQUE(state_hash)` is split into two partial unique indexes (public vs per-org).
+  `audit_events` + the new `user_primitives` / `boards` / `board_items` tables
+  (migration 009) use the strict closed policy.
+- **Personal workspace endpoints:** `/me/primitives` CRUD (forces `visibility=private`
+  + `org_id` server-side, enforces the MODELED fence; `promote` routes to the
+  `/contribute` review queue, never a direct public write), `/me/tams/save` +
+  `/me/tams` + `/me/audit`, and `GET /lineage/{id}` (server-side DAG). The frontend
+  injects the Clerk bearer token and reads real `/me/*` data (localStorage favorites
+  migrate to the server on first login).
+- **Verified:** 922 backend tests incl. **cross-tenant RLS isolation** (org A ⊥ org B
+  across tams/primitives/boards/audit; anon sees only `org_id IS NULL`); migrations
+  008/009 up/down round-trip clean; pyright src 0; ruff + `strata validate` + web tsc
+  clean. **BLOCKED:** live-prod Clerk JWKS verification (kept inert on unset keys; the
+  stubbed-keypair RS256 path is tested).
+
+### Docs — strategic adversarial review
+
+- [`docs/STRATEGY-REVIEW-2026-06-06.md`](docs/STRATEGY-REVIEW-2026-06-06.md): a
+  four-lens long-term/value-prop review → 16 tracked issues (#93–#108). Headline
+  reframe: lead with the **verification layer for AI market claims** (MCP), make the
+  MODELED fence **graded not binary**, invest in frameworks over connectors.
+
 ### Added — curated question → sourced-only report engine (v1.0 program · PR 4)
 
 Ask analytical TAM/market questions and get them answered **only** from the data

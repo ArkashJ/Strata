@@ -86,13 +86,16 @@ def _validate_override_units(reg: Registry, req: RecomputeRequest) -> None:
 async def build_tam(
     concept_slug: str,
     reg: Registry = _REG,
+    principal: Principal = _PRINCIPAL,
 ) -> TAMOutput:
     try:
         out = size_concept(reg, concept_slug)
     except EvaluatorError as exc:
         raise HTTPException(422, str(exc)) from exc
     reg.remember_tam(out)
-    await persist_tam_safe(out)
+    # Authenticated build → a tenant-scoped row (org_id + created_by); anonymous
+    # build → a NULL-org global permalink (unchanged pre-PR behaviour).
+    await persist_tam_safe(out, org_id=principal.org_id, created_by=principal.user_id)
     return out
 
 
@@ -144,9 +147,9 @@ async def recompute_tam(
         raise HTTPException(422, str(exc)) from exc
 
     reg.remember_tam(out)
-    await persist_tam_safe(out)
+    await persist_tam_safe(out, org_id=principal.org_id, created_by=principal.user_id)
     await record_audit_safe(
-        actor=None,
+        actor=principal.user_id,
         action="recompute",
         target=req.concept_slug,
         meta={
@@ -155,6 +158,7 @@ async def recompute_tam(
             "has_assumptions": bool(req.framework_assumptions),
             "has_scope": bool(req.scope and not req.scope.is_empty),
         },
+        org_id=principal.org_id,
     )
     return out
 
@@ -279,6 +283,9 @@ async def promote_tam(
         raise HTTPException(422, str(exc)) from exc
     promoted = out.model_copy(update={"is_promoted": True})
     reg.remember_tam(promoted)
+    # A promoted TAM is a PUBLIC artifact surfaced in /browse + the sitemap, which
+    # read NULL-org rows. So promote writes a global (org_id NULL) row regardless
+    # of who promoted it — never a tenant-scoped, RLS-hidden row.
     await persist_tam_safe(promoted)
     return promoted
 

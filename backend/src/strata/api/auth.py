@@ -25,8 +25,11 @@ from fastapi import HTTPException, Request, Security
 from fastapi.security import APIKeyHeader
 
 from ..config import settings
+from .clerk_auth import verify_clerk_jwt
 
 _API_KEY_HEADER = "x-api-key"
+_AUTHORIZATION_HEADER = "authorization"
+_BEARER_PREFIX = "bearer "
 _ANONYMOUS_ORG = "public"
 
 # OpenAPI security scheme. Declared with ``auto_error=False`` so it is purely a
@@ -44,6 +47,10 @@ class Principal:
     org_id: str
     key_id: str
     scopes: tuple[str, ...] = field(default_factory=tuple)
+    # The Clerk subject (``sub``) behind a ``Authorization: Bearer`` request, or
+    # ``None`` for an API-key / anonymous principal. Carried so write paths can
+    # record a real ``created_by`` actor (PR 1 / U5).
+    user_id: str | None = None
 
     @property
     def is_anonymous(self) -> bool:
@@ -86,7 +93,28 @@ def principal_for_headers(headers: Mapping[str, str], *, require: bool) -> Princ
     Factored out of ``principal_for`` so the pure-ASGI ``/mcp`` middleware can
     authenticate without a FastAPI ``Request``. ``require=True`` forces a key
     even when ``settings.require_auth`` is off — the hosted agent surface stays
-    closed regardless of the REST API's dev posture."""
+    closed regardless of the REST API's dev posture.
+
+    Resolution order (KTD-4): ``Authorization: Bearer`` (Clerk) first, then
+    ``X-API-Key``, then the anonymous/require fallback."""
+    authorization = headers.get(_AUTHORIZATION_HEADER)
+    if authorization and authorization.lower().startswith(_BEARER_PREFIX):
+        token = authorization[len(_BEARER_PREFIX) :].strip()
+        claims = verify_clerk_jwt(token) if token else None
+        if claims is not None:
+            org_id = f"clerk_org:{claims.org_id}" if claims.org_id else f"clerk_user:{claims.sub}"
+            return Principal(
+                org_id=org_id,
+                key_id=f"clerk:{claims.sub}"[:64],
+                scopes=("*",),
+                user_id=claims.sub,
+            )
+        # A present-but-invalid Bearer is a 401 in prod (mirrors the wrong-key
+        # rule); in dev the verifier is inert/lenient, so we fall through to the
+        # anonymous path rather than locking out keyless reads.
+        if require or settings.require_auth:
+            raise HTTPException(status_code=401, detail="invalid bearer token")
+
     raw = headers.get(_API_KEY_HEADER)
     if raw:
         principal = _KEY_STORE.get(hash_key(raw))

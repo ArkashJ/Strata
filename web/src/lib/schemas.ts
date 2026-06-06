@@ -489,6 +489,30 @@ export const auditEventSchema = z.object({
 });
 export type AuditEvent = z.infer<typeof auditEventSchema>;
 
+// ── User primitives (GET /me/primitives) ──────────────────────────────────────
+// A row from the caller's PRIVATE primitive store. `payload` is the full
+// AtomicPrimitive the user stored; we parse it loosely (passthrough) so a future
+// payload field never rejects the row — the bank table only reads name/value/unit.
+export const userPrimitivePayloadSchema = z
+  .object({
+    name: z.string().optional(),
+    value: z.number().optional(),
+    unit: z.object({ currency: z.string().nullable().optional() }).passthrough().optional(),
+    source: z.object({ tier: z.string().optional() }).passthrough().optional(),
+  })
+  .passthrough();
+
+export const userPrimitiveSchema = z.object({
+  id: z.number(),
+  org_id: z.string(),
+  created_by: z.string().nullable(),
+  slug: z.string(),
+  visibility: z.string(),
+  payload: userPrimitivePayloadSchema,
+  created_at: z.string(),
+});
+export type UserPrimitive = z.infer<typeof userPrimitiveSchema>;
+
 // --- Question-driven market report (PR4) ----------------------------------
 // Mirrors backend strata.models.question field-for-field. Verified against
 // /openapi.json (GET /report, GET /report/{concept_slug}). Every numeric answer
