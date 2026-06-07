@@ -362,16 +362,36 @@ flowchart TD
   CACHE -->|no| DBR["DB fallback"] --> SERVE["SSR + OpenGraph"]
 ```
 
-### 22. MCP server (stdio + /mcp)
+### 22. MCP server (stdio + /mcp) — the report-harness surface
+
+The MCP is the primary product surface (analysts at top funds drive the harness). Each tool
+call returns **maximum utility**: structured data + resource_links + next_actions, and the
+report/size tools also carry chart specs (Vega-Lite + Mermaid) and citations. Beyond the
+read/sizing/portfolio tools, the harness now exposes the back-and-forth report loop, claim
+verification, the professional report exporter, and the feedback→DB loop.
 
 ```mermaid
 flowchart LR
-  AG["agent"] -->|stdio| STDIO["strata-mcp"]
-  AG -->|streamable-HTTP| MOUNT["/mcp mount (auth, Wave 3)"]
-  STDIO --> TOOLS["12 tools: search_concepts, list/get primitive, list_frameworks, size_tam, build_tam, list/get connector, resolve_market, portfolio ..."]
-  MOUNT --> TOOLS
-  TOOLS --> PAY["every payload: source_url + tier + snapshot_sha256"]
+  AG["agent (Claude / claude.ai / CLI)"] -->|stdio| STDIO["strata-mcp"]
+  AG -->|"streamable-HTTP (McpAuthMiddleware: key/JWT/OAuth)"| MOUNT["/mcp mount"]
+  STDIO --> CAP
+  MOUNT --> CAP
+  subgraph CAP["capabilities (SDK 1.27)"]
+    TOOLS["tools: search_concepts · list/get_primitive · list_frameworks · size_tam ·
+      build_tam (what-if) · resolve_market · list/get_connector (enriched) ·
+      get_report_for_tam (report↔TAM) · verify_market_claim · export_report (HTML/PDF) ·
+      submit_feedback · list_feedback · apply_feedback (→ org-private primitive) · portfolio · whoami"]
+    RES["resources: strata://primitive|concept|framework|source|tam|report|snapshot|chart/{...}"]
+    PR["prompts: strata.size · strata.verify · strata.report · strata.portfolio"]
+  end
+  TOOLS --> PAY["every numeric payload: source_url + tier + snapshot_sha256 + serve-time integrity;
+    structuredContent + resource_links + next_actions; charts (vega-lite + mermaid)"]
+  TOOLS --> FENCE["Q20 fence: unknown claim → unverifiable (never synthesized);
+    modeled/quarantine tier rejected at the shared guard"]
 ```
+
+Surfaced via the CLI too: `strata report <concept|hash> --premium --pdf --brand…`,
+`strata verify "<claim>"`, `strata feedback submit|list|resolve [--apply]`.
 
 ### 23. Two-tier data bank (private ↔ shared via agents)
 

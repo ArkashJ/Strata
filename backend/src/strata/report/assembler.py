@@ -111,18 +111,36 @@ def _present_modifiers(concept: Concept) -> set[str]:
 
 
 def assemble_report(registry: Registry, concept_slug: str) -> MarketReport:
-    """Assemble the full question report for one concept (pure, no LLM)."""
-    concept = registry.get_concept(concept_slug)
-    bank = QuestionBank.from_registry(registry)
+    """Assemble the full question report for one concept (pure, no LLM).
 
-    # Compute the TAM once. If the concept is unsizable, tam stays None and every
-    # numeric question degrades to a gap — an honest absence, never a fabrication.
+    Sizes the concept once, then delegates to :func:`assemble_report_for_tam` so
+    the concept-level entry and a TAM-bound entry share one resolution path. If
+    the concept is unsizable the TAM is None and every numeric question degrades
+    to an honest gap — never a fabrication."""
+    concept = registry.get_concept(concept_slug)
     tam: TAMOutput | None
     try:
         tam = size_concept(registry, concept_slug)
     except (EvaluatorError, RegistryError):
         tam = None
+    return _assemble(registry, concept, tam)
 
+
+def assemble_report_for_tam(registry: Registry, tam: TAMOutput) -> MarketReport:
+    """Assemble the report BOUND to a specific TAM (GAP-1 fix).
+
+    Resolves every answer from THIS ``tam`` — its scenarios, method families,
+    independence score, scope — with **no re-evaluation**. So a report assembled
+    for a what-if TAM (an overridden ``build_tam`` result) reflects the steered
+    numbers, not a fresh size of the live concept. The concept is looked up only
+    for its non-numeric metadata (definition, modifiers, applicable questions);
+    every figure comes off the passed TAM."""
+    concept = registry.get_concept(tam.target.concept)
+    return _assemble(registry, concept, tam)
+
+
+def _assemble(registry: Registry, concept: Concept, tam: TAMOutput | None) -> MarketReport:
+    bank = QuestionBank.from_registry(registry)
     answers = tuple(
         _resolve(question, concept, registry, tam)
         for question in bank.applicable_to(concept, registry)
@@ -539,4 +557,4 @@ def _ratio(low: float, high: float) -> str:
     return f"{high / low:.2f}×"
 
 
-__all__ = ["MarketReport", "QuestionBank", "assemble_report"]
+__all__ = ["MarketReport", "QuestionBank", "assemble_report", "assemble_report_for_tam"]

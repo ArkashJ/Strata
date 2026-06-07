@@ -221,3 +221,100 @@ GET_REPORT: dict[str, Any] = {
     "required": ["concept_slug"],
     "additionalProperties": False,
 }
+
+GET_REPORT_FOR_TAM: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "state_hash": {
+            "type": "string",
+            "description": (
+                "The state hash of a previously built/sized TAM (from size_tam / "
+                "build_tam). The report is bound to THAT exact TAM — what-if "
+                "overrides are reflected — not a fresh re-evaluation of the concept."
+            ),
+        },
+    },
+    "required": ["state_hash"],
+    "additionalProperties": False,
+}
+
+VERIFY_MARKET_CLAIM: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "claim": {
+            "type": "string",
+            "description": "A market claim in natural language (e.g. 'the X TAM is $Y by 2027').",
+        },
+        "asserted_value": {
+            "type": "number",
+            "description": "Optional: the numeric figure the claim asserts (same unit as the market).",
+        },
+        "asserted_unit": {
+            "type": "string",
+            "description": "Optional: a free-text label of the asserted unit (display only).",
+        },
+        "as_of": {
+            "type": "string",
+            "description": "Optional: the as-of date / year the claim refers to (display only).",
+        },
+    },
+    "required": ["claim"],
+    "additionalProperties": False,
+}
+
+# ── Output schemas (Phase 0) ────────────────────────────────────────────────
+# Advertised in tools/list so a host gets typed structuredContent. Permissive by
+# design (the payloads are rich + evolving): object with additionalProperties so
+# extra fields never break validation, while the key props are documented.
+_PERMISSIVE_OBJECT: dict[str, Any] = {"type": "object", "additionalProperties": True}
+
+_TAM_OUTPUT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": True,
+    "properties": {
+        "concept": {"type": "string"},
+        "state_hash": {"type": "string"},
+        "estimate_kind": {"type": "string"},
+        "method_families": {"type": "array", "items": {"type": "string"}},
+        "independence_score": {"type": "number"},
+        "scenarios": {"type": "array", "items": {"type": "object"}},
+        "charts": {"type": "object"},
+        "next_actions": {"type": "array", "items": {"type": "object"}},
+        "resource_links": {"type": "array", "items": {"type": "object"}},
+    },
+}
+
+OUTPUT_SCHEMAS: dict[str, dict[str, Any]] = {
+    "size_tam": _TAM_OUTPUT_SCHEMA,
+    "resolve_market": {
+        "type": "object",
+        "additionalProperties": True,
+        "properties": {
+            "matched": {"type": "boolean"},
+            "via": {"type": "string"},
+            "state_hash": {"type": "string"},
+            "scenarios": {"type": "array", "items": {"type": "object"}},
+        },
+    },
+    "get_primitive": {
+        "type": "object",
+        "additionalProperties": True,
+        "properties": {"primitive": {"type": "object"}},
+    },
+    "get_report": _PERMISSIVE_OBJECT,
+    "get_report_for_tam": _PERMISSIVE_OBJECT,
+    "verify_market_claim": {
+        "type": "object",
+        "additionalProperties": True,
+        "properties": {
+            "verdict": {"type": "string"},
+            "asserted": {"type": ["object", "null"]},
+            "strata_range": {"type": ["object", "null"]},
+            "spread_x": {"type": ["number", "null"]},
+            "method_families": {"type": "array", "items": {"type": "string"}},
+            "independence_score": {"type": ["number", "null"]},
+            "inputs": {"type": "array", "items": {"type": "object"}},
+            "charts": {"type": "object"},
+        },
+    },
+}
