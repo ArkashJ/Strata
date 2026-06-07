@@ -15,12 +15,36 @@ export interface ErrorStateProps {
   onRetry?: () => void;
 }
 
+// FastAPI returns a human-readable reason in `detail` (a string, or a list of
+// {msg} for validation errors). Surface it instead of the bare status line.
+function apiDetail(body: unknown): string | null {
+  if (body && typeof body === "object" && "detail" in body) {
+    const d = (body as { detail: unknown }).detail;
+    if (typeof d === "string") return d;
+    if (Array.isArray(d)) {
+      const msgs = d.map((e) => (e && typeof e === "object" && "msg" in e ? String((e as { msg: unknown }).msg) : null)).filter(Boolean);
+      if (msgs.length) return msgs.join("; ");
+    }
+  }
+  return null;
+}
+
 function messageFor(error: unknown): string {
   if (error instanceof ApiError) {
-    return `${error.status} — ${error.message}`;
+    const detail = apiDetail(error.body);
+    return detail ? `${detail} (${error.status})` : `${error.status} — ${error.message}`;
+  }
+  // A Zod schema-validation throw carries an enormous JSON message; collapse it
+  // to a concise, honest note rather than dumping the issue list at the user.
+  if (error instanceof Error && error.name === "ZodError") {
+    return "The result came back in an unexpected shape and couldn't be displayed. This is a known data/schema mismatch, not a problem with your query.";
   }
   if (error instanceof Error) {
     return error.message;
+  }
+  // A plain string (some callers set error state to e.message directly).
+  if (typeof error === "string" && error.trim()) {
+    return error;
   }
   return "An unexpected error occurred.";
 }
