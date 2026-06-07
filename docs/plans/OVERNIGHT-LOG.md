@@ -115,3 +115,11 @@ Work queue, dependency-ordered:
 - Clerk→backend JWKS bridge (inert/keyless-safe), migrations 008 (dual-purpose tam_outputs RLS) + 009 (user_primitives/boards), /me CRUD + saved TAMs + audit + lineage, frontend bearer wiring. 922 tests incl. cross-tenant RLS isolation. BLOCKED: live-prod Clerk JWKS. Known limits: #98, #99.
 - Strategic adversarial review → docs/STRATEGY-REVIEW-2026-06-06.md + GH #93–#108.
 - Merged: PR0 #91, PR4 #92, PR1 #109. Remaining: PR2 (this branch), PR3, PR5.
+
+### 2026-06-07 · MCP OAuth 2.1 connector — PR #125 (open, locally green)
+- One-click claude.ai/ChatGPT connect: OAuth 2.1 AS co-hosted with /mcp/ (RFC 8414/7591/9728/8707 + PKCE S256), Clerk-gated consent, opaque token → same org_id as the API-key+RLS path. Additive third bearer branch; strata_sk_/Clerk paths untouched. authlib used ONLY for PKCE S256 (its AuthorizationServer is sync/Flask-coupled — async orchestration hand-written).
+- Branch `worktree-mcp-oauth-connector` (off main @ 8539bac). 10 units (config · migration 013 non-RLS oauth tables · db/oauth.py · metadata · RS acceptance · DCR · authorize · token · consent page · snippet fix). 62 oauth tests; 1059 backend total green; pyright src 0; ruff/validate clean; migration up/down OK.
+- 9-persona ce-code-review applied: RFC 9728 no-slash probe; dropped duplicate CORS header; _OAUTH_STORE 30s revocation-propagating lookaside; allowlist/PKCE unit tests (userinfo-spoof); JWT-bearer DB-lookup skip; OAuth-shaped token errors.
+- CI: backend job billing-blocked (zero-step 2-3s fail, same as 2026-06-06 #108) — NOT a code failure; needs Actions billing fix. Per-PR bar = open + locally green.
+- BLOCKED on deploy+verify-live: needs prod STRATA_OAUTH_ISSUER / MCP_RESOURCE_URL / OAUTH_CONSENT_URL + Clerk PROD keys (prod runs Clerk dev keys today). Deferred P3 follow-ups: rate-limit DCR/token, GC reaper, Clerk org-membership re-check, scope whitelist.
+- NOT merged (per task constraint). Human merges.
