@@ -61,6 +61,15 @@ export function factorChain(scenario: Scenario): FactorChain | null {
   if (!MULTIPLICATIVE_LENSES.has(scenario.lens)) return null;
   const usable = scenario.inputs_used.filter((iu) => iu.value != null);
   if (usable.length < 2) return null;
+  // HONESTY GUARD (review #126): only present "a × b × c = TAM" when the factors'
+  // product ACTUALLY equals the scenario value. Many frameworks wrap inputs in
+  // logistic()/curve()/clamp() or bind shape parameters (adoption_midpoint,
+  // steepness) that are NOT multiplicands — listing them as a product would assert
+  // a false identity. When the product diverges, return null so the bridge does not
+  // render (the report falls back to the honest scenario value + composition chart).
+  const product = usable.reduce((acc, iu) => acc * (iu.value as number), 1);
+  const denom = Math.abs(scenario.value) || 1;
+  if (Math.abs(product - scenario.value) / denom > 0.01) return null;
   return {
     steps: usable.map((iu) => ({
       label: iu.name ?? iu.role_name,

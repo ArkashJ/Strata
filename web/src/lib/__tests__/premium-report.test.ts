@@ -105,6 +105,24 @@ describe("factorChain", () => {
     });
     expect(factorChain(s)).toBeNull();
   });
+
+  it("returns null when the factors' product does not equal the TAM (logistic/shape-param framework)", () => {
+    // A latent-demand framework wraps adoption in logistic(midpoint, steepness):
+    // midpoint/steepness are bound inputs but NOT multiplicands, so the naive
+    // product (20 × 0.5 × 2 × 100 = 2000) ≠ the real scenario value (600). The
+    // bridge must NOT assert a false "a × b × c = TAM" identity.
+    const s = scenario({
+      lens: "latent_demand",
+      value: 600,
+      inputs_used: [
+        input({ primitive_slug: "pop", value: 20, unit: COUNT }),
+        input({ primitive_slug: "adoption_midpoint", value: 0.5, unit: RATIO }),
+        input({ primitive_slug: "adoption_steepness", value: 2, unit: RATIO }),
+        input({ primitive_slug: "wtp", value: 100, unit: USD }),
+      ],
+    });
+    expect(factorChain(s)).toBeNull();
+  });
 });
 
 describe("bridgeScenario", () => {
@@ -115,6 +133,7 @@ describe("bridgeScenario", () => {
         scenario({
           framework: "rich",
           lens: "latent_demand",
+          value: 6, // product of the factors below — a true multiplicative chain
           inputs_used: [input({ value: 1 }), input({ value: 2 }), input({ value: 3 })],
         }),
       ],
