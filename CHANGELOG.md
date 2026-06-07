@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — analyst-grade report redesign
+
+- **The report now reads like a VC analyst deck, not a wall of text.** The top of
+  every analysis report was three small donuts and a lot of empty space, then
+  pages of text cards that reprinted the same five sources over and over. It is
+  now a single executive summary a reader takes in at a glance: the headline TAM,
+  a range bar showing how far the methods disagree (floor → midpoint → ceiling on
+  a log scale), the trust signals (how many independent methods agree, how
+  tightly), a coverage chart of which questions are answered, a map of where the
+  data bank is thin, the mix of source types, and one clean table of every source
+  behind the numbers. The per-question cards keep a compact source tag instead of
+  repeating the full list.
+
+  ```
+  before: [donut][donut][donut] + whitespace ─▶ 15 pages of repeated text
+  after:  headline TAM ─▶ range bar (methods disagree) ─▶ trust signals
+          ─▶ coverage + gaps ─▶ source-type mix ─▶ one source ledger ─▶ tight Q&A
+  ```
+
+  Every number still comes only from a sourced figure or a reproducible
+  calculation — nothing is invented. The dollar range chart shows same-unit
+  figures only; mixed-unit measurements stay in the source table, never plotted
+  as bars. The downloadable PDF reflects the same layout.
+
 ### Fixed — report charts, multi-page PDF, dynamic TAM unblock
 
 - **The deployed site shows data again.** The live frontend

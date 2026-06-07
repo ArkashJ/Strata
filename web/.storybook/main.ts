@@ -19,6 +19,12 @@ const config: StorybookConfig = {
     const { mergeConfig } = await import("vite");
     return mergeConfig(cfg, {
       plugins: [tailwindcss()],
+      // Force-prebundle React so Vite's CJS→ESM interop synthesizes a `default`
+      // export (React 19's index.js otherwise serves raw CJS and the preview
+      // dies with "does not provide an export named 'default'").
+      optimizeDeps: {
+        include: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+      },
       resolve: {
         alias: {
           // Map the @/* path alias defined in tsconfig.json
