@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 
 from strata.api.auth import Principal, hash_key, register_hashed, require_authenticated, unregister
 from strata.api.responses import UNAUTHORIZED
-from strata.db.api_keys import ApiKeyRecord, list_for_org, mint, revoke
+from strata.db.api_keys import ApiKeyRecord, TooManyKeysError, list_for_org, mint, revoke
 from strata.db.engine import session_scope
 
 router = APIRouter(prefix="/me/api-keys", tags=["api-keys"])
@@ -87,10 +87,13 @@ class CreatedKeyOut(ApiKeyOut):
     responses=UNAUTHORIZED,
 )
 async def create_key(body: CreateKeyRequest, principal: Principal = _AUTH) -> CreatedKeyOut:
-    async with session_scope() as session:
-        raw, record = await mint(
-            session, org_id=principal.org_id, label=body.label, created_by=principal.user_id
-        )
+    try:
+        async with session_scope() as session:
+            raw, record = await mint(
+                session, org_id=principal.org_id, label=body.label, created_by=principal.user_id
+            )
+    except TooManyKeysError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     # Usable immediately in this process — no wait for a cache reload.
     register_hashed(hash_key(raw), principal.org_id, key_id=record.key_id)
     return CreatedKeyOut.with_secret(record, raw)

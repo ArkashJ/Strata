@@ -16,7 +16,7 @@ import secrets
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from strata.api.auth import hash_key
@@ -27,6 +27,13 @@ from strata.db.models import ApiKeyRow
 _RAW_PREFIX = "strata_sk_live_"
 # 32 urlsafe chars ≈ 192 bits of entropy — far past guessing range.
 _SECRET_BYTES = 24
+# Cap active keys per org so a loop of mint calls can't grow the in-process auth
+# cache / table without bound (audit finding). Generous for real use.
+MAX_ACTIVE_KEYS_PER_ORG = 20
+
+
+class TooManyKeysError(RuntimeError):
+    """An org is at its active-key ceiling; revoke one before minting another."""
 
 
 def generate_raw_key() -> str:
@@ -72,7 +79,20 @@ async def mint(
     session: AsyncSession, *, org_id: str, label: str, created_by: str | None
 ) -> tuple[str, ApiKeyRecord]:
     """Create a key for ``org_id``. Returns ``(raw_secret, record)``; the raw
-    secret is the caller's only chance to read it."""
+    secret is the caller's only chance to read it. Raises ``TooManyKeysError``
+    when the org is at its active-key ceiling."""
+    active = (
+        await session.execute(
+            select(func.count())
+            .select_from(ApiKeyRow)
+            .where(ApiKeyRow.org_id == org_id, ApiKeyRow.revoked_at.is_(None))
+        )
+    ).scalar_one()
+    if active >= MAX_ACTIVE_KEYS_PER_ORG:
+        raise TooManyKeysError(
+            f"org already has {active} active keys (max {MAX_ACTIVE_KEYS_PER_ORG}); "
+            "revoke one before minting another"
+        )
     raw = generate_raw_key()
     row = ApiKeyRow(
         key_hash=hash_key(raw),
@@ -146,6 +166,6 @@ async def touch_last_used(session: AsyncSession, key_hash: str) -> None:
     must never affect an auth decision."""
     await session.execute(
         update(ApiKeyRow)
-        .where(ApiKeyRow.key_hash == key_hash)
+        .where(ApiKeyRow.key_hash == key_hash, ApiKeyRow.revoked_at.is_(None))
         .values(last_used_at=datetime.now().astimezone())
     )
