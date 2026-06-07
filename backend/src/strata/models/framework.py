@@ -130,6 +130,34 @@ class Framework(BaseModel):
     horizon_class: HorizonClass = HorizonClass.SNAPSHOT
 
     @model_validator(mode="after")
+    def _taxonomy_pair_coheres(self) -> Framework:
+        """The canonical/subframework distinction is a LOCAL invariant of a single
+        framework (it relates only this record's ``parent_lens_shape`` and
+        ``realism_modifiers``), so it must hold at *every* construction — a row
+        from Postgres, an MCP build path, a test — not just under ``strata
+        validate``. Mirrors ``_formula_parses``: load-bearing local invariants
+        live on the model. The genuinely cross-record parts (parent exists, is a
+        same-lens canonical, one canonical per lens) stay in the cross validator.
+
+          canonical  (parent_lens_shape is None)  ⇒ NO realism_modifiers
+          subframework (parent set)               ⇒ ≥1 realism_modifier
+          a framework is never its own parent
+        """
+        if self.parent_lens_shape is None and self.realism_modifiers:
+            raise ValueError(
+                f"canonical framework {self.slug!r} (no parent_lens_shape) must not "
+                f"declare realism_modifiers; it is the raw lens shape"
+            )
+        if self.parent_lens_shape is not None and not self.realism_modifiers:
+            raise ValueError(
+                f"subframework {self.slug!r} declares a parent but no realism_modifiers; "
+                f"a specialization must name how it differs from the canonical shape"
+            )
+        if self.parent_lens_shape == self.slug:
+            raise ValueError(f"framework {self.slug!r} cannot be its own parent_lens_shape")
+        return self
+
+    @model_validator(mode="after")
     def _formula_parses(self) -> Framework:
         """Phase 2: the formula is load-bearing, so a syntactically broken or
         unknown-identifier formula must fail at construction — i.e. whenever the

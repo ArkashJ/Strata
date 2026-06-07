@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from strata.loader import load_data_dir
 from strata.registry import Registry
 from strata.validator.cross_record import cross_record_check
@@ -65,7 +67,11 @@ def test_seeded_data_has_no_taxonomy_errors() -> None:
     assert _taxonomy_issues(_registry()) == []
 
 
-# --- the gate must FIRE on each violation -----------------------------------
+# --- CROSS-RECORD gate must FIRE on each registry-level violation -----------
+#
+# model_copy bypasses Pydantic validation, so it can stage a record that is
+# locally legal but breaks a cross-record invariant — exactly what we want to
+# feed the registry-level gate.
 
 
 def _mutate(reg: Registry, slug: str, **updates: object) -> Registry:
@@ -82,11 +88,12 @@ def test_gate_fires_on_two_canonical_in_one_lens() -> None:
     assert any("canonical shapes" in m for m in issues)
 
 
-def test_gate_fires_on_subframework_without_modifier() -> None:
+def test_gate_fires_on_zero_canonical_in_a_lens() -> None:
+    # Remove a lens's only canonical while a subframework of it remains.
     reg = _registry()
-    _mutate(reg, "cost-efficiency-bounded-displacement", realism_modifiers=())
+    del reg.frameworks["cost-efficiency-full-displacement"]
     issues = _taxonomy_issues(reg)
-    assert any("no realism_modifiers" in m for m in issues)
+    assert any("no canonical shape" in m for m in issues)
 
 
 def test_gate_fires_on_unknown_parent() -> None:
@@ -96,10 +103,66 @@ def test_gate_fires_on_unknown_parent() -> None:
     assert any("not a known framework" in m for m in issues)
 
 
-def test_gate_fires_on_canonical_with_modifier() -> None:
+def test_gate_fires_on_parent_chain() -> None:
+    # A subframework pointing at ANOTHER subframework (of the same lens) — the
+    # "no chains" rule the reframe exists to prevent.
     reg = _registry()
-    from strata.models.framework import RealismModifier
-
-    _mutate(reg, "revenue-capture-full", realism_modifiers=(RealismModifier.BOUNDED,))
+    _mutate(
+        reg,
+        "cost-efficiency-bounded-displacement",
+        parent_lens_shape="cost-efficiency-adoption-gated",
+    )
     issues = _taxonomy_issues(reg)
-    assert any("must not" in m and "realism_modifiers" in m for m in issues)
+    assert any("no chains" in m for m in issues)
+
+
+def test_gate_fires_on_cross_lens_parent() -> None:
+    # A subframework pointing at a canonical of a DIFFERENT lens (its own lens
+    # left intact) — the same-lens guarantee.
+    reg = _registry()
+    _mutate(reg, "cost-efficiency-bounded-displacement", parent_lens_shape="revenue-capture-full")
+    issues = _taxonomy_issues(reg)
+    assert any("different lens" in m for m in issues)
+
+
+# --- LOCAL pair invariants are enforced on the MODEL (at construction) -------
+#
+# These can't even be constructed, so they never reach the registry. model_copy
+# skips validation; model_validate runs it — so we validate a mutated dump.
+
+
+def _framework_dump(slug: str) -> dict[str, object]:
+    return _registry().frameworks[slug].model_dump(mode="json")
+
+
+def test_model_rejects_canonical_with_modifier() -> None:
+    from pydantic import ValidationError
+
+    from strata.models import Framework
+
+    d = _framework_dump("revenue-capture-full")  # canonical
+    d["realism_modifiers"] = ["bounded"]
+    with pytest.raises(ValidationError, match=r"must not.*realism_modifiers"):
+        Framework.model_validate(d)
+
+
+def test_model_rejects_subframework_without_modifier() -> None:
+    from pydantic import ValidationError
+
+    from strata.models import Framework
+
+    d = _framework_dump("cost-efficiency-bounded-displacement")  # subframework
+    d["realism_modifiers"] = []
+    with pytest.raises(ValidationError, match="no realism_modifiers"):
+        Framework.model_validate(d)
+
+
+def test_model_rejects_self_parent() -> None:
+    from pydantic import ValidationError
+
+    from strata.models import Framework
+
+    d = _framework_dump("cost-efficiency-bounded-displacement")
+    d["parent_lens_shape"] = d["slug"]
+    with pytest.raises(ValidationError, match="cannot be its own parent"):
+        Framework.model_validate(d)

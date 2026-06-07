@@ -74,11 +74,13 @@ def _framework_taxonomy(registry: Registry) -> list[CrossRecordIssue]:
 
       * exactly ONE canonical framework per lens that has any framework
         (canonical = ``parent_lens_shape is None``);
-      * a canonical framework declares NO ``realism_modifiers`` (it is the raw
-        shape);
-      * a subframework points at an existing canonical of the SAME lens and
-        declares at least one modifier (a sub with no modifier is a duplicate
-        shape, not a specialization).
+      * a subframework points at an existing canonical of the SAME lens, and
+        that parent is not itself a subframework (no chains).
+
+    The purely-LOCAL pair invariants (a canonical declares no modifiers; a
+    subframework declares ≥1) are enforced on the model itself
+    (``Framework._taxonomy_pair_coheres``), so a self-contradictory record can't
+    be constructed in the first place — those are not re-checked here.
     """
     out: list[CrossRecordIssue] = []
     frameworks = registry.frameworks
@@ -90,21 +92,10 @@ def _framework_taxonomy(registry: Registry) -> list[CrossRecordIssue]:
         lenses_with_frameworks.add(lens)
         if fw.parent_lens_shape is None:
             canonical_by_lens.setdefault(lens, []).append(fw.slug)
-            if fw.realism_modifiers:
-                out.append(
-                    CrossRecordIssue(
-                        code="cross.framework_taxonomy",
-                        severity=CrossRecordSeverity.ERROR,
-                        slug=fw.slug,
-                        message=(
-                            f"canonical framework {fw.slug!r} (no parent_lens_shape) must not "
-                            f"declare realism_modifiers; it is the raw lens shape"
-                        ),
-                    )
-                )
             continue
 
-        # Subframework: validate its parent pointer + modifiers.
+        # Subframework: validate its parent pointer (a cross-record concern —
+        # the parent must exist, be canonical, and share this lens).
         parent = frameworks.get(fw.parent_lens_shape)
         if parent is None:
             out.append(
@@ -118,40 +109,28 @@ def _framework_taxonomy(registry: Registry) -> list[CrossRecordIssue]:
                     ),
                 )
             )
-        else:
-            if parent.parent_lens_shape is not None:
-                out.append(
-                    CrossRecordIssue(
-                        code="cross.framework_taxonomy",
-                        severity=CrossRecordSeverity.ERROR,
-                        slug=fw.slug,
-                        message=(
-                            f"subframework {fw.slug!r} must point at a CANONICAL framework; "
-                            f"{parent.slug!r} is itself a subframework (no chains)"
-                        ),
-                    )
-                )
-            if parent.lens != fw.lens:
-                out.append(
-                    CrossRecordIssue(
-                        code="cross.framework_taxonomy",
-                        severity=CrossRecordSeverity.ERROR,
-                        slug=fw.slug,
-                        message=(
-                            f"subframework {fw.slug!r} (lens {fw.lens.value}) points at "
-                            f"{parent.slug!r} of a different lens ({parent.lens.value})"
-                        ),
-                    )
-                )
-        if not fw.realism_modifiers:
+            continue
+        if parent.parent_lens_shape is not None:
             out.append(
                 CrossRecordIssue(
                     code="cross.framework_taxonomy",
                     severity=CrossRecordSeverity.ERROR,
                     slug=fw.slug,
                     message=(
-                        f"subframework {fw.slug!r} declares a parent but no realism_modifiers; "
-                        f"a specialization must name how it differs from the canonical shape"
+                        f"subframework {fw.slug!r} must point at a CANONICAL framework; "
+                        f"{parent.slug!r} is itself a subframework (no chains)"
+                    ),
+                )
+            )
+        if parent.lens != fw.lens:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.framework_taxonomy",
+                    severity=CrossRecordSeverity.ERROR,
+                    slug=fw.slug,
+                    message=(
+                        f"subframework {fw.slug!r} (lens {fw.lens.value}) points at "
+                        f"{parent.slug!r} of a different lens ({parent.lens.value})"
                     ),
                 )
             )
