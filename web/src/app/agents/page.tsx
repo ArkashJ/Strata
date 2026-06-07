@@ -6,6 +6,7 @@
 import type { Metadata } from "next";
 
 import { ActivityLog } from "@/components/agents/ActivityLog";
+import { ApiKeysPanel } from "@/components/agents/ApiKeysPanel";
 
 export const metadata: Metadata = {
   title: "Agent harness · Strata",
@@ -210,6 +211,8 @@ STRATA_MCP_LIVE_CONNECTORS=1`}</CodeBlock>
           work for — no fabricated figures, every number traceable to a snapshot.
         </p>
       </section>
+
+      <ApiKeysPanel />
 
       <ActivityLog />
     </main>
