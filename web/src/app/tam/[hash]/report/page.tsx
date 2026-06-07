@@ -4,12 +4,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { PremiumTamReport } from "@/components/report/PremiumTamReport";
 import { TamReport } from "@/components/tam/TamReport";
 import { formatCompact } from "@/lib/format";
 import { midScenario, tamRange } from "@/lib/tam";
 import { getTamServer } from "@/lib/tam-server";
 
-type Props = { params: Promise<{ hash: string }> };
+type Props = {
+  params: Promise<{ hash: string }>;
+  searchParams: Promise<{ print?: string; classic?: string }>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { hash } = await params;
@@ -23,9 +27,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ReportPage({ params }: Props) {
+export default async function ReportPage({ params, searchParams }: Props) {
   const { hash } = await params;
+  const { print, classic } = await searchParams;
   const tam = await getTamServer(hash);
   if (!tam) notFound();
-  return <TamReport tam={tam} />;
+  // The classic print-first one-pager stays the PDF target (other surfaces open
+  // it with ?print=1) and is reachable via ?classic=1. The default on-screen
+  // report is the premium Coatue/Gartner section system.
+  if (print != null || classic != null) return <TamReport tam={tam} />;
+  return <PremiumTamReport tam={tam} />;
 }
