@@ -210,7 +210,9 @@ def _tam_midpoint(tam: TAMOutput) -> float:
 async def build_sensitivity(
     concept_slug: str,
     reg: Registry = _REG,
-    pct: float = Query(0.2, description="Sensitivity swing percentage (e.g., 0.2 for ±20%)."),
+    pct: float = Query(
+        0.2, ge=0.01, le=1.0, description="Sensitivity swing percentage (e.g., 0.2 for ±20%)."
+    ),
 ) -> SensitivityResponse:
     try:
         base_tam = size_concept(reg, concept_slug)

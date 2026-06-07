@@ -110,7 +110,7 @@ async def sync(provider: str, principal: Principal = _PRINCIPAL) -> SyncResponse
     connector = _connector_or_404(provider)
     stored = get_vault().get(principal.org_id, provider)
     if stored is None:
-        raise HTTPException(409, f"{provider} not connected for this org")
+        raise HTTPException(404, f"{provider} not connected for this org")
     raw = connector.fetch(stored.reveal())
     primitives = connector.to_private_primitives(principal.org_id, raw)
     get_store().add(principal.org_id, provider, primitives)

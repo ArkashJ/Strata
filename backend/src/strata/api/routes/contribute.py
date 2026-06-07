@@ -19,7 +19,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from strata.api.auth import Principal, require_authenticated, require_principal
 from strata.api.deps import get_registry
 from strata.api.ratelimit import enforce_rate_limit
-from strata.api.responses import RATE_LIMITED, UNAUTHORIZED, error, merge
+from strata.api.responses import (
+    RATE_LIMITED,
+    UNAUTHORIZED,
+    error,
+    format_validation_errors,
+    merge,
+)
 from strata.db.contributions import Contribution, list_contributions, record_contribution_safe
 from strata.db.engine import get_session
 from strata.models import Annotation, AtomicPrimitive, Concept
@@ -85,7 +91,7 @@ def _validate(req: ContributionRequest) -> tuple[ContributionStatus, list[str]]:
         try:
             TypeAdapter(Annotation).validate_python(req.payload)
         except ValidationError as exc:
-            return "rejected", [f"{e['loc']}: {e['msg']}" for e in exc.errors()][:8]
+            return "rejected", format_validation_errors(exc)
         # Annotations are pure commentary (E1) — never auto-publish into math.
         return "needs_review", ["annotation queued for review (never auto-applied to math)"]
 
@@ -93,7 +99,7 @@ def _validate(req: ContributionRequest) -> tuple[ContributionStatus, list[str]]:
         try:
             Concept.model_validate(req.payload)
         except ValidationError as exc:
-            return "rejected", [f"{e['loc']}: {e['msg']}" for e in exc.errors()][:8]
+            return "rejected", format_validation_errors(exc)
         # A concept is a curated identity object, not a sourced number — there's
         # no tier to auto-accept on. Promotion to the public bank ALWAYS goes
         # through human review (flow 39: validator-gated, never a direct write).
@@ -102,7 +108,7 @@ def _validate(req: ContributionRequest) -> tuple[ContributionStatus, list[str]]:
     try:
         prim = TypeAdapter(AtomicPrimitive).validate_python(req.payload)
     except ValidationError as exc:
-        return "rejected", [f"{e['loc']}: {e['msg']}" for e in exc.errors()][:8]
+        return "rejected", format_validation_errors(exc)
 
     # Read the tier from the VALIDATED object (a coerced enum), not the raw dict.
     tier = prim.source.tier.value
@@ -229,7 +235,7 @@ async def intersect_concepts(
     responses=UNAUTHORIZED,
 )
 async def list_contributions_route(
-    status: str | None = None,
+    status: ContributionStatus | None = None,
     session: AsyncSession = _SESSION,
     principal: Principal = _REVIEW_PRINCIPAL,
 ) -> list[Contribution]:

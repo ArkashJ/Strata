@@ -23,7 +23,7 @@ from collections.abc import AsyncIterator
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from strata.api.auth import Principal, require_principal
 from strata.api.deps import get_registry
@@ -51,7 +51,7 @@ _MODEL = "claude-sonnet-4-6"
 
 
 class ResolveRequest(BaseModel):
-    query: str
+    query: str = Field(min_length=1, max_length=2048)
 
 
 def _sse(event: str, data: dict[str, object] | str) -> str:

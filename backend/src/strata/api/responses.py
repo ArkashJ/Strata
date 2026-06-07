@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
 class ErrorDetail(BaseModel):
@@ -46,6 +46,14 @@ def merge(*specs: ResponseSpec) -> ResponseSpec:
     for spec in specs:
         out.update(spec)
     return out
+
+
+def format_validation_errors(exc: ValidationError, *, limit: int = 8) -> list[str]:
+    """Render a Pydantic ``ValidationError`` into capped ``"<loc>: <msg>"`` lines.
+
+    The standard shape for surfacing why an input was rejected — shared so the
+    contribution intake and the /me write paths can't drift on it."""
+    return [f"{e['loc']}: {e['msg']}" for e in exc.errors()][:limit]
 
 
 # Reusable specs for the two cross-cutting failure modes (auth + rate limiting).
