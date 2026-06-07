@@ -25,6 +25,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { ResolveView } from "@/components/ResolveView";
+import { ApiError } from "@/lib/api-client";
 import { BuildStudioView } from "@/components/build/BuildStudioView";
 import { GraphComposer } from "@/components/build/GraphComposer";
 import { MarketSpecStep } from "@/components/build/MarketSpecStep";
@@ -145,7 +146,15 @@ function SpecMode({ query, studio = false }: { query: string; studio?: boolean }
   const concept = useQuery(conceptQuery(matchedSlug));
 
   const [sizing, setSizing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Hold the caught error object (not just its message) so ErrorState can surface
+  // the API's `detail` — e.g. "concept has no applicable framework variants" for a
+  // data-reference concept — instead of a generic line.
+  const [error, setError] = useState<unknown>(null);
+  // A matched concept can have NO applicable framework (it's a sourced data-bank
+  // reference like a GDP series, not a market with a sizing recipe) — the backend
+  // returns 422 there. Rather than dead-end, we fall back to the live resolver so
+  // EVERY market still sizes: flip this and render ResolveView with the concept name.
+  const [forceResolve, setForceResolve] = useState(false);
   // In studio mode the resolved TAM + state are held here so the reveal renders in
   // place after Size (spec mode leaves this null and redirects instead).
   const [studioResult, setStudioResult] = useState<{ tam: TAMOutput; state: BuildState } | null>(
@@ -159,6 +168,7 @@ function SpecMode({ query, studio = false }: { query: string; studio?: boolean }
   const onSize = async (scope: MarketScope) => {
     setSizing(true);
     setError(null);
+    setForceResolve(false);
     const draft: BuildState = {
       target_concept_slug: matchedSlug,
       // The user's pinned geo wins over the concept's default — they may have
@@ -190,7 +200,18 @@ function SpecMode({ query, studio = false }: { query: string; studio?: boolean }
         });
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not size this market.");
+      // No framework for this concept → not an error the user should see. Fall
+      // back to the live resolver (Claude + Exa) so the market still gets sized.
+      const noFramework =
+        e instanceof ApiError &&
+        e.status === 422 &&
+        /no applicable framework/i.test(JSON.stringify(e.body ?? ""));
+      if (noFramework) {
+        setForceResolve(true);
+        setSizing(false);
+        return;
+      }
+      setError(e);
       setSizing(false);
     }
   };
@@ -222,6 +243,17 @@ function SpecMode({ query, studio = false }: { query: string; studio?: boolean }
 
   const conceptName = concept.data?.name ?? matchedSlug.replace(/-/g, " ");
   const initialScope = concept.data?.scope ?? emptyMarketScope();
+
+  // This concept has no sizing framework (a sourced data reference, not a market).
+  // Instead of dead-ending on a 422, resolve it live so it still produces a TAM.
+  if (forceResolve) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <MarketSwitcher current={conceptName} studio={studio} />
+        <ResolveView query={conceptName} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col">
