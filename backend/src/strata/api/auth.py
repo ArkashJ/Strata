@@ -83,6 +83,26 @@ def register_key(raw: str, org_id: str, scopes: tuple[str, ...] = ("*",)) -> Non
     _KEY_STORE[hash_key(raw)] = Principal(org_id=org_id, key_id=hash_key(raw)[:12], scopes=scopes)
 
 
+def register_hashed(
+    key_hash: str, org_id: str, *, key_id: str, scopes: tuple[str, ...] = ("*",)
+) -> None:
+    """Register an already-hashed, DB-persisted key into the in-process cache.
+
+    Used at startup (warm the cache from ``api_keys``) and on mint (a freshly
+    minted key is usable immediately, same process) — so the hot auth path stays
+    a synchronous dict lookup with no per-request DB round-trip."""
+    _KEY_STORE[key_hash] = Principal(org_id=org_id, key_id=key_id, scopes=scopes)
+
+
+def unregister(key_hash: str) -> None:
+    """Evict a key from the cache (on revoke) so it stops authenticating at once."""
+    _KEY_STORE.pop(key_hash, None)
+
+
+def is_cached(key_hash: str) -> bool:
+    return key_hash in _KEY_STORE
+
+
 def _anonymous() -> Principal:
     return Principal(org_id=_ANONYMOUS_ORG, key_id="anonymous", scopes=("read",))
 

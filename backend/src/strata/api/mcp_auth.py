@@ -17,21 +17,70 @@ wrapper, so ``claude mcp add strata --command strata-mcp`` stays local-trust.
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 from fastapi import HTTPException
 
-from .auth import principal_for_headers
+from .auth import hash_key, is_cached, principal_for_headers, register_hashed
 from .metering import get_meter
 from .ratelimit import enforce_rate_limit
 
-# ASGI scope key under which the resolved Principal is stashed. This is
-# FORWARD-WIRING: the auth gate resolves the principal now, but the MCP SDK's
-# session manager does not yet thread scope["state"] into the tool handlers, so
-# the tools still run org-agnostic (org_id="default"). Org-scoping the tool
-# behaviour off this principal is Workstream B; the stash is here so that wiring
-# has the principal available without re-resolving it.
+# ASGI scope key under which the resolved Principal is stashed (kept for any
+# consumer that reads scope state). The tool handlers read the principal via the
+# ``strata.mcp.context`` ContextVar set below, which DOES thread through the SDK.
 _PRINCIPAL_STATE_KEY = "principal"
+
+_API_KEY_HEADER = "x-api-key"
+
+# Throttle for the best-effort ``last_used`` stamp: at most one DB write per key
+# per window, so a chatty agent doesn't turn every tool call into a write.
+_TOUCH_WINDOW_SECONDS = 60.0
+_last_touch: dict[str, float] = {}
+
+
+async def _ensure_key_loaded(headers: dict[str, str]) -> None:
+    """DB-backed auth: if a presented X-API-Key isn't in the in-process cache
+    (minted on another replica, or after a restart that lost the warm cache),
+    look it up once and populate the cache so the sync auth path can resolve it.
+    Best-effort — a DB hiccup just leaves the cache as-is (the request then 401s
+    honestly rather than erroring)."""
+    raw = headers.get(_API_KEY_HEADER)
+    if not raw or is_cached(hash_key(raw)):
+        return
+    try:
+        from ..db.api_keys import lookup_active
+        from ..db.engine import session_scope
+
+        async with session_scope() as session:
+            row = await lookup_active(session, raw)
+        if row is not None:
+            scopes = tuple(s for s in (row.scopes or "*").split(",") if s) or ("*",)
+            register_hashed(
+                row.key_hash, row.org_id, key_id=row.key_id or row.key_hash[:12], scopes=scopes
+            )
+    except Exception:  # auth must degrade to cache-only, never 500 on a DB blip
+        pass
+
+
+async def _touch_last_used(headers: dict[str, str]) -> None:
+    """Stamp ``last_used_at`` for the presented key, throttled and best-effort."""
+    raw = headers.get(_API_KEY_HEADER)
+    if not raw:
+        return
+    key_hash = hash_key(raw)
+    now = time.monotonic()
+    if now - _last_touch.get(key_hash, 0.0) < _TOUCH_WINDOW_SECONDS:
+        return
+    _last_touch[key_hash] = now
+    try:
+        from ..db.api_keys import touch_last_used
+        from ..db.engine import session_scope
+
+        async with session_scope() as session:
+            await touch_last_used(session, key_hash)
+    except Exception:
+        pass
 
 
 async def _send_json(
@@ -58,6 +107,7 @@ class McpAuthMiddleware:
             return
 
         headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
+        await _ensure_key_loaded(headers)  # DB-backed lookup on cache miss
         try:
             principal = principal_for_headers(headers, require=True)  # 401 on miss/bad
         except HTTPException as exc:
@@ -69,6 +119,8 @@ class McpAuthMiddleware:
             extra = {k: str(v) for k, v in (exc.headers or {}).items()}
             await _send_json(send, exc.status_code, {"error": str(exc.detail)}, headers=extra)
             return
+
+        await _touch_last_used(headers)  # best-effort staleness stamp
 
         scope = dict(scope)
         scope["state"] = {**scope.get("state", {}), _PRINCIPAL_STATE_KEY: principal}
@@ -91,4 +143,13 @@ class McpAuthMiddleware:
                 metered = True
             await send(message)
 
-        await self.app(scope, receive, _metered_send)
+        # Thread the principal to the tool handlers. The SDK runs the tool call
+        # within this awaited task, so a ContextVar set here is visible there
+        # (scope["state"] is NOT threaded by the session manager).
+        from ..mcp.context import current_principal
+
+        token = current_principal.set(principal)
+        try:
+            await self.app(scope, receive, _metered_send)
+        finally:
+            current_principal.reset(token)
