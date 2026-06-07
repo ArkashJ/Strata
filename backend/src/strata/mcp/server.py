@@ -66,6 +66,11 @@ def build_server(get_registry: Callable[[], Registry] = load_registry) -> Server
                 name=name,
                 description=spec["description"],
                 inputSchema=spec["inputSchema"],
+                annotations=(
+                    types.ToolAnnotations(**spec["annotations"])
+                    if spec.get("annotations")
+                    else None
+                ),
             )
             for name, spec in TOOLS.items()
         ]

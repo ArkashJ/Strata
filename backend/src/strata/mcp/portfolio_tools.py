@@ -25,8 +25,7 @@ from ..sizing.demo import load_demo_portfolio
 from ..sizing.service import SizeOptions
 from ..sizing.service import size_company as _size_company
 from ..sizing.store import CompanyStore
-
-_DEFAULT_ORG = "default"
+from .context import current_org_id
 
 
 def _disabled() -> dict[str, Any]:
@@ -37,16 +36,20 @@ def _disabled() -> dict[str, Any]:
 
 
 def _store() -> CompanyStore:
-    return CompanyStore(org_id=_DEFAULT_ORG)
+    # Hosted /mcp: the authenticated caller's org (threaded via the auth
+    # middleware ContextVar). Local stdio: "default" (local-trust). So two
+    # tenants writing through the hosted connector never share a portfolio.
+    return CompanyStore(org_id=current_org_id())
 
 
 def import_portfolio(reg: Registry, *, rows: list[dict[str, Any]]) -> dict[str, Any]:
     """[WRITE] Link a list of companies to your org (idempotent on domain)."""
     if not settings.portfolio_enabled:
         return _disabled()
+    org = current_org_id()
     records = [
         CompanyRecord(
-            org_id=_DEFAULT_ORG,
+            org_id=org,
             name=str(r.get("name", "")).strip(),
             domain=str(r.get("domain", "")).strip(),
             vertical=(str(r["vertical"]) if r.get("vertical") else None),
@@ -55,7 +58,7 @@ def import_portfolio(reg: Registry, *, rows: list[dict[str, Any]]) -> dict[str, 
         if str(r.get("name", "")).strip()
     ]
     added, skipped = _store().upsert_many(records)
-    return {"imported": added, "existing": skipped, "parsed": len(records), "org_id": _DEFAULT_ORG}
+    return {"imported": added, "existing": skipped, "parsed": len(records), "org_id": org}
 
 
 def size_company(
@@ -72,7 +75,7 @@ def size_company(
     rec = store.get(key)
     if rec is None:
         # Allow ad-hoc sizing of a not-yet-imported company.
-        rec = CompanyRecord(org_id=_DEFAULT_ORG, name=name or key, domain=domain or "")
+        rec = CompanyRecord(org_id=current_org_id(), name=name or key, domain=domain or "")
     res = _size_company(reg, rec, opts=SizeOptions())
     store.save(res.company)
     out: dict[str, Any] = {
