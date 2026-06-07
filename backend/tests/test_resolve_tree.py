@@ -68,6 +68,33 @@ def test_match_concept_miss() -> None:
     assert match_concept(reg, "wholly unrelated zylophone market 2099") is None
 
 
+def test_match_concept_rejects_single_generic_token_overlap() -> None:
+    """A lone shared word must not carry a match between two unrelated phrases.
+
+    Both queries previously cleared the char-ratio bar on one coincidental token
+    and were silently sized as the wrong concept with no honesty banner — the
+    worst failure mode the resolver has. They must now fall through to ``None``
+    (→ the honest novel-synthesis path), not a confident wrong TAM.
+    """
+    reg = Registry.from_loaded(load_data_dir(_DATA))
+    # "research" alone must not bind to AI legal *research*.
+    assert match_concept(reg, "Market research tools") != "demo-ai-legal-research-us"
+    assert match_concept(reg, "Market research tools") is None
+    # "insurance" alone must not bind to P&C insurance *doc generation*.
+    assert match_concept(reg, "pet insurance") != "doc-gen-pc-insurance"
+    assert match_concept(reg, "pet insurance") is None
+
+
+def test_match_concept_verbose_query_still_hits() -> None:
+    """A verbose query the concept name sits inside still resolves (candidate
+    coverage, not query coverage, carries it)."""
+    reg = Registry.from_loaded(load_data_dir(_DATA))
+    assert (
+        match_concept(reg, "P&C insurance document generation software for US carriers")
+        == _TRIANGULATED_CONCEPT
+    )
+
+
 # ── AC0.2: concept hit returns a triangulated tree ─────────────────────────
 
 
