@@ -20,6 +20,14 @@ tenant isolation stay consistent.
 Spec basis: MCP Authorization rev **2025-06-18** (OAuth 2.1 + RFC 8414 + 7591 +
 9728 + 8707 + PKCE S256). Anthropic connector auth docs.
 
+**Confirmed callback URLs (2026-06-07, OpenAI Apps SDK + Anthropic docs):**
+- Claude (claude.ai web): `https://claude.ai/api/mcp/auth_callback` (exact, static).
+- ChatGPT: `https://chatgpt.com/connector/oauth/{callback_id}` (production, **dynamic
+  per-connector** — `{callback_id}` shown on the app-management page) + legacy
+  `https://chatgpt.com/connector_platform_oauth_redirect`. ChatGPT supports DCR (RFC 7591)
+  and CIMD. Because the production path is dynamic, **do not** hardcode ChatGPT's full URL —
+  validate registered-URI exact-match gated by a trusted-host allowlist (see step 6).
+
 ## Current state (as-built, file:line)
 
 - MCP mounted: `backend/src/strata/api/app.py:~289` — `app.mount("/mcp", McpAuthMiddleware(mcp_app))`.
@@ -113,8 +121,13 @@ sequenceDiagram
 4. **`WWW-Authenticate` on 401** in `mcp_auth.py` pointing at the path-suffixed
    resource-metadata URL.
 5. **DCR** `POST /oauth/register` (accept-any -> `client_id`, persist `redirect_uris`).
-6. **`/oauth/authorize`**: exact redirect-URI allowlist (`https://claude.ai/api/mcp/auth_callback`,
-   ChatGPT's callback, and RFC 8252 loopback for Claude Code); require Clerk session
+6. **`/oauth/authorize`**: validate the incoming `redirect_uri` is an **exact match** of one
+   the client persisted via DCR, AND its scheme+host is in a **trusted-host allowlist** (NOT a
+   single hardcoded full-URL list — ChatGPT's callback path is dynamic per connector, see below).
+   Trusted hosts: `https://claude.ai` (path `/api/mcp/auth_callback`), `https://chatgpt.com`
+   (paths `/connector/oauth/{callback_id}` and legacy `/connector_platform_oauth_redirect`),
+   `https://chat.openai.com`, and RFC 8252 loopback (`http://127.0.0.1:*` / `http://localhost:*`)
+   for Claude Code. Require Clerk session
    (redirect to the frontend Clerk sign-in + consent page if absent); mint a single-use
    code bound to `{challenge, redirect_uri, client_id, resource, org_id}`.
 7. **`/oauth/token`**: `authorization_code` (verify S256, single-use, matches) +
