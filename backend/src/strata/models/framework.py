@@ -35,6 +35,28 @@ class MethodFamily(StrEnum):
     WEIGHTED_BLEND = "weighted_blend"
 
 
+class RealismModifier(StrEnum):
+    """How a SUBFRAMEWORK specializes its lens's canonical math shape.
+
+    The six lenses are six multiplication shapes (the IP). A subframework is that
+    same shape with one or more of these realism treatments applied to the
+    formula — so a number it produces differs, but the structure is the lens's.
+    A canonical framework declares NO modifier (it *is* the raw shape).
+
+      BOUNDED         a clamp(...) caps a factor — can't displace/capture >100%
+      ADOPTION_GATED  curve()/logistic() gates a rate by an S-curve over time
+      SATURATING      a saturating curve (ceiling) without the logistic midpoint
+      ADDRESSABLE     an extra addressable_share factor narrows the base
+      REDUCED         a degenerate form that drops one of the canonical roles
+    """
+
+    BOUNDED = "bounded"
+    ADOPTION_GATED = "adoption_gated"
+    SATURATING = "saturating"
+    ADDRESSABLE = "addressable"
+    REDUCED = "reduced"
+
+
 class InputRole(StrEnum):
     """Q6 input roles. Distinct from Q39 lens role names: a framework input
     has both a ``name`` (matching a Q39 lens role like ``persona_pool``) and
@@ -84,6 +106,15 @@ class Framework(BaseModel):
 
     # Q39 lens tag. The validator enforces concept.analysis_lens ∋ framework.lens.
     lens: AnalysisLens
+
+    # Taxonomy (2026-06-07 reframe): the 6 lens shapes are the canonical
+    # frameworks (parent_lens_shape=None, no realism_modifiers). Every other
+    # framework is a SUBFRAMEWORK — the same shape specialized — and points at
+    # its lens's canonical via ``parent_lens_shape`` and names how it differs via
+    # ``realism_modifiers``. The cross-record validator enforces "exactly one
+    # canonical per lens" so the count of distinct shapes can't silently inflate.
+    parent_lens_shape: Slug | None = None
+    realism_modifiers: tuple[RealismModifier, ...] = ()
 
     inputs: tuple[FrameworkInput, ...]
     formula: str
