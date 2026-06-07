@@ -19,6 +19,11 @@ export const methodFamilySchema = z.enum([
   "comparable_revenue",
   "analog_penetration",
   "value_chain",
+  // Phase 2 families the backend's formula engine emits (models/framework.py
+  // MethodFamily). Missing here, a valid TAM response failed tamOutputSchema.parse
+  // and surfaced as "Could not size this market".
+  "adoption_curve",
+  "weighted_blend",
 ]);
 export type MethodFamily = z.infer<typeof methodFamilySchema>;
 
