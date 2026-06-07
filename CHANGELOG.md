@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — a market query can no longer be sized as the wrong market
+
+- **Free-form queries that didn't name a curated market were being matched to an
+  unrelated one and shown as a real, sourced answer.** "Market research tools"
+  came back as "AI legal research (US lawyers) — $3.7B"; "pet insurance" came
+  back as "P&C insurance document generation" — each on the strength of a single
+  shared word ("research", "insurance"). The matcher compared raw letters, so
+  coincidental overlap looked like a match. It now compares **words**, and a lone
+  shared generic word no longer carries a match. A query that doesn't clearly
+  name a curated market now falls through to the honest "synthesized — verify
+  before citing" path instead of a confident wrong number. This also fixes the
+  builder mis-sizing arbitrary markets.
+
+  ```
+  query ─▶ match words (not letters) ─┬─ clear match  ─▶ curated, sourced TAM
+                                      └─ weak / generic ─▶ synthesized (verify) banner
+  ```
+
+- **Architecture diagrams expanded 41 → 54** (`docs/architecture/DIAGRAMS.md`):
+  the resolver match ladder, unit algebra, source-tier taxonomy, request
+  lifecycle, route/CLI surfaces, connector layering, data stores, and the full
+  resolve sequence — plus a rendering fix for three older diagrams.
+
 ### Added — deploy runbook + a smoke test that proves a deploy took
 
 - **A one-command check that a deploy actually landed.** `scripts/deploy-smoke.sh`
