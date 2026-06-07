@@ -12,9 +12,17 @@ from pathlib import Path
 
 from strata.loader import load_data_dir
 from strata.registry import Registry
-from strata.validator.cross_record import _framework_taxonomy
+from strata.validator.cross_record import cross_record_check
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+
+_TAXONOMY_CODE = "cross.framework_taxonomy"
+
+
+def _taxonomy_issues(reg: Registry) -> list[str]:
+    """Taxonomy-gate messages from the PUBLIC cross-record validator."""
+    return [i.message for i in cross_record_check(reg) if i.code == _TAXONOMY_CODE]
+
 
 # The six canonical lens shapes — one per AnalysisLens.
 CANONICAL = {
@@ -54,7 +62,7 @@ def test_every_subframework_resolves_to_same_lens_canonical() -> None:
 
 
 def test_seeded_data_has_no_taxonomy_errors() -> None:
-    assert _framework_taxonomy(_registry()) == []
+    assert _taxonomy_issues(_registry()) == []
 
 
 # --- the gate must FIRE on each violation -----------------------------------
@@ -70,22 +78,22 @@ def test_gate_fires_on_two_canonical_in_one_lens() -> None:
     _mutate(
         reg, "cost-efficiency-bounded-displacement", parent_lens_shape=None, realism_modifiers=()
     )
-    issues = _framework_taxonomy(reg)
-    assert any("canonical shapes" in i.message for i in issues)
+    issues = _taxonomy_issues(reg)
+    assert any("canonical shapes" in m for m in issues)
 
 
 def test_gate_fires_on_subframework_without_modifier() -> None:
     reg = _registry()
     _mutate(reg, "cost-efficiency-bounded-displacement", realism_modifiers=())
-    issues = _framework_taxonomy(reg)
-    assert any("no realism_modifiers" in i.message for i in issues)
+    issues = _taxonomy_issues(reg)
+    assert any("no realism_modifiers" in m for m in issues)
 
 
 def test_gate_fires_on_unknown_parent() -> None:
     reg = _registry()
     _mutate(reg, "cost-efficiency-bounded-displacement", parent_lens_shape="does-not-exist")
-    issues = _framework_taxonomy(reg)
-    assert any("not a known framework" in i.message for i in issues)
+    issues = _taxonomy_issues(reg)
+    assert any("not a known framework" in m for m in issues)
 
 
 def test_gate_fires_on_canonical_with_modifier() -> None:
@@ -93,5 +101,5 @@ def test_gate_fires_on_canonical_with_modifier() -> None:
     from strata.models.framework import RealismModifier
 
     _mutate(reg, "revenue-capture-full", realism_modifiers=(RealismModifier.BOUNDED,))
-    issues = _framework_taxonomy(reg)
-    assert any("must not" in i.message and "realism_modifiers" in i.message for i in issues)
+    issues = _taxonomy_issues(reg)
+    assert any("must not" in m and "realism_modifiers" in m for m in issues)

@@ -99,11 +99,17 @@ PERSPECTIVE (fenced)   a VIEW on an already-computed TAM — introduces NO new n
 | Lens | Keep as the 1 Framework (shape) | Collapse to subframeworks (realism modifier) |
 |---|---|---|
 | L1 cost_efficiency | `cost-efficiency-full-displacement` (canonical) | bounded, adoption-gated, bottoms_up(degenerate) |
-| L2 revenue_generation | `top_down_revenue_capture` | capture-addressable, capture-bounded, capture-full, adoption-gated |
+| L2 revenue_generation | `revenue-capture-full` | capture-addressable, capture-bounded, adoption-gated, top-down-revenue-capture(reduced) |
 | L3 latent_demand | `latent-demand-adoption-curve` | addressable-logistic, saturating-addressable, saturating-curve |
-| L4 platform_throughput | `throughput-take-rate-with-share` | take_rate(degenerate), adoption-gated, bounded-yield |
-| L5 bundle_consolidation | `consolidation-net-of-bundling-discount` | bounded-net, sum_then_discount |
-| L6 productivity_uplift | `productivity_uplift_value_split` | uplift-addressable, -bounded, -full, adoption-gated |
+| L4 platform_throughput | `throughput-take-rate-with-share` | take-rate(reduced), adoption-gated, bounded-yield |
+| L5 bundle_consolidation | `consolidation-net-of-bundling-discount` | bounded-net, sum-then-discount(reduced) |
+| L6 productivity_uplift | `productivity-uplift-full` | uplift-addressable, -bounded, adoption-gated, value-split(reduced) |
+
+> Canonicals are the *fullest* shape using exactly the lens's required roles
+> (e.g. L2 `revenue-capture-full` = segment×spend×capture; L6
+> `productivity-uplift-full` = persona×gain×split). The 2-term forms
+> (`top-down-revenue-capture`, `productivity-uplift-value-split`) are `reduced`
+> subframeworks, not the canonical — this table reflects the shipped tagging.
 
 Net: **25 framework records → 6 frameworks + ~19 subframeworks.** No recipe is
 deleted; the math is preserved. Only the *classification* changes — and with it,

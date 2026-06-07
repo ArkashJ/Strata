@@ -88,6 +88,8 @@ async def load_frameworks_from_db(session: AsyncSession) -> list[Framework]:
             "output_unit": row.output_unit,
             "applicable_to": row.applicable_to,
             "variants": row.variants,
+            "parent_lens_shape": row.parent_lens_shape,
+            "realism_modifiers": row.realism_modifiers,
         }
         frameworks.append(Framework.model_validate(raw))
     return frameworks
