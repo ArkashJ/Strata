@@ -69,7 +69,18 @@ async def test_protected_resource_metadata(_configured: None, client: AsyncClien
     body = r.json()
     assert body["resource"] == _RES  # byte-exact, trailing slash preserved
     assert body["authorization_servers"] == [_ISSUER]
-    assert r.headers.get("access-control-allow-origin") == "*"
+    # CORS is owned by the app-level CORSMiddleware (no manual ACAO header here),
+    # so a same-origin test request carries no Access-Control-Allow-Origin.
+
+
+@pytest.mark.asyncio
+async def test_protected_resource_metadata_mcp_no_slash(
+    _configured: None, client: AsyncClient
+) -> None:
+    # RFC 9728 path-insertion can yield the no-trailing-slash probe; it must resolve.
+    r = await client.get("/.well-known/oauth-protected-resource/mcp")
+    assert r.status_code == 200
+    assert r.json()["resource"] == _RES
 
 
 @pytest.mark.asyncio

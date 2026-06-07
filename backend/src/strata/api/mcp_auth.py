@@ -28,10 +28,11 @@ from .auth import (
     bearer_token_from_headers,
     hash_key,
     is_cached,
-    oauth_cached,
+    oauth_cache_fresh,
     principal_for_headers,
     register_hashed,
     register_oauth_token,
+    unregister_oauth,
 )
 from .metering import get_meter
 from .ratelimit import enforce_rate_limit
@@ -77,10 +78,19 @@ async def _ensure_key_loaded(headers: dict[str, str]) -> None:
 
     # Detection gap: ``api_key_from_headers`` returns None for any Bearer that is
     # not strata_sk_-prefixed, so an OAuth access token would silently skip the
-    # warm above. Extract the raw Bearer directly and, if it is neither a
-    # strata_sk_ key nor already cached, resolve it from the oauth_tokens table.
+    # warm above. Extract the raw Bearer directly. Skip strata_sk_ keys (handled
+    # above), Clerk JWTs (opaque OAuth tokens are dot-free; a JWT has dots and
+    # verifies by signature — never hits oauth_tokens, so the lookup would always
+    # miss and waste a DB round-trip on every signed-in web request), and entries
+    # already FRESH in the cache. A stale-but-present entry IS re-warmed so a
+    # rotated/revoked token (revoked in DB) gets evicted within the cache TTL.
     bearer = bearer_token_from_headers(headers)
-    if not bearer or bearer.startswith(_API_KEY_PREFIX) or oauth_cached(hash_key(bearer)):
+    if (
+        not bearer
+        or bearer.startswith(_API_KEY_PREFIX)
+        or "." in bearer  # JWT-shaped → not an opaque OAuth token
+        or oauth_cache_fresh(hash_key(bearer))
+    ):
         return
     try:
         from ..db.engine import session_scope
@@ -89,7 +99,9 @@ async def _ensure_key_loaded(headers: dict[str, str]) -> None:
         async with session_scope() as session:
             row = await lookup_access(session, bearer)
         # Only cache a token bound to OUR resource (audience) — a token minted
-        # for a different resource must never authenticate here.
+        # for a different resource must never authenticate here. A miss (revoked,
+        # expired, or wrong-audience) EVICTS any stale entry so revocation in the
+        # DB propagates to this process within the cache TTL.
         if row is not None and row.resource == settings.mcp_resource_url:
             scopes = tuple(s for s in (row.scope or "*").split(",") if s) or ("*",)
             register_oauth_token(
@@ -100,6 +112,8 @@ async def _ensure_key_loaded(headers: dict[str, str]) -> None:
                 expires_at=row.expires_at.timestamp(),
                 scopes=scopes,
             )
+        else:
+            unregister_oauth(hash_key(bearer))
     except Exception:  # auth must degrade to cache-only, never 500 on a DB blip
         pass
 

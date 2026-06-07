@@ -76,6 +76,10 @@ class Settings(BaseSettings):
     mcp_resource_url: str | None = None
     oauth_access_ttl_seconds: int = Field(default=3600, ge=1)
     oauth_refresh_ttl_seconds: int = Field(default=2592000, ge=1)
+    # Authorization codes are single-use and exchanged within seconds of consent;
+    # a short life bounds the replay window. Threaded like the token TTLs (not a
+    # magic literal in the route) so it is tunable per deploy.
+    oauth_code_ttl_seconds: int = Field(default=600, ge=1)
     # Absolute URL of the frontend's Clerk-gated consent page (e.g.
     # ``https://stratabank.vercel.app/oauth/authorize``). ``GET /oauth/authorize``
     # (which arrives cross-origin with no Clerk cookie) 302s the browser here so

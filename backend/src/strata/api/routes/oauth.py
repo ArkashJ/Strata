@@ -241,7 +241,7 @@ async def authorize_decision(
         org_id=org_id,
         user_id=user_id,
         scope=body.scope,
-        ttl_seconds=600,
+        ttl_seconds=settings.oauth_code_ttl_seconds,
     )
     await session.commit()
     params = {"code": raw_code}
@@ -255,6 +255,52 @@ async def authorize_decision(
 # --------------------------------------------------------------------------- #
 def _oauth_error(error: str, status: int = 400) -> JSONResponse:
     return JSONResponse({"error": error}, status_code=status)
+
+
+def _token_response(issued: oauth.IssuedToken) -> JSONResponse:
+    """The RFC 6749 §5.1 success body, shared by both grant branches."""
+    return JSONResponse(
+        {
+            "access_token": issued.access_token,
+            "token_type": "Bearer",
+            "expires_in": issued.expires_in,
+            "refresh_token": issued.refresh_token,
+            "scope": issued.scope,
+        }
+    )
+
+
+async def _grant_authorization_code(
+    session: AsyncSession, *, code: str, code_verifier: str, redirect_uri: str, client_id: str
+) -> JSONResponse:
+    # Verify everything BEFORE consuming, so a bad code_verifier (client bug /
+    # corruption) does not burn a legitimate, retryable code. The atomic
+    # single-use guarantee is the consume step below.
+    row = await oauth.peek_auth_code(session, code)
+    if row is None:
+        return _oauth_error("invalid_grant")
+    if row.redirect_uri != redirect_uri or row.client_id != client_id:
+        return _oauth_error("invalid_grant")
+    if not verify_pkce_s256(code_verifier=code_verifier, code_challenge=row.code_challenge):
+        return _oauth_error("invalid_grant")
+    # All checks passed — now atomically consume. ``None`` means a concurrent
+    # request won the race (replay protection), so this exchange fails. Bind the
+    # issued token from the CONSUMED row (the atomically-won state), not the peek.
+    consumed = await oauth.consume_auth_code(session, code)
+    if consumed is None:
+        return _oauth_error("invalid_grant")
+    issued = await oauth.issue_token(
+        session,
+        client_id=consumed.client_id,
+        org_id=consumed.org_id,
+        user_id=consumed.user_id,
+        scope=consumed.scope,
+        resource=consumed.resource,
+        access_ttl_seconds=settings.oauth_access_ttl_seconds,
+        refresh_ttl_seconds=settings.oauth_refresh_ttl_seconds,
+    )
+    await session.commit()
+    return _token_response(issued)
 
 
 @router.post("/oauth/token")
@@ -271,63 +317,30 @@ async def token(
     """Token endpoint. ``authorization_code`` verifies PKCE S256 + single-use +
     redirect/client match, then issues an opaque access+refresh pair carrying the
     code's bound ``resource``. ``refresh_token`` rotates (old refresh revoked,
-    reuse rejected)."""
+    reuse rejected). A DB failure degrades to an OAuth-shaped ``server_error``
+    (503), not a bare 500 the connector can't parse."""
     _require_enabled()
-
-    if grant_type == "authorization_code":
-        # Verify everything BEFORE consuming, so a bad code_verifier (client bug /
-        # corruption) does not burn a legitimate, retryable code. The atomic
-        # single-use guarantee is the consume step below.
-        row = await oauth.peek_auth_code(session, code)
-        if row is None:
-            return _oauth_error("invalid_grant")
-        if row.redirect_uri != redirect_uri or row.client_id != client_id:
-            return _oauth_error("invalid_grant")
-        if not verify_pkce_s256(code_verifier=code_verifier, code_challenge=row.code_challenge):
-            return _oauth_error("invalid_grant")
-        # All checks passed — now atomically consume. ``None`` means a concurrent
-        # request won the race (replay protection), so this exchange fails.
-        if await oauth.consume_auth_code(session, code) is None:
-            return _oauth_error("invalid_grant")
-        issued = await oauth.issue_token(
-            session,
-            client_id=row.client_id,
-            org_id=row.org_id,
-            user_id=row.user_id,
-            scope=row.scope,
-            resource=row.resource,
-            access_ttl_seconds=settings.oauth_access_ttl_seconds,
-            refresh_ttl_seconds=settings.oauth_refresh_ttl_seconds,
-        )
-        await session.commit()
-        return JSONResponse(
-            {
-                "access_token": issued.access_token,
-                "token_type": "Bearer",
-                "expires_in": issued.expires_in,
-                "refresh_token": issued.refresh_token,
-                "scope": issued.scope,
-            }
-        )
-
-    if grant_type == "refresh_token":
-        issued = await oauth.rotate_refresh(
-            session,
-            refresh_token,
-            access_ttl_seconds=settings.oauth_access_ttl_seconds,
-            refresh_ttl_seconds=settings.oauth_refresh_ttl_seconds,
-        )
-        if issued is None:
-            return _oauth_error("invalid_grant")
-        await session.commit()
-        return JSONResponse(
-            {
-                "access_token": issued.access_token,
-                "token_type": "Bearer",
-                "expires_in": issued.expires_in,
-                "refresh_token": issued.refresh_token,
-                "scope": issued.scope,
-            }
-        )
+    try:
+        if grant_type == "authorization_code":
+            return await _grant_authorization_code(
+                session,
+                code=code,
+                code_verifier=code_verifier,
+                redirect_uri=redirect_uri,
+                client_id=client_id,
+            )
+        if grant_type == "refresh_token":
+            issued = await oauth.rotate_refresh(
+                session,
+                refresh_token,
+                access_ttl_seconds=settings.oauth_access_ttl_seconds,
+                refresh_ttl_seconds=settings.oauth_refresh_ttl_seconds,
+            )
+            if issued is None:
+                return _oauth_error("invalid_grant")
+            await session.commit()
+            return _token_response(issued)
+    except Exception:  # never surface a bare 500 to an RFC client
+        return _oauth_error("server_error", status=503)
 
     return _oauth_error("unsupported_grant_type")

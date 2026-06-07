@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import secrets
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,7 +37,9 @@ _SECRET_BYTES = 24  # ≈192 bits of entropy
 
 
 def _now() -> datetime:
-    return datetime.now().astimezone()
+    # UTC to stay consistent with the Postgres-side func.now() used in the WHERE
+    # clauses; both are tz-aware so a clock-agreement assumption is the only risk.
+    return datetime.now(UTC)
 
 
 # --------------------------------------------------------------------------- #

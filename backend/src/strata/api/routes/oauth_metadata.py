@@ -28,9 +28,12 @@ from strata.config import settings
 
 router = APIRouter(tags=["oauth"])
 
-# These docs are fetched cross-origin from the browser by the connector UIs and
-# carry no secrets, so a wildcard is correct and intentional.
-_CORS_OPEN = {"Access-Control-Allow-Origin": "*"}
+# CORS for these unauth, browser-fetched docs is owned entirely by the app-level
+# CORSMiddleware (app.py), which allowlists claude.ai / chatgpt.com / chat.openai.com
+# in prod and any localhost in dev. We must NOT also set a manual
+# ``Access-Control-Allow-Origin`` here — the middleware echoes the request Origin,
+# so a second header would make the browser see two ACAO values and reject the
+# response (the exact failure that silently breaks a claude.ai connect).
 
 
 def _require_enabled() -> tuple[str, str]:
@@ -48,13 +51,19 @@ def _protected_resource_doc() -> dict[str, Any]:
 @router.get("/.well-known/oauth-protected-resource", include_in_schema=False)
 async def protected_resource() -> JSONResponse:
     """RFC 9728 — point the client at the Authorization Server for this resource."""
-    return JSONResponse(_protected_resource_doc(), headers=_CORS_OPEN)
+    return JSONResponse(_protected_resource_doc())
 
 
+# RFC 9728 §3.1 forms the probe URL by inserting ``/.well-known/oauth-protected-resource``
+# before the resource's path component, so a resource of ``…/mcp`` or ``…/mcp/`` yields
+# ``…/oauth-protected-resource/mcp`` or ``…/oauth-protected-resource/mcp/`` respectively.
+# Register BOTH path-suffixed variants so a client probing either form resolves (the
+# trailing-slash sensitivity is the same class of bug that breaks the /mcp/ redirect).
+@router.get("/.well-known/oauth-protected-resource/mcp", include_in_schema=False)
 @router.get("/.well-known/oauth-protected-resource/mcp/", include_in_schema=False)
 async def protected_resource_mcp_suffixed() -> JSONResponse:
     """Path-suffixed RFC 9728 probe variant (same body as the bare route)."""
-    return JSONResponse(_protected_resource_doc(), headers=_CORS_OPEN)
+    return JSONResponse(_protected_resource_doc())
 
 
 @router.get("/.well-known/oauth-authorization-server", include_in_schema=False)
@@ -72,4 +81,4 @@ async def authorization_server_metadata() -> JSONResponse:
         "code_challenge_methods_supported": ["S256"],
         "token_endpoint_auth_methods_supported": ["none"],
     }
-    return JSONResponse(doc, headers=_CORS_OPEN)
+    return JSONResponse(doc)
