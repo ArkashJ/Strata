@@ -10,7 +10,7 @@ NOT trigger LLM synthesis, so an MCP client can never get an unsourced number.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from ..evaluator import size_concept
@@ -342,7 +342,10 @@ def whoami(reg: Registry) -> dict[str, Any]:
     }
 
 
-_Handler = Callable[[Registry, dict[str, Any]], dict[str, Any]]
+# A handler returns a result dict directly, OR a coroutine that resolves to one
+# (the DB-backed write/read tools). ``server._call_tool`` awaits the coroutine on
+# the app's event loop — the same loop the async engine is bound to.
+_Handler = Callable[[Registry, dict[str, Any]], "dict[str, Any] | Awaitable[dict[str, Any]]"]
 
 
 def _h_whoami(reg: Registry, _args: dict[str, Any]) -> dict[str, Any]:
@@ -425,6 +428,31 @@ def _h_list_portfolio(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
         vertical=args.get("vertical"),
         limit=(int(args["limit"]) if args.get("limit") is not None else None),
     )
+
+
+def _h_get_report(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    from ..report import assemble_report
+
+    slug = str(args.get("concept_slug", "")).strip()
+    if not slug:
+        return {"error": "provide concept_slug"}
+    try:
+        report = assemble_report(reg, slug)
+    except RegistryError as exc:
+        return {"error": "no_such_concept", "detail": str(exc)}
+    return report.model_dump(mode="json")
+
+
+def _h_save_primitive(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    from .user_primitive_tools import save_primitive
+
+    return save_primitive(reg, payload=dict(args.get("payload") or {}))
+
+
+def _h_list_my_primitives(reg: Registry, _args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    from .user_primitive_tools import list_my_primitives
+
+    return list_my_primitives(reg)
 
 
 # Tool annotations (mcp-builder): hints a client uses to label a tool. All Strata
@@ -535,10 +563,42 @@ TOOLS: dict[str, dict[str, Any]] = {
         "handler": _h_list_portfolio,
         "annotations": _READ,
     },
+    "save_primitive": {
+        "description": (
+            "[WRITE] Save a sourced primitive to your org's PRIVATE bank — durable in "
+            "Postgres, org-scoped. visibility/org_id are forced server-side and a "
+            "modeled / analyst-tier number is rejected (Q20). Readable back at /bank, "
+            "GET /me/primitives, and via list_my_primitives."
+        ),
+        "inputSchema": schemas.SAVE_PRIMITIVE,
+        "handler": _h_save_primitive,
+        "annotations": _WRITE,
+    },
+    "list_my_primitives": {
+        "description": (
+            "[READ] List the private primitives in your org's bank (the ones an agent "
+            "or you saved). RLS-scoped to your org."
+        ),
+        "inputSchema": schemas.LIST_MY_PRIMITIVES,
+        "handler": _h_list_my_primitives,
+        "annotations": _READ,
+    },
+    "get_report": {
+        "description": (
+            "[READ] Assemble the full sourced market report for a concept — the "
+            "analysis-question answers, per-method equations, and provenance. "
+            "Registry-only, no LLM. The forwardable PDF lives at /tam/<hash>/report."
+        ),
+        "inputSchema": schemas.GET_REPORT,
+        "handler": _h_get_report,
+        "annotations": _READ,
+    },
 }
 
 
-def call_tool(reg: Registry, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+def call_tool(
+    reg: Registry, name: str, arguments: dict[str, Any]
+) -> dict[str, Any] | Awaitable[dict[str, Any]]:
     spec = TOOLS.get(name)
     if spec is None:
         raise ToolError(f"unknown tool {name!r}")

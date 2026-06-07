@@ -33,6 +33,7 @@ from strata.db.engine import org_session_scope
 from strata.db.tams import list_saved_tams, save_tam_for_org
 from strata.db.user_primitives import (
     ModeledFenceError,
+    TooManyPrimitivesError,
     UserPrimitive,
     create_user_primitive,
     delete_user_primitive,
@@ -77,7 +78,7 @@ def _to_422(exc: Exception) -> HTTPException:
 )
 async def list_my_primitives(principal: Principal = _AUTH) -> list[UserPrimitive]:
     async with org_session_scope(principal.org_id) as session:
-        return await list_user_primitives(session)
+        return await list_user_primitives(session, org_id=principal.org_id)
 
 
 @router.post(
@@ -104,6 +105,8 @@ async def create_my_primitive(
                 created_by=principal.user_id,
                 payload=body.payload,
             )
+    except TooManyPrimitivesError as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
     except (ValidationError, ModeledFenceError, ValueError) as exc:
         raise _to_422(exc) from exc
 
@@ -143,7 +146,7 @@ async def update_my_primitive(
 )
 async def delete_my_primitive(slug: str, principal: Principal = _AUTH) -> None:
     async with org_session_scope(principal.org_id) as session:
-        deleted = await delete_user_primitive(session, slug=slug)
+        deleted = await delete_user_primitive(session, org_id=principal.org_id, slug=slug)
     if not deleted:
         raise HTTPException(status_code=404, detail=f"no private primitive {slug!r}")
 
@@ -161,7 +164,7 @@ async def delete_my_primitive(slug: str, principal: Principal = _AUTH) -> None:
 )
 async def promote_my_primitive(slug: str, principal: Principal = _AUTH) -> PromoteResponse:
     async with org_session_scope(principal.org_id) as session:
-        existing = await get_user_primitive(session, slug=slug)
+        existing = await get_user_primitive(session, org_id=principal.org_id, slug=slug)
     if existing is None:
         raise HTTPException(status_code=404, detail=f"no private primitive {slug!r}")
 

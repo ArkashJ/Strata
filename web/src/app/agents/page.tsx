@@ -80,6 +80,21 @@ const TOOLS: Tool[] = [
     blurb: "Size one linked company, registry-first and offline-safe.",
   },
   { name: "list_portfolio", kind: "read", blurb: "List linked companies with TAM + progress." },
+  {
+    name: "save_primitive",
+    kind: "write",
+    blurb: "Save a sourced number to your private bank — durable, org-scoped, shows on /bank.",
+  },
+  {
+    name: "list_my_primitives",
+    kind: "read",
+    blurb: "Read back the private primitives you (or your agent) saved.",
+  },
+  {
+    name: "get_report",
+    kind: "read",
+    blurb: "Assemble a concept's full sourced market report (answers, equations, provenance).",
+  },
 ];
 
 const KIND_LABEL: Record<ToolKind, string> = {

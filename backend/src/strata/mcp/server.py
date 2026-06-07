@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import contextlib
+import inspect
 import json
 import sys
 from collections.abc import AsyncGenerator, Callable
@@ -82,6 +83,10 @@ def build_server(get_registry: Callable[[], Registry] = load_registry) -> Server
         reg = get_registry()
         try:
             result = call_tool(reg, name, arguments)
+            # Write/read DB tools return a coroutine — await it on this loop (the
+            # same loop the async engine is bound to, mirroring the HTTP routes).
+            if inspect.isawaitable(result):
+                result = await result
         except ToolError as exc:
             result = {"error": str(exc)}
         return [types.TextContent(type="text", text=json.dumps(result, default=str))]

@@ -31,6 +31,9 @@ _EXPECTED_TOOLS = {
     "build_tam",
     "list_connectors",
     "get_connector_data",
+    "save_primitive",
+    "list_my_primitives",
+    "get_report",
 }
 
 

@@ -178,3 +178,46 @@ LIST_PORTFOLIO: dict[str, Any] = {
     },
     "additionalProperties": False,
 }
+
+SAVE_PRIMITIVE: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "payload": {
+            "type": "object",
+            "description": (
+                "The AtomicPrimitive to store. `visibility` and `org_id` are forced "
+                "server-side; a modeled / analyst-tier number is rejected (Q20)."
+            ),
+            "properties": {
+                "slug": {"type": "string", "description": "Stable kebab-case id."},
+                "label": {"type": "string"},
+                "value": {"type": "number"},
+                "unit": {
+                    "type": "object",
+                    "description": "Structured unit: kind, dimension, currency, basis.",
+                },
+                "source": {
+                    "type": "object",
+                    "description": "Citation: url, tier (regulator/first_party/...), snapshot_sha256.",
+                },
+            },
+            "required": ["slug", "value", "unit", "source"],
+        },
+    },
+    "required": ["payload"],
+    "additionalProperties": False,
+}
+
+LIST_MY_PRIMITIVES: dict[str, Any] = {"type": "object", "properties": {}}
+
+GET_REPORT: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "concept_slug": {
+            "type": "string",
+            "description": "The concept to assemble a sourced market report for (e.g. doc-gen-pc).",
+        },
+    },
+    "required": ["concept_slug"],
+    "additionalProperties": False,
+}

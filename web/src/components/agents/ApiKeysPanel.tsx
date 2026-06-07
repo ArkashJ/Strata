@@ -293,8 +293,17 @@ function ConnectSnippets({ latestKey }: { latestKey: string | null }) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <h4 className="text-[12px] text-[var(--fg-2)]">Claude Desktop / claude.ai connector</h4>
+        <h4 className="text-[12px] text-[var(--fg-2)]">Claude Desktop</h4>
         <CopyBox value={desktopSnippet} mono />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h4 className="text-[12px] text-[var(--fg-2)]">claude.ai / ChatGPT (custom connector)</h4>
+        <p className="text-[12px] text-[var(--fg-3)]">
+          Settings → Connectors → Add custom connector. Paste the URL below; set the auth header to{" "}
+          <code className="font-mono text-[var(--fg-2)]">Authorization: Bearer {key}</code>.
+        </p>
+        <CopyBox value={mcpUrl} mono />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -308,7 +317,17 @@ function ConnectSnippets({ latestKey }: { latestKey: string | null }) {
 // ── ApiKeysPanel (exported) ───────────────────────────────────────────────────
 
 export function ApiKeysPanel() {
+  // `revealed` drives the one-time secret box (dismissable). `mintedKey` keeps
+  // the full key for the connect snippets for the rest of the session — so the
+  // snippets stay populated after the user dismisses the reveal box, instead of
+  // silently reverting to the strata_sk_live_… placeholder.
   const [revealed, setRevealed] = useState<ApiKeyCreated | null>(null);
+  const [mintedKey, setMintedKey] = useState<string | null>(null);
+
+  const onMinted = useCallback((k: ApiKeyCreated) => {
+    setRevealed(k);
+    setMintedKey(k.key);
+  }, []);
 
   // When Clerk is not configured, render a minimal note rather than a broken
   // auth gate — the panel needs a signed-in identity to call /me/api-keys.
@@ -355,7 +374,7 @@ export function ApiKeysPanel() {
               treat them like passwords.
             </p>
 
-            <MintForm onMinted={(k) => setRevealed(k)} />
+            <MintForm onMinted={onMinted} />
 
             {revealed ? (
               <SecretReveal secret={revealed.key} onDismiss={() => setRevealed(null)} />
@@ -378,7 +397,7 @@ export function ApiKeysPanel() {
                 Point any MCP-capable client at the hosted endpoint with your key.
               </p>
             </div>
-            <ConnectSnippets latestKey={revealed?.key ?? null} />
+            <ConnectSnippets latestKey={mintedKey} />
           </div>
         </section>
       </Show>
