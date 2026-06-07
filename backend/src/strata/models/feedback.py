@@ -69,3 +69,6 @@ class FeedbackEvent(BaseModel):
     suggested_value: dict[str, Any] | None = None
     status: FeedbackStatus = FeedbackStatus.OPEN
     resolution: str | None = None
+    # Set when an accepted correction was APPLIED: the id of the org-private
+    # primitive the fix created (``user_primitives``). Closes the flag→fix loop.
+    resolved_primitive_id: int | None = None

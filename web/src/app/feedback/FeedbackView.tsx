@@ -16,7 +16,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { feedbackQuery, updateFeedback } from "@/lib/queries";
-import type { FeedbackEvent, FeedbackStatus } from "@/lib/schemas";
+import { FEEDBACK_KIND_LABELS, type FeedbackEvent, type FeedbackStatus } from "@/lib/schemas";
 
 const STATUS_TABS: { label: string; value: FeedbackStatus | undefined }[] = [
   { label: "All", value: undefined },
@@ -25,14 +25,6 @@ const STATUS_TABS: { label: string; value: FeedbackStatus | undefined }[] = [
   { label: "Resolved", value: "resolved" },
   { label: "Won't fix", value: "wontfix" },
 ];
-
-const KIND_LABELS: Record<string, string> = {
-  bad_assumption: "Bad assumption",
-  failed_query: "Failed query",
-  primitive_correction: "Wrong number",
-  missing_data: "Missing data",
-  general: "General",
-};
 
 export function FeedbackView() {
   const [status, setStatus] = useState<FeedbackStatus | undefined>(undefined);
@@ -144,7 +136,7 @@ function FeedbackRow({ row }: { row: FeedbackEvent }) {
 function KindChip({ kind }: { kind: string }) {
   return (
     <span className="inline-flex items-center rounded-[var(--r-1)] bg-[var(--bg-2)] px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--fg-2)]">
-      {KIND_LABELS[kind] ?? kind}
+      {(FEEDBACK_KIND_LABELS as Record<string, string>)[kind] ?? kind}
     </span>
   );
 }

@@ -22,15 +22,7 @@ import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { type SubmitFeedbackInput, submitFeedback } from "@/lib/queries";
-import type { FeedbackKind, FeedbackTargetType } from "@/lib/schemas";
-
-const KIND_LABELS: Record<FeedbackKind, string> = {
-  bad_assumption: "Bad assumption",
-  failed_query: "Failed query",
-  primitive_correction: "Wrong number",
-  missing_data: "Missing data",
-  general: "General",
-};
+import { FEEDBACK_KIND_LABELS, type FeedbackKind, type FeedbackTargetType } from "@/lib/schemas";
 
 export interface FlagButtonProps {
   targetType: FeedbackTargetType;
@@ -115,9 +107,9 @@ export function FlagButton({
               onChange={(e) => setKind(e.target.value as FeedbackKind)}
               className="rounded-[var(--r-2)] border border-[var(--border-2)] bg-[var(--bg-1)] px-2 py-1.5 text-[12px] text-[var(--fg-1)]"
             >
-              {(Object.keys(KIND_LABELS) as FeedbackKind[]).map((k) => (
+              {(Object.keys(FEEDBACK_KIND_LABELS) as FeedbackKind[]).map((k) => (
                 <option key={k} value={k}>
-                  {KIND_LABELS[k]}
+                  {FEEDBACK_KIND_LABELS[k]}
                 </option>
               ))}
             </select>

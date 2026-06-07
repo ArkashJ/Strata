@@ -20,10 +20,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Three ways to flag:** a Flag button on any number, a `/feedback` page that
   lists and resolves flags, and two MCP tools (`submit_feedback`, `list_feedback`)
   so a connected agent can flag inline when it spots a bad assumption.
+- **An accepted correction now improves the tool — it updates the data layer.**
+  Resolving a "wrong number" / "missing data" flag with an accepted correction
+  creates a sourced primitive in your workspace's private bank (validator-gated;
+  a modeled/analyst-tier estimate is refused, Q20), marks the flag resolved, and
+  links the new primitive. Available over REST (`POST /feedback/{id}/apply`), the
+  new `apply_feedback` MCP tool, and the CLI (`strata feedback resolve <id>
+  --apply`). The flag stays commentary — applying it creates a new private number,
+  it never mutates an existing sourced one (E1).
+- **The failed-query auto-capture no longer floods triage with config noise.**
+  When the failure is "the AI backend is unavailable" (a missing key / exhausted
+  credits — an infra/config problem, not a market-data gap), no `failed_query`
+  flag is recorded; only genuine "the bank couldn't answer this" dead-ends are
+  captured. A new `strata feedback` CLI (submit / list / resolve) rounds out the
+  loop for operators.
 
   ```
   flag a number / failed query ─▶ stored per workspace ─▶ /feedback triage ─▶ resolved
-        (web button · MCP tool · auto-capture)                                 (team improves the tool)
+        (web button · MCP tool · auto-capture)              └─ accept correction ─▶ org-private primitive
+                                                                (REST · apply_feedback MCP · CLI --apply)
   ```
 
 ### Added — professional HTML/PDF report engine + a CLI an analyst drives (backend)

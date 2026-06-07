@@ -622,6 +622,16 @@ export type FeedbackTargetType = z.infer<typeof feedbackTargetTypeSchema>;
 export const feedbackStatusSchema = z.enum(["open", "triaged", "resolved", "wontfix"]);
 export type FeedbackStatus = z.infer<typeof feedbackStatusSchema>;
 
+// Human-readable labels for each flag kind — one source of truth shared by the
+// FlagButton (submit) and FeedbackView (triage) so the two surfaces never drift.
+export const FEEDBACK_KIND_LABELS: Record<FeedbackKind, string> = {
+  bad_assumption: "Bad assumption",
+  failed_query: "Failed query",
+  primitive_correction: "Wrong number",
+  missing_data: "Missing data",
+  general: "General",
+};
+
 export const feedbackEventSchema = z.object({
   id: z.number(),
   org_id: z.string(),

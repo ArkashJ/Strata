@@ -879,6 +879,14 @@ def _h_list_feedback(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str,
     return list_feedback(reg, status=args.get("status"))
 
 
+def _h_apply_feedback(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    from .feedback_tools import apply_feedback
+
+    raw_payload = args.get("primitive_payload")
+    payload: dict[str, Any] | None = dict(raw_payload) if isinstance(raw_payload, dict) else None
+    return apply_feedback(reg, feedback_id=int(args["feedback_id"]), primitive_payload=payload)
+
+
 def _h_list_my_primitives(reg: Registry, _args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
     from .user_primitive_tools import list_my_primitives
 
@@ -1043,6 +1051,19 @@ TOOLS: dict[str, dict[str, Any]] = {
         "inputSchema": schemas.LIST_FEEDBACK,
         "handler": _h_list_feedback,
         "annotations": _READ,
+    },
+    "apply_feedback": {
+        "description": (
+            "[WRITE] Accept a primitive_correction / missing_data flag and write "
+            "the fix into the data layer: create an org-private primitive (from "
+            "primitive_payload or the flag's suggested_value), resolve the flag, "
+            "and link the new primitive. Same fence as save_primitive — a modeled "
+            "/ analyst-tier number is rejected (Q20). Closes the flag→fix→improve "
+            "loop; never mutates an existing sourced number (E1)."
+        ),
+        "inputSchema": schemas.APPLY_FEEDBACK,
+        "handler": _h_apply_feedback,
+        "annotations": _WRITE,
     },
     "get_report_for_tam": {
         "description": (

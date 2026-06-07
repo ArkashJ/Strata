@@ -19,8 +19,9 @@ from typing import Any
 from pydantic import ValidationError
 
 from ..db.engine import org_session_scope
+from ..db.feedback import FeedbackNotApplicableError, apply_feedback_correction, record_feedback
 from ..db.feedback import list_feedback as _list_feedback
-from ..db.feedback import record_feedback
+from ..db.user_primitives import ModeledFenceError, TooManyPrimitivesError
 from ..models.feedback import FeedbackKind, FeedbackStatus, TargetType
 from ..registry import Registry
 from .context import current_org_id, current_principal
@@ -74,6 +75,70 @@ async def submit_feedback(reg: Registry, *, payload: dict[str, Any]) -> dict[str
         "target_type": event.target_type.value,
         "status": event.status.value,
         "readable_at": "/feedback (web) · GET /feedback · list_feedback (MCP)",
+    }
+
+
+async def apply_feedback(
+    reg: Registry, *, feedback_id: int, primitive_payload: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """[WRITE] Accept a primitive_correction / missing_data flag and write the
+    correction into the data layer: create an org-private primitive (from
+    ``primitive_payload`` or the flag's stored ``suggested_value``), mark the flag
+    resolved, and link the new primitive.
+
+    Same fence as ``save_primitive`` — a modeled / analyst-tier number is refused
+    (Q20); the flag stays commentary (E1), this CREATES a new private number, it
+    never mutates an existing sourced one. Over local stdio there is no tenant, so
+    the apply is refused honestly."""
+    principal = current_principal.get()
+    if principal is None:
+        return {
+            "error": "no_tenant",
+            "detail": "apply_feedback needs an authenticated (hosted) connection; "
+            "local stdio has no org to attribute the correction to.",
+        }
+    org = current_org_id()
+    try:
+        async with org_session_scope(org) as session:
+            event, prim = await apply_feedback_correction(
+                session,
+                feedback_id,
+                org_id=org,
+                created_by=principal.key_id,
+                primitive_payload=primitive_payload,
+            )
+    except FeedbackNotApplicableError as exc:
+        return {"error": "not_applicable", "detail": str(exc)}
+    except TooManyPrimitivesError as exc:
+        return {"error": "org_limit_reached", "detail": str(exc)}
+    except ModeledFenceError as exc:
+        return {"error": "modeled_fence", "detail": str(exc)}
+    except (ValidationError, ValueError) as exc:
+        return {"error": "invalid_primitive", "detail": str(exc)}
+    return {
+        "applied": True,
+        "feedback": event.model_dump(mode="json"),
+        "primitive": {
+            "slug": prim.slug,
+            "org_id": prim.org_id,
+            "visibility": prim.visibility,
+            **_cite_user_primitive(prim.payload),
+        },
+        "readable_at": "/bank (web) · GET /me/primitives · list_my_primitives (MCP)",
+    }
+
+
+def _cite_user_primitive(payload: dict[str, Any]) -> dict[str, Any]:
+    """Surface the sourced-number contract from a stored private-primitive payload
+    so the agent sees the cited fix it just created (value + unit + source)."""
+    raw_source = payload.get("source")
+    source: dict[str, Any] = raw_source if isinstance(raw_source, dict) else {}
+    return {
+        "value": payload.get("value"),
+        "unit": payload.get("unit"),
+        "source_url": source.get("url"),
+        "source_tier": source.get("tier"),
+        "snapshot_sha256": source.get("snapshot_sha256"),
     }
 
 

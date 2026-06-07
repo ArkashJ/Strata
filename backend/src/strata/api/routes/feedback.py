@@ -15,12 +15,23 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from strata.api.auth import Principal, require_authenticated
-from strata.api.responses import UNAUTHORIZED, error, merge
+from strata.api.responses import UNAUTHORIZED, error, format_validation_errors, merge
 from strata.db.engine import org_session_scope
-from strata.db.feedback import list_feedback, record_feedback, update_feedback
+from strata.db.feedback import (
+    FeedbackNotApplicableError,
+    apply_feedback_correction,
+    list_feedback,
+    record_feedback,
+    update_feedback,
+)
+from strata.db.user_primitives import (
+    ModeledFenceError,
+    TooManyPrimitivesError,
+    UserPrimitive,
+)
 from strata.models.feedback import (
     FeedbackEvent,
     FeedbackKind,
@@ -58,6 +69,23 @@ class UpdateFeedbackRequest(BaseModel):
 
     status: FeedbackStatus | None = None
     resolution: str | None = Field(default=None, max_length=8192)
+
+
+class ApplyFeedbackRequest(BaseModel):
+    """Accept a correction and write it into the data layer. ``primitive_payload``
+    is the AtomicPrimitive to create; omit it to apply the flag's own stored
+    ``suggested_value``. Same fence as ``POST /me/primitives`` — modeled/analyst
+    tier is rejected (Q20)."""
+
+    primitive_payload: dict[str, Any] | None = None
+
+
+class ApplyFeedbackResponse(BaseModel):
+    """The applied correction: the now-resolved flag (linking the new primitive's
+    id) plus the org-private primitive it created."""
+
+    feedback: FeedbackEvent
+    primitive: UserPrimitive
 
 
 @router.post(
@@ -134,3 +162,54 @@ async def patch_feedback(
     if updated is None:
         raise HTTPException(status_code=404, detail=f"no feedback {feedback_id}")
     return updated
+
+
+@router.post(
+    "/{feedback_id}/apply",
+    response_model=ApplyFeedbackResponse,
+    summary="Apply a correction — write it into the data layer",
+    description=(
+        "Accept a ``primitive_correction`` / ``missing_data`` flag: create an "
+        "org-private primitive (from the body's ``primitive_payload`` or the "
+        "flag's ``suggested_value``) through the same validator + MODELED fence as "
+        "``POST /me/primitives``, then mark the flag resolved and link the new "
+        "primitive. This is the flag→fix→improve loop; a modeled / analyst-tier "
+        "number is rejected (422). The flag stays commentary — applying it creates "
+        "a new private number, it never mutates an existing sourced one (E1)."
+    ),
+    responses=merge(
+        UNAUTHORIZED,
+        error(404, "No applicable feedback for this tenant."),
+        error(422, "Invalid correction, modeled-tier number, or non-applicable flag."),
+    ),
+)
+async def apply_feedback(
+    feedback_id: int, body: ApplyFeedbackRequest, principal: Principal = _AUTH
+) -> ApplyFeedbackResponse:
+    try:
+        async with org_session_scope(principal.org_id) as session:
+            feedback, primitive = await apply_feedback_correction(
+                session,
+                feedback_id,
+                org_id=principal.org_id,
+                created_by=principal.user_id,
+                primitive_payload=body.primitive_payload,
+            )
+    except FeedbackNotApplicableError as exc:
+        # Unknown / invisible / already-resolved / wrong-kind / no-payload: the
+        # flag can't be applied. 404 only for "no such row visible to this org";
+        # the rest are 422 (the request is well-formed but the flag is ineligible).
+        if "visible to this org" in str(exc):
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except TooManyPrimitivesError as exc:
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
+    except ModeledFenceError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=422, detail="; ".join(format_validation_errors(exc))
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return ApplyFeedbackResponse(feedback=feedback, primitive=primitive)

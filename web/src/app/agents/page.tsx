@@ -95,6 +95,17 @@ const TOOLS: Tool[] = [
     kind: "read",
     blurb: "Assemble a concept's full sourced market report (answers, equations, provenance).",
   },
+  {
+    name: "submit_feedback",
+    kind: "write",
+    blurb: "Flag a bad assumption / failed query / wrong number — stored so the tool improves.",
+  },
+  { name: "list_feedback", kind: "read", blurb: "List your org's open flags (the triage queue)." },
+  {
+    name: "apply_feedback",
+    kind: "write",
+    blurb: "Accept a correction → create an org-private primitive (same fence as save_primitive).",
+  },
 ];
 
 const KIND_LABEL: Record<ToolKind, string> = {
