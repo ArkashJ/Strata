@@ -22,15 +22,23 @@ from typing import Any
 
 from fastapi import HTTPException
 
+from ..config import settings
 from .auth import (
     api_key_from_headers,
+    bearer_token_from_headers,
     hash_key,
     is_cached,
+    oauth_cached,
     principal_for_headers,
     register_hashed,
+    register_oauth_token,
 )
 from .metering import get_meter
 from .ratelimit import enforce_rate_limit
+
+# An OAuth access token is any Bearer that is NOT a strata_sk_ key (those warm
+# via the api-key path) and NOT a Clerk JWT (those verify by signature, no warm).
+_API_KEY_PREFIX = "strata_sk_"
 
 # ASGI scope key under which the resolved Principal is stashed (kept for any
 # consumer that reads scope state). The tool handlers read the principal via the
@@ -51,18 +59,46 @@ async def _ensure_key_loaded(headers: dict[str, str]) -> None:
     honestly rather than erroring). Resolves the key from X-API-Key OR a Bearer
     ``strata_sk_`` token, so a Bearer-presented key warms the cache too."""
     raw = api_key_from_headers(headers)
-    if not raw or is_cached(hash_key(raw)):
+    if raw and not is_cached(hash_key(raw)):
+        try:
+            from ..db.api_keys import lookup_active
+            from ..db.engine import session_scope
+
+            async with session_scope() as session:
+                row = await lookup_active(session, raw)
+            if row is not None:
+                scopes = tuple(s for s in (row.scopes or "*").split(",") if s) or ("*",)
+                register_hashed(
+                    row.key_hash, row.org_id, key_id=row.key_id or row.key_hash[:12], scopes=scopes
+                )
+        except Exception:  # auth must degrade to cache-only, never 500 on a DB blip
+            pass
+        return
+
+    # Detection gap: ``api_key_from_headers`` returns None for any Bearer that is
+    # not strata_sk_-prefixed, so an OAuth access token would silently skip the
+    # warm above. Extract the raw Bearer directly and, if it is neither a
+    # strata_sk_ key nor already cached, resolve it from the oauth_tokens table.
+    bearer = bearer_token_from_headers(headers)
+    if not bearer or bearer.startswith(_API_KEY_PREFIX) or oauth_cached(hash_key(bearer)):
         return
     try:
-        from ..db.api_keys import lookup_active
         from ..db.engine import session_scope
+        from ..db.oauth import lookup_access
 
         async with session_scope() as session:
-            row = await lookup_active(session, raw)
-        if row is not None:
-            scopes = tuple(s for s in (row.scopes or "*").split(",") if s) or ("*",)
-            register_hashed(
-                row.key_hash, row.org_id, key_id=row.key_id or row.key_hash[:12], scopes=scopes
+            row = await lookup_access(session, bearer)
+        # Only cache a token bound to OUR resource (audience) — a token minted
+        # for a different resource must never authenticate here.
+        if row is not None and row.resource == settings.mcp_resource_url:
+            scopes = tuple(s for s in (row.scope or "*").split(",") if s) or ("*",)
+            register_oauth_token(
+                row.token_hash,
+                org_id=row.org_id,
+                user_id=row.user_id,
+                resource=row.resource,
+                expires_at=row.expires_at.timestamp(),
+                scopes=scopes,
             )
     except Exception:  # auth must degrade to cache-only, never 500 on a DB blip
         pass
@@ -99,6 +135,16 @@ async def _send_json(
     await send({"type": "http.response.body", "body": payload, "more_body": False})
 
 
+def _www_authenticate_header() -> dict[str, str] | None:
+    """The RFC 9728 ``WWW-Authenticate`` challenge pointing at the
+    protected-resource metadata, or ``None`` when the AS is not configured."""
+    if not settings.oauth_enabled or not settings.oauth_issuer:
+        return None
+    base = settings.oauth_issuer.rstrip("/")
+    resource_metadata = f"{base}/.well-known/oauth-protected-resource/mcp/"
+    return {"WWW-Authenticate": f'Bearer resource_metadata="{resource_metadata}"'}
+
+
 class McpAuthMiddleware:
     """Wraps the ``build_streamable_http_app()`` result. Only HTTP requests are
     gated; lifespan / websocket scopes pass straight through to the inner app."""
@@ -116,7 +162,12 @@ class McpAuthMiddleware:
         try:
             principal = principal_for_headers(headers, require=True)  # 401 on miss/bad
         except HTTPException as exc:
-            await _send_json(send, exc.status_code, {"error": str(exc.detail)})
+            # On a 401, advertise OAuth discovery (RFC 9728) so a browser
+            # connector (claude.ai / ChatGPT) can begin the OAuth flow instead of
+            # failing silently. Only when the AS is configured; the static-key
+            # clients (Claude Code/Desktop) ignore this header.
+            extra = _www_authenticate_header() if exc.status_code == 401 else None
+            await _send_json(send, exc.status_code, {"error": str(exc.detail)}, headers=extra)
             return
         try:
             enforce_rate_limit(principal.org_id)  # 429 + Retry-After

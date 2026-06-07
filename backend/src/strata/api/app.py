@@ -25,6 +25,8 @@ from strata.api.routes import (
     integrations,
     lineage,
     me,
+    oauth,
+    oauth_metadata,
     portfolio,
     primitives,
     report,
@@ -279,6 +281,10 @@ def create_app() -> FastAPI:
     app.include_router(me.router)
     app.include_router(api_keys.router)
     app.include_router(lineage.router)
+    # OAuth 2.1 Authorization Server (hosted-MCP web connectors). The metadata
+    # routes are unauth + CORS-open; the /oauth/* routes implement DCR/authorize/token.
+    app.include_router(oauth_metadata.router)
+    app.include_router(oauth.router)
 
     # Mount the read-only Strata MCP server at /mcp (Wave 5A). Best-effort: a
     # failure to build it must not take down the REST API.
