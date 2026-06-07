@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — connect Strata to claude.ai and ChatGPT in one click (OAuth)
+
+- **The hosted Strata connector now works in the claude.ai and ChatGPT websites,
+  not just Claude Code and Claude Desktop.** Those websites only offer a
+  one-click "sign in" connector — they have no field to paste a key — so until
+  now you couldn't add Strata there. Strata now runs that sign-in itself: you
+  paste the connector URL, sign in with your existing Strata (Google) account on
+  a Strata "Allow access?" screen, approve, and the agent is connected to your
+  organization's data — the same data your website session sees. Key-based
+  connect (Claude Code / Claude Desktop) is unchanged.
+
+  ```
+  paste URL ─▶ agent starts OAuth ─▶ sign in (Google) ─▶ "Allow Claude/ChatGPT
+            to access your Strata org?" ─▶ approve ─▶ connected (your org's data)
+  ```
+
+  Built as a standard OAuth 2.1 sign-in alongside the existing connector, so it
+  is added on top of — never replacing — the key and session sign-ins already in
+  place. It stays switched off until the deployment sets the connector's web
+  address; see the pull request for the settings to flip it on in production.
+
 ### Fixed — a market query can no longer be sized as the wrong market
 
 - **Free-form queries that didn't name a curated market were being matched to an
