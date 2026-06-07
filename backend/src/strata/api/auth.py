@@ -18,6 +18,7 @@ open locally. In prod (``require_auth=True``) a missing/invalid key is a 401.
 from __future__ import annotations
 
 import hashlib
+import time
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 
@@ -108,6 +109,126 @@ def is_cached(key_hash: str) -> bool:
     return key_hash in _KEY_STORE
 
 
+# --------------------------------------------------------------------------- #
+# OAuth access-token cache (the third bearer kind — KTD-4)
+# --------------------------------------------------------------------------- #
+# Opaque OAuth access tokens are resolved by hash, like API keys, but they
+# EXPIRE — so the cache stores ``expires_at`` (epoch seconds) and the bound RFC
+# 8707 ``resource``, and the resolution path enforces both. The cache is warmed
+# from Postgres by the MCP middleware on a miss (mirror ``_KEY_STORE``); the DB
+# row's expiry/revocation is authoritative at warm time.
+# The cache entry is a SHORT-LIVED lookaside, not an authority for the token's
+# whole lifetime. ``cache_until`` (a few seconds) bounds how long a warmed entry
+# is trusted before the MCP middleware must re-warm it from Postgres; the DB row
+# is where revocation lives. Without this, a refresh-rotated/revoked access token
+# would keep authenticating from a stale cache entry until its full access TTL
+# (and, across workers, revocation would never propagate). ``expires_at`` is the
+# token's hard expiry; ``cache_until`` is the much-shorter re-warm horizon.
+_OAUTH_CACHE_TTL_SECONDS = 30.0
+
+
+@dataclass(frozen=True, slots=True)
+class _OAuthEntry:
+    principal: Principal
+    resource: str
+    expires_at: float  # token hard expiry, epoch seconds
+    cache_until: float  # re-warm horizon, epoch seconds
+
+
+_OAUTH_STORE: dict[str, _OAuthEntry] = {}
+
+
+def _sweep_oauth_store(now: float) -> None:
+    """Drop hard-expired entries so the cache can't grow without bound as tokens
+    rotate (access tokens rotate on refresh; dead entries would otherwise linger
+    until their exact hash was read again)."""
+    for h in [h for h, e in _OAUTH_STORE.items() if e.expires_at <= now]:
+        _OAUTH_STORE.pop(h, None)
+
+
+def register_oauth_token(
+    token_hash: str,
+    *,
+    org_id: str,
+    user_id: str | None,
+    resource: str,
+    expires_at: float,
+    scopes: tuple[str, ...] = ("*",),
+) -> None:
+    """Cache a DB-resolved OAuth access token so the sync auth path stays a dict
+    lookup. ``expires_at`` is the token's hard expiry (epoch seconds); the entry
+    is only trusted for ``_OAUTH_CACHE_TTL_SECONDS`` before a forced DB re-warm."""
+    now = time.time()
+    _sweep_oauth_store(now)
+    _OAUTH_STORE[token_hash] = _OAuthEntry(
+        principal=Principal(
+            org_id=org_id, key_id=f"oauth:{token_hash[:12]}", scopes=scopes, user_id=user_id
+        ),
+        resource=resource,
+        expires_at=expires_at,
+        cache_until=now + _OAUTH_CACHE_TTL_SECONDS,
+    )
+
+
+def oauth_cached(token_hash: str) -> bool:
+    """True iff an entry exists at all (regardless of freshness) — membership only."""
+    return token_hash in _OAUTH_STORE
+
+
+def oauth_cache_fresh(token_hash: str) -> bool:
+    """True iff a cache entry exists and is still within its re-warm horizon and
+    hard expiry. The MCP middleware re-warms from the DB whenever this is False,
+    so revocation propagates within ``_OAUTH_CACHE_TTL_SECONDS`` (fleet-wide)."""
+    entry = _OAUTH_STORE.get(token_hash)
+    if entry is None:
+        return False
+    now = time.time()
+    return now < entry.cache_until and now < entry.expires_at
+
+
+def unregister_oauth(token_hash: str) -> None:
+    """Evict an OAuth token from the cache (on re-warm miss = revoked/expired in DB)."""
+    _OAUTH_STORE.pop(token_hash, None)
+
+
+def reset_oauth_store() -> None:
+    """Test hook — clear the in-process OAuth token cache between cases."""
+    _OAUTH_STORE.clear()
+
+
+def _oauth_principal_for(token: str) -> Principal | None:
+    """Resolve an OAuth access token from the cache, enforcing expiry and the
+    bound resource (audience). Returns ``None`` on miss / expiry / audience
+    mismatch — the caller then 401s. Expired entries are evicted on read.
+
+    Freshness/revocation is enforced upstream: the MCP middleware re-warms (or
+    evicts) a stale entry from Postgres before this runs, so a revoked token has
+    already been dropped here. This stays a pure cache read on the hot path."""
+    entry = _OAUTH_STORE.get(hash_key(token))
+    if entry is None:
+        return None
+    if entry.expires_at <= time.time():
+        _OAUTH_STORE.pop(hash_key(token), None)
+        return None
+    # Audience check: a token bound to a different resource must never serve our
+    # MCP — reject it (RFC 8707 audience-confusion defense).
+    if entry.resource != settings.mcp_resource_url:
+        return None
+    return entry.principal
+
+
+def bearer_token_from_headers(headers: Mapping[str, str]) -> str | None:
+    """The raw Bearer credential a request presents (ANY kind), or ``None``.
+
+    Unlike ``api_key_from_headers`` (which only returns ``strata_sk_`` Bearers),
+    this returns whatever the client sent — so the MCP middleware can detect an
+    OAuth access token and warm its cache from the DB."""
+    authorization = headers.get(_AUTHORIZATION_HEADER)
+    if authorization and authorization.lower().startswith(_BEARER_PREFIX):
+        return authorization[len(_BEARER_PREFIX) :].strip() or None
+    return None
+
+
 def _anonymous() -> Principal:
     return Principal(org_id=_ANONYMOUS_ORG, key_id="anonymous", scopes=("read",))
 
@@ -162,6 +283,12 @@ def principal_for_headers(headers: Mapping[str, str], *, require: bool) -> Princ
                 scopes=("*",),
                 user_id=claims.sub,
             )
+        # Third bearer kind (KTD-4): an opaque OAuth access token — neither a
+        # strata_sk_ key nor a Clerk JWT. Resolved from the oauth cache (warmed
+        # from Postgres by the MCP middleware), with expiry + audience enforced.
+        oauth_principal = _oauth_principal_for(token) if token else None
+        if oauth_principal is not None:
+            return oauth_principal
         # A present-but-invalid Bearer is a 401 in prod (mirrors the wrong-key
         # rule); in dev the verifier is inert/lenient, so we fall through to the
         # anonymous path rather than locking out keyless reads.

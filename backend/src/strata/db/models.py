@@ -20,6 +20,7 @@ from sqlalchemy import (
     String,
     Text,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -292,3 +293,93 @@ class CompanyRow(Base):
     )
 
     __table_args__ = (Index("uq_companies_org_domain", "org_id", "domain", unique=True),)
+
+
+class OAuthClientRow(Base):
+    """A dynamically-registered OAuth client (RFC 7591 DCR), migration 013.
+
+    claude.ai / ChatGPT register once per connector instance and reuse the
+    returned ``client_id``. ``redirect_uris`` is the JSON array the client
+    declared; ``/oauth/authorize`` later requires the incoming ``redirect_uri``
+    to exact-match one of these (and pass the trusted-host allowlist). Like
+    ``api_keys``, this table is NOT under RLS — DCR is pre-auth, so no
+    ``app.org_id`` exists when the row is read.
+    """
+
+    __tablename__ = "oauth_clients"
+
+    client_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    redirect_uris: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    client_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class OAuthAuthCodeRow(Base):
+    """A short-lived, single-use authorization code, migration 013.
+
+    Minted by ``/oauth/authorize`` after a verified Clerk consent and exchanged
+    once at ``/oauth/token``. Stored **hashed** (the raw code is only ever in the
+    redirect URL). ``consumed_at`` is the single-use marker — a second exchange
+    of the same code is rejected. Bound to ``{code_challenge, redirect_uri,
+    client_id, resource, org_id}`` so the token inherits the exact grant. NOT
+    under RLS — looked up by hash before an org scope is established.
+    """
+
+    __tablename__ = "oauth_auth_codes"
+
+    code_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    client_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    redirect_uri: Mapped[str] = mapped_column(Text, nullable=False)
+    code_challenge: Mapped[str] = mapped_column(String(128), nullable=False)
+    code_challenge_method: Mapped[str] = mapped_column(String(8), nullable=False, default="S256")
+    resource: Mapped[str] = mapped_column(Text, nullable=False)
+    org_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    user_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    scope: Mapped[str] = mapped_column(String(256), nullable=False, default="*")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class OAuthTokenRow(Base):
+    """An issued OAuth access token (+ rotating refresh), migration 013.
+
+    Opaque tokens, stored **hashed** (mirror ``api_keys``) so the RS auth path
+    stays a fast hash lookup. ``resource`` is the bound RFC 8707 audience — the
+    RS rejects a token whose ``resource`` != its own MCP URL (audience-confusion
+    defense). ``refresh_hash`` rotates: ``/oauth/token`` refresh issues a new
+    pair and sets ``revoked_at`` on the old row, so a reused refresh is rejected.
+    NOT under RLS — looked up by hash before an org scope is established; the
+    carried ``org_id`` then drives ``org_session_scope`` + RLS on data tables.
+    """
+
+    __tablename__ = "oauth_tokens"
+
+    token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    refresh_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    client_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    org_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    user_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    scope: Mapped[str] = mapped_column(String(256), nullable=False, default="*")
+    resource: Mapped[str] = mapped_column(Text, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    refresh_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index(
+            "uq_oauth_tokens_refresh_hash",
+            "refresh_hash",
+            unique=True,
+            postgresql_where=text("refresh_hash IS NOT NULL"),
+        ),
+    )

@@ -62,6 +62,38 @@ class Settings(BaseSettings):
     clerk_issuer: str | None = None
     clerk_audience: str | None = None
 
+    # ── OAuth 2.1 Authorization Server (hosted-MCP web connectors) ──────
+    # Co-hosts an AS so claude.ai / ChatGPT "Add custom connector" UIs (which
+    # have no static-header field — OAuth only) can connect in one click. Both
+    # must be set for the AS to come alive; when either is None the metadata /
+    # /oauth routes return 404 (honest "not configured"), mirroring
+    # ``portfolio_enabled``. ``oauth_issuer`` is the API base (scheme+host, no
+    # trailing path) and MUST equal the metadata-serving origin byte-for-byte —
+    # the #1 cause of claude.ai connect failures. ``mcp_resource_url`` is the
+    # ``…/mcp/`` URL byte-exact as users type it (trailing slash load-bearing);
+    # it is the RFC 8707 audience an issued token is bound to.
+    oauth_issuer: str | None = None
+    mcp_resource_url: str | None = None
+    oauth_access_ttl_seconds: int = Field(default=3600, ge=1)
+    oauth_refresh_ttl_seconds: int = Field(default=2592000, ge=1)
+    # Authorization codes are single-use and exchanged within seconds of consent;
+    # a short life bounds the replay window. Threaded like the token TTLs (not a
+    # magic literal in the route) so it is tunable per deploy.
+    oauth_code_ttl_seconds: int = Field(default=600, ge=1)
+    # Absolute URL of the frontend's Clerk-gated consent page (e.g.
+    # ``https://stratabank.vercel.app/oauth/authorize``). ``GET /oauth/authorize``
+    # (which arrives cross-origin with no Clerk cookie) 302s the browser here so
+    # the user signs in + consents; the page then POSTs the decision back with a
+    # Clerk session token. When unset, the AS cannot complete an interactive
+    # authorization and ``GET /oauth/authorize`` returns 503 ("consent UI not
+    # configured") rather than minting without a real identity.
+    oauth_consent_url: str | None = None
+
+    @property
+    def oauth_enabled(self) -> bool:
+        """The AS is live only when both the issuer and the resource URL are set."""
+        return bool(self.oauth_issuer and self.mcp_resource_url)
+
     # Regex for additional allowed origins — used for Vercel preview deploys whose
     # subdomain carries a per-deploy hash (so an exact-origin list can't enumerate
     # them). e.g. ``https://strata-[a-z0-9-]+-arkashjs-projects\.vercel\.app``.
