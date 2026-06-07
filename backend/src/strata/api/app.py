@@ -20,6 +20,7 @@ from strata.api.routes import (
     concepts,
     connectors,
     contribute,
+    feedback,
     frameworks,
     healthz,
     integrations,
@@ -88,6 +89,10 @@ OPENAPI_TAGS: list[dict[str, str]] = [
         "description": "Validator-gated community contribution intake and review queue.",
     },
     {"name": "portfolio", "description": "Portfolio company sizing (cached demo subset)."},
+    {
+        "name": "feedback",
+        "description": "Assumption-flagging + failed-query capture — the improvement flywheel. Commentary on the tool, never an input to the math.",
+    },
     {
         "name": "api-keys",
         "description": "Self-serve API keys for the hosted MCP connector — mint, list, revoke.",
@@ -280,6 +285,7 @@ def create_app() -> FastAPI:
     app.include_router(contribute.router)
     app.include_router(portfolio.router)
     app.include_router(me.router)
+    app.include_router(feedback.router)
     app.include_router(api_keys.router)
     app.include_router(lineage.router)
     # OAuth 2.1 Authorization Server (hosted-MCP web connectors). The metadata

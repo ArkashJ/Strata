@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — feedback loop: flag bad assumptions and failed queries (Phase F)
+
+- **You (or an AI agent) can now flag what's wrong with a number, and the team
+  sees it.** When an assumption looks off, a query comes back empty, a primitive
+  is stale, or data is missing, you raise a flag. The flag is stored against your
+  workspace and shows up in a triage queue where a maintainer can resolve it. A
+  flag is a note about the tool — it never changes a sourced number.
+- **Failed queries are captured automatically.** When a market query can't be
+  answered, the question and the reason are recorded as a flag, so dead-ends
+  become a backlog the team can work through instead of disappearing.
+- **Three ways to flag:** a Flag button on any number, a `/feedback` page that
+  lists and resolves flags, and two MCP tools (`submit_feedback`, `list_feedback`)
+  so a connected agent can flag inline when it spots a bad assumption.
+
+  ```
+  flag a number / failed query ─▶ stored per workspace ─▶ /feedback triage ─▶ resolved
+        (web button · MCP tool · auto-capture)                                 (team improves the tool)
+  ```
+
 ### Added — professional HTML/PDF report engine + a CLI an analyst drives (backend)
 
 - **The harness now builds the entire professional report and exports it as a

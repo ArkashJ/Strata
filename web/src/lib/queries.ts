@@ -8,6 +8,10 @@ import {
   type ConceptQuestionReport,
   type ConceptSummary,
   type Connector,
+  type FeedbackEvent,
+  type FeedbackKind,
+  type FeedbackStatus,
+  type FeedbackTargetType,
   type FrameworkSummary,
   type PortfolioResponse,
   type PrimitiveSummary,
@@ -21,6 +25,7 @@ import {
   conceptQuestionReportSchema,
   conceptSummarySchema,
   connectorSchema,
+  feedbackEventSchema,
   frameworkDetailSchema,
   frameworkSummarySchema,
   portfolioResponseSchema,
@@ -249,3 +254,50 @@ export const auditQuery = (limit = 50, offset = 0) =>
     },
     staleTime: 30_000,
   });
+
+// ── Feedback / assumption-flagging (Phase F) ────────────────────────────────
+// The org's flags (GET /feedback) — newest-first, RLS-scoped server-side. The
+// list is RESILIENT: a 401 (signed out) or malformed response degrades to []
+// so the triage page renders an honest empty state instead of throwing.
+export const feedbackQuery = (status?: FeedbackStatus) =>
+  queryOptions({
+    queryKey: ["feedback", status ?? "all"],
+    queryFn: async (): Promise<FeedbackEvent[]> => {
+      try {
+        const qs = status ? `?status=${status}` : "";
+        const data = await api(`/feedback${qs}`);
+        const parsed = z.array(feedbackEventSchema).safeParse(data);
+        return parsed.success ? parsed.data : [];
+      } catch {
+        return [];
+      }
+    },
+    staleTime: 30_000,
+  });
+
+// Submit a flag (POST /feedback). The submitter is resolved server-side from the
+// Clerk Bearer / API-key principal; visibility is org-scoped. A flag is
+// commentary only — it never changes a sourced number (E1).
+export interface SubmitFeedbackInput {
+  kind: FeedbackKind;
+  target_type: FeedbackTargetType;
+  body: string;
+  target_id?: string | null;
+  query_text?: string | null;
+  severity?: string | null;
+  suggested_value?: Record<string, unknown> | null;
+}
+
+export async function submitFeedback(input: SubmitFeedbackInput): Promise<FeedbackEvent> {
+  const data = await api("/feedback", { method: "POST", body: JSON.stringify(input) });
+  return validated(feedbackEventSchema, data);
+}
+
+// Triage / resolve a flag (PATCH /feedback/{id}).
+export async function updateFeedback(
+  id: number,
+  patch: { status?: FeedbackStatus; resolution?: string | null },
+): Promise<FeedbackEvent> {
+  const data = await api(`/feedback/${id}`, { method: "PATCH", body: JSON.stringify(patch) });
+  return validated(feedbackEventSchema, data);
+}

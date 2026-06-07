@@ -30,6 +30,8 @@ from strata.api.deps import get_registry
 from strata.api.ratelimit import enforce_rate_limit
 from strata.api.responses import RATE_LIMITED, UNAUTHORIZED, merge
 from strata.db.audit import record_audit_safe
+from strata.db.feedback import record_feedback_safe
+from strata.models.feedback import FeedbackKind, TargetType
 from strata.registry import Registry
 from strata.resolver import RunOptions, parse_query, run, search_primitive
 from strata.resolver.events import PipelineStatus, ResolverResult
@@ -165,6 +167,18 @@ async def resolve_query(
             )
         except Exception:
             _log.exception("resolve pipeline failed")
+            # A dead-end query becomes a triageable backlog item, not a black hole
+            # (Phase F). Best-effort + org-scoped; never lets a flag-write break the
+            # stream (an anonymous/public caller is silently dropped by the RLS fence).
+            await record_feedback_safe(
+                org_id=principal.org_id,
+                user_id=principal.user_id,
+                kind=FeedbackKind.FAILED_QUERY,
+                target_type=TargetType.QUERY,
+                body="resolve pipeline raised an internal error",
+                query_text=body.query[:2048],
+                severity="error",
+            )
             yield _sse("error", {"message": "An internal error occurred.", "step": "unknown"})
             yield _sse("done", {})
             return
@@ -182,6 +196,18 @@ async def resolve_query(
                 "is configured."
                 if (result.error or "").startswith("fallback parse")
                 else "Could not find enough market data for this query."
+            )
+            # Capture the dead-end so the team can see what users asked for but
+            # the bank couldn't answer (Phase F — the data-gap backlog).
+            await record_feedback_safe(
+                org_id=principal.org_id,
+                user_id=principal.user_id,
+                kind=FeedbackKind.FAILED_QUERY,
+                target_type=TargetType.QUERY,
+                body=message,
+                query_text=body.query[:2048],
+                severity="warning",
+                suggested_value={"reason": result.error} if result.error else None,
             )
             yield _sse("error", {"message": message, "step": "search"})
             yield _sse("done", {})

@@ -295,6 +295,40 @@ class CompanyRow(Base):
     __table_args__ = (Index("uq_companies_org_domain", "org_id", "domain", unique=True),)
 
 
+class FeedbackEventRow(Base):
+    """A flag against the tool: a bad assumption, failed query, wrong primitive,
+    missing data, or general note (migration 014, Phase F).
+
+    Org-scoped with the strict closed 006-style RLS policy — a session sees only
+    its ``app.org_id`` rows. ``suggested_value`` is advisory JSON (e.g. a proposed
+    corrected number) and is NEVER auto-applied to the math (E1). All reads/writes
+    run inside ``org_session_scope(org_id)`` so the policy actually isolates.
+    """
+
+    __tablename__ = "feedback_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    org_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    user_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    target_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    target_id: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    query_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    severity: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    body: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    suggested_value: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="open")
+    resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("ix_feedback_events_org_status", "org_id", "status"),
+        Index("ix_feedback_events_target", "target_type", "target_id"),
+    )
+
+
 class OAuthClientRow(Base):
     """A dynamically-registered OAuth client (RFC 7591 DCR), migration 013.
 
