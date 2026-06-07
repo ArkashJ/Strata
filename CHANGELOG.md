@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — the MCP is now a report-building harness an AI agent drives (backend)
+
+- **An agent connected to Strata can now build a sourced, defensible market
+  report back-and-forth, not just read one number.** Each tool result is typed,
+  carries one-click drill-down links to the source behind every figure, and
+  suggests the next step the agent can take (drill down, challenge an assumption,
+  assemble the report). Old text-only clients still work.
+- **Verify an AI-generated market claim** — the new `verify_market_claim` tool
+  takes a claim ("the X market is $Y by 2027") and returns a verdict
+  (supported / partially supported / unsupported / unverifiable) against Strata's
+  sourced range, with the named, dated, hash-pinned inputs behind it. A claim
+  Strata has no sourced data for comes back **unverifiable** — it never makes a
+  number up.
+- **The report now matches the exact number on screen.** Previously the report
+  re-sized the market from scratch, so a "what-if" you steered could disagree
+  with the report. `get_report_for_tam(<hash>)` (and `GET /tam/<hash>/report`)
+  now bind the report to that exact TAM — overrides included.
+- **Browse the data as resources.** An agent can list and read Strata records by
+  address (`strata://primitive/…`, `concept/…`, `framework/…`, `tam/…`,
+  `report/…`, `chart/…`) — e.g. `@`-mention a primitive in Claude Code.
+- **Charts the agent's app can render** — every sizing result now carries
+  chart specs (Vega-Lite + Mermaid) built only from the sourced numbers.
+- **Guided workflows** — `strata.size / verify / report / portfolio` prompts
+  script the loop so the agent follows the analyst's method, not guesswork.
+- **Trust hardening** — every figure shows a snapshot integrity status; one
+  shared fence now guards both the website and the agent write paths so a
+  modeled estimate can't slip in through either; every agent call is audited.
+
+  ```
+  ask ─▶ size_tam / verify_market_claim ─▶ sourced TAM (+ links, charts)
+       ─▶ challenge (what-if) ─▶ new /tam/<hash>
+       ─▶ get_report_for_tam(<hash>) ─▶ report bound to that exact number
+  ```
+
 ### Added — connect Strata to claude.ai and ChatGPT in one click (OAuth)
 
 - **The hosted Strata connector now works in the claude.ai and ChatGPT websites,
