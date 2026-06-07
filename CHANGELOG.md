@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — professional HTML/PDF report engine + a CLI an analyst drives (backend)
+
+- **The harness now builds the entire professional report and exports it as a
+  forwardable file.** A new engine turns a sized TAM into a self-contained,
+  Altimeter-grade HTML deck (bold headline, KPI strip, the full $1M section
+  skeleton, a source footnote on every chart, sources appendix, limitations) and
+  a PDF. Charts are drawn server-side as inline SVG — no browser, no extra
+  software — so the deck is one file an analyst can email. Optional firm branding
+  (firm name, prepared-by, logo, brand color, disclaimer) renders in the header
+  and footer.
+- **One-call export over the MCP** — the new `export_report` tool returns the
+  structured report + the HTML deck (+ the PDF as base64 when the PDF library is
+  available) + chart specs + citations + suggested next steps in a single call,
+  bound to the exact TAM you steered. PDF is graceful: if the system can't render
+  one, it returns the HTML with an honest note instead of failing.
+- **A CLI for analysts** — `strata report <concept-or-hash> --premium [--pdf]
+  [--out FILE] [--brand-name … --brand-color … --logo … --prepared-by …]` writes
+  the deck to a file or stdout; `strata verify "<claim>" [--value N]` prints the
+  verdict, the sourced range, and the cited sources.
+
+```
+size a TAM ─▶ export_report / strata report --premium ─▶ HTML deck ─▶ --pdf ─▶ PDF
+             (structured + charts + citations + next steps, all sourced)
+```
+
+- **Faster, honest matching** — the registry concept matcher now uses the
+  Rust-backed `rapidfuzz` library instead of the pure-Python one; the matching
+  rules and thresholds are unchanged (every existing match test still passes).
+- **Richer connector catalog** — `list_connectors` now lists each method's
+  arguments, return shape, an example call, source tier, and reliability flags —
+  everything an agent needs to pull a fresh sourced number.
+
 ### Added — the MCP is now a report-building harness an AI agent drives (backend)
 
 - **An agent connected to Strata can now build a sourced, defensible market
