@@ -17,7 +17,7 @@ on each bar, tabular-mono numerals, and a source footnote line under every chart
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 # Strata brand palette (verbatim from docs/design/brand-kit.md). The static deck
 # is light-default: deep ink type on paper, one indigo accent voice.
@@ -174,17 +174,11 @@ def render_bar_chart(chart: BarChart) -> str:
 
 
 def render_ranked_bar_chart(chart: BarChart) -> str:
-    """Convenience wrapper that forces the ranked (sorted, leader-tinted) variant."""
-    ranked = BarChart(
-        title=chart.title,
-        rows=chart.rows,
-        subtitle=chart.subtitle,
-        source=chart.source,
-        ranked=True,
-        width=chart.width,
-        bar_height=chart.bar_height,
-    )
-    return render_bar_chart(ranked)
+    """Convenience wrapper that forces the ranked (sorted, leader-tinted) variant.
+
+    Uses ``dataclasses.replace`` so every field (incl. any added later) is carried
+    over — only ``ranked`` is flipped (review #129)."""
+    return render_bar_chart(replace(chart, ranked=True))
 
 
 __all__ = [

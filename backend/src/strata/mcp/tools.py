@@ -398,6 +398,10 @@ async def export_report(
             pdf_available = True
         except PdfUnavailableError as exc:
             pdf_note = f"PDF unavailable, returning HTML: {exc}"
+        except Exception as exc:  # never break the documented HTML fallback contract
+            # export_report promises a deliverable, not an error: a genuine WeasyPrint
+            # render failure (libs present) degrades to HTML rather than failing the call.
+            pdf_note = f"PDF render failed, returning HTML: {type(exc).__name__}: {exc}"
 
     citations = [
         {
