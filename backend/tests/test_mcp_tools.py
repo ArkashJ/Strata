@@ -11,6 +11,8 @@ from pathlib import Path
 
 import pytest
 
+from mcp.types import CallToolResult
+
 from strata.loader import load_data_dir
 from strata.mcp.tools import ToolError, call_tool
 from strata.registry import Registry
@@ -22,6 +24,19 @@ _CONCEPT = "doc-gen-pc-insurance"
 @pytest.fixture(scope="module")
 def reg() -> Registry:
     return Registry.from_loaded(load_data_dir(_DATA))
+
+
+def _data(out: object) -> dict:
+    """Normalize a tool return to its structured dict.
+
+    The result-aware tools (size_tam / build_tam / resolve_market / get_primitive)
+    now return a ``CallToolResult`` carrying ``structuredContent``; the rest still
+    return a plain dict. Tests assert on the payload either way."""
+    if isinstance(out, CallToolResult):
+        assert out.structuredContent is not None
+        return out.structuredContent
+    assert isinstance(out, dict)
+    return out
 
 
 def _all_citations(payload: object) -> list[dict]:
@@ -80,7 +95,7 @@ def test_list_primitives_last_page_has_no_more(reg: Registry) -> None:
 
 def test_get_primitive_is_sourced(reg: Registry) -> None:
     slug = _a_regulator_slug(reg)
-    out = call_tool(reg, "get_primitive", {"slug": slug})
+    out = _data(call_tool(reg, "get_primitive", {"slug": slug}))
     prim = out["primitive"]
     assert prim["snapshot_sha256"]
     assert prim["source_url"], "a regulator primitive must carry a real citation URL"
@@ -89,7 +104,7 @@ def test_get_primitive_is_sourced(reg: Registry) -> None:
 
 
 def test_size_tam_scenarios_carry_hash_pins(reg: Registry) -> None:
-    out = call_tool(reg, "size_tam", {"concept_slug": _CONCEPT})
+    out = _data(call_tool(reg, "size_tam", {"concept_slug": _CONCEPT}))
     assert out["scenarios"], "expected a scenario tree"
     for sc in out["scenarios"]:
         assert sc["inputs"], "each scenario must list its inputs"
@@ -98,14 +113,16 @@ def test_size_tam_scenarios_carry_hash_pins(reg: Registry) -> None:
 
 
 def test_resolve_market_registry_hit_is_sourced(reg: Registry) -> None:
-    out = call_tool(reg, "resolve_market", {"query": _CONCEPT})
+    out = _data(call_tool(reg, "resolve_market", {"query": _CONCEPT}))
     assert out["matched"] is True
     cites = _all_citations(out)
     assert cites, "a matched resolve must carry hash-pinned inputs"
 
 
 def test_resolve_market_miss_returns_unmatched_not_synthesized(reg: Registry) -> None:
-    out = call_tool(reg, "resolve_market", {"query": "wholly unrelated zylophone market 2099"})
+    out = _data(
+        call_tool(reg, "resolve_market", {"query": "wholly unrelated zylophone market 2099"})
+    )
     assert out["matched"] is False
     # A miss must NOT contain a number dressed as a sourced TAM.
     assert "scenarios" not in out
@@ -119,7 +136,7 @@ def test_no_fabricated_citation_hosts(reg: Registry) -> None:
         ("size_tam", {"concept_slug": _CONCEPT}),
         ("resolve_market", {"query": _CONCEPT}),
     ]:
-        for cite in _all_citations(call_tool(reg, name, args)):
+        for cite in _all_citations(_data(call_tool(reg, name, args))):
             url = cite.get("source_url")
             # Modeled numbers honestly carry no external URL (None); a present
             # URL must be a real host, never the internal/fabricated marker.
@@ -141,13 +158,17 @@ def test_unknown_tool_and_slug_raise(reg: Registry) -> None:
 
 
 def test_mcp_readonly(reg: Registry) -> None:
-    """AC5A.3 — calling every tool leaves the registry byte-for-byte unchanged."""
+    """AC5A.3 — calling every tool leaves the DATA BANK byte-for-byte unchanged.
+
+    Note: ``tam_outputs`` is deliberately excluded — it is an ephemeral, FIFO-
+    capped RESULT cache (never a persisted primitive), and size_tam now remembers
+    the computed TAM so ``get_report_for_tam(<hash>)`` can bind to it (GAP-1). No
+    data-bank record (atomic/concepts/frameworks/signals) is ever mutated."""
     before = (
         len(reg.atomic),
         len(reg.concepts),
         len(reg.frameworks),
         len(reg.signals),
-        len(reg.tam_outputs),
         sorted(reg.atomic),
     )
     for name, args in [
@@ -164,7 +185,6 @@ def test_mcp_readonly(reg: Registry) -> None:
         len(reg.concepts),
         len(reg.frameworks),
         len(reg.signals),
-        len(reg.tam_outputs),
         sorted(reg.atomic),
     )
     assert before == after
@@ -183,7 +203,7 @@ def test_list_primitives_filters_and_cites(reg: Registry) -> None:
 
 def test_build_tam_what_if_does_not_mutate_registry(reg: Registry) -> None:
     before = sorted(reg.atomic)
-    out = call_tool(reg, "build_tam", {"concept_slug": _CONCEPT})
+    out = _data(call_tool(reg, "build_tam", {"concept_slug": _CONCEPT}))
     assert out["scenarios"], "build_tam must return a scenario tree"
     assert out["state_hash"]
     # what-if sizing never persists a primitive

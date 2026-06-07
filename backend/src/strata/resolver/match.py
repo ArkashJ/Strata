@@ -21,9 +21,23 @@ the worst outcome this project can produce, so the match must turn on shared
 from __future__ import annotations
 
 import re
-from difflib import SequenceMatcher
+
+from rapidfuzz import fuzz
 
 from ..registry import Registry
+
+
+def _ratio(a: str, b: str) -> float:
+    """Per-token similarity in [0, 1], Rust-backed (rapidfuzz).
+
+    Replaces ``difflib.SequenceMatcher(...).ratio()`` with rapidfuzz's
+    ``fuzz.ratio`` (Indel-based, the same character-edit notion) divided by 100,
+    so the coverage + head-token thresholds below are unchanged. rapidfuzz is the
+    faster C/Rust implementation; the score for short tokens is equivalent for the
+    typo-tolerance the matcher relies on ("insurnce" → "insurance").
+    """
+    return fuzz.ratio(a, b) / 100.0
+
 
 # Above this token-coverage score, a fuzzy query is treated as the concept.
 # Coverage is fraction-of-tokens-shared (see ``_similarity``), so 0.6 means a
@@ -67,7 +81,7 @@ def _shared_count(q_tokens: list[str], c_tokens: list[str]) -> int:
         for i, ct in enumerate(c_tokens):
             if i in claimed:
                 continue
-            r = 1.0 if qt == ct else SequenceMatcher(None, qt, ct).ratio()
+            r = 1.0 if qt == ct else _ratio(qt, ct)
             if r > best_r:
                 best_i, best_r = i, r
         if best_i >= 0 and best_r >= _TOKEN_MATCH_RATIO:

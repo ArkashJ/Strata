@@ -272,6 +272,7 @@ def create_app() -> FastAPI:
     app.include_router(healthz.router)
     app.include_router(concepts.router)
     app.include_router(report.router)
+    app.include_router(report.tam_report_router)
     app.include_router(primitives.router)
     app.include_router(signals.router)
     app.include_router(frameworks.router)

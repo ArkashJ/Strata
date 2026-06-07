@@ -35,6 +35,8 @@ dependencies = [
     "mcp>=1.2,<2",
     "pyjwt[crypto]>=2.9,<3",
     "authlib>=1.7.2",
+    "rapidfuzz>=3.14.5",
+    "weasyprint>=69.0",
 ]
 
 [project.optional-dependencies]

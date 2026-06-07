@@ -18,20 +18,28 @@ import json
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, TypeAdapter
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from strata.db.models import UserPrimitiveRow
-from strata.models import AtomicPrimitive, ProvenanceClass
+from strata.guards.fence import ModeledFenceError, validate_and_fence_primitive
 
-
-class ModeledFenceError(ValueError):
-    """Raised when a primitive claims a sourced number that is actually modeled.
-
-    Mirrors ``resolver/writer.py``: a community-modeled / analyst-paraphrase /
-    analyst tier derives ``provenance_class=modeled`` — refuse it here so a
-    soft-data estimate can never enter a tenant's private bank as sourced data."""
+# Re-exported so existing ``from strata.db.user_primitives import ModeledFenceError``
+# imports keep working; the fence itself now lives in ``guards/fence.py`` so the
+# REST and MCP write doors share ONE implementation (#102).
+__all__ = [
+    "MAX_PAYLOAD_BYTES",
+    "MAX_PRIMITIVES_PER_ORG",
+    "ModeledFenceError",
+    "TooManyPrimitivesError",
+    "UserPrimitive",
+    "create_user_primitive",
+    "delete_user_primitive",
+    "get_user_primitive",
+    "list_user_primitives",
+    "update_user_primitive",
+]
 
 
 class TooManyPrimitivesError(ValueError):
@@ -59,36 +67,10 @@ class UserPrimitive(BaseModel):
     created_at: datetime
 
 
-def _validate_and_fence(payload: dict[str, Any], *, org_id: str) -> dict[str, Any]:
-    """Force private+org, validate the AtomicPrimitive shape, enforce the MODELED
-    fence. Returns the normalized payload to persist. Raises ``ValueError`` on a
-    schema violation and ``ModeledFenceError`` on a soft-data claim."""
-    normalized = dict(payload)
-    # Server-authoritative: the store never trusts a client-supplied visibility /
-    # org_id. A body saying "public" or another tenant's org is overwritten.
-    normalized["visibility"] = "private"
-    normalized["org_id"] = org_id
-    normalized.setdefault("kind", "atomic_primitive")
-
-    prim = TypeAdapter(AtomicPrimitive).validate_python(normalized)
-
-    # The same fence as the connector writer: provenance_class is DERIVED from the
-    # source tier, so a modeled estimate cannot be relabelled as sourced.
-    if prim.provenance_class is ProvenanceClass.MODELED:
-        raise ModeledFenceError(
-            f"primitive {prim.slug!r} (tier={prim.source.tier.value}) is modeled, not "
-            f"sourced; the private bank stores sourced output only (Q20)"
-        )
-
-    # Re-serialize from the validated model so what we store matches what loads
-    # (coerced enums, forced visibility/org_id).
-    return prim.model_dump(mode="json")
-
-
 async def create_user_primitive(
     session: AsyncSession, *, org_id: str, created_by: str | None, payload: dict[str, Any]
 ) -> UserPrimitive:
-    validated = _validate_and_fence(payload, org_id=org_id)
+    validated = validate_and_fence_primitive(payload, org_id=org_id)
     # Bound the stored blob before the write (oversized JSONB abuse).
     if len(json.dumps(validated)) > MAX_PAYLOAD_BYTES:
         raise ValueError(f"primitive payload exceeds {MAX_PAYLOAD_BYTES} bytes")
@@ -152,7 +134,7 @@ async def update_user_primitive(
         return None
     body = dict(payload)
     body["slug"] = slug
-    validated = _validate_and_fence(body, org_id=org_id)
+    validated = validate_and_fence_primitive(body, org_id=org_id)
     if len(json.dumps(validated)) > MAX_PAYLOAD_BYTES:
         raise ValueError(f"primitive payload exceeds {MAX_PAYLOAD_BYTES} bytes")
     row.payload = validated
