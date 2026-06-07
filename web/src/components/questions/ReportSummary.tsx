@@ -28,6 +28,10 @@ export function ReportSummary({ report }: { report: ConceptQuestionReport }) {
   const m = deriveReportMetrics(report);
   if (m.total === 0) return null;
 
+  // Total citations across the tier mix — computed once, shared by the panel
+  // hint and the bar (so the two can't diverge).
+  const tierMixTotal = m.tierMix.reduce((s, t) => s + t.count, 0);
+
   return (
     // NOT one break-inside-avoid block: the whole band is taller than a page, so
     // marking it un-splittable would bump it past the KPI strip and leave page 1
@@ -63,11 +67,8 @@ export function ReportSummary({ report }: { report: ConceptQuestionReport }) {
 
       {/* Source-tier mix as a compact stacked bar. */}
       {m.tierMix.length > 0 ? (
-        <Panel
-          title="Source-tier mix"
-          hint={`${m.tierMix.reduce((s, t) => s + t.count, 0)} citations`}
-        >
-          <TierMixBar mix={m.tierMix} className="mt-3" />
+        <Panel title="Source-tier mix" hint={`${tierMixTotal} citations`}>
+          <TierMixBar mix={m.tierMix} total={tierMixTotal} className="mt-3" />
         </Panel>
       ) : null}
 
@@ -127,8 +128,15 @@ function Panel({
   );
 }
 
-function TierMixBar({ mix, className }: { mix: readonly TierSlice[]; className?: string }) {
-  const total = mix.reduce((s, t) => s + t.count, 0);
+function TierMixBar({
+  mix,
+  total,
+  className,
+}: {
+  mix: readonly TierSlice[];
+  total: number;
+  className?: string;
+}) {
   if (total === 0) return null;
   return (
     <div className={className}>

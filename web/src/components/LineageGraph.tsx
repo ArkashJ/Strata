@@ -306,6 +306,9 @@ export function LineageGraph({ tam, open, onClose }: Props) {
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Lineage network"
         className="bg-[var(--bg-1)] rounded-[var(--r-4)] shadow-[var(--shadow-overlay)] flex overflow-hidden"
         style={{ width: "min(1100px, 95vw)", height: "min(700px, 85vh)" }}
       >
@@ -331,6 +334,7 @@ export function LineageGraph({ tam, open, onClose }: Props) {
             <span className="text-[13px] font-medium text-[var(--fg-1)]">Inspector</span>
             <button
               type="button"
+              aria-label="Close"
               onClick={onClose}
               className="w-7 h-7 flex items-center justify-center rounded-[var(--r-2)]
                          text-[var(--fg-3)] hover:bg-[var(--bg-2)] hover:text-[var(--fg-1)] transition-colors"

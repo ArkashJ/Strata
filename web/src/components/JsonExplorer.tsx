@@ -30,11 +30,11 @@ function JsonNode({ value, depth, path }: { value: unknown; depth: number; path:
   }
 
   if (typeof value === "number") {
-    return <span className="text-[#3fa66b]">{value.toLocaleString()}</span>;
+    return <span className="text-[var(--tier-regulator)]">{value.toLocaleString()}</span>;
   }
 
   if (typeof value === "string") {
-    return <span className="text-[#c99846]">&quot;{value}&quot;</span>;
+    return <span className="text-[var(--tier-analyst)]">&quot;{value}&quot;</span>;
   }
 
   if (Array.isArray(value)) {

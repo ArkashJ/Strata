@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — deploy runbook + a smoke test that proves a deploy took
+
+- **A one-command check that a deploy actually landed.** `scripts/deploy-smoke.sh`
+  pings the live backend's health, a route only the newest code serves (the
+  "stale image" detector), the cross-origin permission the website needs, and the
+  website itself — and exits non-zero if any of them is wrong. Paired with a
+  written runbook (`docs/24-deploy-runbook.md`) that explains, in plain terms,
+  every deploy gotcha and the exact commands to recover.
+
+  ```
+  deploy ─▶ smoke test ─┬─ backend healthy?         ─┐
+                        ├─ newest code live?         ├─ all pass ─▶ green
+                        ├─ website allowed by API?   │
+                        └─ website up?               ─┘ any fail ─▶ non-zero + what to fix
+  ```
+
+### Changed — accessibility, dark mode, and input safety
+
+- **The report charts and key controls now work with screen readers and the
+  keyboard.** The TAM range bar, the coverage bars, and the "where the bank is
+  thin" grid previously conveyed meaning through color and position only; they
+  now announce their values as text. The lineage pop-up, sidebar, and collapsible
+  panels gained the labels assistive tech needs.
+- **Dark mode fix.** Two number/string colors in the raw-data viewer were stuck
+  at their light-theme values; they now follow the theme.
+- **Safer inputs.** The market-resolve box, the sensitivity control, and the
+  contributions filter now reject obviously bad input up front (empty/oversized
+  query, out-of-range percentage, unknown status) instead of passing it deeper.
+- **Link previews.** Pasting a Strata page into Slack/LinkedIn now resolves its
+  preview image correctly (absolute URLs).
+
 ### Changed — frameworks are now 6 shapes, not 25
 
 - **Honest framework count.** We described the engine as having "25 frameworks,"

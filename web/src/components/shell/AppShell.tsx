@@ -83,6 +83,7 @@ function FullShell({ children }: { children: ReactNode }) {
       {/* Inline sidebar (md and up). Hidden in print — app chrome never belongs
           in a printed report. */}
       <aside
+        aria-label="Application sidebar"
         data-print-hide
         className={`hidden overflow-hidden md:block w-[var(--sidebar-w-collapsed)] ${
           collapsed ? "" : "lg:w-[var(--sidebar-w)]"

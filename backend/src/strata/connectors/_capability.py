@@ -57,13 +57,23 @@ class CapabilitySpec(BaseModel):
     requires_paid_tier: bool = False
 
 
+_capabilities_cache: list[CapabilitySpec] | None = None
+
+
 def all_capabilities() -> list[CapabilitySpec]:
     """Walk every connector module and collect its capability specs.
 
     Import lazily to avoid pulling network-heavy clients at module load.
     Each connector exposes ``capabilities()`` as a module-level function
     or as a ``Client.capabilities()`` classmethod; both are supported.
+
+    Memoized: the capability set is static for the process lifetime (connector
+    modules don't change at runtime), so the import + walk runs once. Specs are
+    frozen, so sharing the cached list with read-only callers is safe.
     """
+    global _capabilities_cache
+    if _capabilities_cache is not None:
+        return _capabilities_cache
 
     from . import (
         alpha_vantage,
@@ -123,4 +133,5 @@ def all_capabilities() -> list[CapabilitySpec]:
         if fn is None:
             continue
         specs.extend(fn())
+    _capabilities_cache = specs
     return specs

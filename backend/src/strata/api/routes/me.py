@@ -26,7 +26,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ValidationError
 
 from strata.api.auth import Principal, require_authenticated
-from strata.api.responses import UNAUTHORIZED, error, merge
+from strata.api.responses import UNAUTHORIZED, error, format_validation_errors, merge
 from strata.db.audit import AuditEvent, list_audit_events
 from strata.db.contributions import record_contribution_safe
 from strata.db.engine import org_session_scope
@@ -63,7 +63,7 @@ class PromoteResponse(BaseModel):
 def _to_422(exc: Exception) -> HTTPException:
     """Map a validation / fence failure to a 422 with honest reasons."""
     if isinstance(exc, ValidationError):
-        reasons = [f"{e['loc']}: {e['msg']}" for e in exc.errors()][:8]
+        reasons = format_validation_errors(exc)
         return HTTPException(status_code=422, detail="; ".join(reasons))
     return HTTPException(status_code=422, detail=str(exc))
 

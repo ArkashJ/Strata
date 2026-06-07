@@ -173,7 +173,7 @@ function ClerkIdentity({ hide }: { hide: string }) {
     <>
       <Show when="signed-out">
         <SignInButton mode="modal">
-          <button type="button" className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
+          <button type="button" aria-label="Sign in" className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
             <Avatar>↪</Avatar>
             <span className={`text-[13px] text-[var(--fg-2)] truncate ${hide}`}>Sign in</span>
           </button>
