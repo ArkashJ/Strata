@@ -177,6 +177,13 @@ class Framework(BaseModel):
             )
         return self
 
+    @property
+    def is_canonical(self) -> bool:
+        """A canonical lens shape (no parent) vs a subframework specialization.
+        Centralizes the ``parent_lens_shape is None`` test so it doesn't scatter
+        across the validator, API/MCP serializers, and UI grouping code."""
+        return self.parent_lens_shape is None
+
     def variant_for(self, scope: str) -> FrameworkVariant | None:
         for v in self.variants:
             if v.scope == scope:

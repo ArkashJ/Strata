@@ -89,11 +89,17 @@ def test_gate_fires_on_two_canonical_in_one_lens() -> None:
 
 
 def test_gate_fires_on_zero_canonical_in_a_lens() -> None:
-    # Remove a lens's only canonical while a subframework of it remains.
+    # Remove a lens's only canonical while a subframework of it remains. Deleting
+    # the canonical also orphans its subs (an "unknown parent" issue), but the
+    # "no canonical shape" message is emitted ONLY by the zero-canonical branch,
+    # so asserting it names the lens isolates that branch from the orphan noise.
     reg = _registry()
     del reg.frameworks["cost-efficiency-full-displacement"]
     issues = _taxonomy_issues(reg)
-    assert any("no canonical shape" in m for m in issues)
+    zero_canonical = [m for m in issues if "no canonical shape" in m]
+    assert any("cost_efficiency" in m for m in zero_canonical)
+    # And not the >1-canonical message (distinct branch, must not fire here).
+    assert not any("canonical shapes" in m for m in issues)
 
 
 def test_gate_fires_on_unknown_parent() -> None:

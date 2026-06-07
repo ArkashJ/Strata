@@ -453,6 +453,14 @@ export const frameworkDetailSchema = z.object({
   variants: z.array(frameworkVariantSchema),
   expansion_stage_parameter: z.boolean(),
   horizon_class: horizonClassSchema,
+  // Taxonomy (2026-06-07): a canonical lens shape carries null parent + [], a
+  // subframework names its canonical + how it specializes. Optional so a
+  // pre-migration backend response still parses.
+  parent_lens_shape: z.string().nullable().optional(),
+  realism_modifiers: z
+    .array(z.enum(["bounded", "adoption_gated", "saturating", "addressable", "reduced"]))
+    .optional()
+    .default([]),
 });
 export type FrameworkDetail = z.infer<typeof frameworkDetailSchema>;
 

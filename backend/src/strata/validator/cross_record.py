@@ -90,6 +90,8 @@ def _framework_taxonomy(registry: Registry) -> list[CrossRecordIssue]:
     for fw in frameworks.values():
         lens = fw.lens.value
         lenses_with_frameworks.add(lens)
+        # Explicit None check (not the is_canonical property) so the type
+        # checker narrows parent_lens_shape to Slug for the frameworks.get below.
         if fw.parent_lens_shape is None:
             canonical_by_lens.setdefault(lens, []).append(fw.slug)
             continue
@@ -110,7 +112,7 @@ def _framework_taxonomy(registry: Registry) -> list[CrossRecordIssue]:
                 )
             )
             continue
-        if parent.parent_lens_shape is not None:
+        if not parent.is_canonical:
             out.append(
                 CrossRecordIssue(
                     code="cross.framework_taxonomy",
@@ -122,6 +124,9 @@ def _framework_taxonomy(registry: Registry) -> list[CrossRecordIssue]:
                     ),
                 )
             )
+            # The parent being a subframework is the root cause; a lens mismatch
+            # against it is a secondary consequence — don't double-report.
+            continue
         if parent.lens != fw.lens:
             out.append(
                 CrossRecordIssue(
