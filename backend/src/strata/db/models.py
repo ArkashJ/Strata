@@ -236,6 +236,33 @@ class UserPrimitiveRow(Base):
     __table_args__ = (Index("uq_user_primitives_org_slug", "org_id", "slug", unique=True),)
 
 
+class ApiKeyRow(Base):
+    """A self-serve API key (migration 003 table; lifecycle columns in 012).
+
+    Keys are stored **hashed** (sha256) — the raw secret is shown ONCE at mint and
+    never persisted. ``key_id`` is the public, non-secret handle the UI/API use to
+    list and revoke a key; ``prefix`` is a masked fragment for human recognition.
+    A key authenticates the hosted ``/mcp`` connector (and the REST API) as its
+    ``org_id``. NOT under RLS — the auth path looks a key up by hash before any
+    ``app.org_id`` is known, so management routes filter by ``org_id`` in SQL.
+    """
+
+    __tablename__ = "api_keys"
+
+    key_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    org_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    scopes: Mapped[str] = mapped_column(String(256), nullable=False, default="*")
+    key_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    label: Mapped[str | None] = mapped_column(Text, nullable=True)
+    prefix: Mapped[str | None] = mapped_column(String(48), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class CompanyRow(Base):
     """Org-scoped portfolio company — a cheap pointer at a shared MARKET concept.
 

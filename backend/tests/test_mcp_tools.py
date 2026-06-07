@@ -45,6 +45,39 @@ def _a_regulator_slug(reg: Registry) -> str:
     return next(iter(reg.atomic))
 
 
+def test_whoami_reports_bank_counts(reg: Registry) -> None:
+    out = call_tool(reg, "whoami", {})
+    assert out["ok"] is True
+    bank = out["bank"]
+    assert bank["concepts"] == len(reg.concepts)
+    assert bank["primitives"] == len(reg.atomic)
+    assert bank["frameworks"] >= 1
+    # No principal in a direct (non-HTTP) call → honest stdio/local report.
+    assert out["authenticated"] is False
+    assert out["transport"] == "stdio"
+
+
+def test_list_primitives_pagination_envelope(reg: Registry) -> None:
+    first = call_tool(reg, "list_primitives", {"limit": 5, "offset": 0})
+    assert first["count"] == 5
+    assert first["offset"] == 0
+    assert first["total"] >= 5
+    assert first["has_more"] is True
+    assert first["next_offset"] == 5
+    # The next page is disjoint from the first (offset advanced the window).
+    second = call_tool(reg, "list_primitives", {"limit": 5, "offset": 5})
+    first_slugs = {p["slug"] for p in first["primitives"]}
+    second_slugs = {p["slug"] for p in second["primitives"]}
+    assert first_slugs.isdisjoint(second_slugs)
+
+
+def test_list_primitives_last_page_has_no_more(reg: Registry) -> None:
+    total = call_tool(reg, "list_primitives", {"limit": 1})["total"]
+    last = call_tool(reg, "list_primitives", {"limit": 10, "offset": max(0, total - 1)})
+    assert last["has_more"] is False
+    assert last["next_offset"] is None
+
+
 def test_get_primitive_is_sourced(reg: Registry) -> None:
     slug = _a_regulator_slug(reg)
     out = call_tool(reg, "get_primitive", {"slug": slug})

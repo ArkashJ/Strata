@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from strata import __version__
 from strata.api.routes import (
+    api_keys,
     audit,
     build,
     concepts,
@@ -85,7 +86,34 @@ OPENAPI_TAGS: list[dict[str, str]] = [
         "description": "Validator-gated community contribution intake and review queue.",
     },
     {"name": "portfolio", "description": "Portfolio company sizing (cached demo subset)."},
+    {
+        "name": "api-keys",
+        "description": "Self-serve API keys for the hosted MCP connector — mint, list, revoke.",
+    },
 ]
+
+
+async def _warm_api_key_cache() -> None:
+    """Load persisted, non-revoked keys into the in-process auth cache at startup
+    so a key minted before a restart keeps working. Best-effort: a missing/unready
+    DB must never block boot (dev/test run keyless or env-seeded)."""
+    try:
+        from strata.api.auth import register_hashed
+        from strata.db.api_keys import load_all_active
+        from strata.db.engine import session_scope
+
+        async with session_scope() as session:
+            rows = await load_all_active(session)
+        for row in rows:
+            register_hashed(
+                row.key_hash,
+                row.org_id,
+                key_id=row.key_id or row.key_hash[:12],
+                scopes=tuple(s for s in (row.scopes or "*").split(",") if s) or ("*",),
+            )
+        log.info("strata.api_keys.cache_warmed", count=len(rows))
+    except Exception:
+        log.warning("strata.api_keys.cache_warm_failed", exc_info=True)
 
 
 @asynccontextmanager
@@ -99,6 +127,8 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None]:
         log.info("strata.registry.loading_from_db")
         application.state.registry = await Registry.from_db()
         log.info("strata.registry.loaded_from_db")
+
+    await _warm_api_key_cache()
 
     # Run the mounted MCP server's session-manager lifespan alongside the API
     # (Wave 5A). Mounted sub-apps don't get their lifespan run automatically, so
@@ -235,6 +265,7 @@ def create_app() -> FastAPI:
     app.include_router(contribute.router)
     app.include_router(portfolio.router)
     app.include_router(me.router)
+    app.include_router(api_keys.router)
     app.include_router(lineage.router)
 
     # Mount the read-only Strata MCP server at /mcp (Wave 5A). Best-effort: a

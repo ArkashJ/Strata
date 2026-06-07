@@ -8,11 +8,23 @@ from __future__ import annotations
 
 from typing import Any
 
+WHOAMI: dict[str, Any] = {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": False,
+}
+
 SEARCH_CONCEPTS: dict[str, Any] = {
     "type": "object",
     "properties": {
         "query": {"type": "string", "description": "Free-text market / concept query."},
         "limit": {"type": "integer", "minimum": 1, "maximum": 50, "default": 10},
+        "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Skip this many matches (pagination).",
+        },
     },
     "required": ["query"],
     "additionalProperties": False,
@@ -66,6 +78,12 @@ LIST_PRIMITIVES: dict[str, Any] = {
         },
         "query": {"type": "string", "description": "Substring match on slug / name."},
         "limit": {"type": "integer", "minimum": 1, "maximum": 200, "default": 50},
+        "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0,
+            "description": "Skip this many rows (pagination).",
+        },
     },
     "additionalProperties": False,
 }

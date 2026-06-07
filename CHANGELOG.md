@@ -29,6 +29,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the resolver match ladder, unit algebra, source-tier taxonomy, request
   lifecycle, route/CLI surfaces, connector layering, data stores, and the full
   resolve sequence — plus a rendering fix for three older diagrams.
+### Added — connect Strata to Claude with a self-serve API key
+
+- **Generate an API key on the website, paste it into Claude.** A signed-in user
+  visits `/agents`, clicks Generate, and copies a key (shown once). Pasting it
+  into Claude (Code, Desktop, or claude.ai) as a connector gives that user's
+  Claude the Strata toolset — sourced market sizing, the data bank, frameworks —
+  scoped to their own account.
+
+  ```
+  website /agents ─▶ Generate key ─▶ strata_sk_live_… (copy once)
+        └─▶ paste into Claude as an MCP connector ─▶ Claude calls Strata tools
+                                                     (authenticated as your org)
+  ```
+
+- **Keys are safe by construction.** Only a one-way hash is stored — the secret
+  is never saved and never shown again. Keys can be listed (masked) and revoked
+  any time; a revoked key stops working immediately. One account can never see
+  or revoke another's keys.
+
+- **The connector got sturdier.** A `whoami` check confirms the connection and
+  shows how much data the bank holds; long lists page properly; and each tool is
+  labelled read-only vs write so Claude treats it correctly.
 
 ### Added — deploy runbook + a smoke test that proves a deploy took
 
