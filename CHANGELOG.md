@@ -41,6 +41,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
        ─▶ get_report_for_tam(<hash>) ─▶ report bound to that exact number
   ```
 
+### Added — market reports now look like a $1M consulting deck
+
+- **The report at `/tam/<hash>/report` is now a Coatue/Gartner-grade
+  presentation, not a plain one-pager.** It opens with a bold editorial headline
+  stating the takeaway, an executive figure strip (the triangulated TAM, the
+  range, how many independent methods agree, and an independence score), the
+  top-down-vs-bottoms-up cross-check, a ranked comparison of every method, a
+  "how the number builds" factor bridge coloured by source quality, the
+  sensitivity view (which assumption to defend first), and a sources appendix
+  where every figure is named, dated, tiered, and snapshot-pinned.
+- **Honest by design.** Sections with no sourced data (a competitive set or an
+  adoption curve we haven't sourced yet) say so plainly instead of inventing a
+  number. A market with only one method shown is labelled as such — no fake
+  second method.
+- **Look and feel.** Numbers use tabular Geist Mono; charts carry a title, a
+  unit, and a source footnote; light and dark both supported; motion respects a
+  reader's reduced-motion setting; no gradients or glassmorphism. The colour rule
+  is consistent: warm tier colours always mean source quality, cool colours
+  always mean method — they never cross.
+- The new building blocks are reusable across the app and were built in
+  Storybook (the auth-free design loop) before wiring into the page. The classic
+  print-first one-pager is unchanged and is still what "Save as PDF" produces.
+
+```
+TAM (sized, sourced) ─▶ /tam/<hash>/report
+  headline ─▶ figure strip ─▶ cross-check ─▶ method comparison
+           ─▶ how-it-builds ─▶ sensitivity ─▶ sources appendix
+  (any section with no data → an honest "not sourced yet" note)
+```
+
 ### Added — connect Strata to claude.ai and ChatGPT in one click (OAuth)
 
 - **The hosted Strata connector now works in the claude.ai and ChatGPT websites,
