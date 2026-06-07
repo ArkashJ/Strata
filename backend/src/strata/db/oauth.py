@@ -23,7 +23,7 @@ import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from strata.api.auth import hash_key
@@ -101,29 +101,42 @@ async def create_auth_code(
     return raw
 
 
+async def peek_auth_code(session: AsyncSession, raw_code: str) -> OAuthAuthCodeRow | None:
+    """Read a live (unconsumed, unexpired) code WITHOUT consuming it, so the
+    caller can verify PKCE + redirect/client match BEFORE the single-use consume.
+    This means a bad ``code_verifier`` does not burn a legitimate client's code.
+    Expiry is evaluated by Postgres (``func.now()``) to avoid app/DB clock skew."""
+    return (
+        await session.execute(
+            select(OAuthAuthCodeRow).where(
+                OAuthAuthCodeRow.code_hash == hash_key(raw_code),
+                OAuthAuthCodeRow.consumed_at.is_(None),
+                OAuthAuthCodeRow.expires_at > func.now(),
+            )
+        )
+    ).scalar_one_or_none()
+
+
 async def consume_auth_code(session: AsyncSession, raw_code: str) -> OAuthAuthCodeRow | None:
     """Atomically mark a code consumed and return it — only if not already
     consumed and not expired. A second call returns ``None`` (single-use).
 
     The ``WHERE consumed_at IS NULL`` clause in the UPDATE is the lock: two
     concurrent exchanges race on the same row and exactly one wins, so a replay
-    can never succeed even under concurrency."""
+    can never succeed even under concurrency. ``RETURNING`` the row avoids a
+    second SELECT (which could race a cleanup delete and raise). Expiry and the
+    consumed-at stamp are evaluated by Postgres (``func.now()``)."""
     stmt = (
         update(OAuthAuthCodeRow)
         .where(
             OAuthAuthCodeRow.code_hash == hash_key(raw_code),
             OAuthAuthCodeRow.consumed_at.is_(None),
-            OAuthAuthCodeRow.expires_at > _now(),
+            OAuthAuthCodeRow.expires_at > func.now(),
         )
-        .values(consumed_at=_now())
-        .returning(OAuthAuthCodeRow.code_hash)
+        .values(consumed_at=func.now())
+        .returning(OAuthAuthCodeRow)
     )
-    won = (await session.execute(stmt)).scalar_one_or_none()
-    if won is None:
-        return None
-    return (
-        await session.execute(select(OAuthAuthCodeRow).where(OAuthAuthCodeRow.code_hash == won))
-    ).scalar_one()
+    return (await session.execute(stmt)).scalar_one_or_none()
 
 
 # --------------------------------------------------------------------------- #
@@ -185,7 +198,7 @@ async def lookup_access(session: AsyncSession, raw_access: str) -> OAuthTokenRow
             select(OAuthTokenRow).where(
                 OAuthTokenRow.token_hash == hash_key(raw_access),
                 OAuthTokenRow.revoked_at.is_(None),
-                OAuthTokenRow.expires_at > _now(),
+                OAuthTokenRow.expires_at > func.now(),
             )
         )
     ).scalar_one_or_none()
@@ -211,9 +224,9 @@ async def rotate_refresh(
         .where(
             OAuthTokenRow.refresh_hash == hash_key(raw_refresh),
             OAuthTokenRow.revoked_at.is_(None),
-            OAuthTokenRow.refresh_expires_at > _now(),
+            OAuthTokenRow.refresh_expires_at > func.now(),
         )
-        .values(revoked_at=_now())
+        .values(revoked_at=func.now())
         .returning(
             OAuthTokenRow.client_id,
             OAuthTokenRow.org_id,

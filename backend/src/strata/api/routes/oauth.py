@@ -275,12 +275,19 @@ async def token(
     _require_enabled()
 
     if grant_type == "authorization_code":
-        row = await oauth.consume_auth_code(session, code)
+        # Verify everything BEFORE consuming, so a bad code_verifier (client bug /
+        # corruption) does not burn a legitimate, retryable code. The atomic
+        # single-use guarantee is the consume step below.
+        row = await oauth.peek_auth_code(session, code)
         if row is None:
             return _oauth_error("invalid_grant")
         if row.redirect_uri != redirect_uri or row.client_id != client_id:
             return _oauth_error("invalid_grant")
         if not verify_pkce_s256(code_verifier=code_verifier, code_challenge=row.code_challenge):
+            return _oauth_error("invalid_grant")
+        # All checks passed — now atomically consume. ``None`` means a concurrent
+        # request won the race (replay protection), so this exchange fails.
+        if await oauth.consume_auth_code(session, code) is None:
             return _oauth_error("invalid_grant")
         issued = await oauth.issue_token(
             session,

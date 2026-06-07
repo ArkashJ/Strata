@@ -372,6 +372,39 @@ async def test_token_pkce_mismatch_rejected(
 
 @_needs_pg
 @pytest.mark.asyncio
+async def test_bad_verifier_does_not_burn_code(
+    _configured: None, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed PKCE exchange must NOT consume the code — the legitimate client
+    can still redeem it with the correct verifier (review fix: peek-then-consume)."""
+    client_id, code, verifier = await _full_grant_to_code(client, monkeypatch)
+    bad = await client.post(
+        "/oauth/token",
+        data={
+            "grant_type": "authorization_code",
+            "code": code,
+            "code_verifier": "definitely_the_wrong_verifier",
+            "redirect_uri": _CB,
+            "client_id": client_id,
+        },
+    )
+    assert bad.status_code == 400
+    # The code survived the bad attempt — the correct verifier still works.
+    good = await client.post(
+        "/oauth/token",
+        data={
+            "grant_type": "authorization_code",
+            "code": code,
+            "code_verifier": verifier,
+            "redirect_uri": _CB,
+            "client_id": client_id,
+        },
+    )
+    assert good.status_code == 200
+
+
+@_needs_pg
+@pytest.mark.asyncio
 async def test_refresh_rotation_and_reuse(
     _configured: None, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
