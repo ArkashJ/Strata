@@ -9,6 +9,8 @@ name: Throughput bounded yield
 # clamp(take_rate * market_share_assumption, 0, 1). Full role coverage.
 method_family: value_chain
 lens: platform_throughput
+parent_lens_shape: throughput-take-rate-with-share
+realism_modifiers: [bounded]
 inputs:
 - name: gmv_or_volume
   role: base_value

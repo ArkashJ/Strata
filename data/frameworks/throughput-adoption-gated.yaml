@@ -10,6 +10,8 @@ name: Throughput (adoption-gated share)
 # platform_throughput roles.
 method_family: adoption_curve
 lens: platform_throughput
+parent_lens_shape: throughput-take-rate-with-share
+realism_modifiers: [adoption_gated]
 inputs:
 - name: gmv_or_volume
   role: base_value

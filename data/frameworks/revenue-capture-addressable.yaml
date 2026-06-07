@@ -9,6 +9,8 @@ name: Revenue capture (addressable-narrowed)
 # x capture_rate. Covers all three required revenue_generation roles.
 method_family: top_down_spend
 lens: revenue_generation
+parent_lens_shape: revenue-capture-full
+realism_modifiers: [addressable]
 inputs:
 - name: target_segment_count
   role: base_value

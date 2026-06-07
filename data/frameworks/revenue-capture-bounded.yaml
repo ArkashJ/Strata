@@ -9,6 +9,8 @@ name: Revenue capture (bounded capture rate)
 # Full role coverage for revenue_generation.
 method_family: top_down_spend
 lens: revenue_generation
+parent_lens_shape: revenue-capture-full
+realism_modifiers: [bounded]
 inputs:
 - name: target_segment_count
   role: base_value

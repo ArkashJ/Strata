@@ -10,6 +10,8 @@ name: Productivity uplift (adoption-gated gain)
 # all three required productivity_uplift roles.
 method_family: adoption_curve
 lens: productivity_uplift
+parent_lens_shape: productivity-uplift-full
+realism_modifiers: [adoption_gated]
 inputs:
 - name: persona_count
   role: base_value

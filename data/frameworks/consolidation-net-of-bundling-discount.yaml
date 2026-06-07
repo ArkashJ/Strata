@@ -12,6 +12,8 @@ name: Consolidation net of bundling discount
 # this adds the genuinely-available pricing_discount role rather than fabricate it.
 method_family: comparable_revenue
 lens: bundle_consolidation
+parent_lens_shape: null
+realism_modifiers: []
 inputs:
 - name: tools_displaced
   role: base_value

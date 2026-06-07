@@ -9,6 +9,8 @@ name: Productivity uplift (bounded gain)
 # value_split_to_vendor. Full role coverage for productivity_uplift.
 method_family: comparable_revenue
 lens: productivity_uplift
+parent_lens_shape: productivity-uplift-full
+realism_modifiers: [bounded]
 inputs:
 - name: persona_count
   role: base_value

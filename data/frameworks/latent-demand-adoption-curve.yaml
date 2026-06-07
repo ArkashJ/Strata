@@ -9,6 +9,8 @@ name: Latent demand (logistic adoption curve)
 method_family: bottoms_up_seats
 
 lens: latent_demand
+parent_lens_shape: null
+realism_modifiers: []
 
 # addressable_population × logistic(position, midpoint, steepness) × WTP.
 # The logistic factor is the adopted SHARE (dimensionless, in (0,1)); it is what

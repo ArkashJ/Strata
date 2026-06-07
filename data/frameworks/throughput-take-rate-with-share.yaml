@@ -9,6 +9,8 @@ name: Throughput take-rate (with platform share)
 # market_share_assumption. Clears the platform_throughput role warning.
 method_family: value_chain
 lens: platform_throughput
+parent_lens_shape: null
+realism_modifiers: []
 inputs:
 - name: gmv_or_volume
   role: base_value

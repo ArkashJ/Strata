@@ -10,6 +10,8 @@ name: Revenue capture (adoption-gated)
 # revenue_generation roles.
 method_family: adoption_curve
 lens: revenue_generation
+parent_lens_shape: revenue-capture-full
+realism_modifiers: [adoption_gated]
 inputs:
 - name: target_segment_count
   role: base_value
