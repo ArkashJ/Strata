@@ -11,6 +11,8 @@ name: Cost efficiency (bounded displacement)
 # Full role coverage for cost_efficiency.
 method_family: bottoms_up_seats
 lens: cost_efficiency
+parent_lens_shape: cost-efficiency-full-displacement
+realism_modifiers: [bounded]
 inputs:
 - name: persona_pool
   role: base_value

@@ -11,6 +11,8 @@ name: Latent demand (saturating-exponential curve)
 # Covers all three required latent_demand roles.
 method_family: adoption_curve
 lens: latent_demand
+parent_lens_shape: latent-demand-adoption-curve
+realism_modifiers: [saturating]
 inputs:
 - name: addressable_population
   role: base_value

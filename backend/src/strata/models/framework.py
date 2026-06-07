@@ -35,6 +35,28 @@ class MethodFamily(StrEnum):
     WEIGHTED_BLEND = "weighted_blend"
 
 
+class RealismModifier(StrEnum):
+    """How a SUBFRAMEWORK specializes its lens's canonical math shape.
+
+    The six lenses are six multiplication shapes (the IP). A subframework is that
+    same shape with one or more of these realism treatments applied to the
+    formula — so a number it produces differs, but the structure is the lens's.
+    A canonical framework declares NO modifier (it *is* the raw shape).
+
+      BOUNDED         a clamp(...) caps a factor — can't displace/capture >100%
+      ADOPTION_GATED  curve()/logistic() gates a rate by an S-curve over time
+      SATURATING      a saturating curve (ceiling) without the logistic midpoint
+      ADDRESSABLE     an extra addressable_share factor narrows the base
+      REDUCED         a degenerate form that drops one of the canonical roles
+    """
+
+    BOUNDED = "bounded"
+    ADOPTION_GATED = "adoption_gated"
+    SATURATING = "saturating"
+    ADDRESSABLE = "addressable"
+    REDUCED = "reduced"
+
+
 class InputRole(StrEnum):
     """Q6 input roles. Distinct from Q39 lens role names: a framework input
     has both a ``name`` (matching a Q39 lens role like ``persona_pool``) and
@@ -85,6 +107,15 @@ class Framework(BaseModel):
     # Q39 lens tag. The validator enforces concept.analysis_lens ∋ framework.lens.
     lens: AnalysisLens
 
+    # Taxonomy (2026-06-07 reframe): the 6 lens shapes are the canonical
+    # frameworks (parent_lens_shape=None, no realism_modifiers). Every other
+    # framework is a SUBFRAMEWORK — the same shape specialized — and points at
+    # its lens's canonical via ``parent_lens_shape`` and names how it differs via
+    # ``realism_modifiers``. The cross-record validator enforces "exactly one
+    # canonical per lens" so the count of distinct shapes can't silently inflate.
+    parent_lens_shape: Slug | None = None
+    realism_modifiers: tuple[RealismModifier, ...] = ()
+
     inputs: tuple[FrameworkInput, ...]
     formula: str
     output_unit: Unit
@@ -97,6 +128,34 @@ class Framework(BaseModel):
 
     expansion_stage_parameter: bool = False
     horizon_class: HorizonClass = HorizonClass.SNAPSHOT
+
+    @model_validator(mode="after")
+    def _taxonomy_pair_coheres(self) -> Framework:
+        """The canonical/subframework distinction is a LOCAL invariant of a single
+        framework (it relates only this record's ``parent_lens_shape`` and
+        ``realism_modifiers``), so it must hold at *every* construction — a row
+        from Postgres, an MCP build path, a test — not just under ``strata
+        validate``. Mirrors ``_formula_parses``: load-bearing local invariants
+        live on the model. The genuinely cross-record parts (parent exists, is a
+        same-lens canonical, one canonical per lens) stay in the cross validator.
+
+          canonical  (parent_lens_shape is None)  ⇒ NO realism_modifiers
+          subframework (parent set)               ⇒ ≥1 realism_modifier
+          a framework is never its own parent
+        """
+        if self.parent_lens_shape is None and self.realism_modifiers:
+            raise ValueError(
+                f"canonical framework {self.slug!r} (no parent_lens_shape) must not "
+                f"declare realism_modifiers; it is the raw lens shape"
+            )
+        if self.parent_lens_shape is not None and not self.realism_modifiers:
+            raise ValueError(
+                f"subframework {self.slug!r} declares a parent but no realism_modifiers; "
+                f"a specialization must name how it differs from the canonical shape"
+            )
+        if self.parent_lens_shape == self.slug:
+            raise ValueError(f"framework {self.slug!r} cannot be its own parent_lens_shape")
+        return self
 
     @model_validator(mode="after")
     def _formula_parses(self) -> Framework:
@@ -117,6 +176,13 @@ class Framework(BaseModel):
                 f"framework {self.slug!r} formula references undeclared input(s): {unknown}"
             )
         return self
+
+    @property
+    def is_canonical(self) -> bool:
+        """A canonical lens shape (no parent) vs a subframework specialization.
+        Centralizes the ``parent_lens_shape is None`` test so it doesn't scatter
+        across the validator, API/MCP serializers, and UI grouping code."""
+        return self.parent_lens_shape is None
 
     def variant_for(self, scope: str) -> FrameworkVariant | None:
         for v in self.variants:

@@ -148,6 +148,11 @@ class FrameworkRow(Base):
     output_unit: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     applicable_to: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     variants: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
+    # Taxonomy (2026-06-07): a canonical lens shape ⇒ NULL parent + empty
+    # modifiers; a subframework ⇒ parent = its lens's canonical slug + ≥1
+    # realism modifier. Persisted so Registry.from_db (prod) sees the taxonomy.
+    parent_lens_shape: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    realism_modifiers: Mapped[list[Any]] = mapped_column(JSONB, nullable=False, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

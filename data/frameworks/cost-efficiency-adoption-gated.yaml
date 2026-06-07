@@ -11,6 +11,8 @@ name: Cost efficiency (adoption-gated displacement)
 # Covers all four required cost_efficiency roles.
 method_family: adoption_curve
 lens: cost_efficiency
+parent_lens_shape: cost-efficiency-full-displacement
+realism_modifiers: [adoption_gated]
 inputs:
 - name: persona_pool
   role: base_value

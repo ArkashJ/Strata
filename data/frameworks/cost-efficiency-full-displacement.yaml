@@ -11,6 +11,8 @@ name: Cost efficiency (full displacement)
 # Clears the standing role-coverage warning for cost_efficiency.
 method_family: bottoms_up_seats
 lens: cost_efficiency
+parent_lens_shape: null
+realism_modifiers: []
 inputs:
 - name: persona_pool
   role: base_value

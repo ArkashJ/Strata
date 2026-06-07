@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — frameworks are now 6 shapes, not 25
+
+- **Honest framework count.** We described the engine as having "25 frameworks,"
+  but they were really the **6 sizing shapes** (one per lens) repeated with small
+  realism tweaks — a clamp here, an adoption curve there. They're now classified
+  as **6 canonical shapes + 19 specializations (subframeworks)**, and a check
+  refuses to let the count of distinct shapes quietly creep back up. No recipe was
+  removed and no number changed — only how they're grouped and counted.
+
+  ```
+  6 lens shapes ─┬─ subframeworks (same shape: bounded · adoption-gated · …)
+                 ├─ signals      (corroborate, never feed a TAM)
+                 └─ perspectives (cross-checks/views on a computed TAM)
+  ```
+
+  Decision record: `docs/plans/2026-06-07-frameworks-taxonomy-reframe.md`.
+
 ### Changed — analyst-grade report redesign
 
 - **The report now reads like a VC analyst deck, not a wall of text.** The top of

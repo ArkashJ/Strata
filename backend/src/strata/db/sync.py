@@ -206,6 +206,8 @@ async def _upsert_frameworks(session: AsyncSession, records: list[dict[str, Any]
             "output_unit": stmt.excluded.output_unit,
             "applicable_to": stmt.excluded.applicable_to,
             "variants": stmt.excluded.variants,
+            "parent_lens_shape": stmt.excluded.parent_lens_shape,
+            "realism_modifiers": stmt.excluded.realism_modifiers,
         },
     )
     await session.execute(stmt)
@@ -252,6 +254,8 @@ async def sync_yaml_to_db(data_dir: Path) -> dict[str, int]:
                 "output_unit": d.get("output_unit", {}),
                 "applicable_to": list(d.get("applicable_to", [])),
                 "variants": d.get("variants", []),
+                "parent_lens_shape": d.get("parent_lens_shape"),
+                "realism_modifiers": list(d.get("realism_modifiers", [])),
             }
         )
 

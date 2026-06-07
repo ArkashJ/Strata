@@ -9,6 +9,8 @@ method_family: comparable_revenue
 
 # Q39 lens tag — productivity_uplift (GitHub Copilot / Cursor math shape).
 lens: productivity_uplift
+parent_lens_shape: productivity-uplift-full
+realism_modifiers: [reduced]
 
 # v0.2 simplification: 2-input persona-count × vendor-value-split product. The
 # full Q39 productivity_uplift math (persona × productivity_gain × capture_rate)

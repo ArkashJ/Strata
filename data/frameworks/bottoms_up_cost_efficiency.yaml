@@ -4,6 +4,8 @@ schema_version: 1
 name: Bottoms-up cost efficiency
 method_family: bottoms_up_seats
 lens: cost_efficiency
+parent_lens_shape: cost-efficiency-full-displacement
+realism_modifiers: [reduced]
 inputs:
 - name: persona_pool
   role: base_value

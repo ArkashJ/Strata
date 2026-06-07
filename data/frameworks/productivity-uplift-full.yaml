@@ -10,6 +10,8 @@ name: Productivity uplift (full, with gain rate)
 # role warning.
 method_family: comparable_revenue
 lens: productivity_uplift
+parent_lens_shape: null
+realism_modifiers: []
 inputs:
 - name: persona_count
   role: base_value

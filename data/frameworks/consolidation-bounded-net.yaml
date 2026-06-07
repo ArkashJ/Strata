@@ -11,6 +11,8 @@ name: Consolidation bounded net capture
 # limitation as consolidation-net-of-bundling-discount.
 method_family: comparable_revenue
 lens: bundle_consolidation
+parent_lens_shape: consolidation-net-of-bundling-discount
+realism_modifiers: [bounded]
 inputs:
 - name: tools_displaced
   role: base_value

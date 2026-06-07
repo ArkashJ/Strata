@@ -4,6 +4,8 @@ schema_version: 1
 name: Top-down revenue capture
 method_family: top_down_spend
 lens: revenue_generation
+parent_lens_shape: revenue-capture-full
+realism_modifiers: [reduced]
 inputs:
 - name: target_segment_count
   role: base_value

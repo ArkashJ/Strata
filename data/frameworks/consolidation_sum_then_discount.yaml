@@ -9,6 +9,8 @@ method_family: comparable_revenue
 
 # Q39 lens tag — bundle_consolidation (Microsoft 365 / Google Workspace math shape).
 lens: bundle_consolidation
+parent_lens_shape: consolidation-net-of-bundling-discount
+realism_modifiers: [reduced]
 
 # v0.2 simplification: 2-input displaced-spend × consolidation-rate product.
 # The full Q39 bundle_consolidation math (tools_displaced × consolidation_rate

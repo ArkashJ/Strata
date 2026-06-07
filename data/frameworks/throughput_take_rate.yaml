@@ -8,6 +8,8 @@ method_family: value_chain
 
 # Q39 lens tag — platform_throughput (Stripe/Plaid math shape).
 lens: platform_throughput
+parent_lens_shape: throughput-take-rate-with-share
+realism_modifiers: [reduced]
 
 # v0.2 simplification: 2-input GMV × take-rate product. The full Q39
 # platform_throughput math (GMV × take × share_digital) lands when a

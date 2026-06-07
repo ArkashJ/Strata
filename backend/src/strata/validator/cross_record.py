@@ -58,9 +58,115 @@ def cross_record_check(registry: Registry) -> list[CrossRecordIssue]:
     issues.extend(_framework_variant_checks(registry))
     issues.extend(_framework_role_coverage(registry))
     issues.extend(_framework_formula_coherence(registry))
+    issues.extend(_framework_taxonomy(registry))
     issues.extend(_secondary_lens_overlap_warning(registry))
     issues.extend(_question_answers_resolvable(registry))
     return issues
+
+
+def _framework_taxonomy(registry: Registry) -> list[CrossRecordIssue]:
+    """Enforce the 6-shapes + subframeworks taxonomy (2026-06-07 reframe).
+
+    The six lenses are six canonical math shapes; every other framework is a
+    SUBFRAMEWORK specializing one. The invariants below keep the count of
+    *distinct shapes* honest — so "frameworks" can't silently inflate back into
+    25 look-alikes:
+
+      * exactly ONE canonical framework per lens that has any framework
+        (canonical = ``parent_lens_shape is None``);
+      * a subframework points at an existing canonical of the SAME lens, and
+        that parent is not itself a subframework (no chains).
+
+    The purely-LOCAL pair invariants (a canonical declares no modifiers; a
+    subframework declares ≥1) are enforced on the model itself
+    (``Framework._taxonomy_pair_coheres``), so a self-contradictory record can't
+    be constructed in the first place — those are not re-checked here.
+    """
+    out: list[CrossRecordIssue] = []
+    frameworks = registry.frameworks
+    canonical_by_lens: dict[str, list[str]] = {}
+    lenses_with_frameworks: set[str] = set()
+
+    for fw in frameworks.values():
+        lens = fw.lens.value
+        lenses_with_frameworks.add(lens)
+        # Explicit None check (not the is_canonical property) so the type
+        # checker narrows parent_lens_shape to Slug for the frameworks.get below.
+        if fw.parent_lens_shape is None:
+            canonical_by_lens.setdefault(lens, []).append(fw.slug)
+            continue
+
+        # Subframework: validate its parent pointer (a cross-record concern —
+        # the parent must exist, be canonical, and share this lens).
+        parent = frameworks.get(fw.parent_lens_shape)
+        if parent is None:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.framework_taxonomy",
+                    severity=CrossRecordSeverity.ERROR,
+                    slug=fw.slug,
+                    message=(
+                        f"subframework {fw.slug!r} parent_lens_shape "
+                        f"{fw.parent_lens_shape!r} is not a known framework"
+                    ),
+                )
+            )
+            continue
+        if not parent.is_canonical:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.framework_taxonomy",
+                    severity=CrossRecordSeverity.ERROR,
+                    slug=fw.slug,
+                    message=(
+                        f"subframework {fw.slug!r} must point at a CANONICAL framework; "
+                        f"{parent.slug!r} is itself a subframework (no chains)"
+                    ),
+                )
+            )
+            # The parent being a subframework is the root cause; a lens mismatch
+            # against it is a secondary consequence — don't double-report.
+            continue
+        if parent.lens != fw.lens:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.framework_taxonomy",
+                    severity=CrossRecordSeverity.ERROR,
+                    slug=fw.slug,
+                    message=(
+                        f"subframework {fw.slug!r} (lens {fw.lens.value}) points at "
+                        f"{parent.slug!r} of a different lens ({parent.lens.value})"
+                    ),
+                )
+            )
+
+    for lens in sorted(lenses_with_frameworks):
+        canon = canonical_by_lens.get(lens, [])
+        if len(canon) == 0:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.framework_taxonomy",
+                    severity=CrossRecordSeverity.ERROR,
+                    slug=lens,
+                    message=(
+                        f"lens {lens!r} has frameworks but no canonical shape "
+                        f"(none with parent_lens_shape=None)"
+                    ),
+                )
+            )
+        elif len(canon) > 1:
+            out.append(
+                CrossRecordIssue(
+                    code="cross.framework_taxonomy",
+                    severity=CrossRecordSeverity.ERROR,
+                    slug=lens,
+                    message=(
+                        f"lens {lens!r} has {len(canon)} canonical shapes "
+                        f"({sorted(canon)}); exactly one is allowed"
+                    ),
+                )
+            )
+    return out
 
 
 def _framework_formula_coherence(registry: Registry) -> list[CrossRecordIssue]:

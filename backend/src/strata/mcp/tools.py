@@ -100,10 +100,16 @@ def list_frameworks(reg: Registry) -> dict[str, Any]:
             "lens": fw.lens.value,
             "inputs": [{"name": i.name, "role": i.role.value} for i in fw.inputs],
             "formula": fw.formula,
+            # Taxonomy: a canonical lens shape (parent null, modifiers []) vs a
+            # subframework specializing it — so an agent can group the 6 shapes
+            # and see how each variant differs before choosing one for a TAM.
+            "is_canonical": fw.is_canonical,
+            "parent_lens_shape": fw.parent_lens_shape,
+            "realism_modifiers": [m.value for m in fw.realism_modifiers],
         }
         for fw in reg.iter_frameworks()
     ]
-    frameworks.sort(key=lambda f: f["slug"])
+    frameworks.sort(key=lambda f: str(f["slug"]))
     return {"count": len(frameworks), "frameworks": frameworks}
 
 
@@ -369,7 +375,11 @@ TOOLS: dict[str, dict[str, Any]] = {
         "handler": _h_get_primitive,
     },
     "list_frameworks": {
-        "description": "List the TAM frameworks (method family, lens, inputs).",
+        "description": (
+            "List the TAM frameworks (method family, lens, inputs). Each is either a "
+            "canonical lens shape (is_canonical=true) or a subframework that specializes "
+            "one — parent_lens_shape names the canonical, realism_modifiers how it differs."
+        ),
         "inputSchema": schemas.LIST_FRAMEWORKS,
         "handler": _h_list_frameworks,
     },
