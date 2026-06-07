@@ -322,6 +322,10 @@ class FeedbackEventRow(Base):
     suggested_value: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="open")
     resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # The org-private ``user_primitives`` row an accepted correction produced
+    # (migration 015). Same tenant, so the id is only meaningful under this
+    # row's ``org_id``; no cross-RLS FK. NULL for every flag that never applied.
+    resolved_primitive_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     __table_args__ = (
         Index("ix_feedback_events_org_status", "org_id", "status"),

@@ -12,6 +12,7 @@ no-tenant honesty checks do not need Postgres and always run.
 from __future__ import annotations
 
 import socket
+from typing import Any
 
 import pytest
 from fastapi import FastAPI
@@ -22,8 +23,48 @@ from strata.api.app import create_app
 from strata.api.auth import Principal
 from strata.api.clerk_auth import ClerkClaims
 from strata.config import settings
-from strata.db.feedback import list_feedback, record_feedback, update_feedback
+from strata.db.feedback import (
+    apply_feedback_correction,
+    list_feedback,
+    record_feedback,
+    update_feedback,
+)
+from strata.db.user_primitives import ModeledFenceError
 from strata.models.feedback import FeedbackKind, FeedbackStatus, TargetType
+
+
+def _sourced_primitive(slug: str = "fb-test-headcount-2024") -> dict[str, Any]:
+    """A valid REGULATOR-tier primitive (provenance derives to sourced)."""
+    return {
+        "kind": "atomic_primitive",
+        "slug": slug,
+        "schema_version": 1,
+        "concept_slug": "demo-ai-sales-ops-us",
+        "name": "Corrected headcount",
+        "description": "A corrected private primitive.",
+        "value": 123456,
+        "unit": {"kind": "stock", "dimension": "people"},
+        "as_of": "2024-12-31",
+        "geo": {"level": "country", "codes": ["US"]},
+        "geo_perspective": "supply",
+        "distribution_shape": "normal",
+        "delivery_mode": "n/a",
+        "source": {
+            "slug": "fb-src",
+            "tier": "regulator",
+            "url": "https://www.bls.gov/x",
+            "accessed": "2026-05-30",
+            "snapshot_sha256": "a" * 64,
+        },
+    }
+
+
+def _modeled_primitive(slug: str = "fb-test-modeled-2024") -> dict[str, Any]:
+    """A COMMUNITY-MODELED estimate — provenance derives to modeled (fence rejects)."""
+    p = _sourced_primitive(slug)
+    p["source"] = {**p["source"], "tier": "community-modeled"}
+    return p
+
 
 _USER_A = "user_fb_a"
 _USER_B = "user_fb_b"
@@ -62,10 +103,16 @@ async def _cleanup() -> None:
         )
         if not has:
             return
+        has_prims = await conn.fetchval(
+            "SELECT 1 FROM information_schema.tables WHERE table_name = 'user_primitives'"
+        )
         for org in (_ORG_A, _ORG_B):
             async with conn.transaction():
                 await conn.execute("SELECT set_config('app.org_id', $1, true)", org)
                 await conn.execute("DELETE FROM feedback_events WHERE org_id = $1", org)
+                if has_prims:
+                    # The apply tests create org-private primitives; clean them too.
+                    await conn.execute("DELETE FROM user_primitives WHERE org_id = $1", org)
     finally:
         await conn.close()
 
@@ -332,3 +379,201 @@ async def test_mcp_submit_and_list_feedback_org_scoped(_clean: None) -> None:
         assert listed["feedback"][0]["target_id"] == "wtp-2021"
     finally:
         context.current_principal.reset(token)
+
+
+# --------------------------------------------------------------------------- #
+# Apply-correction — close the loop (flag → org-private primitive).            #
+# --------------------------------------------------------------------------- #
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_apply_correction_creates_primitive_and_resolves(_clean: None) -> None:
+    """An accepted correction creates an org-private primitive, flips the flag to
+    resolved, and links the new primitive's id — all under the caller's org (RLS)."""
+    from strata.db.engine import org_session_scope
+    from strata.db.user_primitives import list_user_primitives
+
+    async with org_session_scope(_ORG_A) as session:
+        ev = await record_feedback(
+            session,
+            org_id=_ORG_A,
+            user_id=_USER_A,
+            kind=FeedbackKind.PRIMITIVE_CORRECTION,
+            target_type=TargetType.PRIMITIVE,
+            body="headcount is stale; corrected below",
+            suggested_value=_sourced_primitive(),
+        )
+        fid = ev.id
+
+    async with org_session_scope(_ORG_A) as session:
+        feedback, prim = await apply_feedback_correction(session, fid, org_id=_ORG_A)
+        assert feedback.status is FeedbackStatus.RESOLVED
+        assert feedback.resolved_primitive_id == prim.id
+        assert prim.visibility == "private"
+        assert prim.org_id == _ORG_A
+
+    # The primitive is durable + org-scoped; B sees none of it.
+    async with org_session_scope(_ORG_A) as session:
+        a_prims = await list_user_primitives(session, org_id=_ORG_A)
+        assert any(p.slug == "fb-test-headcount-2024" for p in a_prims)
+    async with org_session_scope(_ORG_B) as session:
+        assert await list_user_primitives(session, org_id=_ORG_B) == []
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_apply_correction_rejects_modeled_tier(_clean: None) -> None:
+    """A modeled / analyst-tier correction is refused by the shared fence — the
+    flag stays open and no primitive is created (Q20)."""
+    from strata.db.engine import org_session_scope
+    from strata.db.user_primitives import list_user_primitives
+
+    async with org_session_scope(_ORG_A) as session:
+        ev = await record_feedback(
+            session,
+            org_id=_ORG_A,
+            user_id=_USER_A,
+            kind=FeedbackKind.PRIMITIVE_CORRECTION,
+            target_type=TargetType.PRIMITIVE,
+            body="proposed (modeled) correction",
+        )
+        fid = ev.id
+
+    async with org_session_scope(_ORG_A) as session:
+        with pytest.raises(ModeledFenceError):
+            await apply_feedback_correction(
+                session, fid, org_id=_ORG_A, primitive_payload=_modeled_primitive()
+            )
+
+    # The flag stays open and no primitive landed (the apply rolled back).
+    async with org_session_scope(_ORG_A) as session:
+        rows = await list_feedback(session)
+        assert rows[0].status is FeedbackStatus.OPEN
+        assert rows[0].resolved_primitive_id is None
+        assert await list_user_primitives(session, org_id=_ORG_A) == []
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_rest_apply_happy(client: AsyncClient, stub_clerk: None, _clean: None) -> None:
+    created = await client.post(
+        "/feedback",
+        headers=_BEARER_A,
+        json={
+            "kind": "primitive_correction",
+            "target_type": "primitive",
+            "body": "corrected headcount",
+        },
+    )
+    fid = created.json()["id"]
+    applied = await client.post(
+        f"/feedback/{fid}/apply",
+        headers=_BEARER_A,
+        json={"primitive_payload": _sourced_primitive("fb-rest-corrected")},
+    )
+    assert applied.status_code == 200, applied.text
+    out = applied.json()
+    assert out["feedback"]["status"] == "resolved"
+    assert out["feedback"]["resolved_primitive_id"] is not None
+    assert out["primitive"]["slug"] == "fb-rest-corrected"
+    assert out["primitive"]["visibility"] == "private"
+
+
+@pytest.mark.asyncio
+async def test_rest_apply_anonymous_is_401(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(settings, "require_auth", False)
+    r = await client.post("/feedback/1/apply", json={})
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_mcp_apply_feedback_refuses_without_tenant() -> None:
+    from strata.mcp.feedback_tools import apply_feedback
+
+    out = await apply_feedback(None, feedback_id=1)  # type: ignore[arg-type]
+    assert out["error"] == "no_tenant"
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_mcp_apply_feedback_org_scoped(_clean: None) -> None:
+    from strata.db.engine import org_session_scope
+    from strata.mcp import context
+    from strata.mcp.feedback_tools import apply_feedback as mcp_apply
+
+    async with org_session_scope(_ORG_A) as session:
+        ev = await record_feedback(
+            session,
+            org_id=_ORG_A,
+            user_id=_USER_A,
+            kind=FeedbackKind.MISSING_DATA,
+            target_type=TargetType.QUERY,
+            body="no data for this market; adding it",
+            suggested_value=_sourced_primitive("fb-mcp-corrected"),
+        )
+        fid = ev.id
+
+    principal = Principal(org_id=_ORG_A, key_id="key_a", scopes=("*",))
+    token = context.current_principal.set(principal)
+    try:
+        out = await mcp_apply(None, feedback_id=fid)  # type: ignore[arg-type]
+        assert out["applied"] is True
+        assert out["feedback"]["status"] == "resolved"
+        assert out["primitive"]["slug"] == "fb-mcp-corrected"
+        assert out["primitive"]["source_tier"] == "regulator"
+    finally:
+        context.current_principal.reset(token)
+
+
+# --------------------------------------------------------------------------- #
+# Failed-query auto-capture must NOT fire on the LLM-unavailable branch.       #
+# --------------------------------------------------------------------------- #
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_llm_unavailable_does_not_autocapture(
+    client: AsyncClient, stub_clerk: None, _clean: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A fallback-parse failure (LLM backend unavailable) is infra/config, not a
+    market-data gap — it must NOT flood the triage queue with a failed_query row."""
+    import strata.api.routes.resolve as resolve_mod
+    from strata.resolver.events import PipelineStatus, ResolverResult
+
+    # Force a NOVEL miss so the route reaches the terminal branch, then stub the
+    # pipeline to return a fallback-parse failure (the LLM-unavailable shape).
+    monkeypatch.setattr(
+        resolve_mod, "_registry_first_slug", lambda *a, **k: _novel_resolved_query()
+    )
+
+    def _fake_run(*_a: Any, **_k: Any) -> ResolverResult:
+        return ResolverResult(
+            status=PipelineStatus.FAILED,
+            via="fallback",
+            error="fallback parse failed: RuntimeError",
+        )
+
+    monkeypatch.setattr(resolve_mod, "run", _fake_run)
+
+    r = await client.post(
+        "/resolve",
+        headers=_BEARER_A,
+        json={"query": "wholly unrelated zylophone market 2099"},
+    )
+    assert r.status_code == 200, r.text
+    assert "Dynamic resolution is unavailable" in r.text  # honest LLM-unavailable copy
+
+    from strata.db.engine import org_session_scope
+
+    async with org_session_scope(_ORG_A) as session:
+        rows = await list_feedback(session)
+    assert rows == [], "an LLM-unavailable failure must not auto-create a failed_query flag"
+
+
+def _novel_resolved_query() -> Any:
+    from strata.resolver.slug import ResolvedQuery, ResolverIntent
+
+    return ResolvedQuery(intent=ResolverIntent.NOVEL, confidence=0.0)

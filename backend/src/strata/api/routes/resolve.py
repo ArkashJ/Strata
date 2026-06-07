@@ -165,11 +165,12 @@ async def resolve_query(
                 parse_fn=parse_query,
                 search_fn=search_primitive,
             )
-        except Exception:
+        except Exception as exc:
             _log.exception("resolve pipeline failed")
             # A dead-end query becomes a triageable backlog item, not a black hole
             # (Phase F). Best-effort + org-scoped; never lets a flag-write break the
             # stream (an anonymous/public caller is silently dropped by the RLS fence).
+            # The reason is captured consistently with the terminal branch below.
             await record_feedback_safe(
                 org_id=principal.org_id,
                 user_id=principal.user_id,
@@ -178,6 +179,7 @@ async def resolve_query(
                 body="resolve pipeline raised an internal error",
                 query_text=body.query[:2048],
                 severity="error",
+                suggested_value={"reason": f"{exc.__class__.__name__}: {exc}"[:512]},
             )
             yield _sse("error", {"message": "An internal error occurred.", "step": "unknown"})
             yield _sse("done", {})
@@ -189,26 +191,32 @@ async def resolve_query(
             # (commonly no API key / exhausted credits), not a transient glitch —
             # say so honestly and point the user at the curated library, which
             # needs no LLM.
+            llm_unavailable = (result.error or "").startswith("fallback parse")
             message = (
                 "Dynamic resolution is unavailable — the AI backend returned an "
                 "error (commonly a missing/expired API key or exhausted credits). "
                 "Pick the nearest curated concept below, or retry once a backend "
                 "is configured."
-                if (result.error or "").startswith("fallback parse")
+                if llm_unavailable
                 else "Could not find enough market data for this query."
             )
-            # Capture the dead-end so the team can see what users asked for but
-            # the bank couldn't answer (Phase F — the data-gap backlog).
-            await record_feedback_safe(
-                org_id=principal.org_id,
-                user_id=principal.user_id,
-                kind=FeedbackKind.FAILED_QUERY,
-                target_type=TargetType.QUERY,
-                body=message,
-                query_text=body.query[:2048],
-                severity="warning",
-                suggested_value={"reason": result.error} if result.error else None,
-            )
+            # Capture the dead-end ONLY when it's a real market-data gap — a query
+            # the bank couldn't answer (Phase F backlog). An LLM-backend-unavailable
+            # / fallback-parse failure is an infra/config problem, not a missing
+            # number; flooding triage with it would bury the actual data gaps, so
+            # skip the auto-flag for that branch (the user still gets the honest
+            # message + curated-concept fallback above).
+            if not llm_unavailable:
+                await record_feedback_safe(
+                    org_id=principal.org_id,
+                    user_id=principal.user_id,
+                    kind=FeedbackKind.FAILED_QUERY,
+                    target_type=TargetType.QUERY,
+                    body=message,
+                    query_text=body.query[:2048],
+                    severity="warning",
+                    suggested_value={"reason": result.error} if result.error else None,
+                )
             yield _sse("error", {"message": message, "step": "search"})
             yield _sse("done", {})
             return

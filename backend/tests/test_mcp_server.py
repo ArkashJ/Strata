@@ -16,7 +16,8 @@ from strata.mcp.server import build_server, build_streamable_http_app
 
 # The 5 read-only tools (Wave 5A) + 3 write tools (portfolio P1) + 4 harness
 # tools (data-bank expansion: browse, what-if sizing, connector inventory + live)
-# + whoami (connection diagnostics) + 2 feedback tools (Phase F: submit/list flags).
+# + whoami (connection diagnostics) + 3 feedback tools (Phase F: submit/list flags
+# + apply a correction into the data layer).
 _EXPECTED_TOOLS = {
     "whoami",
     "search_concepts",
@@ -36,6 +37,7 @@ _EXPECTED_TOOLS = {
     "get_report",
     "submit_feedback",
     "list_feedback",
+    "apply_feedback",
 }
 
 

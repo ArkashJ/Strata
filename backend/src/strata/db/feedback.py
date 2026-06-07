@@ -20,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from strata.db.models import FeedbackEventRow
+from strata.db.user_primitives import UserPrimitive, create_user_primitive
 from strata.models.feedback import (
     FeedbackEvent,
     FeedbackKind,
@@ -28,6 +29,19 @@ from strata.models.feedback import (
 )
 
 _log = logging.getLogger(__name__)
+
+# The flag kinds that propose a corrected/new number an accepted resolution can
+# turn into an org-private primitive. A bad-assumption / general / failed-query
+# flag is triage commentary only — it never produces a primitive (E1, Q20).
+_APPLICABLE_KINDS: frozenset[FeedbackKind] = frozenset(
+    {FeedbackKind.PRIMITIVE_CORRECTION, FeedbackKind.MISSING_DATA}
+)
+
+
+class FeedbackNotApplicableError(ValueError):
+    """The flag cannot be turned into a primitive: it is already resolved, has no
+    correction payload, or its kind is commentary-only (not a correction)."""
+
 
 # The anonymous tenant sentinel (mirrors ``api.auth._ANONYMOUS_ORG`` and the
 # audit writer). The closed RLS policy rejects a NULL/anon-org row by design, so
@@ -154,3 +168,65 @@ async def update_feedback(
         row.resolution = resolution
     await session.flush()
     return FeedbackEvent.model_validate(row)
+
+
+async def apply_feedback_correction(
+    session: AsyncSession,
+    feedback_id: int,
+    *,
+    org_id: str,
+    created_by: str | None = None,
+    primitive_payload: dict[str, Any] | None = None,
+) -> tuple[FeedbackEvent, UserPrimitive]:
+    """Close the loop: turn an accepted ``primitive_correction`` / ``missing_data``
+    flag into an org-private primitive, then mark the flag resolved and link the
+    new row's id.
+
+    The correction is taken from ``primitive_payload`` (an explicit override) or,
+    failing that, the row's own ``suggested_value`` — whichever is present is run
+    through the SAME validator + MODELED fence that backs ``POST /me/primitives``
+    (``create_user_primitive`` → ``_validate_and_fence``): visibility/org_id are
+    forced, and a modeled / analyst-tier number is refused (``ModeledFenceError``)
+    so a soft-data estimate can never enter the bank as sourced (Q20). The flag is
+    still commentary (E1) — applying it does not mutate any existing sourced
+    number; it CREATES a new org-private one the team chose to accept.
+
+    Both writes share one already-org-scoped session so the RLS policies on
+    ``feedback_events`` and ``user_primitives`` isolate the tenant, and the commit
+    is atomic (the caller owns ``org_session_scope``). Raises
+    ``FeedbackNotApplicableError`` when the flag can't be applied (unknown/invisible
+    row, already-resolved, wrong kind, or no correction payload); the primitive
+    fences raise their own ``ValueError`` subclasses, which the caller maps to 422.
+    """
+    row = (
+        await session.execute(select(FeedbackEventRow).where(FeedbackEventRow.id == feedback_id))
+    ).scalar_one_or_none()
+    if row is None:
+        raise FeedbackNotApplicableError(f"no feedback {feedback_id} visible to this org")
+    if row.status == FeedbackStatus.RESOLVED.value:
+        raise FeedbackNotApplicableError(f"feedback {feedback_id} is already resolved")
+    if FeedbackKind(row.kind) not in _APPLICABLE_KINDS:
+        raise FeedbackNotApplicableError(
+            f"feedback kind {row.kind!r} is commentary only; only "
+            f"primitive_correction / missing_data can apply a correction"
+        )
+
+    payload = primitive_payload if primitive_payload else row.suggested_value
+    if not payload:
+        raise FeedbackNotApplicableError(
+            f"feedback {feedback_id} has no correction payload to apply "
+            "(pass primitive_payload or set suggested_value)"
+        )
+
+    # The fence lives here — a modeled-tier correction raises ModeledFenceError and
+    # the whole apply rolls back (no primitive, flag stays open).
+    prim = await create_user_primitive(
+        session, org_id=org_id, created_by=created_by, payload=payload
+    )
+
+    row.status = FeedbackStatus.RESOLVED.value
+    row.resolved_primitive_id = prim.id
+    if not row.resolution:
+        row.resolution = f"applied correction → org-private primitive {prim.slug!r} (id={prim.id})"
+    await session.flush()
+    return FeedbackEvent.model_validate(row), prim

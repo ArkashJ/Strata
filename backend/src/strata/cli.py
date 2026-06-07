@@ -1037,5 +1037,155 @@ def promote(
         typer.echo(f"  (with {len(report.warnings)} warning(s) — review with `strata validate`)")
 
 
+# --------------------------------------------------------------------------- #
+# Feedback loop (Phase F) — flag → triage → apply the fix into the data layer. #
+# --------------------------------------------------------------------------- #
+
+feedback_app = typer.Typer(
+    name="feedback",
+    help="Flag bad assumptions / failed queries / corrections; triage and apply them.",
+    no_args_is_help=True,
+)
+app.add_typer(feedback_app)
+
+# Org scope is required: feedback_events is RLS-scoped, so every CLI verb runs
+# inside org_session_scope(org) exactly like the HTTP routes. Operator passes the
+# tenant explicitly (the CLI has no Clerk session to derive it from).
+_FB_ORG_OPT = typer.Option(..., "--org", help="Org id to scope the operation to (RLS tenant).")
+_FB_KIND_OPT = typer.Option(
+    "general",
+    "--kind",
+    help="bad_assumption | failed_query | primitive_correction | missing_data | general.",
+)
+_FB_TARGET_OPT = typer.Option(
+    "query", "--target", help="tam | primitive | concept | framework | query | report."
+)
+_FB_BODY_OPT = typer.Option(..., "--body", help="What's wrong / what you observed.")
+_FB_TARGET_ID_OPT = typer.Option(None, "--target-id", help="The flagged target (hash or slug).")
+_FB_STATUS_OPT = typer.Option(None, "--status", help="Filter by status (open/triaged/...).")
+_FB_APPLY_OPT = typer.Option(
+    False, "--apply", help="Also apply the correction (create an org-private primitive)."
+)
+_FB_RESOLUTION_OPT = typer.Option(None, "--resolution", help="Resolution note when resolving.")
+_FB_ID_ARG = typer.Argument(..., help="Feedback row id.")
+
+
+@feedback_app.command("submit")
+def feedback_submit(
+    org: str = _FB_ORG_OPT,
+    body: str = _FB_BODY_OPT,
+    kind: str = _FB_KIND_OPT,
+    target: str = _FB_TARGET_OPT,
+    target_id: str | None = _FB_TARGET_ID_OPT,
+) -> None:
+    """Flag a bad assumption / failed query / correction (org-scoped, RLS)."""
+    import asyncio
+
+    from strata.db.engine import org_session_scope
+    from strata.db.feedback import record_feedback
+    from strata.models.feedback import FeedbackKind, TargetType
+
+    async def _run() -> int:
+        async with org_session_scope(org) as session:
+            event = await record_feedback(
+                session,
+                org_id=org,
+                user_id=None,
+                kind=FeedbackKind(kind),
+                target_type=TargetType(target),
+                body=body,
+                target_id=target_id,
+            )
+            return event.id
+
+    try:
+        fid = asyncio.run(_run())
+    except ValueError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        typer.echo(f"ERROR writing feedback: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"✓ Flag {fid} submitted ({kind} on {target}).")
+
+
+@feedback_app.command("list")
+def feedback_list(org: str = _FB_ORG_OPT, status: str | None = _FB_STATUS_OPT) -> None:
+    """List the org's flags newest-first, optionally filtered by status."""
+    import asyncio
+
+    from strata.db.engine import org_session_scope
+    from strata.db.feedback import list_feedback
+    from strata.models.feedback import FeedbackEvent, FeedbackStatus
+
+    status_filter = FeedbackStatus(status) if status else None
+
+    async def _run() -> list[FeedbackEvent]:
+        async with org_session_scope(org) as session:
+            return await list_feedback(session, status=status_filter, limit=100)
+
+    try:
+        rows = asyncio.run(_run())
+    except ValueError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        typer.echo(f"ERROR listing feedback: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    if not rows:
+        typer.echo("No feedback for this org.")
+        return
+    for r in rows:
+        tgt = f"{r.target_type.value}:{r.target_id}" if r.target_id else r.target_type.value
+        typer.echo(f"  #{r.id:<5} [{r.status.value:<8}] {r.kind.value:<22} {tgt}  — {r.body[:60]}")
+
+
+@feedback_app.command("resolve")
+def feedback_resolve(
+    feedback_id: int = _FB_ID_ARG,
+    org: str = _FB_ORG_OPT,
+    apply_correction: bool = _FB_APPLY_OPT,
+    resolution: str | None = _FB_RESOLUTION_OPT,
+) -> None:
+    """Resolve a flag. With ``--apply`` the correction is written into the data
+    layer (creates an org-private primitive from the flag's suggested_value through
+    the same MODELED fence as the HTTP/MCP paths); otherwise it just marks the row
+    resolved."""
+    import asyncio
+
+    from strata.db.engine import org_session_scope
+    from strata.db.feedback import (
+        FeedbackNotApplicableError,
+        apply_feedback_correction,
+        update_feedback,
+    )
+    from strata.db.user_primitives import ModeledFenceError
+    from strata.models.feedback import FeedbackStatus
+
+    async def _run() -> str:
+        async with org_session_scope(org) as session:
+            if apply_correction:
+                _event, prim = await apply_feedback_correction(
+                    session, feedback_id, org_id=org, primitive_payload=None
+                )
+                return f"applied → org-private primitive {prim.slug!r} (id={prim.id})"
+            updated = await update_feedback(
+                session, feedback_id, status=FeedbackStatus.RESOLVED, resolution=resolution
+            )
+            if updated is None:
+                raise FeedbackNotApplicableError(f"no feedback {feedback_id} visible to this org")
+            return "resolved"
+
+    try:
+        outcome = asyncio.run(_run())
+    except (FeedbackNotApplicableError, ModeledFenceError, ValueError) as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        typer.echo(f"ERROR resolving feedback: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"✓ Flag {feedback_id} {outcome}.")
+
+
 if __name__ == "__main__":
     app()

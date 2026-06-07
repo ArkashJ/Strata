@@ -276,3 +276,29 @@ LIST_FEEDBACK: dict[str, Any] = {
     },
     "additionalProperties": False,
 }
+
+APPLY_FEEDBACK: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "feedback_id": {
+            "type": "integer",
+            "description": ("The primitive_correction / missing_data flag to accept and apply."),
+        },
+        "primitive_payload": {
+            "type": "object",
+            "description": (
+                "The AtomicPrimitive to create from the correction. Omit to apply "
+                "the flag's own stored suggested_value. visibility/org_id are forced "
+                "server-side; a modeled / analyst-tier number is rejected (Q20)."
+            ),
+            "properties": {
+                "slug": {"type": "string", "description": "Stable kebab-case id."},
+                "value": {"type": "number"},
+                "unit": {"type": "object", "description": "Structured unit."},
+                "source": {"type": "object", "description": "Citation: url, tier, snapshot."},
+            },
+        },
+    },
+    "required": ["feedback_id"],
+    "additionalProperties": False,
+}
