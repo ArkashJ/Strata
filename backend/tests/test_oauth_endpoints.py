@@ -180,6 +180,34 @@ async def test_authorize_redirects_to_consent_when_valid(
 
 @_needs_pg
 @pytest.mark.asyncio
+@pytest.mark.parametrize("sent_resource", ["https://api.example.test/mcp", _RES])
+async def test_authorize_resource_is_trailing_slash_tolerant(
+    _configured: None, client: AsyncClient, sent_resource: str
+) -> None:
+    # claude.ai / ChatGPT canonicalize the pasted connector URL and may send the
+    # RFC 8707 resource indicator WITHOUT the trailing slash even though we
+    # advertise it WITH one (_RES). Both denote the same mounted /mcp resource,
+    # so authorize must accept either — the bug that produced
+    # "resource must match the MCP resource URL" 400 in the live connect.
+    client_id = await _register(client)
+    _, challenge = _pkce()
+    r = await client.get(
+        "/oauth/authorize",
+        params={
+            "response_type": "code",
+            "client_id": client_id,
+            "redirect_uri": _CB,
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
+            "resource": sent_resource,
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 302
+
+
+@_needs_pg
+@pytest.mark.asyncio
 async def test_authorize_rejects_unregistered_redirect_uri(
     _configured: None, client: AsyncClient
 ) -> None:
@@ -220,7 +248,20 @@ async def test_authorize_rejects_missing_pkce(_configured: None, client: AsyncCl
 
 @_needs_pg
 @pytest.mark.asyncio
-async def test_authorize_rejects_wrong_resource(_configured: None, client: AsyncClient) -> None:
+@pytest.mark.parametrize(
+    "wrong_resource",
+    [
+        "https://wrong.test/mcp/",  # different host
+        "https://api.example.test/other",  # same host, different path
+        "https://api.example.test/mcp/extra",  # superpath of the real resource
+    ],
+)
+async def test_authorize_rejects_wrong_resource(
+    _configured: None, client: AsyncClient, wrong_resource: str
+) -> None:
+    # The slash-tolerant audience check (rstrip("/")) must NOT over-normalize:
+    # a genuinely different host or path is still rejected. This pins the RFC 8707
+    # binding so a future looser comparison can't silently widen the audience.
     client_id = await _register(client)
     _, challenge = _pkce()
     r = await client.get(
@@ -231,7 +272,7 @@ async def test_authorize_rejects_wrong_resource(_configured: None, client: Async
             "redirect_uri": _CB,
             "code_challenge": challenge,
             "code_challenge_method": "S256",
-            "resource": "https://wrong.test/mcp/",
+            "resource": wrong_resource,
         },
         follow_redirects=False,
     )

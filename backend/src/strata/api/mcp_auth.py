@@ -102,7 +102,11 @@ async def _ensure_key_loaded(headers: dict[str, str]) -> None:
         # for a different resource must never authenticate here. A miss (revoked,
         # expired, or wrong-audience) EVICTS any stale entry so revocation in the
         # DB propagates to this process within the cache TTL.
-        if row is not None and row.resource == settings.mcp_resource_url:
+        if (
+            row is not None
+            and settings.mcp_resource_url is not None
+            and row.resource.rstrip("/") == settings.mcp_resource_url.rstrip("/")
+        ):
             scopes = tuple(s for s in (row.scope or "*").split(",") if s) or ("*",)
             register_oauth_token(
                 row.token_hash,

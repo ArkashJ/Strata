@@ -116,7 +116,12 @@ async def _validate_authorize(
         raise HTTPException(status_code=400, detail="redirect_uri not allowed")
     if not code_challenge or (code_challenge_method or "").upper() != "S256":
         raise HTTPException(status_code=400, detail="PKCE S256 code_challenge required")
-    if not resource or resource != mcp_resource:
+    # RFC 8707 audience check, trailing-slash tolerant: claude.ai / ChatGPT
+    # canonicalize the pasted connector URL and may send the resource indicator
+    # with or without a trailing slash regardless of how we advertise it. The
+    # mounted transport lives at ``/mcp`` and ``/mcp/`` (one 307s to the other),
+    # so both denote the same resource — compare them as equal.
+    if not resource or resource.rstrip("/") != mcp_resource.rstrip("/"):
         raise HTTPException(status_code=400, detail="resource must match the MCP resource URL")
 
 
