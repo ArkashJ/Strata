@@ -311,13 +311,19 @@ def resolve_market(reg: Registry, *, query: str) -> dict[str, Any]:
     return {"matched": True, "via": "concept", **_serialize_tam(reg, slug)}
 
 
-def get_report_for_tam(reg: Registry, *, state_hash: str) -> dict[str, Any]:
+async def get_report_for_tam(reg: Registry, *, state_hash: str) -> dict[str, Any]:
     """Assemble the report bound to a previously built/sized TAM (GAP-1). Resolves
-    the TAM from the registry cache (a prior size_tam/build_tam call remembered it)
-    and reports its exact numbers — no re-evaluation."""
+    the TAM from the registry cache (a prior size_tam/build_tam call remembered it),
+    falling back to the durable Postgres store so a shared permalink keeps resolving
+    under stateless HTTP / multi-worker / cache eviction (mirrors GET /tam/{hash}/report)."""
+    from ..db.tams import get_tam_from_db_safe
     from ..report import assemble_premium_report_for_tam, assemble_report_for_tam
 
     tam = reg.tam_outputs.get(state_hash)
+    if tam is None:
+        tam = await get_tam_from_db_safe(state_hash)
+        if tam is not None:
+            reg.remember_tam(tam)
     if tam is None:
         raise ToolError(
             f"no TAM with state_hash {state_hash!r} in this session; size it first",
@@ -635,7 +641,8 @@ def _h_verify_market_claim(reg: Registry, args: dict[str, Any]) -> CallToolResul
     return tool_result(out, links=links, next_actions=next_actions)
 
 
-def _h_get_report_for_tam(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+def _h_get_report_for_tam(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    # Async: it may fall back to the durable Postgres store (server._call_tool awaits).
     return get_report_for_tam(reg, state_hash=args["state_hash"])
 
 

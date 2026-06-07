@@ -133,6 +133,31 @@ def _limitations(tam: TAMOutput | None) -> tuple[str, ...]:
     return tuple(out)
 
 
+def _scope_summary(tam: TAMOutput | None) -> str:
+    """Whether the sourced inputs actually cover the declared market (snap-to-truth).
+
+    A clean scope is a credibility signal; a divergence is *why* methods disagree —
+    surfaced, not hidden. Reads the attached ScopeReport defensively (it is optional)."""
+    if tam is None:
+        return "Market is unsizable from the curated bank, so its scope is undefined here."
+    scope = getattr(tam, "scope", None)
+    if scope is None:
+        return (
+            "This concept does not declare a structured market scope (vertical / persona / "
+            "segment / geo) yet — the figures are not scope-checked against a declared market."
+        )
+    if getattr(scope, "ok", False):
+        return (
+            "The sourced primitives' actual scope matches the declared market across every "
+            "checked dimension — no narrowing or broadening that would misrepresent the size."
+        )
+    return (
+        "Some sourced inputs are narrower or broader than the declared market (see the scope "
+        "check). The displayed scope snaps to the primitives' truth, and the divergence is the "
+        "leading explanation for any disagreement between methods — surfaced, not hidden."
+    )
+
+
 def build_premium_report(tam: TAMOutput | None, base: MarketReport) -> PremiumReport:
     """Group the fenced answers into the premium section skeleton + render
     token-fenced prose from the TAM's own figures."""
@@ -145,7 +170,10 @@ def build_premium_report(tam: TAMOutput | None, base: MarketReport) -> PremiumRe
     families = tuple(m.value for m in tam.method_families_used) if tam is not None else ()
     independence = tam.independence_score if tam is not None else 0.0
     limitations = _limitations(tam)
-    has_modeled = bool(limitations) and tam is not None
+    # The "inputs are modeled" caveat must reflect MODELED INPUTS specifically —
+    # not any limitation. A scope warning is a limitation but not a modeled input,
+    # so gate the caveat on the TAM's own modeled/synthetic flags (review #128).
+    has_modeled = tam is not None and (tam.uses_modeled_composites or tam.uses_synthetic_primitives)
 
     sections: list[ReportSection] = []
     # Executive summary leads (answer-first pyramid).
@@ -163,6 +191,16 @@ def build_premium_report(tam: TAMOutput | None, base: MarketReport) -> PremiumRe
                 has_modeled=has_modeled,
             ),
             chart="kpi_strip",
+        )
+    )
+    # Market definition & scope leads the evidence — a premium report names what
+    # is in/out of market before sizing it (the #1 thing a drifting definition breaks).
+    sections.append(
+        ReportSection(
+            key="market_definition_scope",
+            title="Market definition & scope",
+            summary=_scope_summary(tam),
+            is_gap=tam is None or getattr(tam, "scope", None) is None,
         )
     )
     for key, title, cats in _SECTION_CATEGORIES:

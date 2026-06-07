@@ -8,6 +8,8 @@ no LLM, no DB.
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 
 from strata.evaluator import size_concept
@@ -105,14 +107,17 @@ def test_assemble_report_for_tam_binds_to_tam(reg) -> None:
 def test_get_report_for_tam_resolves_cached_hash(reg) -> None:
     res = _h_size_tam(reg, {"concept_slug": _CONCEPT})
     state_hash = res.structuredContent["state_hash"]
-    report = get_report_for_tam(reg, state_hash=state_hash)
+    # get_report_for_tam is async (it may fall back to the durable store); drive it.
+    report = asyncio.run(get_report_for_tam(reg, state_hash=state_hash))
     assert report["concept_slug"] == _CONCEPT
     assert report["answers"]
+    # The premium $1M view is bound to the same TAM.
+    assert report["premium"]["state_hash"] == state_hash
 
 
 def test_get_report_for_tam_unknown_hash_raises(reg) -> None:
     with pytest.raises(ToolError):
-        get_report_for_tam(reg, state_hash="0" * 64)
+        asyncio.run(get_report_for_tam(reg, state_hash="0" * 64))
 
 
 # --- P4: verify_market_claim verdicts --------------------------------------
