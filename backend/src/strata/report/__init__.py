@@ -10,6 +10,6 @@ narrative, or an honest gap. An unsourced number is structurally impossible.
 
 from __future__ import annotations
 
-from .assembler import assemble_report
+from .assembler import assemble_report, assemble_report_for_tam
 
-__all__ = ["assemble_report"]
+__all__ = ["assemble_report", "assemble_report_for_tam"]

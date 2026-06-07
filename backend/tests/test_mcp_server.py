@@ -34,6 +34,8 @@ _EXPECTED_TOOLS = {
     "save_primitive",
     "list_my_primitives",
     "get_report",
+    "get_report_for_tam",
+    "verify_market_claim",
 }
 
 
@@ -66,8 +68,12 @@ async def test_unknown_tool_returns_error_not_crash() -> None:
     server = build_server()
     async with create_connected_server_and_client_session(server) as client:
         result = await client.call_tool("get_primitive", {"slug": "no-such-primitive"})
+        assert result.isError
         text = result.content[0].text  # type: ignore[union-attr]
-        assert "not found" in json.loads(text)["error"]
+        # Error payload is now the structured taxonomy envelope (code + message).
+        err = json.loads(text)["error"]
+        assert err["code"] == "PRIMITIVE_NOT_FOUND"
+        assert "not found" in err["message"]
 
 
 def test_streamable_http_app_builds() -> None:

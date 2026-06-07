@@ -13,17 +13,31 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from mcp.types import CallToolResult
+
 from ..evaluator import size_concept
 from ..evaluator.engine import EvalOverrides, EvaluatorError, OverrideValue
 from ..models import AtomicPrimitive
+from ..models.tam_output import TAMOutput
 from ..registry import Registry, RegistryError
 from ..resolver.match import match_concept
 from . import schemas
+from .charts import build_all_charts
 
-
-class ToolError(RuntimeError):
-    """A tool was called with bad arguments or an unknown slug."""
-
+# ToolError now lives in errors.py with a code taxonomy; imported here so the many
+# ``from .tools import ToolError`` / ``raise ToolError(...)`` sites are unchanged
+# (the positional message constructor stays backward-compatible).
+from .errors import (
+    CODE_CONCEPT_NOT_FOUND,
+    CODE_EVALUATOR_ERROR,
+    CODE_INVALID_INPUT,
+    CODE_LIVE_DISABLED,
+    CODE_NO_MATCH,
+    CODE_PRIMITIVE_NOT_FOUND,
+    ToolError,
+)
+from .integrity import primitive_integrity
+from .result import tool_result
 
 # Internal/synthetic host marker used by community-modeled primitives. These are
 # honest estimates, not externally-citable measurements — so the MCP surface
@@ -39,7 +53,11 @@ def _clean_url(url: str) -> str | None:
 
 def _cite(p: AtomicPrimitive) -> dict[str, Any]:
     """The sourced-number contract: value + unit + citation (hash always pinned;
-    source_url is None for modeled numbers that have no external citation)."""
+    source_url is None for modeled numbers that have no external citation).
+
+    Carries an MCP ``resource_uri`` (``strata://primitive/<slug>``) so the number
+    is one click from its full record, and a serve-time ``integrity`` status so a
+    tampered / placeholder pin never silently backs a number (Phase 1/2)."""
     return {
         "slug": p.slug,
         "name": p.name,
@@ -49,7 +67,14 @@ def _cite(p: AtomicPrimitive) -> dict[str, Any]:
         "source_url": _clean_url(p.source.url),
         "source_tier": p.source.tier.value,
         "snapshot_sha256": p.source.snapshot_sha256,
+        "integrity": primitive_integrity(p),
+        "resource_uri": f"strata://primitive/{p.slug}",
     }
+
+
+# Public alias so other modules (resources.py) can build the same sourced-number
+# citation without reaching into a private name.
+cite_primitive = _cite
 
 
 def _paginated(
@@ -57,9 +82,16 @@ def _paginated(
 ) -> dict[str, Any]:
     """Uniform pagination envelope (mcp-builder): the page under ``key`` plus
     ``total`` / ``count`` / ``offset`` / ``has_more`` / ``next_offset`` so an
-    agent can walk a large result set without loading it all at once."""
+    agent can walk a large result set without loading it all at once.
+
+    Also emits an opaque ``cursor`` (the next page's offset, base64-encoded) so a
+    cursor-style client can page without knowing it is offset-backed; ``offset``
+    stays for offset-style clients (A6)."""
+    import base64
+
     next_offset = offset + len(items)
     has_more = next_offset < total
+    cursor = base64.urlsafe_b64encode(str(next_offset).encode()).decode() if has_more else None
     return {
         **extra,
         "total": total,
@@ -67,6 +99,7 @@ def _paginated(
         "offset": offset,
         "has_more": has_more,
         "next_offset": next_offset if has_more else None,
+        "cursor": cursor,
         key: items,
     }
 
@@ -110,7 +143,11 @@ def get_primitive(reg: Registry, *, slug: str) -> dict[str, Any]:
     try:
         p = reg.get_atomic(slug)
     except RegistryError as exc:
-        raise ToolError(f"primitive {slug!r} not found") from exc
+        raise ToolError(
+            f"primitive {slug!r} not found",
+            code=CODE_PRIMITIVE_NOT_FOUND,
+            remediation="list_primitives to find a valid slug",
+        ) from exc
     return {"primitive": {**_cite(p), "description": p.description}}
 
 
@@ -136,10 +173,10 @@ def list_frameworks(reg: Registry) -> dict[str, Any]:
     return {"count": len(frameworks), "frameworks": frameworks}
 
 
-def _serialize_tam(
-    reg: Registry, concept_slug: str, overrides: EvalOverrides | None = None
-) -> dict[str, Any]:
-    tam = size_concept(reg, concept_slug, overrides=overrides)
+def _serialize_tam_output(reg: Registry, tam: TAMOutput) -> dict[str, Any]:
+    """Serialize an already-computed TAM (no sizing). The result carries the
+    chart specs + the resource_uri for the permalink so an agent can drill down
+    or render a chart without a second call."""
     scenarios = [
         {
             "framework": s.framework,
@@ -172,8 +209,64 @@ def _serialize_tam(
         "estimate_kind": "triangulated" if len(tam.method_families_used) >= 2 else "single_method",
         "method_families": [m.value for m in tam.method_families_used],
         "independence_score": tam.independence_score,
+        "convergence": (tam.convergence.model_dump(mode="json") if tam.convergence else None),
         "scenarios": scenarios,
+        "charts": build_all_charts(tam),
+        "permalink": f"/tam/{tam.state_hash}",
     }
+
+
+def _serialize_tam(
+    reg: Registry, concept_slug: str, overrides: EvalOverrides | None = None
+) -> dict[str, Any]:
+    tam = size_concept(reg, concept_slug, overrides=overrides)
+    # Cache the computed TAM so get_report_for_tam(<hash>) / /tam/<hash> resolve
+    # the exact tree this call produced (incl. what-if overrides) without a DB
+    # round-trip — the report can then bind to the steered numbers (GAP-1).
+    reg.remember_tam(tam)
+    return _serialize_tam_output(reg, tam)
+
+
+def _tam_resource_links(reg: Registry, tam_dict: dict[str, Any]) -> list[dict[str, Any]]:
+    """Drill-down links for a TAM result: the TAM + report resources, the web
+    permalink + forwardable report, and each unique sourced input primitive."""
+    state_hash = str(tam_dict.get("state_hash", ""))
+    concept = str(tam_dict.get("concept", ""))
+    links: list[dict[str, Any]] = [
+        {"uri": f"strata://tam/{state_hash}", "name": "tam", "description": "the frozen TAM"},
+        {"uri": f"strata://report/{concept}", "name": "report", "description": "market report"},
+        {"uri": f"/tam/{state_hash}", "name": "permalink", "mimeType": "text/html"},
+        {"uri": f"/tam/{state_hash}/report", "name": "report_pdf", "mimeType": "text/html"},
+    ]
+    seen: set[str] = set()
+    for sc in tam_dict.get("scenarios", []):
+        for inp in sc.get("inputs", []):
+            slug = str(inp.get("primitive", ""))
+            if slug and slug not in seen and slug in reg.atomic:
+                seen.add(slug)
+                links.append({"uri": f"strata://primitive/{slug}", "name": slug})
+                links.append(
+                    {"uri": f"/p/{slug}", "name": f"{slug} (web)", "mimeType": "text/html"}
+                )
+    return links
+
+
+def _tam_next_actions(tam_dict: dict[str, Any]) -> list[dict[str, Any]]:
+    """Affordances the agent can chain off a TAM result."""
+    state_hash = str(tam_dict.get("state_hash", ""))
+    concept = str(tam_dict.get("concept", ""))
+    return [
+        {
+            "tool": "get_report_for_tam",
+            "description": "Assemble the full sourced report bound to this exact TAM.",
+            "arguments": {"state_hash": state_hash},
+        },
+        {
+            "tool": "build_tam",
+            "description": "Challenge an assumption with a what-if override.",
+            "arguments": {"concept_slug": concept},
+        },
+    ]
 
 
 def size_tam(
@@ -183,13 +276,21 @@ def size_tam(
     if slug is None and query is not None:
         slug = match_concept(reg, query)
     if slug is None:
-        raise ToolError("provide a known concept_slug or a query that matches one")
+        raise ToolError(
+            "provide a known concept_slug or a query that matches one",
+            code=CODE_NO_MATCH,
+            remediation="search_concepts to find a matching slug",
+        )
     if slug not in reg.concepts:
-        raise ToolError(f"concept {slug!r} not found")
+        raise ToolError(
+            f"concept {slug!r} not found",
+            code=CODE_CONCEPT_NOT_FOUND,
+            remediation="search_concepts to find a matching slug",
+        )
     try:
         return _serialize_tam(reg, slug)
     except EvaluatorError as exc:
-        raise ToolError(str(exc)) from exc
+        raise ToolError(str(exc), code=CODE_EVALUATOR_ERROR) from exc
 
 
 def resolve_market(reg: Registry, *, query: str) -> dict[str, Any]:
@@ -208,6 +309,105 @@ def resolve_market(reg: Registry, *, query: str) -> dict[str, Any]:
             ),
         }
     return {"matched": True, "via": "concept", **_serialize_tam(reg, slug)}
+
+
+def get_report_for_tam(reg: Registry, *, state_hash: str) -> dict[str, Any]:
+    """Assemble the report bound to a previously built/sized TAM (GAP-1). Resolves
+    the TAM from the registry cache (a prior size_tam/build_tam call remembered it)
+    and reports its exact numbers — no re-evaluation."""
+    from ..report import assemble_report_for_tam
+
+    tam = reg.tam_outputs.get(state_hash)
+    if tam is None:
+        raise ToolError(
+            f"no TAM with state_hash {state_hash!r} in this session; size it first",
+            code=CODE_NO_MATCH,
+            remediation="call size_tam or build_tam, then pass the returned state_hash",
+        )
+    return assemble_report_for_tam(reg, tam).model_dump(mode="json")
+
+
+def _claim_verdict(asserted_value: float | None, low: float, high: float) -> tuple[str, float]:
+    """Verdict + spread for an asserted figure vs the sourced range.
+
+    supported: inside [low, high]; partially_supported: within 2× of an endpoint;
+    unsupported: further out. With no asserted value we report the range only
+    (verdict 'range_only'). Pure comparison of sourced numbers — nothing invented.
+    """
+    spread = (high / low) if low > 0 else 0.0
+    if asserted_value is None:
+        return "range_only", spread
+    if low <= asserted_value <= high:
+        return "supported", spread
+    nearest = low if asserted_value < low else high
+    ratio = (asserted_value / nearest) if nearest > 0 else float("inf")
+    off_by = max(ratio, 1.0 / ratio) if ratio > 0 else float("inf")
+    return ("partially_supported" if off_by <= 2.0 else "unsupported"), spread
+
+
+def verify_market_claim(
+    reg: Registry,
+    *,
+    claim: str,
+    asserted_value: float | None = None,
+    asserted_unit: str | None = None,
+    as_of: str | None = None,
+) -> dict[str, Any]:
+    """The thesis tool: verify an AI-generated market claim against sourced data.
+
+    Matches the claim to a curated concept (LLM-free), sizes it, and renders a
+    verdict from the sourced scenario range + convergence. An unknown claim is
+    ``unverifiable`` with an honest gap — a number is NEVER synthesized (Q20)."""
+    slug = match_concept(reg, claim)
+    if slug is None or slug not in reg.concepts:
+        return {
+            "verdict": "unverifiable",
+            "claim": claim,
+            "asserted": _asserted(asserted_value, asserted_unit, as_of),
+            "strata_range": None,
+            "message": (
+                "No curated, sourced concept matches this claim, so Strata cannot "
+                "verify it. This is an honest gap — no number is synthesized."
+            ),
+        }
+    try:
+        tam_dict = _serialize_tam(reg, slug)
+    except EvaluatorError as exc:
+        raise ToolError(str(exc), code=CODE_EVALUATOR_ERROR) from exc
+
+    values = [float(s["value"]) for s in tam_dict["scenarios"]]
+    low, high = min(values), max(values)
+    mid = (low + high) / 2.0
+    verdict, spread = _claim_verdict(asserted_value, low, high)
+    inputs = [
+        {
+            "primitive": inp["primitive"],
+            "value": inp["value"],
+            "snapshot_sha256": inp["snapshot_sha256"],
+        }
+        for sc in tam_dict["scenarios"]
+        for inp in sc["inputs"]
+    ]
+    return {
+        "verdict": verdict,
+        "claim": claim,
+        "concept": slug,
+        "asserted": _asserted(asserted_value, asserted_unit, as_of),
+        "strata_range": {"low": low, "mid": mid, "high": high},
+        "spread_x": spread,
+        "method_families": tam_dict["method_families"],
+        "independence_score": tam_dict["independence_score"],
+        "convergence": tam_dict.get("convergence"),
+        "inputs": inputs,
+        "state_hash": tam_dict["state_hash"],
+        "charts": tam_dict.get("charts", {}),
+    }
+
+
+def _asserted(value: float | None, unit: str | None, as_of: str | None) -> dict[str, Any] | None:
+    if value is None and unit is None and as_of is None:
+        return None
+    return {"value": value, "unit": unit, "as_of": as_of}
 
 
 def list_primitives(
@@ -246,14 +446,22 @@ def build_tam(
     primitive's value, or re-point a framework input) — not just read the frozen
     TAM. What-if values are NEVER persisted (the result carries a banner)."""
     if concept_slug not in reg.concepts:
-        raise ToolError(f"concept {concept_slug!r} not found")
+        raise ToolError(
+            f"concept {concept_slug!r} not found",
+            code=CODE_CONCEPT_NOT_FOUND,
+            remediation="search_concepts to find a matching slug",
+        )
     # A what-if value keeps the unit of the primitive it replaces, so the
     # framework input signature still validates (the unit is looked up, not
     # supplied by the caller).
     po: dict[str, OverrideValue] = {}
     for slug, val in (primitive_overrides or {}).items():
         if slug not in reg.atomic:
-            raise ToolError(f"override target primitive {slug!r} not found")
+            raise ToolError(
+                f"override target primitive {slug!r} not found",
+                code=CODE_PRIMITIVE_NOT_FOUND,
+                remediation="list_primitives to find a valid override target",
+            )
         po[slug] = OverrideValue(value=float(val), unit=reg.atomic[slug].unit)
     overrides = EvalOverrides(
         primitive_overrides=po,
@@ -262,7 +470,7 @@ def build_tam(
     try:
         return _serialize_tam(reg, concept_slug, overrides)
     except EvaluatorError as exc:
-        raise ToolError(str(exc)) from exc
+        raise ToolError(str(exc), code=CODE_EVALUATOR_ERROR) from exc
 
 
 def list_connectors(reg: Registry, *, tier: str | None = None) -> dict[str, Any]:
@@ -298,14 +506,20 @@ def get_connector_data(
         raise ToolError(
             "live connector calls are disabled; set STRATA_MCP_LIVE_CONNECTORS=1 to enable "
             "get_connector_data (the read-only tools — search_concepts/list_primitives/"
-            "size_tam — need no network)."
+            "size_tam — need no network).",
+            code=CODE_LIVE_DISABLED,
+            remediation="set STRATA_MCP_LIVE_CONNECTORS=1 on the server to enable live fetches",
         )
     from ..connectors._dispatch import call_and_convert
 
     try:
         primitive = call_and_convert(connector, method, dict(args))
     except Exception as exc:
-        raise ToolError(f"connector call failed: {type(exc).__name__}: {exc}") from exc
+        raise ToolError(
+            f"connector call failed: {type(exc).__name__}: {exc}",
+            code=CODE_EVALUATOR_ERROR,
+            retriable=True,
+        ) from exc
     return {"connector": connector, "method": method, "primitive": primitive}
 
 
@@ -342,10 +556,21 @@ def whoami(reg: Registry) -> dict[str, Any]:
     }
 
 
-# A handler returns a result dict directly, OR a coroutine that resolves to one
-# (the DB-backed write/read tools). ``server._call_tool`` awaits the coroutine on
-# the app's event loop — the same loop the async engine is bound to.
-_Handler = Callable[[Registry, dict[str, Any]], "dict[str, Any] | Awaitable[dict[str, Any]]"]
+# A handler returns a plain dict, a fully-built CallToolResult (the result-aware
+# tools that attach resource_links / next_actions / charts), OR a coroutine
+# resolving to a dict (the DB-backed write/read tools). ``server._call_tool``
+# awaits the coroutine on the app's event loop and wraps a dict via tool_result.
+_HandlerReturn = dict[str, Any] | CallToolResult | Awaitable[dict[str, Any]]
+_Handler = Callable[[Registry, dict[str, Any]], _HandlerReturn]
+
+
+def _tam_result(reg: Registry, tam_dict: dict[str, Any]) -> CallToolResult:
+    """Wrap a TAM-shaped dict with its drill-down links + chainable next_actions."""
+    return tool_result(
+        tam_dict,
+        links=_tam_resource_links(reg, tam_dict),
+        next_actions=_tam_next_actions(tam_dict),
+    )
 
 
 def _h_whoami(reg: Registry, _args: dict[str, Any]) -> dict[str, Any]:
@@ -361,20 +586,53 @@ def _h_search(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def _h_get_primitive(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
-    return get_primitive(reg, slug=args["slug"])
+def _h_get_primitive(reg: Registry, args: dict[str, Any]) -> CallToolResult:
+    out = get_primitive(reg, slug=args["slug"])
+    slug = str(args["slug"])
+    return tool_result(
+        out,
+        links=[
+            {"uri": f"strata://primitive/{slug}", "name": slug},
+            {"uri": f"/p/{slug}", "name": f"{slug} (web)", "mimeType": "text/html"},
+        ],
+    )
 
 
 def _h_list_frameworks(reg: Registry, _args: dict[str, Any]) -> dict[str, Any]:
     return list_frameworks(reg)
 
 
-def _h_size_tam(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
-    return size_tam(reg, concept_slug=args.get("concept_slug"), query=args.get("query"))
+def _h_size_tam(reg: Registry, args: dict[str, Any]) -> CallToolResult:
+    return _tam_result(
+        reg, size_tam(reg, concept_slug=args.get("concept_slug"), query=args.get("query"))
+    )
 
 
-def _h_resolve_market(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
-    return resolve_market(reg, query=args["query"])
+def _h_resolve_market(reg: Registry, args: dict[str, Any]) -> CallToolResult:
+    out = resolve_market(reg, query=args["query"])
+    if out.get("matched"):
+        return _tam_result(reg, out)
+    return tool_result(out)
+
+
+def _h_verify_market_claim(reg: Registry, args: dict[str, Any]) -> CallToolResult:
+    out = verify_market_claim(
+        reg,
+        claim=args["claim"],
+        asserted_value=args.get("asserted_value"),
+        asserted_unit=args.get("asserted_unit"),
+        as_of=args.get("as_of"),
+    )
+    links: list[dict[str, Any]] = []
+    next_actions: list[dict[str, Any]] = []
+    if out.get("strata_range") is not None and out.get("state_hash"):
+        links = _tam_resource_links(reg, {**out, "scenarios": []})
+        next_actions = _tam_next_actions(out)
+    return tool_result(out, links=links, next_actions=next_actions)
+
+
+def _h_get_report_for_tam(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    return get_report_for_tam(reg, state_hash=args["state_hash"])
 
 
 def _h_list_primitives(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
@@ -388,12 +646,15 @@ def _h_list_primitives(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def _h_build_tam(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
-    return build_tam(
+def _h_build_tam(reg: Registry, args: dict[str, Any]) -> CallToolResult:
+    return _tam_result(
         reg,
-        concept_slug=args["concept_slug"],
-        primitive_overrides=args.get("primitive_overrides"),
-        framework_assumptions=args.get("framework_assumptions"),
+        build_tam(
+            reg,
+            concept_slug=args["concept_slug"],
+            primitive_overrides=args.get("primitive_overrides"),
+            framework_assumptions=args.get("framework_assumptions"),
+        ),
     )
 
 
@@ -593,14 +854,37 @@ TOOLS: dict[str, dict[str, Any]] = {
         "handler": _h_get_report,
         "annotations": _READ,
     },
+    "get_report_for_tam": {
+        "description": (
+            "[READ] Assemble the full sourced market report BOUND to a specific TAM "
+            "(by state_hash from size_tam/build_tam) — so the report's numbers match "
+            "the exact (possibly what-if) TAM you steered, not a fresh re-size."
+        ),
+        "inputSchema": schemas.GET_REPORT_FOR_TAM,
+        "handler": _h_get_report_for_tam,
+        "annotations": _READ,
+    },
+    "verify_market_claim": {
+        "description": (
+            "[READ] Verify an AI-generated market claim against Strata's sourced data: "
+            "returns a verdict (supported / partially_supported / unsupported / "
+            "unverifiable), the sourced range + spread, method families, and cited "
+            "inputs. An unknown claim is unverifiable — never a synthesized number (Q20)."
+        ),
+        "inputSchema": schemas.VERIFY_MARKET_CLAIM,
+        "handler": _h_verify_market_claim,
+        "annotations": _READ,
+    },
 }
 
 
 def call_tool(
     reg: Registry, name: str, arguments: dict[str, Any]
-) -> dict[str, Any] | Awaitable[dict[str, Any]]:
+) -> dict[str, Any] | CallToolResult | Awaitable[dict[str, Any]]:
     spec = TOOLS.get(name)
     if spec is None:
-        raise ToolError(f"unknown tool {name!r}")
+        raise ToolError(
+            f"unknown tool {name!r}", code=CODE_INVALID_INPUT, remediation="check the tool name"
+        )
     handler: _Handler = spec["handler"]
     return handler(reg, arguments or {})

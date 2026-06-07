@@ -20,9 +20,10 @@ from __future__ import annotations
 import argparse
 import asyncio
 import contextlib
+import hashlib
 import inspect
-import json
 import sys
+import time
 from collections.abc import AsyncGenerator, Callable
 from pathlib import Path
 from typing import Any
@@ -33,25 +34,50 @@ from mcp.server import Server
 from ..config import settings
 from ..loader import load_data_dir
 from ..registry import Registry
-from .tools import TOOLS, ToolError, call_tool
+from . import schemas
+from .errors import ToolError
+from .prompts import register_prompts
+from .resources import register_resources
+from .result import tool_result
+from .tools import TOOLS, call_tool
 
 _SERVER_NAME = "strata"
 
+# A boot-frozen registry made saved primitives / fresh ingest invisible (#97/#98).
+# Cache the on-disk YAML load with a short TTL so a long-lived stdio process picks
+# up data changes without a restart, while a tight loop of calls still shares one
+# load. The HTTP transport prefers the API's shared app.state.registry (app.py),
+# so this TTL only governs the stdio / fallback path.
+_REGISTRY_TTL_SECONDS = 30.0
 _registry_cache: Registry | None = None
+_registry_loaded_at: float = 0.0
 
 
-def load_registry() -> Registry:
-    """Build a read-only registry. Cached per process (the MCP surface never
-    mutates it, so one load is safe)."""
-    global _registry_cache
-    if _registry_cache is not None:
-        return _registry_cache
+def _data_root() -> Path:
     root = Path(settings.data_dir)
     if not root.is_absolute():
         # Mirror api.deps: backend/src/strata/mcp/server.py -> parents[4] == repo root.
         root = Path(__file__).resolve().parents[4] / root
-    _registry_cache = Registry.from_loaded(load_data_dir(root))
+    return root
+
+
+def load_registry() -> Registry:
+    """Build a read-only registry from on-disk YAML, cached with a short TTL so a
+    saved primitive / fresh ingest becomes visible without a process restart."""
+    global _registry_cache, _registry_loaded_at
+    now = time.monotonic()
+    if _registry_cache is not None and (now - _registry_loaded_at) < _REGISTRY_TTL_SECONDS:
+        return _registry_cache
+    _registry_cache = Registry.from_loaded(load_data_dir(_data_root()))
+    _registry_loaded_at = now
     return _registry_cache
+
+
+def invalidate_registry_cache() -> None:
+    """Force the next ``load_registry`` to re-read from disk (e.g. after a write)."""
+    global _registry_cache, _registry_loaded_at
+    _registry_cache = None
+    _registry_loaded_at = 0.0
 
 
 def build_server(get_registry: Callable[[], Registry] = load_registry) -> Server:
@@ -67,6 +93,7 @@ def build_server(get_registry: Callable[[], Registry] = load_registry) -> Server
                 name=name,
                 description=spec["description"],
                 inputSchema=spec["inputSchema"],
+                outputSchema=schemas.OUTPUT_SCHEMAS.get(name),
                 annotations=(
                     types.ToolAnnotations(**spec["annotations"])
                     if spec.get("annotations")
@@ -79,8 +106,9 @@ def build_server(get_registry: Callable[[], Registry] = load_registry) -> Server
     @server.call_tool()
     async def _call_tool(  # pyright: ignore[reportUnusedFunction]
         name: str, arguments: dict[str, Any]
-    ) -> list[types.TextContent]:
+    ) -> types.CallToolResult:
         reg = get_registry()
+        status = "ok"
         try:
             result = call_tool(reg, name, arguments)
             # Write/read DB tools return a coroutine — await it on this loop (the
@@ -88,10 +116,48 @@ def build_server(get_registry: Callable[[], Registry] = load_registry) -> Server
             if inspect.isawaitable(result):
                 result = await result
         except ToolError as exc:
-            result = {"error": str(exc)}
-        return [types.TextContent(type="text", text=json.dumps(result, default=str))]
+            status = "error"
+            out = tool_result(exc.to_payload(), is_error=True)
+        else:
+            # A handler may return a fully-built CallToolResult (the result-aware
+            # tools) or a plain dict (wrap it). A dict carrying a top-level
+            # "error" is an in-band failure → mark the result isError.
+            if isinstance(result, types.CallToolResult):
+                out = result
+                if out.isError:
+                    status = "error"
+            else:
+                dict_result: dict[str, Any] = result
+                is_err = "error" in dict_result
+                status = "error" if is_err else "ok"
+                out = tool_result(dict_result, is_error=is_err)
+        await _audit_call(name, arguments, status)
+        return out
 
+    register_resources(server, get_registry)
+    register_prompts(server)
     return server
+
+
+async def _audit_call(name: str, arguments: dict[str, Any], status: str) -> None:
+    """Best-effort per-call audit (Phase 2 / A4). Args are hashed, never stored
+    verbatim, so the trail records WHAT ran without leaking inputs. Never raises
+    into the call path — an audit failure must not break the tool."""
+    try:
+        from ..db.audit import record_audit_safe
+        from .context import current_org_id, current_principal
+
+        principal = current_principal.get()
+        args_hash = hashlib.sha256(repr(sorted(arguments.items())).encode()).hexdigest()[:16]
+        await record_audit_safe(
+            actor=(principal.key_id if principal is not None else None),
+            action=f"mcp.{name}",
+            target=str(arguments.get("concept_slug") or arguments.get("slug") or "") or None,
+            meta={"status": status, "args_hash": args_hash},
+            org_id=current_org_id(),
+        )
+    except Exception:  # audit is best-effort; never break the tool call
+        pass
 
 
 async def run_stdio() -> None:
