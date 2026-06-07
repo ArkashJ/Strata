@@ -315,7 +315,7 @@ def get_report_for_tam(reg: Registry, *, state_hash: str) -> dict[str, Any]:
     """Assemble the report bound to a previously built/sized TAM (GAP-1). Resolves
     the TAM from the registry cache (a prior size_tam/build_tam call remembered it)
     and reports its exact numbers — no re-evaluation."""
-    from ..report import assemble_report_for_tam
+    from ..report import assemble_premium_report_for_tam, assemble_report_for_tam
 
     tam = reg.tam_outputs.get(state_hash)
     if tam is None:
@@ -324,7 +324,11 @@ def get_report_for_tam(reg: Registry, *, state_hash: str) -> dict[str, Any]:
             code=CODE_NO_MATCH,
             remediation="call size_tam or build_tam, then pass the returned state_hash",
         )
-    return assemble_report_for_tam(reg, tam).model_dump(mode="json")
+    # The flat answer rows (back-compat) plus the premium $1M section view that an
+    # agent forwards as a deliverable — both bound to THIS tam, no re-evaluation.
+    report = assemble_report_for_tam(reg, tam).model_dump(mode="json")
+    report["premium"] = assemble_premium_report_for_tam(reg, tam).model_dump(mode="json")
+    return report
 
 
 def _claim_verdict(asserted_value: float | None, low: float, high: float) -> tuple[str, float]:

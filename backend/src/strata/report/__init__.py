@@ -11,5 +11,18 @@ narrative, or an honest gap. An unsourced number is structurally impossible.
 from __future__ import annotations
 
 from .assembler import assemble_report, assemble_report_for_tam
+from .sections import (
+    PremiumReport,
+    ReportSection,
+    assemble_premium_report_for_tam,
+    build_premium_report,
+)
 
-__all__ = ["assemble_report", "assemble_report_for_tam"]
+__all__ = [
+    "PremiumReport",
+    "ReportSection",
+    "assemble_premium_report_for_tam",
+    "assemble_report",
+    "assemble_report_for_tam",
+    "build_premium_report",
+]

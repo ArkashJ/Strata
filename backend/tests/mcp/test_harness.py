@@ -24,7 +24,11 @@ from strata.mcp.tools import (
     get_report_for_tam,
     verify_market_claim,
 )
-from strata.report import assemble_report, assemble_report_for_tam
+from strata.report import (
+    assemble_premium_report_for_tam,
+    assemble_report,
+    assemble_report_for_tam,
+)
 
 _CONCEPT = "doc-gen-pc-insurance"
 
@@ -203,3 +207,38 @@ def test_chart_builders_return_valid_specs(reg) -> None:
         assert all_charts[kind]["format"] == "mermaid"
         assert all_charts[kind]["spec"]["diagram"].startswith("graph")
     assert charts.build_chart(tam, "no-such-kind") is None
+
+
+# --- P4: premium report anatomy --------------------------------------------
+
+
+def test_premium_report_sections_and_sources(reg) -> None:
+    tam = size_concept(reg, _CONCEPT)
+    pr = assemble_premium_report_for_tam(reg, tam)
+    # Editorial headline + a defensible range bound to THIS tam.
+    assert pr.concept_slug == _CONCEPT
+    assert pr.state_hash == tam.state_hash
+    assert pr.range_mid is not None
+    # The $1M skeleton always leads with an executive summary.
+    keys = [s.key for s in pr.sections]
+    assert keys[0] == "executive_summary"
+    assert "triangulation" in keys
+    assert "sources_appendix" not in keys  # sources live in pr.sources, not a section
+    # Sources appendix is deduped by primitive; limitations are honest, not empty filler.
+    slugs = [p.primitive_slug for p in pr.sources]
+    assert len(slugs) == len(set(slugs)), "sources appendix must dedup by primitive"
+    # A section with no sourced answers is flagged a gap, never fabricated.
+    for s in pr.sections:
+        if s.is_gap:
+            assert all(a.status == "gap" for a in s.answers)
+
+
+def test_premium_report_unsizable_is_honest(reg) -> None:
+    # build_premium_report with no TAM degrades to gaps, never invented figures.
+    from strata.report import assemble_report, build_premium_report
+
+    base = assemble_report(reg, _CONCEPT)
+    pr = build_premium_report(None, base)
+    assert pr.range_mid is None
+    assert "unsizable" in pr.headline.lower()
+    assert pr.limitations  # the unsizable caveat is surfaced

@@ -16,7 +16,12 @@ from strata.api.responses import error
 from strata.db.tams import get_tam_from_db_safe
 from strata.models import ConceptQuestionReport, QuestionCategory
 from strata.registry import Registry, RegistryError
-from strata.report import assemble_report, assemble_report_for_tam
+from strata.report import (
+    PremiumReport,
+    assemble_premium_report_for_tam,
+    assemble_report,
+    assemble_report_for_tam,
+)
 
 router = APIRouter(prefix="/report", tags=["report"])
 
@@ -102,5 +107,35 @@ async def get_report_for_tam(
         raise HTTPException(404, f"tam {state_hash!r} not found")
     try:
         return assemble_report_for_tam(reg, tam)
+    except RegistryError as exc:
+        raise HTTPException(404, f"concept for tam {state_hash!r} not found") from exc
+
+
+@tam_report_router.get(
+    "/tam/{state_hash}/premium",
+    response_model=PremiumReport,
+    summary="The premium ($1M-grade) report view, bound to a specific TAM",
+    description=(
+        "The forwardable consulting-grade view of the same TAM: editorial "
+        "headline, defensible range, the MBB/CDD section skeleton (executive "
+        "summary, triangulation, segmentation, competitive landscape, growth "
+        "drivers, sources appendix, limitations). Structure only — every figure "
+        "still comes off a sourced primitive or a reproducible derivation (Q20)."
+    ),
+    responses=error(404, "TAM not found."),
+)
+async def get_premium_report_for_tam(
+    state_hash: str,
+    reg: Registry = _REG,
+) -> PremiumReport:
+    tam = reg.tam_outputs.get(state_hash)
+    if tam is None:
+        tam = await get_tam_from_db_safe(state_hash)
+        if tam is not None:
+            reg.remember_tam(tam)
+    if tam is None:
+        raise HTTPException(404, f"tam {state_hash!r} not found")
+    try:
+        return assemble_premium_report_for_tam(reg, tam)
     except RegistryError as exc:
         raise HTTPException(404, f"concept for tam {state_hash!r} not found") from exc
