@@ -26,6 +26,102 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         (web button · MCP tool · auto-capture)                                 (team improves the tool)
   ```
 
+### Added — professional HTML/PDF report engine + a CLI an analyst drives (backend)
+
+- **The harness now builds the entire professional report and exports it as a
+  forwardable file.** A new engine turns a sized TAM into a self-contained,
+  Altimeter-grade HTML deck (bold headline, KPI strip, the full $1M section
+  skeleton, a source footnote on every chart, sources appendix, limitations) and
+  a PDF. Charts are drawn server-side as inline SVG — no browser, no extra
+  software — so the deck is one file an analyst can email. Optional firm branding
+  (firm name, prepared-by, logo, brand color, disclaimer) renders in the header
+  and footer.
+- **One-call export over the MCP** — the new `export_report` tool returns the
+  structured report + the HTML deck (+ the PDF as base64 when the PDF library is
+  available) + chart specs + citations + suggested next steps in a single call,
+  bound to the exact TAM you steered. PDF is graceful: if the system can't render
+  one, it returns the HTML with an honest note instead of failing.
+- **A CLI for analysts** — `strata report <concept-or-hash> --premium [--pdf]
+  [--out FILE] [--brand-name … --brand-color … --logo … --prepared-by …]` writes
+  the deck to a file or stdout; `strata verify "<claim>" [--value N]` prints the
+  verdict, the sourced range, and the cited sources.
+
+```
+size a TAM ─▶ export_report / strata report --premium ─▶ HTML deck ─▶ --pdf ─▶ PDF
+             (structured + charts + citations + next steps, all sourced)
+```
+
+- **Faster, honest matching** — the registry concept matcher now uses the
+  Rust-backed `rapidfuzz` library instead of the pure-Python one; the matching
+  rules and thresholds are unchanged (every existing match test still passes).
+- **Richer connector catalog** — `list_connectors` now lists each method's
+  arguments, return shape, an example call, source tier, and reliability flags —
+  everything an agent needs to pull a fresh sourced number.
+
+### Added — the MCP is now a report-building harness an AI agent drives (backend)
+
+- **An agent connected to Strata can now build a sourced, defensible market
+  report back-and-forth, not just read one number.** Each tool result is typed,
+  carries one-click drill-down links to the source behind every figure, and
+  suggests the next step the agent can take (drill down, challenge an assumption,
+  assemble the report). Old text-only clients still work.
+- **Verify an AI-generated market claim** — the new `verify_market_claim` tool
+  takes a claim ("the X market is $Y by 2027") and returns a verdict
+  (supported / partially supported / unsupported / unverifiable) against Strata's
+  sourced range, with the named, dated, hash-pinned inputs behind it. A claim
+  Strata has no sourced data for comes back **unverifiable** — it never makes a
+  number up.
+- **The report now matches the exact number on screen.** Previously the report
+  re-sized the market from scratch, so a "what-if" you steered could disagree
+  with the report. `get_report_for_tam(<hash>)` (and `GET /tam/<hash>/report`)
+  now bind the report to that exact TAM — overrides included.
+- **Browse the data as resources.** An agent can list and read Strata records by
+  address (`strata://primitive/…`, `concept/…`, `framework/…`, `tam/…`,
+  `report/…`, `chart/…`) — e.g. `@`-mention a primitive in Claude Code.
+- **Charts the agent's app can render** — every sizing result now carries
+  chart specs (Vega-Lite + Mermaid) built only from the sourced numbers.
+- **Guided workflows** — `strata.size / verify / report / portfolio` prompts
+  script the loop so the agent follows the analyst's method, not guesswork.
+- **Trust hardening** — every figure shows a snapshot integrity status; one
+  shared fence now guards both the website and the agent write paths so a
+  modeled estimate can't slip in through either; every agent call is audited.
+
+  ```
+  ask ─▶ size_tam / verify_market_claim ─▶ sourced TAM (+ links, charts)
+       ─▶ challenge (what-if) ─▶ new /tam/<hash>
+       ─▶ get_report_for_tam(<hash>) ─▶ report bound to that exact number
+  ```
+
+### Added — market reports now look like a $1M consulting deck
+
+- **The report at `/tam/<hash>/report` is now a Coatue/Gartner-grade
+  presentation, not a plain one-pager.** It opens with a bold editorial headline
+  stating the takeaway, an executive figure strip (the triangulated TAM, the
+  range, how many independent methods agree, and an independence score), the
+  top-down-vs-bottoms-up cross-check, a ranked comparison of every method, a
+  "how the number builds" factor bridge coloured by source quality, the
+  sensitivity view (which assumption to defend first), and a sources appendix
+  where every figure is named, dated, tiered, and snapshot-pinned.
+- **Honest by design.** Sections with no sourced data (a competitive set or an
+  adoption curve we haven't sourced yet) say so plainly instead of inventing a
+  number. A market with only one method shown is labelled as such — no fake
+  second method.
+- **Look and feel.** Numbers use tabular Geist Mono; charts carry a title, a
+  unit, and a source footnote; light and dark both supported; motion respects a
+  reader's reduced-motion setting; no gradients or glassmorphism. The colour rule
+  is consistent: warm tier colours always mean source quality, cool colours
+  always mean method — they never cross.
+- The new building blocks are reusable across the app and were built in
+  Storybook (the auth-free design loop) before wiring into the page. The classic
+  print-first one-pager is unchanged and is still what "Save as PDF" produces.
+
+```
+TAM (sized, sourced) ─▶ /tam/<hash>/report
+  headline ─▶ figure strip ─▶ cross-check ─▶ method comparison
+           ─▶ how-it-builds ─▶ sensitivity ─▶ sources appendix
+  (any section with no data → an honest "not sourced yet" note)
+```
+
 ### Added — connect Strata to claude.ai and ChatGPT in one click (OAuth)
 
 - **The hosted Strata connector now works in the claude.ai and ChatGPT websites,
