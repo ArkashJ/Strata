@@ -2,6 +2,14 @@
 
 from __future__ import annotations
 
-from .fence import ModeledFenceError, validate_and_fence_primitive
+from .fence import (
+    ModeledFenceError,
+    validate_and_fence_primitive,
+    validate_and_fence_shared_primitive,
+)
 
-__all__ = ["ModeledFenceError", "validate_and_fence_primitive"]
+__all__ = [
+    "ModeledFenceError",
+    "validate_and_fence_primitive",
+    "validate_and_fence_shared_primitive",
+]

@@ -67,6 +67,20 @@ def hash_key(raw: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
+def _admin_orgs() -> frozenset[str]:
+    """The set of org ids granted cross-tenant admin (from ``STRATA_ADMIN_ORGS``)."""
+    return frozenset(o.strip() for o in settings.admin_orgs.split(",") if o.strip())
+
+
+def is_admin(principal: Principal | None) -> bool:
+    """True iff the principal's org is on the admin allowlist. An anonymous or
+    unknown principal is never admin. Drives the cross-org feedback tools — the
+    bypass is opt-in per org, audited, and additive to the closed tenant RLS."""
+    if principal is None or principal.is_anonymous or principal.org_id == _ANONYMOUS_ORG:
+        return False
+    return principal.org_id in _admin_orgs()
+
+
 def _parse_key_store(raw_pairs: str) -> dict[str, Principal]:
     """``rawkey:org_id`` pairs → {sha256(rawkey): Principal}."""
     store: dict[str, Principal] = {}

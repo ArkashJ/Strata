@@ -7,6 +7,7 @@ import base64
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import typer
 from dotenv import load_dotenv
@@ -1369,6 +1370,131 @@ def feedback_resolve(
         typer.echo(f"ERROR resolving feedback: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     typer.echo(f"✓ Flag {feedback_id} {outcome}.")
+
+
+admin_app = typer.Typer(
+    name="admin",
+    help="Cross-org governance: read every tenant's feedback, promote a correction "
+    "into the shared bank. Local-trust (operator has repo access).",
+    no_args_is_help=True,
+)
+app.add_typer(admin_app)
+
+# The CLI is local-trust, so it sets the admin GUC directly (the STRATA_ADMIN_ORGS
+# allowlist gates the *network* MCP path). app.org_id is set to a stable sentinel
+# inside admin_session_scope; the cross-org reads key on app.is_admin, not the org.
+_ADMIN_ORG = "cli-admin"
+_ADMIN_STATUS_OPT = typer.Option(None, "--status", help="Filter by status (open/triaged/...).")
+_ADMIN_KIND_OPT = typer.Option(None, "--kind", help="Filter by flag kind.")
+_ADMIN_FILTER_ORG_OPT = typer.Option(None, "--org", help="Narrow to a single tenant's queue.")
+_ADMIN_PROMOTE_ORG_OPT = typer.Option(
+    None, "--org", help="The originating org of the flag (for the audit note)."
+)
+_ADMIN_VALIDATE_ONLY_OPT = typer.Option(
+    False, "--validate-only", help="Validate + print the shared YAML but don't write/resolve."
+)
+_ADMIN_ID_ARG = typer.Argument(..., help="Feedback row id to promote.")
+
+
+@admin_app.command("feedback")
+def admin_feedback(
+    status: str | None = _ADMIN_STATUS_OPT,
+    kind: str | None = _ADMIN_KIND_OPT,
+    org: str | None = _ADMIN_FILTER_ORG_OPT,
+) -> None:
+    """List feedback across EVERY org's queue (newest-first), with org attribution."""
+    import asyncio
+
+    from strata.db.engine import admin_session_scope
+    from strata.db.feedback import admin_list_feedback
+    from strata.models.feedback import FeedbackEvent, FeedbackKind, FeedbackStatus
+
+    status_filter = FeedbackStatus(status) if status else None
+    kind_filter = FeedbackKind(kind) if kind else None
+
+    async def _run() -> list[FeedbackEvent]:
+        async with admin_session_scope(_ADMIN_ORG) as session:
+            return await admin_list_feedback(
+                session, status=status_filter, kind=kind_filter, org_id=org, limit=200
+            )
+
+    try:
+        rows = asyncio.run(_run())
+    except ValueError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        typer.echo(f"ERROR listing feedback: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    if not rows:
+        typer.echo("No feedback across any org.")
+        return
+    for r in rows:
+        tgt = f"{r.target_type.value}:{r.target_id}" if r.target_id else r.target_type.value
+        typer.echo(
+            f"  #{r.id:<5} [{r.status.value:<8}] {r.org_id:<28} {r.kind.value:<22} "
+            f"{tgt}  — {r.body[:50]}"
+        )
+
+
+@admin_app.command("promote")
+def admin_promote(
+    feedback_id: int = _ADMIN_ID_ARG,
+    org: str | None = _ADMIN_PROMOTE_ORG_OPT,
+    data_dir: Path = _DATA_DIR_OPT,
+    validate_only: bool = _ADMIN_VALIDATE_ONLY_OPT,
+) -> None:
+    """Promote an org-private correction into the SHARED bank: re-validate through
+    the shared-bank fence (a modeled / analyst-tier number is refused — Q20), write
+    ``data/primitives/<slug>.yaml``, and mark the flag resolved cross-org."""
+    import asyncio
+
+    import yaml
+
+    from strata.db.engine import admin_session_scope
+    from strata.db.feedback import admin_correction_payload, admin_get_feedback_row
+    from strata.guards.fence import ModeledFenceError, validate_and_fence_shared_primitive
+    from strata.models.feedback import FeedbackStatus
+
+    async def _run() -> dict[str, Any]:
+        async with admin_session_scope(_ADMIN_ORG) as session:
+            row = await admin_get_feedback_row(session, feedback_id)
+            if row is None:
+                raise ValueError(f"no feedback {feedback_id}")
+            payload = await admin_correction_payload(session, row)
+            if payload is None:
+                raise ValueError(
+                    f"feedback {feedback_id} has no correction to promote "
+                    "(no applied primitive and no suggested_value)"
+                )
+            shared = validate_and_fence_shared_primitive(payload)
+            if not validate_only:
+                row.status = FeedbackStatus.RESOLVED.value
+                note = f"promoted to shared bank → data/primitives/{shared['slug']}.yaml"
+                row.resolution = f"{row.resolution} · {note}" if row.resolution else note
+                await session.flush()
+            return shared
+
+    try:
+        shared = asyncio.run(_run())
+    except (ModeledFenceError, ValueError) as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        typer.echo(f"ERROR promoting correction: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    slug = str(shared["slug"])
+    if validate_only:
+        typer.echo(f"✓ Validated (not written). Shared YAML for {slug!r}:\n")
+        typer.echo(yaml.safe_dump(shared, sort_keys=False))
+        return
+    dest = data_dir / "primitives" / f"{slug}.yaml"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(yaml.safe_dump(shared, sort_keys=False), encoding="utf-8")
+    origin = f" (from {org})" if org else ""
+    typer.echo(f"✓ Promoted flag {feedback_id}{origin} → {dest}")
+    typer.echo("  Validate + seed: `strata validate` then `strata db seed`.")
 
 
 if __name__ == "__main__":

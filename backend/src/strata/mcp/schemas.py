@@ -276,6 +276,45 @@ LIST_FEEDBACK: dict[str, Any] = {
     },
     "additionalProperties": False,
 }
+ADMIN_LIST_FEEDBACK: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "status": {
+            "type": "string",
+            "enum": ["open", "triaged", "resolved", "wontfix"],
+            "description": "Filter by triage status.",
+        },
+        "kind": {
+            "type": "string",
+            "enum": [
+                "bad_assumption",
+                "failed_query",
+                "primitive_correction",
+                "missing_data",
+                "general",
+            ],
+            "description": "Filter by flag kind.",
+        },
+        "org_id": {"type": "string", "description": "Narrow to a single tenant's queue."},
+        "limit": {"type": "integer", "description": "Max rows (1-500, default 100)."},
+    },
+    "additionalProperties": False,
+}
+ADMIN_PROMOTE_CORRECTION: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "feedback_id": {
+            "type": "integer",
+            "description": (
+                "The correction flag to promote into the shared bank. Uses the "
+                "org-private primitive it created (resolved_primitive_id) or its "
+                "suggested_value; re-validated + fenced (Q20)."
+            ),
+        },
+    },
+    "required": ["feedback_id"],
+    "additionalProperties": False,
+}
 
 APPLY_FEEDBACK: dict[str, Any] = {
     "type": "object",

@@ -893,6 +893,24 @@ def _h_list_my_primitives(reg: Registry, _args: dict[str, Any]) -> Awaitable[dic
     return list_my_primitives(reg)
 
 
+def _h_admin_list_feedback(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    from .admin_tools import admin_list_feedback
+
+    return admin_list_feedback(
+        reg,
+        status=args.get("status"),
+        kind=args.get("kind"),
+        org_id=args.get("org_id"),
+        limit=int(args.get("limit", 100)),
+    )
+
+
+def _h_admin_promote_correction(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    from .admin_tools import admin_promote_correction
+
+    return admin_promote_correction(reg, feedback_id=int(args["feedback_id"]))
+
+
 # Tool annotations (mcp-builder): hints a client uses to label a tool. All Strata
 # tools that touch the data bank are read-only; the two portfolio tools write to
 # the caller's org store (non-destructive); connector + size_company touch the
@@ -1097,6 +1115,29 @@ TOOLS: dict[str, dict[str, Any]] = {
         "inputSchema": schemas.VERIFY_MARKET_CLAIM,
         "handler": _h_verify_market_claim,
         "annotations": _READ,
+    },
+    "admin_list_feedback": {
+        "description": (
+            "[READ · ADMIN] List feedback across EVERY org's queue (newest-first). "
+            "Restricted to orgs on STRATA_ADMIN_ORGS. Filter by status/kind/org_id. "
+            "Each row carries its originating org_id. The owner's cross-tenant view "
+            "of what users are flagging across all accounts."
+        ),
+        "inputSchema": schemas.ADMIN_LIST_FEEDBACK,
+        "handler": _h_admin_list_feedback,
+        "annotations": _READ,
+    },
+    "admin_promote_correction": {
+        "description": (
+            "[WRITE · ADMIN] Promote one org-private correction (by feedback_id) into "
+            "the SHARED bank everyone reads: re-validates through the shared-bank fence "
+            "(a modeled / analyst-tier number is rejected — Q20), resolves the flag, and "
+            "RETURNS the committable data/primitives/<slug>.yaml. Does not write disk "
+            "server-side; run `strata admin promote` in a checkout to commit it."
+        ),
+        "inputSchema": schemas.ADMIN_PROMOTE_CORRECTION,
+        "handler": _h_admin_promote_correction,
+        "annotations": _WRITE,
     },
 }
 
