@@ -24,6 +24,7 @@ from strata.api.auth import Principal
 from strata.api.clerk_auth import ClerkClaims
 from strata.config import settings
 from strata.db.feedback import (
+    FeedbackNotApplicableError,
     apply_feedback_correction,
     list_feedback,
     record_feedback,
@@ -452,6 +453,45 @@ async def test_apply_correction_rejects_modeled_tier(_clean: None) -> None:
         assert rows[0].status is FeedbackStatus.OPEN
         assert rows[0].resolved_primitive_id is None
         assert await list_user_primitives(session, org_id=_ORG_A) == []
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_apply_correction_duplicate_slug_is_not_applicable(_clean: None) -> None:
+    """A correction whose slug already exists in the org bank trips the (org_id, slug)
+    unique constraint — translated to FeedbackNotApplicableError (a 422), not a raw 500."""
+    from strata.db.engine import org_session_scope
+
+    # First correction lands a primitive with the slug.
+    async with org_session_scope(_ORG_A) as session:
+        ev1 = await record_feedback(
+            session,
+            org_id=_ORG_A,
+            user_id=_USER_A,
+            kind=FeedbackKind.PRIMITIVE_CORRECTION,
+            target_type=TargetType.PRIMITIVE,
+            body="first correction",
+            suggested_value=_sourced_primitive("fb-dup-slug"),
+        )
+        fid1 = ev1.id
+    async with org_session_scope(_ORG_A) as session:
+        await apply_feedback_correction(session, fid1, org_id=_ORG_A)
+
+    # A second correction reusing the same slug must be rejected cleanly.
+    async with org_session_scope(_ORG_A) as session:
+        ev2 = await record_feedback(
+            session,
+            org_id=_ORG_A,
+            user_id=_USER_A,
+            kind=FeedbackKind.PRIMITIVE_CORRECTION,
+            target_type=TargetType.PRIMITIVE,
+            body="colliding correction",
+            suggested_value=_sourced_primitive("fb-dup-slug"),
+        )
+        fid2 = ev2.id
+    async with org_session_scope(_ORG_A) as session:
+        with pytest.raises(FeedbackNotApplicableError):
+            await apply_feedback_correction(session, fid2, org_id=_ORG_A)
 
 
 @_PG

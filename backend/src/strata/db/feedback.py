@@ -17,6 +17,7 @@ import logging
 from typing import Any
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from strata.db.models import FeedbackEventRow
@@ -219,10 +220,19 @@ async def apply_feedback_correction(
         )
 
     # The fence lives here — a modeled-tier correction raises ModeledFenceError and
-    # the whole apply rolls back (no primitive, flag stays open).
-    prim = await create_user_primitive(
-        session, org_id=org_id, created_by=created_by, payload=payload
-    )
+    # the whole apply rolls back (no primitive, flag stays open). A correction whose
+    # slug already exists in the org bank trips the (org_id, slug) unique constraint
+    # at flush; translate that to an applicable-error (422) instead of a raw 500.
+    slug = str(payload.get("slug", "")) if isinstance(payload, dict) else ""
+    try:
+        prim = await create_user_primitive(
+            session, org_id=org_id, created_by=created_by, payload=payload
+        )
+    except IntegrityError as exc:
+        raise FeedbackNotApplicableError(
+            f"a primitive with slug {slug!r} already exists in this org's bank; "
+            "edit that primitive or use a distinct slug for the correction"
+        ) from exc
 
     row.status = FeedbackStatus.RESOLVED.value
     row.resolved_primitive_id = prim.id
