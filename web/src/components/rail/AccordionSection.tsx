@@ -28,6 +28,8 @@ export function AccordionSection({
 }: AccordionSectionProps) {
   const [open, setOpen] = useState(defaultOpen);
   const expanded = pinned || open;
+  // Stable id so the toggle's aria-controls can point at the content region.
+  const panelId = `rail-${title.replace(/\s+/g, "-").toLowerCase()}`;
 
   return (
     <section
@@ -48,6 +50,7 @@ export function AccordionSection({
         <button
           type="button"
           aria-expanded={open}
+          aria-controls={panelId}
           onClick={() => setOpen((o) => !o)}
           className="flex w-full items-center justify-between px-4 py-3 text-left"
         >
@@ -60,7 +63,11 @@ export function AccordionSection({
           ) : null}
         </button>
       )}
-      {expanded ? <div className="px-4 pb-3 pt-1">{children}</div> : null}
+      {expanded ? (
+        <div id={panelId} role="region" aria-label={title} className="px-4 pb-3 pt-1">
+          {children}
+        </div>
+      ) : null}
     </section>
   );
 }

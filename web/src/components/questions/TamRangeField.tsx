@@ -14,6 +14,10 @@ import { ChartFrame } from "@/components/charts/ChartFrame";
 import { formatUSD } from "@/lib/format";
 import { type RangeMetrics, formatRatio } from "@/lib/report-metrics";
 
+// Axis padding on each side, in log-decades — keeps the floor/ceiling caps off
+// the track edges (a third of a decade).
+const LOG_AXIS_PAD = 0.33;
+
 // Compact label for a decade gridline (always a power of ten): "$100M", "$1B".
 function decadeLabel(v: number): string {
   if (v >= 1e9) return `$${Math.round(v / 1e9)}B`;
@@ -52,8 +56,8 @@ export function TamRangeField({
   const { low, high, mid, spreadRatio } = range;
   // Pad the axis a third of a decade on each side so the end bars aren't flush
   // against the track edge.
-  const axisMin = 10 ** (Math.log10(low) - 0.33);
-  const axisMax = 10 ** (Math.log10(high) + 0.33);
+  const axisMin = 10 ** (Math.log10(low) - LOG_AXIS_PAD);
+  const axisMax = 10 ** (Math.log10(high) + LOG_AXIS_PAD);
   const ticks = decadeTicks(axisMin, axisMax);
 
   const lowPct = logPos(low, axisMin, axisMax) * 100;
@@ -67,6 +71,11 @@ export function TamRangeField({
       ? `Floor ${formatUSD(low)} → ceiling ${formatUSD(high)} · ${formatRatio(spreadRatio)} spread`
       : `Floor ${formatUSD(low)} → ceiling ${formatUSD(high)}`;
 
+  const ariaLabel =
+    `TAM range across methods: floor ${formatUSD(low)} to ceiling ${formatUSD(high)}` +
+    (midLabel != null ? `, triangulated midpoint ${midLabel}` : "") +
+    (spreadRatio != null ? `, ${formatRatio(spreadRatio)} spread` : "");
+
   return (
     <ChartFrame
       title="TAM range across methods"
@@ -75,7 +84,9 @@ export function TamRangeField({
       source={null}
       className={className}
     >
-      <div className="relative mt-6 mb-1 select-none">
+      {/* role=img + label: the bar conveys meaning via pixel position/color, so
+          a screen reader gets the floor/ceiling/midpoint as text instead. */}
+      <div className="relative mt-6 mb-1 select-none" role="img" aria-label={ariaLabel}>
         {/* Midpoint callout above the band */}
         {midPct != null ? (
           <div

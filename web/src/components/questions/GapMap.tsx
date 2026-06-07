@@ -51,11 +51,18 @@ export function GapMap({
           return (
             <div key={cat} className="grid grid-cols-[104px_1fr] items-center gap-3">
               <span className="truncate text-[12px] text-[var(--fg-2)]">{CATEGORY_LABEL[cat]}</span>
-              <div className="flex flex-wrap gap-1">
+              {/* The cells convey count via color alone, so the group carries the
+                  text summary and the individual swatches are hidden from AT. */}
+              <div
+                className="flex flex-wrap gap-1"
+                role="img"
+                aria-label={`${CATEGORY_LABEL[cat]}: ${c.answered} answered, ${gaps} ${gaps === 1 ? "gap" : "gaps"}`}
+              >
                 {/* Fixed-length decorative cells, one per question. */}
                 {cellsFor(cat, c.answered, gaps).map((cell) => (
                   <span
                     key={cell.id}
+                    aria-hidden="true"
                     className={
                       cell.answered
                         ? "h-3 w-3 rounded-[3px] bg-[var(--accent)]"

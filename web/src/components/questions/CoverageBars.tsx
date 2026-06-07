@@ -35,10 +35,18 @@ export function CoverageBars({
               <span className="truncate text-[12px] text-[var(--fg-2)]">
                 {CATEGORY_LABEL[r.category]}
               </span>
-              <div className="h-2.5 overflow-hidden rounded-full bg-[var(--bg-2)]">
+              <div
+                className="h-2.5 overflow-hidden rounded-full bg-[var(--bg-2)]"
+                role="progressbar"
+                aria-valuenow={pct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`${CATEGORY_LABEL[r.category]}: ${r.answered} of ${r.total} answered`}
+              >
                 <div
                   className="h-full rounded-full bg-[var(--accent)] transition-[width]"
                   style={{ width: `${pct}%` }}
+                  aria-hidden="true"
                 />
               </div>
               <span className="font-mono text-[11px] tabular-nums text-[var(--fg-3)]">

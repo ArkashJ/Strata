@@ -23,6 +23,9 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  // Base origin so relative OpenGraph image URLs (e.g. /tam/[hash]'s og image)
+  // resolve to absolute URLs for social/unfurl bots.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://stratabank.vercel.app"),
   title: "Strata — Defensible TAM",
   description:
     "Open-source community-curated market sizing. Primitives, frameworks, and a chain of custody you can paste in a memo.",
