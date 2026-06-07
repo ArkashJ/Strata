@@ -300,8 +300,9 @@ function ConnectSnippets({ latestKey }: { latestKey: string | null }) {
       <div className="flex flex-col gap-2">
         <h4 className="text-[12px] text-[var(--fg-2)]">claude.ai / ChatGPT (custom connector)</h4>
         <p className="text-[12px] text-[var(--fg-3)]">
-          Settings → Connectors → Add custom connector. Paste the URL below; set the auth header to{" "}
-          <code className="font-mono text-[var(--fg-2)]">Authorization: Bearer {key}</code>.
+          Settings → Connectors → Add custom connector. Paste the URL below — Claude or ChatGPT runs
+          a one-click OAuth sign-in (no header needed). You&apos;ll approve access on a Strata
+          consent screen.
         </p>
         <CopyBox value={mcpUrl} mono />
       </div>
