@@ -493,7 +493,13 @@ into a forwardable report.
 
 ### PR 5 — Breadth to v1.0
 
-- **Frameworks 5 → 25** (validator-gated, each a structurally distinct math shape). **Build
+- **Frameworks — REFRAMED 2026-06-07** (see
+  [`docs/plans/2026-06-07-frameworks-taxonomy-reframe.md`](plans/2026-06-07-frameworks-taxonomy-reframe.md)).
+  The "5 → 25, each a structurally distinct math shape" goal was wrong: there are
+  only **6 distinct shapes** (one per lens). The 25 frameworks are now classified
+  as **6 canonical + 19 subframeworks** (realism-modifier specializations), and a
+  validator gate enforces exactly one canonical shape per lens. Done. The note
+  below is retained for historical context on the L3 build that closed the gap. **Build
   L3 `latent_demand` first** — it has 0 frameworks *and* 0 concepts: add
   `latent-demand-adoption-curve.yaml` (`addressable_population * logistic(adoption_rate_curve)
   * willingness_to_pay`; the formula engine already supports `logistic`/`curve`) + 1–2 L3

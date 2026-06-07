@@ -42,9 +42,12 @@ Three moves follow:
    their alpha; an agent has no such incentive).
 
 3. **Invest in frameworks + the trust fence; divest from connectors** (#104, #107).
-   Measured today: **280 primitives (52% raw gov-API passthrough), 0 first-party,
-   5 frameworks** (roadmap wants 25; L3 `latent_demand` has 0 frameworks _and_ 0
-   concepts). The fork-proof assets are the parameterized+sourced **recipes** and the
+   Measured today: **280 primitives (52% raw gov-API passthrough), 0 first-party.**
+   Frameworks: **6 canonical lens shapes + 19 subframeworks** (the old "5 → 25
+   distinct frameworks" goal was reframed 2026-06-07 — see
+   [`docs/plans/2026-06-07-frameworks-taxonomy-reframe.md`](plans/2026-06-07-frameworks-taxonomy-reframe.md);
+   there are only 6 distinct shapes, the rest are realism-modifier specializations,
+   now enforced by the validator). The fork-proof assets are the parameterized+sourced **recipes** and the
    verification fence — not the data. One org-private first-party feed beats all 23
    public connectors. Pick the **single-TAM-for-an-IC-memo beachhead** (#105); ship a
    real **private-first contributor incentive** or drop "community" from the pitch
