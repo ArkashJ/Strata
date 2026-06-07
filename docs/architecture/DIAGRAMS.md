@@ -50,6 +50,19 @@ Index:
 | 39 | Semantic search + concept promotion (PR5) | PR5 |
 | 40 | The 6-PR program dependency graph | program |
 | 41 | End-to-end demo flow | demo |
+| 42 | Registry-first slug resolution (match ladder) | backend |
+| 43 | Token-coverage concept matching | backend |
+| 44 | Unit type system (the algebra) | data |
+| 45 | Source-tier taxonomy (9 tiers) | integrity |
+| 46 | Request lifecycle + middleware stack | backend |
+| 47 | API route surface (16 routers) | backend |
+| 48 | CLI command surface | backend |
+| 49 | Connector 6-layer pattern | connectors |
+| 50 | Three data stores (YAML · PG · registry) | data |
+| 51 | OAuth inbound SaaS connector | connectors |
+| 52 | API-key auth + rate-limit + metering | substrate |
+| 53 | Resolver status + estimate_kind | backend |
+| 54 | Full /resolve sequence (end to end) | backend |
 
 ---
 
@@ -110,19 +123,30 @@ erDiagram
   }
 ```
 
-### 3. Resolve pipeline (SSE, first non-null wins)
+### 3. Resolve pipeline (SSE, 4-step fallback chain, first hit wins)
 
 ```mermaid
 flowchart TD
-  Q["POST /resolve {query}"] --> RL["rate-limit(org_id)"]
-  RL --> M["registry-first match_concept (LLM-free)"]
-  M -->|"hit conf>=0.5"| S1["size_concept -> scenario tree"]
-  M -->|miss| S3
-  S1 --> S2["compose registry primitives"] --> OUT
-  S3["connector live (allow_live=False on HTTP -> SKIPPED)"] --> S4
-  S4["Exa fallback (double-fenced; ephemeral, never persisted)"] --> OUT
-  OUT["SSE: parsing -> searching -> framework_selected -> evaluating -> result -> done"]
+  Q["POST /resolve {query}"] --> RL["rate-limit + observability (org_id, request_id)"]
+  RL --> SLUG["registry-first slug resolution (LLM-free)<br/>exact → token-coverage → pgvector NN"]
+  SLUG --> CONF{"confidence ≥ 0.5?"}
+  CONF -->|"concept hit"| S1["Step 1 · size_concept → ≥2-scenario tree<br/>(estimate_kind = triangulated)"]
+  CONF -->|"primitive hit"| S2["Step 2 · single / compose primitives<br/>(PARTIAL if no composable framework)"]
+  CONF -->|miss| S3["Step 3 · connector live<br/>(allow_live=False on HTTP → SKIPPED)"]
+  S3 --> S4["Step 4 · Exa fallback (double-fenced)<br/>STRATA_ALLOW_EXA_FALLBACK=1 · needs ≥2 primitives<br/>synthesized banner · ephemeral, never persisted"]
+  S1 --> OUT
+  S2 --> OUT
+  S4 -->|"≥2 synthesized"| OUT
+  S4 -->|"<2 synthesized"| FAIL
+  S3 -.->|"fallback off"| FAIL
+  FAIL["FAILED → 'Could not find enough market data'"]
+  OUT["status OK / PARTIAL · SSE: parsing → searching → framework_selected → evaluating → result → done"]
 ```
+
+> A wrong concept dressed as a sourced TAM is the worst outcome the resolver can
+> produce, so the match ladder (#42–#43) is deliberately strict: a near-miss
+> falls through to the *honest* fallback (#54) — a synthesized estimate behind a
+> "verify before citing" banner — rather than a confident wrong answer.
 
 ### 4. Build / recompute + state hash
 
@@ -302,7 +326,7 @@ flowchart TD
 ```mermaid
 flowchart LR
   IN["each input"] --> SWING["swing ±20%"]
-  SWING --> IMP["|Δ TAM|"]
+  SWING --> IMP["abs(Δ TAM)"]
   IMP --> SORT["sort by impact"]
   SORT --> BAR["TornadoChart (longest bar = defend first)"]
 ```
@@ -386,7 +410,7 @@ flowchart TD
     Bank["/bank (real CRM, PR1)"]; Boards["/dashboard boards (PR3)"]; Agents["/agents"]
   end
   subgraph BANK["STRATA BANK"]
-    Explore["/explore (concepts|primitives|frameworks|signals|pyramid|tams)"]
+    Explore["/explore (concepts · primitives · frameworks · signals · pyramid · tams)"]
   end
   subgraph SOURCES
     Connectors["/connectors"]; Integrations["/integrations"]
@@ -413,7 +437,7 @@ flowchart LR
 flowchart TD
   Req["request"] --> H{"Authorization: Bearer JWT?"}
   H -->|"yes + Clerk configured"| Vv["verify vs Clerk JWKS (cached, kid-refresh)"]
-  Vv -->|valid| P1["Principal{org_id=clerk_org:* | clerk_user:*, user_id=sub}"]
+  Vv -->|valid| P1["Principal{org_id=clerk_org:* or clerk_user:*, user_id=sub}"]
   Vv -->|invalid| E401["401"]
   H -->|no| K{"X-API-Key?"}
   K -->|yes| P2["Principal{org_id from key store}"]
@@ -608,4 +632,237 @@ flowchart TD
   MOD --> REP["/c/&lt;slug&gt;/report — 150 Qs answered from sourced primitives (PR4)"]
   REP --> FENCE["zero external citations; gaps say 'no data'; spreads show disagreement"]
   REP --> PDF["forwardable PDF (PR3)"]
+```
+
+### 42. Registry-first slug resolution (the match ladder)
+
+The resolver spends nothing on an LLM until it has exhausted the free,
+deterministic registry ladder. Each rung is stricter-to-looser; the first hit
+wins, a total miss becomes `NOVEL` intent and falls to synthesis.
+
+```mermaid
+flowchart TD
+  Q["free-form query"] --> NORM["normalize (lowercase, strip punctuation)"]
+  NORM --> EXACT{"exact slug OR name match?"}
+  EXACT -->|yes| HIT["concept slug (confidence 1.0)"]
+  EXACT -->|no| TOK["token-coverage match_concept (LLM-free, deterministic)"]
+  TOK --> THR{"best score ≥ 0.6?"}
+  THR -->|yes| HIT
+  THR -->|no| SEM["pgvector NN match_concept_semantic (cosine)"]
+  SEM --> STHR{"similarity ≥ 0.5?"}
+  STHR -->|yes| HIT
+  STHR -->|no| MISS["miss → NOVEL intent → fallback synthesis (#54)"]
+  HIT --> CONF{"confidence ≥ 0.5?"}
+  CONF -->|yes| SIZE["size_concept (registry, no LLM)"]
+  CONF -->|no| MISS
+```
+
+### 43. Token-coverage concept matching
+
+Matching turns on shared *meaningful tokens*, not character coincidence. The
+prior `SequenceMatcher` char-ratio mis-bound "Market research tools" → AI legal
+*research* (0.61) and "pet insurance" → P&C *insurance* doc-gen (0.67) on one
+incidental word each. Coverage + a head-token guard kills those without
+breaking real or verbose queries.
+
+```mermaid
+flowchart TD
+  IN["query + candidate (slug & name)"] --> T["tokenize: lowercase · drop 1-char + grammatical filler"]
+  T --> SH["shared = greedy 1:1 token overlap<br/>(exact OR ratio ≥ 0.85 typo-tolerant)"]
+  SH --> Z{"shared == 0?"}
+  Z -->|yes| ZERO["score 0"]
+  Z -->|no| COV["cov_q = shared/len(q) · cov_c = shared/len(c)<br/>score = max(cov_q, cov_c)"]
+  COV --> G{"shared == 1 AND candidate has > 1 token?"}
+  G -->|no| KEEP["keep score"]
+  G -->|yes| HEAD{"is the shared token the candidate's HEAD?"}
+  HEAD -->|"yes — brand head ('Kyber')"| KEEP
+  HEAD -->|"no — mid-word ('research' / 'insurance' / 'test')"| CAP["cap below 0.6 → reject"]
+  KEEP --> OUT["best candidate ≥ 0.6 wins, else None"]
+  CAP --> OUT
+```
+
+### 44. Unit type system (the algebra)
+
+```mermaid
+flowchart LR
+  subgraph U["Unit (structured — frameworks declare signatures)"]
+    K["kind: stock · flow · intensive · dimensionless"]
+    D["dimension: people · currency · transactions · events · percent · tokens · impressions · organizations · seats"]
+    DEN["denominator: str or None (e.g. per-seat-per-year)"]
+    CUR["currency: str or None"]
+    BAS["basis: nominal"]
+  end
+  U --> VAL["L2 validator: reject dimensionally-invalid wiring (no money²)"]
+  U --> NORM["currency stored nominal → normalized at query time"]
+  VAL --> EVAL["evaluator only multiplies unit-checked roles"]
+```
+
+### 45. Source-tier taxonomy (9 tiers)
+
+```mermaid
+flowchart TD
+  ST["SourceTier (9; models/source.py)"] --> SIZ["sizing tiers — may feed a TAM"]
+  ST --> QUAR["non-sizing — quarantined from the evaluator"]
+  SIZ --> A["first_party"]
+  SIZ --> B["regulator"]
+  SIZ --> C["aggregator"]
+  SIZ --> D["analyst"]
+  SIZ --> E["analyst-paraphrase"]
+  SIZ --> F["onchain"]
+  SIZ --> G["community-modeled (MODELED banner; strata promote refuses)"]
+  QUAR --> H["prediction_market → reg.signals (#16)"]
+  QUAR --> I["community (social) → reg.signals (#16)"]
+```
+
+### 46. Request lifecycle + middleware stack
+
+```mermaid
+flowchart TD
+  REQ["HTTP request"] --> CORS["CORSMiddleware (fails closed in prod; any localhost:* in dev)"]
+  CORS --> OBS["observability middleware"]
+  OBS --> RID["assign request_id (uuid4) → request.state + X-Request-Id"]
+  RID --> PRIN["extract Principal (org_id) for metering"]
+  PRIN --> T0["perf_counter start"]
+  T0 --> ROUTE["route handler"]
+  ROUTE --> METER["meter.record(org_id)"]
+  METER --> LOG["structured log: request_id · method · path · status · org · elapsed_ms"]
+  LOG --> RESP["response (+ X-Request-Id)"]
+```
+
+### 47. API route surface (16 routers + /mcp)
+
+```mermaid
+flowchart LR
+  subgraph Data
+    C["/c concepts"]; P["/p primitives"]; F["/f frameworks"]; SG["/signals"]
+  end
+  subgraph Sizing
+    B["/build + /build/recompute"]; R["/resolve (SSE)"]; RP["/report"]; LN["/lineage"]
+  end
+  subgraph Tenant
+    AU["/audit"]; US["/usage"]; ME["/me"]; CB["/contribute"]; PO["/portfolio"]
+  end
+  subgraph Sources
+    CN["/connectors"]; IN["/integrations (OAuth)"]
+  end
+  subgraph Ops
+    HZ["/healthz (+ /llm)"]; MCP["/mcp mount (McpAuthMiddleware)"]
+  end
+```
+
+### 48. CLI command surface (`strata`)
+
+```mermaid
+flowchart LR
+  CLI["strata"] --> CORE["version · validate · size · report · stats · embed"]
+  CLI --> INTEG["verify-integrity · resource-status · test-connectors"]
+  CLI --> GOAL["goal (4-step resolver) · promote"]
+  CLI --> DB["db: seed · stats"]
+  CLI --> ING["ingest: run · status · refresh"]
+  CLI --> PF["portfolio: import · size · list · gaps"]
+```
+
+### 49. Connector 6-layer pattern
+
+```mermaid
+flowchart TD
+  L1["1 · Enums (API constants)"] --> L2["2 · TypedDicts (raw API response shapes)"]
+  L2 --> L3["3 · frozen dataclasses (validated models, slots=True)"]
+  L3 --> L4["4 · unified response (e.g. BLSResponse: status + data + cache meta)"]
+  L4 --> L5["5 · disk cache (~/.strata/cache/{connector}, sha256, ~24h TTL)"]
+  L5 --> L6["6 · client (context-manager) + YAML converters → AtomicPrimitive"]
+  L6 --> OUT["23 typed connectors; 13 produce committed primitives"]
+```
+
+### 50. Three data stores (YAML · Postgres · in-memory registry)
+
+```mermaid
+flowchart LR
+  YAML["YAML on disk (data/*.yaml — source of truth in dev/CI)"] -->|"strata db seed"| PG[("Postgres — prod primary; GIN+B-tree; RLS")]
+  YAML -->|"load_data_dir at boot"| REG["in-memory Registry (evaluator reads THIS)"]
+  PG -.->|"Registry.from_db round-trips scope"| REG
+  CONN["connectors"] -->|"disk cache → converter"| YAML
+  UP["user_primitives (PG-only, migration 009)"] -.->|"⚠ substrate rot #98: invisible to in-memory evaluator"| REG
+  REGISTRY_NOTE["⚠ #97: in-memory registry frozen at boot"] -.-> REG
+```
+
+### 51. OAuth inbound SaaS connector (private, org-scoped primitives)
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant API as /integrations
+  participant P as Provider (HubSpot)
+  participant V as TokenVault (Fernet)
+  participant E as Evaluator
+  U->>API: connect (authorize_url)
+  API->>P: redirect to OAuth consent
+  P-->>API: code (single-use CSRF state)
+  API->>P: exchange_code → access_token
+  API->>V: encrypt + store (org_id, provider)
+  U->>API: sync
+  API->>V: decrypt token
+  API->>P: fetch(access_token)
+  P-->>API: raw tenant data
+  API->>API: to_private_primitives(org_id, raw)
+  Note over API,E: visibility=private · org_id-scoped · private banner · disconnect purges
+  API-->>E: feed same evaluator (isolated cross-tenant)
+```
+
+### 52. API-key auth + rate-limit + metering
+
+```mermaid
+flowchart TD
+  REQ["request"] --> KEY{"X-API-Key OR Bearer JWT?"}
+  KEY -->|present| PR["Principal{org_id} (api/auth.py)"]
+  KEY -->|"none + require_auth"| E401["401"]
+  KEY -->|"none + keyless prod"| ANON["anonymous Principal(org_id=public)"]
+  PR --> RL["token-bucket rate-limit per org (api/ratelimit.py)"]
+  ANON --> RL
+  RL -->|"bucket empty"| E429["429 + Retry-After"]
+  RL -->|ok| H["handler"]
+  H --> MET["usage meter → GET /usage · /metrics"]
+```
+
+### 53. Resolver status + estimate_kind
+
+```mermaid
+stateDiagram-v2
+  [*] --> Resolve
+  Resolve --> Triangulated: concept hit · ≥2 method families
+  Resolve --> SingleMethod: 1 family OR fallback synthesis
+  Resolve --> Partial: primitives found · no composable framework
+  Resolve --> Failed: registry miss + fallback off / empty
+  Triangulated --> OK: status OK (no banner)
+  SingleMethod --> Banner: honesty banner (synthesized / MODELED)
+  Banner --> OK
+  Partial --> OKp: status PARTIAL
+  Failed --> Msg: "Could not find enough market data"
+```
+
+### 54. Full /resolve sequence (end to end)
+
+```mermaid
+sequenceDiagram
+  participant FE as Frontend (ResolveView)
+  participant API as /resolve (SSE)
+  participant MT as match (registry-first)
+  participant EV as evaluator
+  participant EX as Exa + LLM (fenced)
+  FE->>API: POST {query}
+  API-->>FE: event: parsing
+  API->>MT: match_concept (exact → token → pgvector NN)
+  alt confidence ≥ 0.5 (concept hit)
+    API-->>FE: searching · primitive_found ×N
+    API->>EV: size_concept → scenario tree
+    API-->>FE: framework_selected · evaluating
+    API-->>FE: event: result (triangulated, sourced)
+  else miss + STRATA_ALLOW_EXA_FALLBACK=1
+    API->>EX: parse → Exa search → extract (needs ≥2 primitives)
+    EX-->>API: synthesized primitives (ephemeral, never persisted)
+    API-->>FE: event: result (single_method + 'verify before citing' banner)
+  else miss + fallback off / empty
+    API-->>FE: event: error ('Could not find enough market data')
+  end
+  API-->>FE: event: done
 ```

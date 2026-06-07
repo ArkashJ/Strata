@@ -7,6 +7,15 @@ Returns the concept slug on a hit, else ``None`` so the caller falls through to
 the novel synthesis path.
 
 Pure Python — no network, no LLM — so a registry hit is deterministic and free.
+
+Matching is *token*-driven, not character-driven. A raw character-ratio
+(``SequenceMatcher`` over whole strings) treats incidental letter overlap as
+similarity: "market research tools" scored 0.61 against "ai legal research us"
+and "pet insurance" scored 0.67 against "doc-gen-pc-insurance" — both garbage
+matches that cleared a 0.6 char-ratio bar on the strength of a single shared
+word ("research", "insurance"). A wrong concept presented as a sourced TAM is
+the worst outcome this project can produce, so the match must turn on shared
+*meaningful tokens*, and a lone generic overlap must not carry a hit.
 """
 
 from __future__ import annotations
@@ -16,31 +25,93 @@ from difflib import SequenceMatcher
 
 from ..registry import Registry
 
-# Above this token-aware similarity, a fuzzy query is treated as the concept.
-# Tuned so "doc gen for P&C insurance" matches "doc-gen-pc-insurance" but an
-# unrelated market does not.
+# Above this token-coverage score, a fuzzy query is treated as the concept.
+# Coverage is fraction-of-tokens-shared (see ``_similarity``), so 0.6 means a
+# clear majority of one side's words must line up — "doc gen pc insurance"
+# fully covers "doc-gen-pc-insurance" (1.0) while "pet insurance" covers it only
+# 0.25 and is rejected.
 _FUZZY_THRESHOLD = 0.6
+
+# A query token counts as matching a candidate token at or above this per-token
+# ratio — exact words plus light typo tolerance ("insurnce" → "insurance"),
+# without letting unrelated words ("ops" vs "operations", 0.46) leak through.
+_TOKEN_MATCH_RATIO = 0.85
+
+# Grammatical filler only. Deliberately NOT domain words ("market", "tools",
+# "software", "ai"): stripping those would shrink "market research tools" to
+# the bare token "research" and reintroduce the false match against legal
+# *research*. Filler carries no market meaning and only inflates token counts.
+_STOPWORDS = frozenset(
+    {"the", "a", "an", "of", "for", "in", "on", "and", "to", "with", "by", "at", "as"}
+)
 
 
 def _normalize(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
 
 
+def _tokens(text: str) -> list[str]:
+    """Normalized, filler-stripped tokens. Single-char tokens (e.g. the standalone
+    ``p`` and ``c`` left when "P & C" tokenizes with spaces) are dropped — they
+    match too freely. ("pc" in ``doc-gen-pc-insurance`` survives; it is 2 chars.)"""
+    return [t for t in _normalize(text).split() if len(t) > 1 and t not in _STOPWORDS]
+
+
+def _shared_count(q_tokens: list[str], c_tokens: list[str]) -> int:
+    """Number of query tokens that find a distinct candidate token (exact or
+    near-exact). Greedy 1:1 so two query words can't both claim one candidate."""
+    claimed: set[int] = set()
+    shared = 0
+    for qt in q_tokens:
+        best_i, best_r = -1, 0.0
+        for i, ct in enumerate(c_tokens):
+            if i in claimed:
+                continue
+            r = 1.0 if qt == ct else SequenceMatcher(None, qt, ct).ratio()
+            if r > best_r:
+                best_i, best_r = i, r
+        if best_i >= 0 and best_r >= _TOKEN_MATCH_RATIO:
+            claimed.add(best_i)
+            shared += 1
+    return shared
+
+
 def _similarity(query: str, candidate: str) -> float:
-    q, c = _normalize(query), _normalize(candidate)
-    if not q or not c:
+    """Token-coverage similarity in [0, 1].
+
+    ``max`` of the two coverage ratios so either a query that names the whole
+    concept ("doc gen pc insurance" → covers the candidate) or a verbose query
+    the concept name sits inside ("AI legal research software for US law firms"
+    → candidate is covered) scores high, while a one-word coincidence does not.
+    """
+    q_tokens, c_tokens = _tokens(query), _tokens(candidate)
+    if not q_tokens or not c_tokens:
         return 0.0
-    ratio = SequenceMatcher(None, q, c).ratio()
-    # Jaccard token bonus: rewards word-for-word overlap (ordering/filler
-    # insensitive) without the precision hole of a min() denominator, where a
-    # 1-word query like "test" would score 1.0 against any multi-word name
-    # containing that word. Union denominator keeps a lone shared token modest.
-    q_tokens, c_tokens = set(q.split()), set(c.split())
-    union = q_tokens | c_tokens
-    if union:
-        jaccard = len(q_tokens & c_tokens) / len(union)
-        ratio = max(ratio, jaccard)
-    return ratio
+
+    shared = _shared_count(q_tokens, c_tokens)
+    if shared == 0:
+        return 0.0
+
+    cov_q = shared / len(q_tokens)
+    cov_c = shared / len(c_tokens)
+    score = max(cov_q, cov_c)
+
+    # A lone shared token must not carry a match unless it is the candidate's
+    # *identifying head* — a brand/leading word like "Kyber" in
+    # "kyber-pc-doc-gen". An incidental middle word does not qualify: "pet
+    # insurance" ∩ "doc gen pc insurance" = {insurance} (head is "doc"), and
+    # "test" ∩ "skyramp ai test automation" = {test} (head is "skyramp") are
+    # both rejected, while bare "Kyber" still resolves.
+    # NOTE: the guard is skipped for a single-token candidate (no head to
+    # distinguish). That is safe only while no concept's slug/name reduces to one
+    # generic word ("insurance", "research") — such a concept would false-match
+    # any query containing that word. Keep concept names multi-token.
+    if shared == 1 and len(c_tokens) > 1:
+        head_matches = _shared_count(q_tokens, c_tokens[:1]) == 1
+        if not head_matches:
+            score = min(score, _FUZZY_THRESHOLD - 0.01)
+
+    return score
 
 
 def match_concept(reg: Registry, query: str) -> str | None:
