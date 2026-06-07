@@ -130,6 +130,20 @@ export default function AgentsPage() {
         </p>
       </header>
 
+      {/* Start here: sign in → generate a key → paste the snippet into Claude.
+          The key panel leads the page so a non-technical user reaches the
+          one action that matters before the MCP tool reference below. */}
+      <section className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h2 className="display text-[22px] text-[var(--fg-1)]">Start here — connect to Claude</h2>
+          <p className="max-w-[680px] text-[13px] text-[var(--fg-3)]">
+            Sign in, generate a key, and copy the snippet into Claude. No setup, no terminal — three
+            steps and your agent can size markets off the sourced bank.
+          </p>
+        </div>
+        <ApiKeysPanel />
+      </section>
+
       <section className="flex flex-col gap-3">
         <h2 className="text-[13px] uppercase tracking-[0.06em] text-[var(--fg-3)]">
           How an agent uses it
@@ -211,8 +225,6 @@ STRATA_MCP_LIVE_CONNECTORS=1`}</CodeBlock>
           work for — no fabricated figures, every number traceable to a snapshot.
         </p>
       </section>
-
-      <ApiKeysPanel />
 
       <ActivityLog />
     </main>

@@ -37,6 +37,8 @@ export function DashboardView() {
 
       {!clerkEnabled && <AuthNotice />}
 
+      <ConnectCta />
+
       <LibraryCounts />
 
       <FavoritesList />
@@ -59,6 +61,33 @@ function AuthNotice() {
         and per-user build history. The public panels below work without it.
       </p>
     </div>
+  );
+}
+
+// ── Connect-to-Claude CTA ────────────────────────────────────────────────────
+// The dashboard's one outbound action: route a signed-in user to where they
+// generate an API key and wire Strata into Claude. Without this, the dashboard
+// dead-ends and a non-technical user never finds key generation.
+function ConnectCta() {
+  return (
+    <Link
+      href="/agents"
+      className="canvas-card group flex items-center gap-4 border border-[var(--accent)] bg-[var(--accent-soft)] p-4 transition-colors hover:bg-[var(--accent-soft)]/80"
+    >
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--r-2)] bg-[var(--accent)] text-[18px] text-[var(--accent-fg-on)]">
+        ✦
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[14px] font-medium text-[var(--fg-1)]">Connect to Claude</span>
+        <span className="block text-[12.5px] leading-relaxed text-[var(--fg-3)]">
+          Generate an API key and give your AI agent sourced, hash-pinned market data — no terminal
+          required.
+        </span>
+      </span>
+      <span className="shrink-0 text-[13px] text-[var(--accent-active)] transition-transform group-hover:translate-x-0.5">
+        Generate a key →
+      </span>
+    </Link>
   );
 }
 

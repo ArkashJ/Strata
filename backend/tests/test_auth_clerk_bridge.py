@@ -16,6 +16,7 @@ from fastapi import HTTPException
 from strata.api import auth
 from strata.api.auth import (
     Principal,
+    api_key_from_headers,
     principal_for_headers,
     register_key,
     require_authenticated,
@@ -164,3 +165,38 @@ def test_require_authenticated_passes_clerk_principal(
     assert isinstance(p, Principal)
     assert p.user_id == "user_88"
     assert not p.is_anonymous
+
+
+# ── Bearer-presented Strata API key (the website "Connect to Claude" snippet) ──
+
+
+def test_strata_key_as_bearer_resolves(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A minted ``strata_sk_`` key pasted as ``Authorization: Bearer …`` resolves
+    to its org — the website snippets do exactly this against the hosted /mcp."""
+
+    def _boom(_token: str) -> ClerkClaims | None:
+        raise AssertionError("Clerk verifier must not run for a strata_sk_ Bearer token")
+
+    monkeypatch.setattr(auth, "verify_clerk_jwt", _boom)
+    register_key("strata_sk_live_demo123", "org_keyed")
+    p = principal_for_headers({"authorization": "Bearer strata_sk_live_demo123"}, require=True)
+    assert p.org_id == "org_keyed"
+    assert not p.is_anonymous
+
+
+def test_invalid_strata_key_as_bearer_is_401(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An unknown ``strata_sk_`` Bearer is a hard 401 even in dev — a present but
+    wrong key is a failed auth attempt, never an anonymous read."""
+    monkeypatch.setattr(settings, "require_auth", False)
+    with pytest.raises(HTTPException) as exc:
+        principal_for_headers({"authorization": "Bearer strata_sk_live_nope"}, require=False)
+    assert exc.value.status_code == 401
+
+
+def test_api_key_from_headers_variants() -> None:
+    """The shared extractor pulls the key from X-API-Key OR a Bearer strata_sk_
+    token, and returns None for a Clerk Bearer JWT."""
+    assert api_key_from_headers({"x-api-key": "strata_sk_live_x"}) == "strata_sk_live_x"
+    assert api_key_from_headers({"authorization": "Bearer strata_sk_live_y"}) == "strata_sk_live_y"
+    assert api_key_from_headers({"authorization": "Bearer some.clerk.jwt"}) is None
+    assert api_key_from_headers({}) is None

@@ -31,6 +31,11 @@ _API_KEY_HEADER = "x-api-key"
 _AUTHORIZATION_HEADER = "authorization"
 _BEARER_PREFIX = "bearer "
 _ANONYMOUS_ORG = "public"
+# Minted Strata keys share this prefix (``db.api_keys._RAW_PREFIX`` =
+# ``strata_sk_live_``). We match the shorter stem so a key presented as a Bearer
+# token is recognised as an API key (not mistaken for a Clerk JWT) before we ever
+# try to verify it as one.
+_API_KEY_PREFIX = "strata_sk_"
 
 # OpenAPI security scheme. Declared with ``auto_error=False`` so it is purely a
 # *documentation* hook — it surfaces the ``X-API-Key`` header in ``/openapi.json``
@@ -107,6 +112,24 @@ def _anonymous() -> Principal:
     return Principal(org_id=_ANONYMOUS_ORG, key_id="anonymous", scopes=("read",))
 
 
+def api_key_from_headers(headers: Mapping[str, str]) -> str | None:
+    """The raw Strata API key a request presents, via ``X-API-Key`` OR a Bearer
+    ``strata_sk_`` token. Returns ``None`` for a Clerk Bearer JWT or no key.
+
+    The MCP middleware's DB cache-warm + last-used paths use this so a key
+    presented as a Bearer token resolves on a cold replica too (not just keys
+    sent in the ``X-API-Key`` header)."""
+    raw = headers.get(_API_KEY_HEADER)
+    if raw:
+        return raw
+    authorization = headers.get(_AUTHORIZATION_HEADER)
+    if authorization and authorization.lower().startswith(_BEARER_PREFIX):
+        token = authorization[len(_BEARER_PREFIX) :].strip()
+        if token.startswith(_API_KEY_PREFIX):
+            return token
+    return None
+
+
 def principal_for_headers(headers: Mapping[str, str], *, require: bool) -> Principal:
     """Resolve a Principal from raw request headers (transport-agnostic).
 
@@ -120,6 +143,16 @@ def principal_for_headers(headers: Mapping[str, str], *, require: bool) -> Princ
     authorization = headers.get(_AUTHORIZATION_HEADER)
     if authorization and authorization.lower().startswith(_BEARER_PREFIX):
         token = authorization[len(_BEARER_PREFIX) :].strip()
+        # A Strata API key presented as a Bearer token. The website's "Connect to
+        # Claude" snippets paste the minted ``strata_sk_…`` key as
+        # ``Authorization: Bearer …``, so resolve it exactly like the X-API-Key
+        # path — a key minted on the site must work as a Bearer credential too.
+        if token.startswith(_API_KEY_PREFIX):
+            principal = _KEY_STORE.get(hash_key(token))
+            if principal is not None:
+                return principal
+            raise HTTPException(status_code=401, detail="invalid API key")
+        # Otherwise treat it as a Clerk session JWT (the signed-in web app).
         claims = verify_clerk_jwt(token) if token else None
         if claims is not None:
             org_id = f"clerk_org:{claims.org_id}" if claims.org_id else f"clerk_user:{claims.sub}"

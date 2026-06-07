@@ -22,7 +22,13 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from .auth import hash_key, is_cached, principal_for_headers, register_hashed
+from .auth import (
+    api_key_from_headers,
+    hash_key,
+    is_cached,
+    principal_for_headers,
+    register_hashed,
+)
 from .metering import get_meter
 from .ratelimit import enforce_rate_limit
 
@@ -30,8 +36,6 @@ from .ratelimit import enforce_rate_limit
 # consumer that reads scope state). The tool handlers read the principal via the
 # ``strata.mcp.context`` ContextVar set below, which DOES thread through the SDK.
 _PRINCIPAL_STATE_KEY = "principal"
-
-_API_KEY_HEADER = "x-api-key"
 
 # Throttle for the best-effort ``last_used`` stamp: at most one DB write per key
 # per window, so a chatty agent doesn't turn every tool call into a write.
@@ -44,8 +48,9 @@ async def _ensure_key_loaded(headers: dict[str, str]) -> None:
     (minted on another replica, or after a restart that lost the warm cache),
     look it up once and populate the cache so the sync auth path can resolve it.
     Best-effort — a DB hiccup just leaves the cache as-is (the request then 401s
-    honestly rather than erroring)."""
-    raw = headers.get(_API_KEY_HEADER)
+    honestly rather than erroring). Resolves the key from X-API-Key OR a Bearer
+    ``strata_sk_`` token, so a Bearer-presented key warms the cache too."""
+    raw = api_key_from_headers(headers)
     if not raw or is_cached(hash_key(raw)):
         return
     try:
@@ -65,7 +70,7 @@ async def _ensure_key_loaded(headers: dict[str, str]) -> None:
 
 async def _touch_last_used(headers: dict[str, str]) -> None:
     """Stamp ``last_used_at`` for the presented key, throttled and best-effort."""
-    raw = headers.get(_API_KEY_HEADER)
+    raw = api_key_from_headers(headers)
     if not raw:
         return
     key_hash = hash_key(raw)
