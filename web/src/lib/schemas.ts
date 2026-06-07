@@ -597,3 +597,44 @@ export const questionSummarySchema = z.object({
   lenses: z.array(z.string()),
 });
 export type QuestionSummary = z.infer<typeof questionSummarySchema>;
+
+// ── Feedback / assumption-flagging (Phase F) ────────────────────────────────
+// A flag against the tool — commentary, never an input to the math (E1).
+export const feedbackKindSchema = z.enum([
+  "bad_assumption",
+  "failed_query",
+  "primitive_correction",
+  "missing_data",
+  "general",
+]);
+export type FeedbackKind = z.infer<typeof feedbackKindSchema>;
+
+export const feedbackTargetTypeSchema = z.enum([
+  "tam",
+  "primitive",
+  "concept",
+  "framework",
+  "query",
+  "report",
+]);
+export type FeedbackTargetType = z.infer<typeof feedbackTargetTypeSchema>;
+
+export const feedbackStatusSchema = z.enum(["open", "triaged", "resolved", "wontfix"]);
+export type FeedbackStatus = z.infer<typeof feedbackStatusSchema>;
+
+export const feedbackEventSchema = z.object({
+  id: z.number(),
+  org_id: z.string(),
+  user_id: z.string().nullable().optional(),
+  created_at: z.string(),
+  kind: feedbackKindSchema,
+  target_type: feedbackTargetTypeSchema,
+  target_id: z.string().nullable().optional(),
+  query_text: z.string().nullable().optional(),
+  severity: z.string().nullable().optional(),
+  body: z.string(),
+  suggested_value: z.record(z.string(), z.unknown()).nullable().optional(),
+  status: feedbackStatusSchema,
+  resolution: z.string().nullable().optional(),
+});
+export type FeedbackEvent = z.infer<typeof feedbackEventSchema>;

@@ -23,6 +23,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { hideDecorClass, hideLabelClass } from "./collapse";
 import {
   AgentsIcon,
+  BellIcon,
   ConnectorsIcon,
   GuidesIcon,
   HomeIcon,
@@ -97,6 +98,12 @@ function SidebarFooter({ collapsed }: { collapsed: boolean }) {
           collapsed={collapsed}
         />
         <SecondaryItem icon={<GuidesIcon />} label="Guides" href="/guides" collapsed={collapsed} />
+        <SecondaryItem
+          icon={<BellIcon />}
+          label="Feedback"
+          href="/feedback"
+          collapsed={collapsed}
+        />
         <SecondaryItem
           icon={<ContributeIcon />}
           label="Contribute"

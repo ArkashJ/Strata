@@ -221,3 +221,58 @@ GET_REPORT: dict[str, Any] = {
     "required": ["concept_slug"],
     "additionalProperties": False,
 }
+
+# ── Feedback tools (Phase F) — the improvement flywheel ─────────────────────
+SUBMIT_FEEDBACK: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "payload": {
+            "type": "object",
+            "description": (
+                "The flag. A flag is commentary on the tool, never an input to the math (E1)."
+            ),
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "bad_assumption",
+                        "failed_query",
+                        "primitive_correction",
+                        "missing_data",
+                        "general",
+                    ],
+                },
+                "target_type": {
+                    "type": "string",
+                    "enum": ["tam", "primitive", "concept", "framework", "query", "report"],
+                },
+                "body": {"type": "string", "description": "What's wrong / what you observed."},
+                "target_id": {
+                    "type": "string",
+                    "description": "The flagged target (e.g. a /tam/<hash> hash or primitive slug).",
+                },
+                "query_text": {"type": "string", "description": "The query that failed, if any."},
+                "severity": {"type": "string", "description": "info | warning | error."},
+                "suggested_value": {
+                    "type": "object",
+                    "description": "Advisory proposed correction; never auto-applied.",
+                },
+            },
+            "required": ["kind", "target_type", "body"],
+        },
+    },
+    "required": ["payload"],
+    "additionalProperties": False,
+}
+
+LIST_FEEDBACK: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "status": {
+            "type": "string",
+            "enum": ["open", "triaged", "resolved", "wontfix"],
+            "description": "Filter by triage status.",
+        },
+    },
+    "additionalProperties": False,
+}

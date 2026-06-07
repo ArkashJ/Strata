@@ -449,6 +449,18 @@ def _h_save_primitive(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str
     return save_primitive(reg, payload=dict(args.get("payload") or {}))
 
 
+def _h_submit_feedback(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    from .feedback_tools import submit_feedback
+
+    return submit_feedback(reg, payload=dict(args.get("payload") or {}))
+
+
+def _h_list_feedback(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    from .feedback_tools import list_feedback
+
+    return list_feedback(reg, status=args.get("status"))
+
+
 def _h_list_my_primitives(reg: Registry, _args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
     from .user_primitive_tools import list_my_primitives
 
@@ -591,6 +603,27 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "inputSchema": schemas.GET_REPORT,
         "handler": _h_get_report,
+        "annotations": _READ,
+    },
+    "submit_feedback": {
+        "description": (
+            "[WRITE] Flag a bad assumption, a failed query, a wrong primitive, or "
+            "missing data on a tam/primitive/concept/framework/query/report. Stored "
+            "org-scoped so the team can triage and improve the tool. Commentary "
+            "only — never changes a sourced number (E1). Readable at /feedback, "
+            "GET /feedback, and via list_feedback."
+        ),
+        "inputSchema": schemas.SUBMIT_FEEDBACK,
+        "handler": _h_submit_feedback,
+        "annotations": _WRITE,
+    },
+    "list_feedback": {
+        "description": (
+            "[READ] List your org's flags (optionally by status: open/triaged/"
+            "resolved/wontfix). RLS-scoped to your org."
+        ),
+        "inputSchema": schemas.LIST_FEEDBACK,
+        "handler": _h_list_feedback,
         "annotations": _READ,
     },
 }
