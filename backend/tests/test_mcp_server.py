@@ -35,6 +35,7 @@ _EXPECTED_TOOLS = {
     "list_my_primitives",
     "get_report",
     "get_report_for_tam",
+    "export_report",
     "verify_market_claim",
 }
 

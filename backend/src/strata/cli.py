@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import base64
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -12,8 +15,16 @@ from strata import __version__
 from strata.evaluator import EvaluatorError, size_concept
 from strata.loader import LoaderError
 from strata.models import QuestionCategory, ResolvedAnswer, TAMOutput, Unit
-from strata.registry import RegistryError
-from strata.report import assemble_report
+from strata.registry import Registry, RegistryError
+from strata.report import (
+    Branding,
+    PdfUnavailableError,
+    PremiumReport,
+    assemble_premium_report_for_tam,
+    assemble_report,
+    render_premium_html,
+    render_premium_pdf,
+)
 from strata.sizing.cli import portfolio_app
 from strata.validator import Severity, ValidationFinding
 from strata.validator import validate as run_validate
@@ -40,10 +51,38 @@ _CONCEPT_SLUG_ARG = typer.Argument(..., help="Concept slug to size.")
 _DATA_DIR_OPT = typer.Option(
     Path("data"), "--data-dir", "-d", help="Data directory (defaults to ./data)."
 )
-_REPORT_CONCEPT_ARG = typer.Argument(..., help="Concept slug to assemble the question report for.")
+_REPORT_CONCEPT_ARG = typer.Argument(
+    ..., help="Concept slug to assemble the report for, or a 64-hex TAM state hash."
+)
 _REPORT_CATEGORY_OPT = typer.Option(
     None, "--category", "-c", help="Only show answers in this question category."
 )
+_REPORT_PREMIUM_OPT = typer.Option(
+    False, "--premium", help="Render the premium ($1M-grade) HTML report deck."
+)
+_REPORT_PDF_OPT = typer.Option(
+    False, "--pdf", help="Also render a PDF (needs WeasyPrint + native libs; falls back to HTML)."
+)
+_REPORT_OUT_OPT = typer.Option(
+    None, "--out", "-o", help="Write the rendered report here (default: stdout for HTML)."
+)
+_REPORT_BRAND_NAME_OPT = typer.Option(None, "--brand-name", help="Firm name in the report header.")
+_REPORT_BRAND_COLOR_OPT = typer.Option(
+    None, "--brand-color", help="Brand accent color (hex, e.g. #5B5BD6)."
+)
+_REPORT_LOGO_OPT = typer.Option(
+    None, "--logo", help="Path to a logo image (embedded as a data URI)."
+)
+_REPORT_PREPARED_BY_OPT = typer.Option(
+    None, "--prepared-by", help="Analyst name for the report header."
+)
+_VERIFY_CLAIM_ARG = typer.Argument(..., help="A market claim to verify against the sourced bank.")
+_VERIFY_VALUE_OPT = typer.Option(
+    None, "--value", help="The numeric figure the claim asserts (same unit as the market)."
+)
+
+# A 64-char hex string is a TAM state hash; anything else is a concept slug.
+_HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 @app.callback()
@@ -144,18 +183,9 @@ def _unit_label(unit: Unit) -> str:
     return label
 
 
-@app.command("report")
-def report_cmd(
-    concept_slug: str = _REPORT_CONCEPT_ARG,
-    data_dir: Path = _DATA_DIR_OPT,
-    category: QuestionCategory | None = _REPORT_CATEGORY_OPT,
-) -> None:
-    """Assemble the analysis-question report for a concept and print each answer.
-
-    Runs the three-layer validator first (refusing on errors, exactly like
-    ``size``), then resolves every applicable question purely from the registry
-    and the in-process evaluator. Gaps are shown honestly, never hidden.
-    """
+def _load_registry_or_exit(data_dir: Path) -> Registry:
+    """Validate the data dir and return its registry, exiting non-zero on errors
+    (shared by the text and premium report paths so the gate behaves identically)."""
     try:
         validation = run_validate(data_dir)
     except LoaderError as exc:
@@ -171,7 +201,85 @@ def report_cmd(
     if validation.registry is None:
         typer.echo("ERROR validator did not return a registry", err=True)
         raise typer.Exit(code=1)
-    registry = validation.registry
+    return validation.registry
+
+
+def _branding_from_opts(
+    brand_name: str | None, brand_color: str | None, logo: Path | None, prepared_by: str | None
+) -> Branding | None:
+    """Build the optional Branding from CLI flags; ``None`` when nothing is set.
+
+    A ``--logo`` path is embedded as a base64 data URI so the rendered HTML/PDF
+    stays self-contained (no external asset fetch for a forwarded deliverable)."""
+    if not any((brand_name, brand_color, logo, prepared_by)):
+        return None
+    logo_data_uri: str | None = None
+    if logo is not None:
+        data = logo.read_bytes()
+        suffix = logo.suffix.lower().lstrip(".") or "png"
+        mime = "svg+xml" if suffix == "svg" else suffix
+        logo_data_uri = f"data:image/{mime};base64,{base64.b64encode(data).decode('ascii')}"
+    return Branding(
+        firm_name=brand_name,
+        prepared_by=prepared_by,
+        brand_color=brand_color,
+        logo_data_uri=logo_data_uri,
+    )
+
+
+def _resolve_premium_report(registry: Registry, concept_or_hash: str) -> PremiumReport:
+    """Resolve the premium report by concept slug (size then bind) or by a TAM
+    state hash (durable store). Exits non-zero with an honest message on a miss."""
+    if _HASH_RE.match(concept_or_hash):
+        from strata.db.tams import get_tam_from_db_safe
+
+        tam = asyncio.run(get_tam_from_db_safe(concept_or_hash))
+        if tam is None:
+            typer.echo(
+                f"ERROR no TAM with state hash {concept_or_hash!r} in the durable store; "
+                "size it first (e.g. via the API or MCP), or pass a concept slug.",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+        return assemble_premium_report_for_tam(registry, tam)
+    try:
+        tam = size_concept(registry, concept_or_hash)
+    except (EvaluatorError, RegistryError) as exc:
+        typer.echo(f"ERROR could not size {concept_or_hash!r}: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    return assemble_premium_report_for_tam(registry, tam)
+
+
+@app.command("report")
+def report_cmd(
+    concept_slug: str = _REPORT_CONCEPT_ARG,
+    data_dir: Path = _DATA_DIR_OPT,
+    category: QuestionCategory | None = _REPORT_CATEGORY_OPT,
+    premium: bool = _REPORT_PREMIUM_OPT,
+    pdf: bool = _REPORT_PDF_OPT,
+    out: Path | None = _REPORT_OUT_OPT,
+    brand_name: str | None = _REPORT_BRAND_NAME_OPT,
+    brand_color: str | None = _REPORT_BRAND_COLOR_OPT,
+    logo: Path | None = _REPORT_LOGO_OPT,
+    prepared_by: str | None = _REPORT_PREPARED_BY_OPT,
+) -> None:
+    """Assemble a concept's market report — plain-text by default, or a premium deck.
+
+    Runs the three-layer validator first (refusing on errors, exactly like
+    ``size``). Plain mode resolves every applicable question purely from the
+    registry and prints each answer (gaps shown honestly). ``--premium`` renders
+    the $1M-grade HTML deck (editorial headline, sourced range, inline-SVG charts,
+    sources appendix), optionally to ``--pdf``, with optional firm branding.
+    The argument may be a concept slug or a 64-hex TAM state hash.
+    """
+    registry = _load_registry_or_exit(data_dir)
+
+    if premium or pdf:
+        _emit_premium_report(
+            registry, concept_slug, pdf, out, brand_name, brand_color, logo, prepared_by
+        )
+        return
+
     try:
         report = assemble_report(registry, concept_slug)
     except RegistryError as exc:
@@ -191,6 +299,40 @@ def report_cmd(
         _render_answer(ans)
 
 
+def _emit_premium_report(
+    registry: Registry,
+    concept_or_hash: str,
+    pdf: bool,
+    out: Path | None,
+    brand_name: str | None,
+    brand_color: str | None,
+    logo: Path | None,
+    prepared_by: str | None,
+) -> None:
+    """Render the premium HTML (and optionally PDF) report and write it out."""
+    pr = _resolve_premium_report(registry, concept_or_hash)
+    branding = _branding_from_opts(brand_name, brand_color, logo, prepared_by)
+    html = render_premium_html(pr, branding)
+
+    if pdf:
+        try:
+            pdf_bytes = render_premium_pdf(html)
+        except PdfUnavailableError as exc:
+            typer.echo(f"WARN {exc}", err=True)
+            typer.echo("WARN falling back to HTML output.", err=True)
+        else:
+            target = out or Path(f"{pr.concept_slug}-report.pdf")
+            target.write_bytes(pdf_bytes)
+            typer.echo(f"Wrote PDF report to {target}", err=True)
+            return
+
+    if out is not None:
+        out.write_text(html, encoding="utf-8")
+        typer.echo(f"Wrote HTML report to {out}", err=True)
+    else:
+        typer.echo(html)
+
+
 def _render_answer(ans: ResolvedAnswer) -> None:
     if ans.status == "gap":
         typer.echo(f"⊘ [{ans.category.value}] {ans.prompt}")
@@ -207,6 +349,48 @@ def _render_answer(ans: ResolvedAnswer) -> None:
         tier = f" ({prov.source_tier})" if prov.source_tier else ""
         typer.echo(f"    ← {prov.primitive_slug}{tier} (snapshot {prov.snapshot_sha256[:12]}…)")
     typer.echo("")
+
+
+@app.command("verify")
+def verify_cmd(
+    claim: str = _VERIFY_CLAIM_ARG,
+    data_dir: Path = _DATA_DIR_OPT,
+    value: float | None = _VERIFY_VALUE_OPT,
+) -> None:
+    """Verify a market claim against the sourced bank (the verify_market_claim tool).
+
+    Matches the claim to a curated concept (registry-first, LLM-free), sizes it,
+    and prints the verdict + sourced range + cited inputs. An unknown claim is
+    ``unverifiable`` — a number is never synthesized (Q20)."""
+    from strata.mcp.tools import verify_market_claim
+
+    registry = _load_registry_or_exit(data_dir)
+    out = verify_market_claim(registry, claim=claim, asserted_value=value)
+
+    typer.echo(f"Claim: {claim}")
+    typer.echo(f"Verdict: {out['verdict']}")
+    rng = out.get("strata_range")
+    if rng is None:
+        typer.echo(f"  {out.get('message', 'no sourced range')}")
+        return
+    typer.echo(
+        f"  Sourced range: {rng['low']:,.0f} - {rng['high']:,.0f} "
+        f"(mid {rng['mid']:,.0f}, spread {out.get('spread_x', 0):.1f}×)"
+    )
+    typer.echo(
+        f"  Method families: {out.get('method_families', [])}  "
+        f"independence {out.get('independence_score', 0):.2f}"
+    )
+    inputs = out.get("inputs", [])
+    if inputs:
+        typer.echo("  Cited inputs:")
+        seen: set[str] = set()
+        for inp in inputs:
+            slug = inp["primitive"]
+            if slug in seen:
+                continue
+            seen.add(slug)
+            typer.echo(f"    ← {slug} (snapshot {inp['snapshot_sha256'][:12]}…)")
 
 
 # ── Database sub-commands ────────────────────────────────────────────

@@ -238,6 +238,47 @@ GET_REPORT_FOR_TAM: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+EXPORT_REPORT: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "state_hash": {
+            "type": "string",
+            "description": (
+                "The state hash of a previously built/sized TAM (from size_tam / "
+                "build_tam). The exported report is bound to THAT exact TAM."
+            ),
+        },
+        "format": {
+            "type": "string",
+            "enum": ["html", "pdf"],
+            "default": "html",
+            "description": (
+                "html (default) returns the self-contained HTML deck; pdf also "
+                "returns pdf_base64 when WeasyPrint is available, else falls back "
+                "to HTML with a note."
+            ),
+        },
+        "branding": {
+            "type": "object",
+            "description": (
+                "Optional firm branding for the report header/footer (firm_name, "
+                "prepared_by, logo_url, logo_data_uri, brand_color, disclaimer)."
+            ),
+            "properties": {
+                "firm_name": {"type": "string"},
+                "prepared_by": {"type": "string"},
+                "logo_url": {"type": "string"},
+                "logo_data_uri": {"type": "string"},
+                "brand_color": {"type": "string"},
+                "disclaimer": {"type": "string"},
+            },
+            "additionalProperties": False,
+        },
+    },
+    "required": ["state_hash"],
+    "additionalProperties": False,
+}
+
 VERIFY_MARKET_CLAIM: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -303,6 +344,21 @@ OUTPUT_SCHEMAS: dict[str, dict[str, Any]] = {
     },
     "get_report": _PERMISSIVE_OBJECT,
     "get_report_for_tam": _PERMISSIVE_OBJECT,
+    "export_report": {
+        "type": "object",
+        "additionalProperties": True,
+        "properties": {
+            "state_hash": {"type": "string"},
+            "format": {"type": "string"},
+            "html": {"type": "string"},
+            "pdf_base64": {"type": ["string", "null"]},
+            "pdf_available": {"type": "boolean"},
+            "premium": {"type": "object"},
+            "charts": {"type": "object"},
+            "citations": {"type": "array", "items": {"type": "object"}},
+            "next_actions": {"type": "array", "items": {"type": "object"}},
+        },
+    },
     "verify_market_claim": {
         "type": "object",
         "additionalProperties": True,

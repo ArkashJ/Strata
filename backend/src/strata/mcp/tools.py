@@ -337,6 +337,109 @@ async def get_report_for_tam(reg: Registry, *, state_hash: str) -> dict[str, Any
     return report
 
 
+async def _resolve_tam_for_report(reg: Registry, state_hash: str) -> TAMOutput:
+    """Resolve a previously built/sized TAM: cache first, durable store fallback
+    (the same resolution :func:`get_report_for_tam` uses, factored out so
+    ``export_report`` binds to the identical TAM)."""
+    from ..db.tams import get_tam_from_db_safe
+
+    tam = reg.tam_outputs.get(state_hash)
+    if tam is None:
+        tam = await get_tam_from_db_safe(state_hash)
+        if tam is not None:
+            reg.remember_tam(tam)
+    if tam is None:
+        raise ToolError(
+            f"no TAM with state_hash {state_hash!r} in this session; size it first",
+            code=CODE_NO_MATCH,
+            remediation="call size_tam or build_tam, then pass the returned state_hash",
+        )
+    return tam
+
+
+async def export_report(
+    reg: Registry,
+    *,
+    state_hash: str,
+    format: str = "html",
+    branding: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Maximum-utility export: the ENTIRE professional report in one call.
+
+    Bundles the premium structured sections + the self-contained Altimeter-grade
+    HTML deck (+ a base64 PDF when WeasyPrint is available and format=pdf) + the
+    Vega-Lite/Mermaid chart specs + the deduped citations + chainable next_actions
+    — all bound to THIS exact TAM (what-if overrides reflected). Every figure is
+    sourced or reproducibly derived; nothing is synthesized (Q20). A PDF that
+    cannot render (missing native libs) degrades to HTML with an honest note,
+    never an error."""
+    import base64
+
+    from ..report import (
+        Branding,
+        PdfUnavailableError,
+        assemble_premium_report_for_tam,
+        render_premium_html,
+        render_premium_pdf,
+    )
+
+    tam = await _resolve_tam_for_report(reg, state_hash)
+    premium = assemble_premium_report_for_tam(reg, tam)
+    brand = Branding.model_validate(branding) if branding else None
+    html = render_premium_html(premium, brand)
+
+    fmt = format if format in {"html", "pdf"} else "html"
+    pdf_b64: str | None = None
+    pdf_available = False
+    pdf_note: str | None = None
+    if fmt == "pdf":
+        try:
+            pdf_b64 = base64.b64encode(render_premium_pdf(html)).decode("ascii")
+            pdf_available = True
+        except PdfUnavailableError as exc:
+            pdf_note = f"PDF unavailable, returning HTML: {exc}"
+
+    citations = [
+        {
+            "primitive_slug": p.primitive_slug,
+            "source_url": p.source_url,
+            "source_tier": p.source_tier,
+            "snapshot_sha256": p.snapshot_sha256,
+        }
+        for p in premium.sources
+    ]
+    out: dict[str, Any] = {
+        "state_hash": tam.state_hash,
+        "concept": tam.target.concept,
+        "format": fmt,
+        "html": html,
+        "pdf_base64": pdf_b64,
+        "pdf_available": pdf_available,
+        "premium": premium.model_dump(mode="json"),
+        "charts": build_all_charts(tam),
+        "citations": citations,
+        "permalink": f"/tam/{tam.state_hash}/report",
+        # Chainable affordances embedded in the payload (the dict path does not
+        # take a separate next_actions kwarg, so carry them inline — result.py
+        # surfaces structuredContent.next_actions identically).
+        "next_actions": [
+            {
+                "tool": "build_tam",
+                "description": "Challenge an assumption with a what-if override, then re-export.",
+                "arguments": {"concept_slug": tam.target.concept},
+            },
+            {
+                "tool": "verify_market_claim",
+                "description": "Verify a specific figure in the report against the sourced range.",
+                "arguments": {"claim": tam.target.concept_name or tam.target.concept},
+            },
+        ],
+    }
+    if pdf_note:
+        out["pdf_note"] = pdf_note
+    return out
+
+
 def _claim_verdict(asserted_value: float | None, low: float, high: float) -> tuple[str, float]:
     """Verdict + spread for an asserted figure vs the sourced range.
 
@@ -498,7 +601,36 @@ def list_connectors(reg: Registry, *, tier: str | None = None) -> dict[str, Any]
             spec.connector,
             {"connector": spec.connector, "source_tier": spec_tier, "methods": []},
         )
-        entry["methods"].append({"method": spec.method, "returns": spec.returns})
+        # Maximum agent utility: per-method args (name/type/required/example),
+        # what it returns, a one-line example call, and the honest reliability
+        # flags — everything an agent needs to pick + call a method correctly.
+        args = [
+            {
+                "name": a.name,
+                "type": str(a.type),
+                "description": a.description,
+                "required": a.required,
+                "example": a.example,
+            }
+            for a in spec.args
+        ]
+        example_args = {a.name: a.example for a in spec.args if a.example is not None}
+        entry["methods"].append(
+            {
+                "method": spec.method,
+                "description": spec.description,
+                "returns": spec.returns,
+                "args": args,
+                "source_tier": spec_tier,
+                "is_fragile": spec.is_fragile,
+                "requires_paid_tier": spec.requires_paid_tier,
+                "example_call": {
+                    "connector": spec.connector,
+                    "method": spec.method,
+                    "args": example_args,
+                },
+            }
+        )
     connectors = sorted(by_connector.values(), key=lambda c: c["connector"])
     return {"count": len(connectors), "connectors": connectors}
 
@@ -644,6 +776,16 @@ def _h_verify_market_claim(reg: Registry, args: dict[str, Any]) -> CallToolResul
 def _h_get_report_for_tam(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
     # Async: it may fall back to the durable Postgres store (server._call_tool awaits).
     return get_report_for_tam(reg, state_hash=args["state_hash"])
+
+
+def _h_export_report(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    # Async: shares the cache-then-durable-store TAM resolution (server awaits).
+    return export_report(
+        reg,
+        state_hash=args["state_hash"],
+        format=str(args.get("format", "html")),
+        branding=args.get("branding"),
+    )
 
 
 def _h_list_primitives(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
@@ -873,6 +1015,18 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "inputSchema": schemas.GET_REPORT_FOR_TAM,
         "handler": _h_get_report_for_tam,
+        "annotations": _READ,
+    },
+    "export_report": {
+        "description": (
+            "[READ] Export the ENTIRE professional report for a TAM (by state_hash) in "
+            "one call: premium structured sections + a self-contained Altimeter-grade "
+            "HTML deck (+ base64 PDF when format=pdf and WeasyPrint is available) + "
+            "chart specs + citations + next_actions. The forwardable deliverable Maya "
+            "emails to the IC — bound to the exact TAM, every figure sourced (Q20)."
+        ),
+        "inputSchema": schemas.EXPORT_REPORT,
+        "handler": _h_export_report,
         "annotations": _READ,
     },
     "verify_market_claim": {
