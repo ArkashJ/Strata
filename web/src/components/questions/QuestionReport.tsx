@@ -12,44 +12,15 @@
 
 import Link from "next/link";
 
-import { ReportCharts } from "@/components/questions/ReportCharts";
+import { ReportSummary } from "@/components/questions/ReportSummary";
 import { Button } from "@/components/ui/Button";
 import { SourcedNumber } from "@/components/ui/SourcedNumber";
-import { formatSnapshot, tierLabel } from "@/lib/format";
-import type {
-  AnswerProvenance,
-  ConceptQuestionReport,
-  QuestionCategory,
-  ResolvedAnswer,
-} from "@/lib/schemas";
-
-// Spec order for the 10 analysis buckets — drives both grouping and section
-// order. A category with no resolved answers is simply not rendered.
-const CATEGORY_ORDER: readonly QuestionCategory[] = [
-  "market_size",
-  "growth_rate",
-  "segmentation",
-  "geography",
-  "competition_share",
-  "regulation",
-  "adoption",
-  "unit_economics",
-  "risks",
-  "methodology",
-];
-
-const CATEGORY_LABEL: Record<QuestionCategory, string> = {
-  market_size: "Market size",
-  growth_rate: "Growth rate",
-  segmentation: "Segmentation",
-  geography: "Geography",
-  competition_share: "Competition & share",
-  regulation: "Regulation",
-  adoption: "Adoption",
-  unit_economics: "Unit economics",
-  risks: "Risks",
-  methodology: "Methodology",
-};
+import { tierColor } from "@/lib/chart-colors";
+import { isPlaceholderSnapshot, tierLabel } from "@/lib/format";
+// Single source of truth for bucket order + labels — shared with the summary
+// charts so the per-section body and the visual band can't drift apart.
+import { CATEGORY_LABEL, CATEGORY_ORDER } from "@/lib/report-metrics";
+import type { AnswerProvenance, ConceptQuestionReport, ResolvedAnswer } from "@/lib/schemas";
 
 // Pull a /tam/<hash> permalink out of the backend's synthesis sentence so the
 // reader can jump to the interactive, reproducible TAM. The hash is the only
@@ -115,8 +86,9 @@ export function QuestionReport({ report }: { report: ConceptQuestionReport }) {
         />
       </section>
 
-      {/* Visual summary — derived from the answered/gap + provenance data. */}
-      <ReportCharts report={report} />
+      {/* Executive visual band — headline TAM, range, methodology, coverage,
+          gaps, tier mix, and the source ledger — all derived from the payload. */}
+      <ReportSummary report={report} />
 
       {report.answers.length === 0 ? (
         <p className="report-block mt-8 text-[13px] text-[var(--fg-3)]">
@@ -235,24 +207,49 @@ function AnswerCard({ answer: a }: { answer: ResolvedAnswer }) {
         </div>
       ) : null}
 
-      {/* Provenance snapshot tails — one row per sourced primitive behind it. */}
-      {a.provenance.length > 0 ? (
-        <ul className="mt-3 flex flex-col gap-1 border-t border-[var(--border-1)] pt-3 text-[11px] text-[var(--fg-3)]">
-          {a.provenance.map((p) => (
-            <li key={p.primitive_slug} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-              <span className="text-[var(--fg-2)]">{p.primitive_slug}</span>
-              {p.source_tier ? (
-                <span className="font-mono uppercase tracking-wide">
-                  {tierLabel(p.source_tier)}
-                </span>
-              ) : (
-                <span className="font-mono uppercase tracking-wide">composite</span>
-              )}
-              <span className="font-mono">{formatSnapshot(p.snapshot_sha256)}</span>
-              {p.as_of ? <span>as of {p.as_of}</span> : null}
-            </li>
-          ))}
-        </ul>
+      {/* Compact provenance — tier chips + an honest pin note. The full per-
+          source detail (slug, snapshot, as-of) lives ONCE in the summary's
+          source ledger, so cards no longer reprint the same five rows. */}
+      {a.provenance.length > 0 ? <ProvenanceChips provenance={a.provenance} /> : null}
+    </div>
+  );
+}
+
+// Compact provenance for a single answer: one chip per distinct source tier
+// (tier hue = the load-bearing colour contract) with a count, plus an honest
+// "not pinned (demo)" note when any backing snapshot is a placeholder sentinel.
+function ProvenanceChips({ provenance }: { provenance: readonly AnswerProvenance[] }) {
+  const tierCounts = new Map<string, number>();
+  for (const p of provenance) {
+    const key = p.source_tier ?? "composite";
+    tierCounts.set(key, (tierCounts.get(key) ?? 0) + 1);
+  }
+  const anyPlaceholder = provenance.some((p) => isPlaceholderSnapshot(p.snapshot_sha256));
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--border-1)] pt-3 text-[11px] text-[var(--fg-3)]">
+      <span className="text-[var(--fg-3)]">
+        {provenance.length} source{provenance.length === 1 ? "" : "s"}
+      </span>
+      {[...tierCounts.entries()].map(([tier, count]) => (
+        <span
+          key={tier}
+          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide"
+          style={
+            tier === "composite"
+              ? { color: "var(--fg-3)", backgroundColor: "var(--bg-2)" }
+              : {
+                  color: tierColor(tier),
+                  backgroundColor: `color-mix(in srgb, ${tierColor(tier)} 14%, transparent)`,
+                }
+          }
+        >
+          {tier === "composite" ? "Composite" : tierLabel(tier)}
+          {count > 1 ? <span className="opacity-70">{count}</span> : null}
+        </span>
+      ))}
+      {anyPlaceholder ? (
+        <span className="font-mono text-[10px] text-[var(--warning)]">not pinned (demo)</span>
       ) : null}
     </div>
   );
