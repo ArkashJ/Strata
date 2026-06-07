@@ -251,7 +251,10 @@ function KeyList() {
 // ── ConnectSnippets ───────────────────────────────────────────────────────────
 
 function ConnectSnippets({ latestKey }: { latestKey: string | null }) {
-  const mcpUrl = `${env.NEXT_PUBLIC_API_URL}/mcp`;
+  // Trailing slash is load-bearing: the mounted /mcp app 307-redirects /mcp ->
+  // /mcp/, and HTTP clients drop the Authorization header across the redirect —
+  // so the key silently fails to authenticate. Point clients straight at /mcp/.
+  const mcpUrl = `${env.NEXT_PUBLIC_API_URL}/mcp/`;
   const key = latestKey ?? "strata_sk_live_…";
   const hasRealKey = latestKey !== null;
 
@@ -270,7 +273,9 @@ function ConnectSnippets({ latestKey }: { latestKey: string | null }) {
     2,
   );
 
-  const rawSnippet = `URL: ${mcpUrl}\nHeader: Authorization: Bearer ${key}`;
+  // The streamable-HTTP transport requires an explicit Accept (it rejects */*),
+  // so a hand-rolled / ChatGPT client must send it — documented here.
+  const rawSnippet = `URL: ${mcpUrl}\nHeader: Authorization: Bearer ${key}\nHeader: Accept: application/json, text/event-stream`;
 
   return (
     <div className="flex flex-col gap-4">

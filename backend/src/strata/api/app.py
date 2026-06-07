@@ -202,7 +202,19 @@ def create_app() -> FastAPI:
         # "stratabank.vercel.app is empty" bug). Starlette ORs allow_origins with
         # allow_origin_regex, so adding the exact host here wins regardless of the
         # configured regex. Exact-host only — no wildcard, no bypass surface.
-        cors_origins = sorted({*cors_origins, "https://stratabank.vercel.app"})
+        # The agent-connector hosts (claude.ai, ChatGPT) are included so a
+        # browser-origin "add custom connector" UI can complete its CORS preflight
+        # to /mcp/. Exact hosts only; auth still requires a valid API key, so this
+        # widens only the preflight, never the data surface.
+        cors_origins = sorted(
+            {
+                *cors_origins,
+                "https://stratabank.vercel.app",
+                "https://claude.ai",
+                "https://chatgpt.com",
+                "https://chat.openai.com",
+            }
+        )
 
     app.add_middleware(
         CORSMiddleware,

@@ -207,11 +207,10 @@ export default function AgentsPage() {
           </div>
           <div className="flex flex-col gap-2">
             <h3 className="text-[13px] text-[var(--fg-2)]">Hosted (HTTP)</h3>
-            <CodeBlock>{`# streamable-HTTP endpoint
-POST  https://<your-strata-host>/mcp
-
-# enable live connector fetches (off by default)
-STRATA_MCP_LIVE_CONNECTORS=1`}</CodeBlock>
+            <CodeBlock>{`# streamable-HTTP endpoint (trailing slash required)
+POST  https://<your-strata-host>/mcp/
+Header: Authorization: Bearer strata_sk_live_…
+Header: Accept: application/json, text/event-stream`}</CodeBlock>
           </div>
         </div>
       </section>

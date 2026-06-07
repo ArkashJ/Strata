@@ -33,4 +33,11 @@ fi
 PORT="${PORT:-8000}"
 
 echo "[entrypoint] starting uvicorn on 0.0.0.0:${PORT}"
-exec uvicorn strata.api.app:app --host 0.0.0.0 --port "${PORT}"
+# --proxy-headers + --forwarded-allow-ips='*': behind Railway's TLS-terminating
+# edge the container speaks plain http, so without trusting X-Forwarded-Proto a
+# trailing-slash redirect (e.g. POST /mcp -> /mcp/) is emitted with an http://
+# Location. That scheme downgrade makes HTTP clients (httpx, the MCP transport)
+# DROP the Authorization header across the redirect -> the hosted /mcp connector
+# 401s a valid key. Trusting the proxy headers keeps the redirect on https.
+exec uvicorn strata.api.app:app --host 0.0.0.0 --port "${PORT}" \
+  --proxy-headers --forwarded-allow-ips='*'
