@@ -169,7 +169,7 @@ async def test_record_gap_dedups_and_counts(_clean: None) -> None:
         assert g2.hit_count == 2  # same dedup_key → bumped, not duplicated
 
     async with org_session_scope(_TENANT_A) as s:
-        rows = await list_gaps(s)
+        rows = await list_gaps(s, org_id=_TENANT_A)
         assert len(rows) == 1
         assert rows[0].hit_count == 2
 
@@ -189,10 +189,46 @@ async def test_gaps_rank_by_demand_and_isolate(_clean: None) -> None:
         await record_gap(s, org_id=_TENANT_B, source=GapSource.MANUAL, query_text="B only")
 
     async with org_session_scope(_TENANT_A) as s:
-        rows = await list_gaps(s)
+        rows = await list_gaps(s, org_id=_TENANT_A)
         assert [r.query_text for r in rows][0] == "hot market"  # most-demanded first
         assert all(r.org_id == _TENANT_A for r in rows)
         assert "B only" not in {r.query_text for r in rows}
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_list_gaps_filters_by_arg_even_if_rls_bypassed(_clean: None) -> None:
+    """Defense-in-depth: the explicit ``org_id`` filter isolates even if the session
+    could see other orgs' rows (the superuser/BYPASSRLS scenario). We simulate that
+    by querying through an ADMIN session (which CAN see every org) but passing
+    ``list_gaps``'s own ``org_id`` filter — only the named org's rows come back."""
+    from strata.db.engine import admin_session_scope, org_session_scope
+    from strata.db.sourcing_gaps import list_gaps, record_gap
+
+    async with org_session_scope(_TENANT_A) as s:
+        await record_gap(s, org_id=_TENANT_A, source=GapSource.MANUAL, query_text="A gap")
+    async with org_session_scope(_TENANT_B) as s:
+        await record_gap(s, org_id=_TENANT_B, source=GapSource.MANUAL, query_text="B gap")
+
+    # Admin session sees every org (RLS open) — but list_gaps' org_id predicate
+    # still restricts to _TENANT_A. Without the explicit filter this would leak B.
+    async with admin_session_scope(_TENANT_A) as s:
+        rows = await list_gaps(s, org_id=_TENANT_A)
+        assert {r.org_id for r in rows} == {_TENANT_A}
+        assert "B gap" not in {r.query_text for r in rows}
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_record_gap_refuses_org_mismatch(_clean: None) -> None:
+    """A write whose org_id ≠ the session's app.org_id is refused (so a spoofed
+    org can't be persisted even under a BYPASSRLS role)."""
+    from strata.db.engine import OrgScopeMismatchError, org_session_scope
+    from strata.db.sourcing_gaps import record_gap
+
+    async with org_session_scope(_TENANT_A) as s:
+        with pytest.raises(OrgScopeMismatchError):
+            await record_gap(s, org_id=_TENANT_B, source=GapSource.MANUAL, query_text="spoofed")
 
 
 @_PG
@@ -213,8 +249,8 @@ async def test_admin_sees_every_org_gap_and_can_mark_sourced(_clean: None) -> No
 
     # Closing a gap (its number got sourced) flips status under its own tenant.
     async with org_session_scope(_TENANT_A) as s:
-        closed = await mark_gap_sourced(s, gid, note="sourced via census")
+        closed = await mark_gap_sourced(s, gid, org_id=_TENANT_A, note="sourced via census")
         assert closed is not None and closed.status is GapStatus.SOURCED
     async with org_session_scope(_TENANT_A) as s:
-        open_rows = await list_gaps(s, status=GapStatus.OPEN)
+        open_rows = await list_gaps(s, org_id=_TENANT_A, status=GapStatus.OPEN)
         assert gid not in {r.id for r in open_rows}

@@ -138,6 +138,7 @@ async def list_feedback_route(
     async with org_session_scope(principal.org_id) as session:
         return await list_feedback(
             session,
+            org_id=principal.org_id,
             status=status,
             target_type=target_type,
             limit=limit,
@@ -157,7 +158,11 @@ async def patch_feedback(
 ) -> FeedbackEvent:
     async with org_session_scope(principal.org_id) as session:
         updated = await update_feedback(
-            session, feedback_id, status=body.status, resolution=body.resolution
+            session,
+            feedback_id,
+            org_id=principal.org_id,
+            status=body.status,
+            resolution=body.resolution,
         )
     if updated is None:
         raise HTTPException(status_code=404, detail=f"no feedback {feedback_id}")

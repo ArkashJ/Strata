@@ -110,7 +110,7 @@ async def list_sourcing_gaps(
         }
     org = current_org_id()
     async with org_session_scope(org) as session:
-        rows = await list_gaps(session, status=status_filter, limit=capped)
+        rows = await list_gaps(session, org_id=org, status=status_filter, limit=capped)
     return {
         "scope": "org",
         "org_id": org,

@@ -29,7 +29,6 @@ from strata.connectors.openfda import OpenFDAClient
 from strata.connectors.usda_nass import NASSClient
 from strata.connectors.worldbank import WorldBankClient
 
-
 TAM_QUERIES: list[dict[str, object]] = [
     # Kyber — P&C insurance doc-gen
     {
