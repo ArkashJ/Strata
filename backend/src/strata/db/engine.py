@@ -59,6 +59,26 @@ async def set_org_scope(session: AsyncSession, org_id: str) -> None:
     await session.execute(text("SELECT set_config('app.org_id', :org, true)"), {"org": org_id})
 
 
+class OrgScopeMismatchError(RuntimeError):
+    """A tenant write supplied an ``org_id`` that does not match the session's
+    ``app.org_id`` GUC — refused so a spoofed/misrouted org can't be persisted
+    even under a BYPASSRLS (superuser) runtime role, where the RLS ``WITH CHECK``
+    would not catch it."""
+
+
+async def assert_org_matches_session(session: AsyncSession, org_id: str) -> None:
+    """Defense-in-depth for tenant INSERTs: verify the caller-supplied ``org_id``
+    equals the transaction's ``app.org_id`` GUC before writing. RLS ``WITH CHECK``
+    normally enforces this, but a superuser role bypasses RLS — so a write path
+    that bakes in a caller-supplied org needs this server-side check too. Raises
+    :class:`OrgScopeMismatchError` on mismatch."""
+    current = (
+        await session.execute(text("SELECT current_setting('app.org_id', true)"))
+    ).scalar_one_or_none()
+    if current != org_id:
+        raise OrgScopeMismatchError(f"write org_id {org_id!r} != session app.org_id {current!r}")
+
+
 @asynccontextmanager
 async def org_session_scope(org_id: str) -> AsyncGenerator[AsyncSession]:
     """A transactional session with RLS scoped to ``org_id`` — every query inside

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from strata.loader import load_data_dir
 from strata.registry import Registry
 from strata.validator import validate

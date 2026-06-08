@@ -1308,7 +1308,7 @@ def feedback_list(org: str = _FB_ORG_OPT, status: str | None = _FB_STATUS_OPT) -
 
     async def _run() -> list[FeedbackEvent]:
         async with org_session_scope(org) as session:
-            return await list_feedback(session, status=status_filter, limit=100)
+            return await list_feedback(session, org_id=org, status=status_filter, limit=100)
 
     try:
         rows = asyncio.run(_run())
@@ -1356,7 +1356,11 @@ def feedback_resolve(
                 )
                 return f"applied → org-private primitive {prim.slug!r} (id={prim.id})"
             updated = await update_feedback(
-                session, feedback_id, status=FeedbackStatus.RESOLVED, resolution=resolution
+                session,
+                feedback_id,
+                org_id=org,
+                status=FeedbackStatus.RESOLVED,
+                resolution=resolution,
             )
             if updated is None:
                 raise FeedbackNotApplicableError(f"no feedback {feedback_id} visible to this org")
@@ -1412,7 +1416,7 @@ def gaps_list(
         if org is None:
             raise ValueError("pass --org <workspace> (or --all for the platform queue)")
         async with org_session_scope(org) as session:
-            return await list_gaps(session, status=status_filter, limit=limit)
+            return await list_gaps(session, org_id=org, status=status_filter, limit=limit)
 
     try:
         rows = asyncio.run(_run())
@@ -1488,7 +1492,7 @@ def gaps_resolve(
     async def _run() -> bool:
         async with org_session_scope(org) as session:
             closed = await mark_gap_sourced(
-                session, gap_id, resolved_primitive_id=primitive_id, note=note
+                session, gap_id, org_id=org, resolved_primitive_id=primitive_id, note=note
             )
             return closed is not None
 

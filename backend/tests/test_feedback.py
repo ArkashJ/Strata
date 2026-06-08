@@ -192,20 +192,27 @@ async def test_db_record_list_update_is_org_scoped(_clean: None) -> None:
 
     # A sees its own row; B sees none of A's (RLS isolation).
     async with org_session_scope(_ORG_A) as session:
-        a_rows = await list_feedback(session)
+        a_rows = await list_feedback(session, org_id=_ORG_A)
         assert {r.id for r in a_rows} == {fid}
         assert a_rows[0].suggested_value == {"adoption": 0.1}
     async with org_session_scope(_ORG_B) as session:
-        assert await list_feedback(session) == []
+        assert await list_feedback(session, org_id=_ORG_B) == []
 
     # B cannot update A's row (invisible → None).
     async with org_session_scope(_ORG_B) as session:
-        assert await update_feedback(session, fid, status=FeedbackStatus.RESOLVED) is None
+        assert (
+            await update_feedback(session, fid, org_id=_ORG_B, status=FeedbackStatus.RESOLVED)
+            is None
+        )
 
     # A resolves its own row.
     async with org_session_scope(_ORG_A) as session:
         updated = await update_feedback(
-            session, fid, status=FeedbackStatus.RESOLVED, resolution="fixed the source"
+            session,
+            fid,
+            org_id=_ORG_A,
+            status=FeedbackStatus.RESOLVED,
+            resolution="fixed the source",
         )
         assert updated is not None
         assert updated.status is FeedbackStatus.RESOLVED
@@ -236,9 +243,9 @@ async def test_db_list_filters_by_status_and_target(_clean: None) -> None:
             status=FeedbackStatus.TRIAGED,
         )
     async with org_session_scope(_ORG_A) as session:
-        open_rows = await list_feedback(session, status=FeedbackStatus.OPEN)
+        open_rows = await list_feedback(session, org_id=_ORG_A, status=FeedbackStatus.OPEN)
         assert {r.target_type for r in open_rows} == {TargetType.QUERY}
-        prim_rows = await list_feedback(session, target_type=TargetType.PRIMITIVE)
+        prim_rows = await list_feedback(session, org_id=_ORG_A, target_type=TargetType.PRIMITIVE)
         assert len(prim_rows) == 1
         assert prim_rows[0].status is FeedbackStatus.TRIAGED
 
@@ -328,7 +335,7 @@ async def test_failed_query_autocaptures_feedback(
     from strata.db.engine import org_session_scope
 
     async with org_session_scope(_ORG_A) as session:
-        rows = await list_feedback(session)
+        rows = await list_feedback(session, org_id=_ORG_A)
     assert any(
         r.kind is FeedbackKind.FAILED_QUERY and r.target_type is TargetType.QUERY for r in rows
     ), "a failed resolve must auto-create a failed_query feedback row"
@@ -449,7 +456,7 @@ async def test_apply_correction_rejects_modeled_tier(_clean: None) -> None:
 
     # The flag stays open and no primitive landed (the apply rolled back).
     async with org_session_scope(_ORG_A) as session:
-        rows = await list_feedback(session)
+        rows = await list_feedback(session, org_id=_ORG_A)
         assert rows[0].status is FeedbackStatus.OPEN
         assert rows[0].resolved_primitive_id is None
         assert await list_user_primitives(session, org_id=_ORG_A) == []
@@ -609,7 +616,7 @@ async def test_llm_unavailable_does_not_autocapture(
     from strata.db.engine import org_session_scope
 
     async with org_session_scope(_ORG_A) as session:
-        rows = await list_feedback(session)
+        rows = await list_feedback(session, org_id=_ORG_A)
     assert rows == [], "an LLM-unavailable failure must not auto-create a failed_query flag"
 
 

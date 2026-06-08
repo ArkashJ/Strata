@@ -154,7 +154,7 @@ async def list_feedback(reg: Registry, *, status: str | None = None) -> dict[str
         except ValueError as exc:
             return {"error": "invalid_status", "detail": str(exc)}
     async with org_session_scope(org) as session:
-        rows = await _list_feedback(session, status=status_filter, limit=100)
+        rows = await _list_feedback(session, org_id=org, status=status_filter, limit=100)
     return {
         "org_id": org,
         "count": len(rows),
