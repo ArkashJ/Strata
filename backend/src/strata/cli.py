@@ -1468,6 +1468,40 @@ def gaps_record(
     typer.echo(f"✓ Gap recorded (hit_count={hits}).")
 
 
+@gaps_app.command("resolve")
+def gaps_resolve(
+    gap_id: int = typer.Argument(..., help="Sourcing-gap row id to close."),
+    org: str = typer.Option(..., "--org", help="Workspace the gap belongs to (RLS tenant)."),
+    primitive_id: int | None = typer.Option(
+        None, "--primitive-id", help="The org-private primitive that now sources it."
+    ),
+    note: str | None = typer.Option(None, "--note", help="How it was sourced."),
+) -> None:
+    """Close a gap once its number is sourced — flips status to ``sourced`` and
+    optionally links the primitive that filled it."""
+    import asyncio
+
+    from strata.db.engine import org_session_scope
+    from strata.db.sourcing_gaps import mark_gap_sourced
+
+    async def _run() -> bool:
+        async with org_session_scope(org) as session:
+            closed = await mark_gap_sourced(
+                session, gap_id, resolved_primitive_id=primitive_id, note=note
+            )
+            return closed is not None
+
+    try:
+        ok = asyncio.run(_run())
+    except Exception as exc:
+        typer.echo(f"ERROR resolving gap: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    if not ok:
+        typer.echo(f"No gap {gap_id} visible to {org}.", err=True)
+        raise typer.Exit(code=1)
+    typer.echo(f"✓ Gap {gap_id} marked sourced.")
+
+
 admin_app = typer.Typer(
     name="admin",
     help="Cross-org governance: read every tenant's feedback, promote a correction "

@@ -1,9 +1,8 @@
 """Sourcing-gap writer + reader (Pillar B1 — measure the misses).
 
-Mirrors ``db/feedback.py``: ``record_gap_safe`` is fire-and-forget on its own
-org-scoped session (a failed gap-write never breaks the request that triggered
-it), while the explicit ``record_gap`` / ``list_*`` take an already-org-scoped
-session so the strict ``sourcing_gaps`` RLS isolates the tenant.
+``record_gap`` / ``list_*`` / ``mark_gap_sourced`` take an already-org-scoped
+session so the strict ``sourcing_gaps`` RLS isolates the tenant (the MCP tool /
+CLI own the ``org_session_scope``, mirroring ``db/feedback.py``).
 
 A gap is a demand signal, never a number — it never feeds the math (E1). The
 recorder DE-DUPLICATES on ``(org_id, dedup_key)``: a repeat miss bumps
@@ -13,7 +12,6 @@ inserting a duplicate, so the queue ranks by real demand.
 
 from __future__ import annotations
 
-import logging
 import re
 
 from sqlalchemy import func, select
@@ -23,8 +21,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from strata.db.models import SourcingGapRow
 from strata.models.sourcing_gap import GapSource, GapStatus, SourcingGap
 
-_log = logging.getLogger(__name__)
-_ANONYMOUS_ORG = "public"
 _WS = re.compile(r"\s+")
 
 
@@ -32,11 +28,12 @@ def make_dedup_key(*, query_text: str | None, resource_target: str | None) -> st
     """Collapse a miss onto a stable identity. A named ``resource_target`` (the
     connector/method that would fill it, e.g. ``bls:displacement-by-occupation``)
     wins — many phrasings map to one gap. Otherwise the normalized query text
-    (lowercased, whitespace-collapsed, trimmed) is the key."""
+    (lowercased, whitespace-collapsed, trimmed) is the key (``"query:"`` when
+    empty — the f-string already yields that, no special-case needed)."""
     if resource_target:
         return f"target:{resource_target.strip().lower()}"
     q = _WS.sub(" ", (query_text or "").strip().lower())
-    return f"query:{q}" if q else "query:"
+    return f"query:{q}"
 
 
 async def record_gap(
@@ -84,46 +81,6 @@ async def record_gap(
     ).returning(SourcingGapRow)
     row = (await session.execute(stmt)).scalar_one()
     return SourcingGap.model_validate(row)
-
-
-async def record_gap_safe(
-    *,
-    org_id: str | None,
-    source: GapSource,
-    query_text: str | None = None,
-    concept_slug: str | None = None,
-    role: str | None = None,
-    lens: str | None = None,
-    unit_hint: str | None = None,
-    resource_target: str | None = None,
-    note: str | None = None,
-) -> int | None:
-    """Fire-and-forget gap write on its own org-scoped session. Swallows (but
-    logs) any failure so capturing a gap can never break the request that hit it.
-    Returns the row id, or ``None`` when dropped (anonymous org has no tenant
-    bucket under the closed RLS, exactly like the feedback writer)."""
-    if not org_id or org_id == _ANONYMOUS_ORG:
-        return None
-    try:
-        from strata.db.engine import org_session_scope
-
-        async with org_session_scope(org_id) as session:
-            gap = await record_gap(
-                session,
-                org_id=org_id,
-                source=source,
-                query_text=query_text,
-                concept_slug=concept_slug,
-                role=role,
-                lens=lens,
-                unit_hint=unit_hint,
-                resource_target=resource_target,
-                note=note,
-            )
-            return gap.id
-    except Exception:
-        _log.warning("sourcing_gap.write_failed source=%s", source.value)
-        return None
 
 
 async def list_gaps(
