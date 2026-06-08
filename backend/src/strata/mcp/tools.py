@@ -301,12 +301,22 @@ def resolve_market(reg: Registry, *, query: str) -> dict[str, Any]:
     if slug is None:
         return {
             "matched": False,
+            # Machine-readable so an agent cannot mistake a miss for a sourced
+            # number (AC-B2.1): no sourced data exists for this query.
+            "unsourced": True,
+            "estimate_kind": None,
+            "independence_score": 0.0,
             "query": query,
             "message": (
                 "No curated concept matches this query. Strata's MCP surface only "
-                "returns sourced, hash-pinned numbers; use the Strata web app for "
-                "novel LLM synthesis."
+                "returns sourced, hash-pinned numbers — this query is unsourced. "
+                "Report it with report_sourcing_gap so the miss becomes ranked "
+                "demand for the sourcing backlog."
             ),
+            "next_action": {
+                "tool": "report_sourcing_gap",
+                "payload": {"query_text": query, "source": "resolve_miss"},
+            },
         }
     return {"matched": True, "via": "concept", **_serialize_tam(reg, slug)}
 
@@ -911,6 +921,23 @@ def _h_admin_promote_correction(reg: Registry, args: dict[str, Any]) -> Awaitabl
     return admin_promote_correction(reg, feedback_id=int(args["feedback_id"]))
 
 
+def _h_report_sourcing_gap(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    from .sourcing_gap_tools import report_sourcing_gap
+
+    return report_sourcing_gap(reg, payload=dict(args.get("payload") or {}))
+
+
+def _h_list_sourcing_gaps(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    from .sourcing_gap_tools import list_sourcing_gaps
+
+    return list_sourcing_gaps(
+        reg,
+        status=args.get("status"),
+        scope=str(args.get("scope", "org")),
+        limit=int(args.get("limit", 50)),
+    )
+
+
 # Tool annotations (mcp-builder): hints a client uses to label a tool. All Strata
 # tools that touch the data bank are read-only; the two portfolio tools write to
 # the caller's org store (non-destructive); connector + size_company touch the
@@ -1138,6 +1165,29 @@ TOOLS: dict[str, dict[str, Any]] = {
         "inputSchema": schemas.ADMIN_PROMOTE_CORRECTION,
         "handler": _h_admin_promote_correction,
         "annotations": _WRITE,
+    },
+    "report_sourcing_gap": {
+        "description": (
+            "[WRITE] Record that sourced data was MISSING for a query / role — so the "
+            "miss becomes ranked demand instead of vanishing. Call this when "
+            "resolve_market returns matched=false or verify_market_claim is "
+            "unverifiable. De-duplicated (a repeat bumps hit_count). Commentary on "
+            "supply, never a number (E1)."
+        ),
+        "inputSchema": schemas.REPORT_SOURCING_GAP,
+        "handler": _h_report_sourcing_gap,
+        "annotations": _WRITE,
+    },
+    "list_sourcing_gaps": {
+        "description": (
+            "[READ] List sourcing gaps, most-demanded first (hit_count desc). "
+            "scope='org' (default) = your workspace; scope='all' = every workspace "
+            "ranked platform-wide (ADMIN only). The demand-ranked connector / "
+            "sourcing backlog."
+        ),
+        "inputSchema": schemas.LIST_SOURCING_GAPS,
+        "handler": _h_list_sourcing_gaps,
+        "annotations": _READ,
     },
 }
 
