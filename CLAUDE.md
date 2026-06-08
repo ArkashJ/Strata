@@ -41,7 +41,42 @@ When the visual system drifts, re-run `/impeccable document` to refresh
 
 ---
 
-## Repo state (as of 2026-06-03)
+## Repo state (as of 2026-06-08)
+
+> **Direction lock — MCP + CLI are the product; the web UI is FROZEN.** All new
+> capability ships through `strata.mcp` (the surface agents drive) and the
+> `strata` CLI (the surface a human analyst drives). Spec + business acceptance
+> criteria across four pillars (A trust/feedback · B data-source robustness ·
+> C analyst outputs · D deep-dive) in
+> [`docs/plans/2026-06-07-mcp-cli-research-engine-spec.md`](docs/plans/2026-06-07-mcp-cli-research-engine-spec.md).
+>
+> - **Merged to main (PRs #133 spec · #134 admin · #135 gaps; full suite 1127
+>   green):** the MCP surface is now **26 tools**. **Pillar A — admin cross-org
+>   feedback governance:** `STRATA_ADMIN_ORGS` allowlist + `auth.is_admin`;
+>   `admin_session_scope` sets an audited `app.is_admin` GUC; **migration 016**
+>   adds *additive* permissive admin-read/update RLS policies (the closed tenant
+>   policy is untouched — GUC-unset sessions behave exactly as before, verified
+>   empirically). MCP `admin_list_feedback` / `admin_promote_correction` (prod-safe:
+>   returns the committable `data/primitives/<slug>.yaml`, no server-side disk
+>   write) + CLI `strata admin feedback|promote`. `guards.fence.validate_and_fence_shared_primitive`
+>   is the public twin of the private fence — refuses modeled/analyst tier (Q20)
+>   at the shared door. **Pillar B1 — sourcing-gap queue (the accuracy fix):**
+>   `resolve_market` miss now returns machine-readable `unsourced=true` + a
+>   `next_action` → `report_sourcing_gap`; gaps de-dup on `(org_id, dedup_key)`
+>   via `INSERT…ON CONFLICT` bumping `hit_count` (**migration 017**, closed RLS +
+>   admin read). MCP `report_sourcing_gap` / `list_sourcing_gaps` (`scope='all'`
+>   admin-only) + CLI `strata gaps list|record|resolve`. A gap is a demand signal,
+>   never a number (E1). The feedback loop itself (`submit/list/apply_feedback`,
+>   migrations 014/015) + `verify_market_claim` + branded `export_report` already
+>   shipped earlier; **all four are now on `main`**.
+> - **Deploy gap (live as of 2026-06-08):** prod MCP is a **stale v0.11.0** build —
+>   the feedback / verify / admin / gap tools are merged to `main` but NOT yet on
+>   the hosted server (`strata-api-production-9740.up.railway.app`). A railway
+>   redeploy is required to make them live; the entrypoint auto-runs migrations
+>   014–017 on boot. Until then `whoami` shows the old tool set.
+> - **Next (in flight):** Pillar C analyst outputs (XLSX/DCF/LBO), Pillar D
+>   `deepen_market`, and an MCP trace-capture layer (tool calls + chain-of-thought
+>   → golden test fixtures).
 
 > **In flight — v1.0 program (6 stacked PRs, `docs/TODO_june6.md`).** Driving a
 > tool the owner would actually use: live steerable TAM tree, real per-user
