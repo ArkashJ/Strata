@@ -18,6 +18,7 @@ from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from strata.db.engine import assert_org_matches_session
 from strata.db.models import SourcingGapRow
 from strata.models.sourcing_gap import GapSource, GapStatus, SourcingGap
 
@@ -51,7 +52,10 @@ async def record_gap(
 ) -> SourcingGap:
     """Upsert one gap inside an already-org-scoped session. A repeat (same
     ``dedup_key``) bumps ``hit_count`` + ``last_seen_at`` rather than inserting a
-    duplicate — so the row's count is how many times this number was asked for."""
+    duplicate — so the row's count is how many times this number was asked for.
+    The session-match guard refuses a spoofed/misrouted ``org_id`` even under a
+    BYPASSRLS (superuser) role, where the RLS ``WITH CHECK`` would not catch it."""
+    await assert_org_matches_session(session, org_id)
     dedup_key = make_dedup_key(query_text=query_text, resource_target=resource_target)
     insert_stmt = pg_insert(SourcingGapRow).values(
         org_id=org_id,
@@ -86,13 +90,16 @@ async def record_gap(
 async def list_gaps(
     session: AsyncSession,
     *,
+    org_id: str,
     status: GapStatus | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> list[SourcingGap]:
-    """The org's gaps, most-demanded first (hit_count desc, then most-recent).
-    RLS restricts rows to ``app.org_id``."""
-    stmt = select(SourcingGapRow)
+    """The org's gaps, most-demanded first (hit_count desc, then most-recent). RLS
+    restricts rows to ``app.org_id``; the explicit ``org_id`` filter is a
+    defense-in-depth backstop so isolation does not depend on RLS alone (e.g. a
+    superuser / BYPASSRLS runtime role)."""
+    stmt = select(SourcingGapRow).where(SourcingGapRow.org_id == org_id)
     if status is not None:
         stmt = stmt.where(SourcingGapRow.status == status.value)
     stmt = (
@@ -130,13 +137,19 @@ async def mark_gap_sourced(
     session: AsyncSession,
     gap_id: int,
     *,
+    org_id: str,
     resolved_primitive_id: int | None = None,
     note: str | None = None,
 ) -> SourcingGap | None:
-    """Close a gap once the number is sourced (RLS-scoped). ``None`` when no such
-    row is visible to this tenant."""
+    """Close a gap once the number is sourced (RLS-scoped). The explicit ``org_id``
+    predicate is a defense-in-depth backstop so a caller can't close another
+    tenant's gap even if RLS were bypassed. ``None`` when no such row is visible."""
     row = (
-        await session.execute(select(SourcingGapRow).where(SourcingGapRow.id == gap_id))
+        await session.execute(
+            select(SourcingGapRow).where(
+                SourcingGapRow.id == gap_id, SourcingGapRow.org_id == org_id
+            )
+        )
     ).scalar_one_or_none()
     if row is None:
         return None

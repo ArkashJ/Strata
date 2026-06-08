@@ -20,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from strata.db.engine import assert_org_matches_session
 from strata.db.models import FeedbackEventRow
 from strata.db.user_primitives import UserPrimitive, create_user_primitive
 from strata.guards.fence import validate_and_fence_shared_primitive
@@ -66,7 +67,10 @@ async def record_feedback(
     status: FeedbackStatus = FeedbackStatus.OPEN,
 ) -> FeedbackEvent:
     """Insert one feedback row inside an already-org-scoped session. The caller
-    owns the scope (so ``app.org_id`` is set and the RLS ``WITH CHECK`` passes)."""
+    owns the scope (so ``app.org_id`` is set and the RLS ``WITH CHECK`` passes).
+    The session-match guard refuses a spoofed/misrouted ``org_id`` even under a
+    BYPASSRLS (superuser) role, where the RLS ``WITH CHECK`` would not catch it."""
+    await assert_org_matches_session(session, org_id)
     row = FeedbackEventRow(
         org_id=org_id,
         user_id=user_id,
@@ -129,14 +133,18 @@ async def record_feedback_safe(
 async def list_feedback(
     session: AsyncSession,
     *,
+    org_id: str,
     status: FeedbackStatus | None = None,
     target_type: TargetType | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> list[FeedbackEvent]:
-    """Return feedback rows newest-first, optionally filtered. RLS (the scoped
-    session) restricts rows to ``app.org_id``."""
-    stmt = select(FeedbackEventRow)
+    """Return the org's feedback rows newest-first, optionally filtered. RLS (the
+    scoped session) restricts rows to ``app.org_id``; the explicit ``org_id``
+    filter is a defense-in-depth backstop so isolation does not depend on RLS
+    alone (e.g. if the runtime DB role were ever a superuser / BYPASSRLS role —
+    mirrors ``db.user_primitives.list_user_primitives``)."""
+    stmt = select(FeedbackEventRow).where(FeedbackEventRow.org_id == org_id)
     if status is not None:
         stmt = stmt.where(FeedbackEventRow.status == status.value)
     if target_type is not None:
@@ -154,13 +162,20 @@ async def update_feedback(
     session: AsyncSession,
     feedback_id: int,
     *,
+    org_id: str,
     status: FeedbackStatus | None = None,
     resolution: str | None = None,
 ) -> FeedbackEvent | None:
-    """Triage / resolve one row (RLS-scoped to the caller's org). Returns ``None``
-    when no such row is visible to this tenant."""
+    """Triage / resolve one row (RLS-scoped to the caller's org). The explicit
+    ``org_id`` predicate is a defense-in-depth backstop so a caller can never
+    mutate another tenant's flag even if RLS were bypassed (superuser role).
+    Returns ``None`` when no such row is visible to this tenant."""
     row = (
-        await session.execute(select(FeedbackEventRow).where(FeedbackEventRow.id == feedback_id))
+        await session.execute(
+            select(FeedbackEventRow).where(
+                FeedbackEventRow.id == feedback_id, FeedbackEventRow.org_id == org_id
+            )
+        )
     ).scalar_one_or_none()
     if row is None:
         return None
@@ -225,7 +240,13 @@ async def admin_correction_payload(
 
         prim = (
             await session.execute(
-                select(UserPrimitiveRow).where(UserPrimitiveRow.id == row.resolved_primitive_id)
+                select(UserPrimitiveRow).where(
+                    UserPrimitiveRow.id == row.resolved_primitive_id,
+                    # defense-in-depth: the linked primitive must belong to the
+                    # flag's own org — a cross-org FK can't promote another
+                    # tenant's number even under a BYPASSRLS (superuser) role.
+                    UserPrimitiveRow.org_id == row.org_id,
+                )
             )
         ).scalar_one_or_none()
         if prim is not None:
@@ -296,8 +317,14 @@ async def apply_feedback_correction(
     row, already-resolved, wrong kind, or no correction payload); the primitive
     fences raise their own ``ValueError`` subclasses, which the caller maps to 422.
     """
+    # Explicit org predicate (defense-in-depth) so a caller can never apply a
+    # correction onto another tenant's flag even if RLS were bypassed.
     row = (
-        await session.execute(select(FeedbackEventRow).where(FeedbackEventRow.id == feedback_id))
+        await session.execute(
+            select(FeedbackEventRow).where(
+                FeedbackEventRow.id == feedback_id, FeedbackEventRow.org_id == org_id
+            )
+        )
     ).scalar_one_or_none()
     if row is None:
         raise FeedbackNotApplicableError(f"no feedback {feedback_id} visible to this org")

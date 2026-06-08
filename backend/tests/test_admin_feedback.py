@@ -233,7 +233,7 @@ async def test_admin_list_feedback_sees_every_org(_clean: None) -> None:
 
     # A tenant session still sees only its own (isolation intact).
     async with org_session_scope(_TENANT_A) as s:
-        a_rows = await tenant_list(s)
+        a_rows = await tenant_list(s, org_id=_TENANT_A)
         assert {r.org_id for r in a_rows} == {_TENANT_A}
 
 
