@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — workspace data stays private even if the database role is over-privileged
+
+- **A workspace's feedback and sourcing-gaps are now isolated by the application,
+  not just by the database.** Previously isolation relied solely on Postgres
+  row-level security; if the database connection runs as a superuser (which
+  bypasses that security), one workspace could see another's rows. Every
+  read, update, and write now also filters by the caller's own workspace, and a
+  write whose workspace doesn't match the active session is refused — so a
+  workspace sees and touches only its own data regardless of the database role.
+  Admin cross-workspace tools (for the owner) are unaffected.
+
+  ```
+  request ─▶ tenant query now carries  WHERE org_id = <caller's own>
+                                        (belt) + Postgres RLS (suspenders)
+          ─▶ tenant write refused unless org_id == active session's org
+  ```
+
 ### Added — feedback loop: flag bad assumptions and failed queries (Phase F)
 
 - **You (or an AI agent) can now flag what's wrong with a number, and the team
