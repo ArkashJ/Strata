@@ -235,6 +235,58 @@ caller always knows how trustworthy a number is.
 
 ---
 
+## 8. MCP trace capture: recording tool calls for replay and golden tests
+
+```mermaid
+flowchart TD
+    call["MCP tools/call"] -->|every call| dispatch["_call_tool dispatch<br/>(server.py:106)"]
+    
+    dispatch -->|audit path| audit["_audit_call<br/>(hashed args)"]
+    audit --> done["tool returns"]
+    
+    dispatch -->|trace path| trace["_trace_call (fire-and-forget)<br/>gated: STRATA_TRACE_CAPTURE"]
+    trace --> record["record_trace_safe<br/>(args, result_summary + sha256, status, ms)"]
+    record --> tool_traces[("tool_traces RLS<br/>session_id · seq · tool<br/>args · result_summary · result_sha256<br/>status · duration_ms")]
+    tool_traces --> session_upsert["upsert trace_sessions<br/>(call_count++, last_seen_at)"]
+    session_upsert --> prune["prune sessions > N per org<br/>(STRATA_TRACE_MAX_SESSIONS)"]
+    
+    done --> end1["✓ call completes"]
+    prune --> end2["(fire-and-forget)"]
+    
+    agent["agent"] -->|optional| reasoning["record_session_reasoning<br/>(MCP tool)"]
+    reasoning --> record_reason["record_reasoning<br/>(session_id, reasoning, outcome)"]
+    record_reason --> trace_sessions[("trace_sessions RLS<br/>session_id (pk) · org_id<br/>call_count · reasoning<br/>outcome · created_at")]
+    
+    list_show["strata traces<br/>list|show|export|replay"]
+    list_show -->|list/show| readers["list_sessions / get_session_calls<br/>(RLS-scoped, org or admin)"]
+    readers --> display["ordered calls: seq · tool · status · ms<br/>+ reasoning block"]
+    
+    list_show -->|export| export["→ golden fixture<br/>backend/tests/fixtures/traces/<session>.json"]
+    list_show -->|replay| replay["replay.py: registry-first, offline<br/>re-run call_tool per captured call<br/>sha256 diff: canonicalized result"]
+    replay --> report["ReplayReport per call:<br/>{match: bool, captured_hash, fresh_hash}"]
+    report -->|divergence?| status["exit non-zero (regression signal)"]
+    report -->|all match| green["exit 0 (golden test)"]
+    
+    classDef capture fill:#e6f3ff,stroke:#5B5BD6;
+    classDef rls fill:#fff,stroke:#0a0;
+    classDef cli fill:#f7f7ff,stroke:#333;
+    class trace,record,tool_traces,session_upsert capture;
+    class tool_traces,trace_sessions rls;
+    class list_show,replay,export cli;
+```
+
+**Two-tier capture (automatic + opt-in):** every MCP call is automatically recorded
+(name, args, structural result summary + sha256, status, duration, org, session, seq)
+fire-and-forget into RLS-scoped `tool_traces` + `trace_sessions` tables, gated off by
+default (`STRATA_TRACE_CAPTURE`). The agent can opt-in to a second tier by calling
+`record_session_reasoning` with its reasoning and a coarse outcome tag (ok / unsourced /
+unverifiable / error / flagged), stitching WHY into the session. The replay side exports
+a captured session to a golden fixture or replays it offline against current code,
+sha256-diffing results to surface silent regressions — the instrument that makes
+connector roadmapping evidence-driven.
+
+---
+
 ## Tool index (quick reference)
 
 | Tier | Tools | Gate |
@@ -247,3 +299,4 @@ caller always knows how trustworthy a number is.
 | Feedback (write) | submit_feedback, list_feedback, apply_feedback | auth (org) |
 | Admin (cross-org) | admin_list_feedback, admin_promote_correction | `STRATA_ADMIN_ORGS` |
 | Sourcing-gap | report_sourcing_gap, list_sourcing_gaps | auth (org); `scope=all` admin |
+| Trace (capture) | record_session_reasoning | auth (org); `STRATA_TRACE_CAPTURE` |

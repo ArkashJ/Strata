@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — MCP trace-capture: every tool call captured for replay and regression testing (Direction 1)
+
+Every MCP call is automatically recorded — tool name, arguments, structural result summary
++ SHA256 hash, status, duration, org, session ID, sequence — fire-and-forget into
+RLS-scoped `tool_traces` + `trace_sessions` tables (migration 018). Capture is gated off
+by default (`STRATA_TRACE_CAPTURE`); when enabled, calls never raise into the dispatch
+path (bare-except fire-and-forget). Agents opt-in to a second tier by calling a new
+`record_session_reasoning` MCP tool (27 total) to stitch their reasoning + outcome
+(`ok|unsourced|unverifiable|error|flagged`) to the session they just ran.
+
+  ```
+  every call ──► automatic capture ──► tool_traces + trace_sessions (RLS, off-by-default)
+                      └─ can drift (e2g, API changed) ─┐
+                                                        ▼
+  agent reasoning ─► record_session_reasoning ──► trace_sessions.reasoning (opt-in)
+
+  strata traces list|show ─► list sessions + ordered calls + reasoning
+  strata traces export ───► golden fixture (backend/tests/fixtures/traces/<session>.json)
+  strata traces replay ───► registry-first, offline re-run; sha256-diff results
+                            → ReplayReport per call (match: bool, captured_hash, fresh_hash)
+                            → exit non-zero if divergence (regression signal, CI-usable)
+  ```
+
+The replay harness runs with live connectors gated off (`STRATA_MCP_LIVE_CONNECTORS`
+unset during replay) so results are deterministic; write tools are skipped by default
+(`--include-writes` to override) to prevent mutation on replay. Retention: keep most
+recent **N=200 sessions per org** (default, configurable); args/results truncated to
+**64 KB** per field with a `truncated` flag for honesty. Same RLS as feedback/gaps (org
+isolation, admin cross-org read). The two-tier capture (what the server sees + what the
+agent knows) makes Direction 2's demand-ranked connectors evidence-driven instead of
+guessed.
+
 ### Added — feedback loop: flag bad assumptions and failed queries (Phase F)
 
 - **You (or an AI agent) can now flag what's wrong with a number, and the team
