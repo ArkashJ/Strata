@@ -1372,6 +1372,136 @@ def feedback_resolve(
     typer.echo(f"✓ Flag {feedback_id} {outcome}.")
 
 
+gaps_app = typer.Typer(
+    name="gaps",
+    help="The demand-ranked sourcing backlog: queries/roles we had no sourced number "
+    "for, ranked by how often they were asked.",
+    no_args_is_help=True,
+)
+app.add_typer(gaps_app)
+
+_GAPS_STATUS_OPT = typer.Option(None, "--status", help="Filter by status (open/sourced/wontfix).")
+_GAPS_ALL_OPT = typer.Option(False, "--all", help="Every workspace, ranked platform-wide (admin).")
+_GAPS_ORG_OPT = typer.Option(None, "--org", help="Narrow to a single workspace (with --all).")
+_GAPS_LIMIT_OPT = typer.Option(20, "--top", help="Max rows (most-demanded first).")
+
+
+@gaps_app.command("list")
+def gaps_list(
+    status: str | None = _GAPS_STATUS_OPT,
+    all_orgs: bool = _GAPS_ALL_OPT,
+    org: str | None = _GAPS_ORG_OPT,
+    limit: int = _GAPS_LIMIT_OPT,
+) -> None:
+    """List sourcing gaps, most-demanded first. ``--all`` ranks every workspace's
+    gaps platform-wide (the connector-build backlog ordered by real demand)."""
+    import asyncio
+
+    from strata.db.engine import admin_session_scope, org_session_scope
+    from strata.db.sourcing_gaps import admin_list_gaps, list_gaps
+    from strata.models.sourcing_gap import GapStatus, SourcingGap
+
+    status_filter = GapStatus(status) if status else None
+
+    async def _run() -> list[SourcingGap]:
+        if all_orgs:
+            async with admin_session_scope(_ADMIN_ORG) as session:
+                return await admin_list_gaps(session, status=status_filter, org_id=org, limit=limit)
+        # Org scope requires an explicit tenant when not --all.
+        if org is None:
+            raise ValueError("pass --org <workspace> (or --all for the platform queue)")
+        async with org_session_scope(org) as session:
+            return await list_gaps(session, status=status_filter, limit=limit)
+
+    try:
+        rows = asyncio.run(_run())
+    except ValueError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        typer.echo(f"ERROR listing gaps: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    if not rows:
+        typer.echo("No sourcing gaps recorded.")
+        return
+    for r in rows:
+        tgt = r.resource_target or (r.query_text or "")
+        scope = f"{r.org_id:<24} " if all_orgs else ""
+        typer.echo(f"  ×{r.hit_count:<4} [{r.status.value:<7}] {scope}{tgt[:64]}")
+
+
+@gaps_app.command("record")
+def gaps_record(
+    org: str = typer.Option(..., "--org", help="Workspace to attribute the gap to."),
+    query: str | None = typer.Option(None, "--query", help="The market that had no answer."),
+    resource_target: str | None = typer.Option(
+        None, "--target", help="connector:method that would fill it."
+    ),
+) -> None:
+    """Manually log a sourcing gap (de-duplicated; a repeat bumps its hit count)."""
+    import asyncio
+
+    from strata.db.engine import org_session_scope
+    from strata.db.sourcing_gaps import record_gap
+    from strata.models.sourcing_gap import GapSource
+
+    if not query and not resource_target:
+        typer.echo("ERROR: pass --query or --target", err=True)
+        raise typer.Exit(code=1)
+
+    async def _run() -> int:
+        async with org_session_scope(org) as session:
+            gap = await record_gap(
+                session,
+                org_id=org,
+                source=GapSource.MANUAL,
+                query_text=query,
+                resource_target=resource_target,
+            )
+            return gap.hit_count
+
+    try:
+        hits = asyncio.run(_run())
+    except Exception as exc:
+        typer.echo(f"ERROR recording gap: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"✓ Gap recorded (hit_count={hits}).")
+
+
+@gaps_app.command("resolve")
+def gaps_resolve(
+    gap_id: int = typer.Argument(..., help="Sourcing-gap row id to close."),
+    org: str = typer.Option(..., "--org", help="Workspace the gap belongs to (RLS tenant)."),
+    primitive_id: int | None = typer.Option(
+        None, "--primitive-id", help="The org-private primitive that now sources it."
+    ),
+    note: str | None = typer.Option(None, "--note", help="How it was sourced."),
+) -> None:
+    """Close a gap once its number is sourced — flips status to ``sourced`` and
+    optionally links the primitive that filled it."""
+    import asyncio
+
+    from strata.db.engine import org_session_scope
+    from strata.db.sourcing_gaps import mark_gap_sourced
+
+    async def _run() -> bool:
+        async with org_session_scope(org) as session:
+            closed = await mark_gap_sourced(
+                session, gap_id, resolved_primitive_id=primitive_id, note=note
+            )
+            return closed is not None
+
+    try:
+        ok = asyncio.run(_run())
+    except Exception as exc:
+        typer.echo(f"ERROR resolving gap: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    if not ok:
+        typer.echo(f"No gap {gap_id} visible to {org}.", err=True)
+        raise typer.Exit(code=1)
+    typer.echo(f"✓ Gap {gap_id} marked sourced.")
+
+
 admin_app = typer.Typer(
     name="admin",
     help="Cross-org governance: read every tenant's feedback, promote a correction "

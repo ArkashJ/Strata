@@ -315,6 +315,57 @@ ADMIN_PROMOTE_CORRECTION: dict[str, Any] = {
     "required": ["feedback_id"],
     "additionalProperties": False,
 }
+REPORT_SOURCING_GAP: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "payload": {
+            "type": "object",
+            "description": "What sourced data was missing. At least one of query_text "
+            "or resource_target is required.",
+            "properties": {
+                "query_text": {
+                    "type": "string",
+                    "description": "The market / question that had no sourced answer.",
+                },
+                "resource_target": {
+                    "type": "string",
+                    "description": "The connector:method that would fill it, e.g. "
+                    "'bls:displacement-by-occupation' (de-dups many phrasings to one gap).",
+                },
+                "concept_slug": {"type": "string"},
+                "role": {"type": "string", "description": "The framework role left unsourced."},
+                "lens": {"type": "string"},
+                "unit_hint": {"type": "string"},
+                "source": {
+                    "type": "string",
+                    "enum": ["resolve_miss", "report_gap", "unverifiable_claim", "manual"],
+                    "description": "Where the miss was observed (default: manual).",
+                },
+                "note": {"type": "string"},
+            },
+        },
+    },
+    "required": ["payload"],
+    "additionalProperties": False,
+}
+LIST_SOURCING_GAPS: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "status": {
+            "type": "string",
+            "enum": ["open", "sourced", "wontfix"],
+            "description": "Filter by status (default: all).",
+        },
+        "scope": {
+            "type": "string",
+            "enum": ["org", "all"],
+            "description": "'org' (default) = your workspace; 'all' = every workspace "
+            "ranked platform-wide (ADMIN only).",
+        },
+        "limit": {"type": "integer", "description": "Max rows (1-500, default 50)."},
+    },
+    "additionalProperties": False,
+}
 
 APPLY_FEEDBACK: dict[str, Any] = {
     "type": "object",

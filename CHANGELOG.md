@@ -68,6 +68,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                           (re-validated · modeled refused)   └─▶ seed ─▶ every workspace sees it
   ```
 
+### Added — sourcing-gap queue: the misses become a ranked backlog
+
+- **A first-time query we can't source no longer vanishes — it becomes ranked
+  demand.** When a market query has no sourced number, `resolve_market` now says
+  so plainly (a machine-readable "unsourced" flag, so a connected agent can't
+  mistake an estimate for a sourced answer) and points the agent at a new
+  `report_sourcing_gap` tool. Reporting the gap records *this market was asked for
+  and we had nothing* — de-duplicated, so asking again bumps a count instead of
+  piling up rows.
+- **The backlog is ordered by real demand.** `list_sourcing_gaps` (MCP) and
+  `strata gaps list` (CLI) show the most-requested missing numbers first. The
+  owner can see them across every workspace (`scope="all"` / `--all`, admin only),
+  each gap optionally naming the connector that would fill it — so the next data
+  source we build is the one customers actually asked for, not a guess.
+- **A gap is a demand signal, never a number.** Like a flag, it never feeds the
+  math (E1); recording one changes no result. Closing a gap (once its number is
+  sourced) flips its status and links the new primitive.
+
+  ```
+  novel query ─▶ resolve_market: matched=false, unsourced=true
+                       │ agent calls report_sourcing_gap
+                       ▼
+                 sourcing_gaps (de-duped, hit_count++) ─▶ list_sourcing_gaps / strata gaps
+                       │                                     (ranked by demand; admin = all workspaces)
+                 owner builds the connector ─▶ promote ─▶ gap marked sourced
+  ```
+
 ### Added — professional HTML/PDF report engine + a CLI an analyst drives (backend)
 
 - **The harness now builds the entire professional report and exports it as a

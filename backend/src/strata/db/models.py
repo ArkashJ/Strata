@@ -19,6 +19,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
     func,
     text,
 )
@@ -330,6 +331,49 @@ class FeedbackEventRow(Base):
     __table_args__ = (
         Index("ix_feedback_events_org_status", "org_id", "status"),
         Index("ix_feedback_events_target", "target_type", "target_id"),
+    )
+
+
+class SourcingGapRow(Base):
+    """A demand signal that sourced data was missing (migration 017, Pillar B1).
+
+    Org-scoped with the same strict closed RLS as ``feedback_events`` — a session
+    sees only its ``app.org_id`` rows (admin sees all via the additive policy).
+    De-duplicated on ``(org_id, dedup_key)``: a repeat miss bumps ``hit_count`` +
+    ``last_seen_at`` instead of inserting again, so the queue counts demand. A gap
+    is a supply-side signal, never a number — it never feeds the math (E1).
+    """
+
+    __tablename__ = "sourcing_gaps"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    org_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    dedup_key: Mapped[str] = mapped_column(String(512), nullable=False)
+    query_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    concept_slug: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    role: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    lens: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    unit_hint: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    resource_target: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    hit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="open")
+    resolved_primitive_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    __table_args__ = (
+        # The de-dup target: one row per (org, normalized miss). The recorder
+        # upserts onto this, bumping hit_count rather than inserting a duplicate.
+        UniqueConstraint("org_id", "dedup_key", name="uq_sourcing_gaps_org_dedup"),
+        Index("ix_sourcing_gaps_org_status", "org_id", "status"),
+        # Demand ranking: most-requested open gaps first within an org.
+        Index("ix_sourcing_gaps_org_hits", "org_id", "hit_count"),
     )
 
 

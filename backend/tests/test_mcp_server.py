@@ -43,6 +43,8 @@ _EXPECTED_TOOLS = {
     "verify_market_claim",
     "admin_list_feedback",
     "admin_promote_correction",
+    "report_sourcing_gap",
+    "list_sourcing_gaps",
 }
 
 
