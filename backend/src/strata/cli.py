@@ -1452,32 +1452,19 @@ def admin_promote(
     import yaml
 
     from strata.db.engine import admin_session_scope
-    from strata.db.feedback import admin_correction_payload, admin_get_feedback_row
-    from strata.guards.fence import ModeledFenceError, validate_and_fence_shared_primitive
-    from strata.models.feedback import FeedbackStatus
+    from strata.db.feedback import FeedbackNotApplicableError, admin_promote_payload
+    from strata.guards.fence import ModeledFenceError
 
     async def _run() -> dict[str, Any]:
+        # The read → fence → resolve sequence lives in admin_promote_payload so the
+        # CLI and the MCP tool can't drift; validate_only maps to resolve=False.
         async with admin_session_scope(_ADMIN_ORG) as session:
-            row = await admin_get_feedback_row(session, feedback_id)
-            if row is None:
-                raise ValueError(f"no feedback {feedback_id}")
-            payload = await admin_correction_payload(session, row)
-            if payload is None:
-                raise ValueError(
-                    f"feedback {feedback_id} has no correction to promote "
-                    "(no applied primitive and no suggested_value)"
-                )
-            shared = validate_and_fence_shared_primitive(payload)
-            if not validate_only:
-                row.status = FeedbackStatus.RESOLVED.value
-                note = f"promoted to shared bank → data/primitives/{shared['slug']}.yaml"
-                row.resolution = f"{row.resolution} · {note}" if row.resolution else note
-                await session.flush()
+            shared, _ = await admin_promote_payload(session, feedback_id, resolve=not validate_only)
             return shared
 
     try:
         shared = asyncio.run(_run())
-    except (ModeledFenceError, ValueError) as exc:
+    except (FeedbackNotApplicableError, ModeledFenceError, ValueError) as exc:
         typer.echo(f"ERROR: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     except Exception as exc:

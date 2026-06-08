@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from strata.db.models import FeedbackEventRow
 from strata.db.user_primitives import UserPrimitive, create_user_primitive
+from strata.guards.fence import validate_and_fence_shared_primitive
 from strata.models.feedback import (
     FeedbackEvent,
     FeedbackKind,
@@ -232,6 +233,39 @@ async def admin_correction_payload(
     if row.suggested_value is not None:
         return dict(row.suggested_value)
     return None
+
+
+async def admin_promote_payload(
+    session: AsyncSession, feedback_id: int, *, resolve: bool = True
+) -> tuple[dict[str, Any], str]:
+    """Read a correction cross-org, fence it for the shared bank, and (when
+    ``resolve``) mark the flag resolved with the promotion note. Returns the
+    normalized PUBLIC payload + the originating ``org_id``.
+
+    The single owner of the promote sequence (read → fence → resolve → note) so
+    the MCP tool and the CLI can never drift on the Q20 fence or the resolution
+    string — each caller keeps only its own transport concern (envelope vs
+    typer.Exit; the CLI's ``validate_only`` maps to ``resolve=False``). Raises
+    :class:`FeedbackNotApplicableError` (unknown row / no correction payload) and
+    the fence's :class:`ModeledFenceError` / ``ValidationError`` (the callers map
+    those to their surface). Runs inside the caller's ``admin_session_scope``."""
+    row = await admin_get_feedback_row(session, feedback_id)
+    if row is None:
+        raise FeedbackNotApplicableError(f"no feedback {feedback_id}")
+    payload = await admin_correction_payload(session, row)
+    if payload is None:
+        raise FeedbackNotApplicableError(
+            f"feedback {feedback_id} has no correction to promote "
+            "(no applied primitive and no suggested_value)"
+        )
+    shared = validate_and_fence_shared_primitive(payload)
+    from_org = row.org_id
+    if resolve:
+        note = f"promoted to shared bank → data/primitives/{shared['slug']}.yaml"
+        row.resolution = f"{row.resolution} · {note}" if row.resolution else note
+        row.status = FeedbackStatus.RESOLVED.value
+        await session.flush()
+    return shared, from_org
 
 
 async def apply_feedback_correction(

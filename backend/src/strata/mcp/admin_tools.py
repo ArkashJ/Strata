@@ -24,14 +24,9 @@ from pydantic import ValidationError
 
 from ..api.auth import is_admin
 from ..db.engine import admin_session_scope
-from ..db.feedback import (
-    admin_correction_payload,
-    admin_get_feedback_row,
-)
-from ..db.feedback import (
-    admin_list_feedback as _admin_list_feedback,
-)
-from ..guards.fence import ModeledFenceError, validate_and_fence_shared_primitive
+from ..db.feedback import FeedbackNotApplicableError, admin_promote_payload
+from ..db.feedback import admin_list_feedback as _admin_list_feedback
+from ..guards.fence import ModeledFenceError
 from ..models.feedback import FeedbackKind, FeedbackStatus
 from ..registry import Registry
 from .context import current_principal
@@ -114,33 +109,21 @@ async def admin_promote_correction(reg: Registry, *, feedback_id: int) -> dict[s
         return err
     admin_org = current_principal.get().org_id  # type: ignore[union-attr]  # _require_admin guards None
     async with admin_session_scope(admin_org) as session:
-        row = await admin_get_feedback_row(session, feedback_id)
-        if row is None:
-            return {"error": "not_found", "detail": f"no feedback {feedback_id}"}
-        payload = await admin_correction_payload(session, row)
-        if payload is None:
-            return {
-                "error": "no_payload",
-                "detail": f"feedback {feedback_id} has no correction to promote "
-                "(no applied primitive and no suggested_value).",
-            }
         try:
-            shared = validate_and_fence_shared_primitive(payload)
+            shared, from_org = await admin_promote_payload(session, feedback_id, resolve=True)
+        except FeedbackNotApplicableError as exc:
+            return {"error": "not_applicable", "detail": str(exc)}
         except ModeledFenceError as exc:
             return {"error": "modeled_fence", "detail": str(exc)}
         except (ValidationError, ValueError) as exc:
             return {"error": "invalid_primitive", "detail": str(exc)}
-        row.status = FeedbackStatus.RESOLVED.value
-        note = f"promoted to shared bank → data/primitives/{shared['slug']}.yaml"
-        row.resolution = f"{row.resolution} · {note}" if row.resolution else note
-        await session.flush()
     return {
         "promoted": True,
         "feedback_id": feedback_id,
-        "from_org": row.org_id,
+        "from_org": from_org,
         "slug": shared["slug"],
         "shared_yaml": yaml.safe_dump(shared, sort_keys=False),
         "shared_primitive": shared,
-        "next_action": f"strata admin promote {feedback_id} --org {row.org_id} "
+        "next_action": f"strata admin promote {feedback_id} --org {from_org} "
         "writes this to data/primitives/ in a repo checkout",
     }
