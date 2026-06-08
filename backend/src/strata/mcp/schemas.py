@@ -450,6 +450,52 @@ EXPORT_REPORT: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+RECORD_SESSION_REASONING: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "payload": {
+            "type": "object",
+            "description": (
+                "The agent's reasoning for this session. reasoning is required; "
+                "session_id defaults to the active X-Strata-Trace-Session; outcome "
+                "is a coarse self-assessment tag."
+            ),
+            "properties": {
+                "session_id": {
+                    "type": "string",
+                    "description": (
+                        "The trace session to attach reasoning to. Omit to use the "
+                        "active X-Strata-Trace-Session (the common case)."
+                    ),
+                },
+                "reasoning": {
+                    "type": "string",
+                    "description": (
+                        "The agent's chain-of-thought, plan, or self-assessment for "
+                        "this session. Non-empty. Stored verbatim — write as if "
+                        "explaining your decisions to a reviewer who will replay the "
+                        "session against updated code."
+                    ),
+                },
+                "outcome": {
+                    "type": "string",
+                    "enum": ["ok", "unsourced", "unverifiable", "error", "flagged"],
+                    "description": (
+                        "Coarse self-assessment of the session result: ok = answered "
+                        "with sourced data; unsourced = the query had no sourced "
+                        "primitive; unverifiable = a claim could not be verified; "
+                        "error = a tool call failed; flagged = suspicious / needs "
+                        "human review."
+                    ),
+                },
+            },
+            "required": ["reasoning"],
+        },
+    },
+    "required": ["payload"],
+    "additionalProperties": False,
+}
+
 VERIFY_MARKET_CLAIM: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -542,6 +588,16 @@ OUTPUT_SCHEMAS: dict[str, dict[str, Any]] = {
             "independence_score": {"type": ["number", "null"]},
             "inputs": {"type": "array", "items": {"type": "object"}},
             "charts": {"type": "object"},
+        },
+    },
+    "record_session_reasoning": {
+        "type": "object",
+        "additionalProperties": True,
+        "properties": {
+            "recorded": {"type": "boolean"},
+            "session_id": {"type": "string"},
+            "outcome": {"type": ["string", "null"]},
+            "readable_at": {"type": "string"},
         },
     },
 }

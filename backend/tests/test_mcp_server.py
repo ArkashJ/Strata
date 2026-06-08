@@ -45,6 +45,7 @@ _EXPECTED_TOOLS = {
     "admin_promote_correction",
     "report_sourcing_gap",
     "list_sourcing_gaps",
+    "record_session_reasoning",
 }
 
 

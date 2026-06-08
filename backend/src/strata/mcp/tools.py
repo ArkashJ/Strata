@@ -927,6 +927,12 @@ def _h_report_sourcing_gap(reg: Registry, args: dict[str, Any]) -> Awaitable[dic
     return report_sourcing_gap(reg, payload=dict(args.get("payload") or {}))
 
 
+def _h_record_session_reasoning(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
+    from .trace_tools import record_session_reasoning
+
+    return record_session_reasoning(reg, payload=dict(args.get("payload") or {}))
+
+
 def _h_list_sourcing_gaps(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
     from .sourcing_gap_tools import list_sourcing_gaps
 
@@ -1188,6 +1194,19 @@ TOOLS: dict[str, dict[str, Any]] = {
         "inputSchema": schemas.LIST_SOURCING_GAPS,
         "handler": _h_list_sourcing_gaps,
         "annotations": _READ,
+    },
+    "record_session_reasoning": {
+        "description": (
+            "[WRITE] Attach your reasoning / chain-of-thought / plan for THIS session "
+            "so a captured trace is diagnosable, not just reproducible. The server "
+            "records every tool call automatically; this adds the *why* it can't see. "
+            "Provide session_id (or rely on the active one from X-Strata-Trace-Session), "
+            "reasoning, and an optional outcome tag "
+            "(ok|unsourced|unverifiable|error|flagged)."
+        ),
+        "inputSchema": schemas.RECORD_SESSION_REASONING,
+        "handler": _h_record_session_reasoning,
+        "annotations": _WRITE,
     },
 }
 

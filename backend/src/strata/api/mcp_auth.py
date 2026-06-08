@@ -220,10 +220,17 @@ class McpAuthMiddleware:
         # Thread the principal to the tool handlers. The SDK runs the tool call
         # within this awaited task, so a ContextVar set here is visible there
         # (scope["state"] is NOT threaded by the session manager).
-        from ..mcp.context import current_principal
+        from ..mcp.context import current_principal, current_trace_session
 
         token = current_principal.set(principal)
+        # Group captured tool calls into the agent-supplied trace session (plan
+        # D1). Only set the var when the header is present + non-empty; otherwise
+        # leave it None so the call is still captured, just ungrouped.
+        trace_session = headers.get("x-strata-trace-session", "").strip()
+        trace_token = current_trace_session.set(trace_session) if trace_session else None
         try:
             await self.app(scope, receive, _metered_send)
         finally:
             current_principal.reset(token)
+            if trace_token is not None:
+                current_trace_session.reset(trace_token)

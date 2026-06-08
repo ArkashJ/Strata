@@ -116,6 +116,20 @@ class Settings(BaseSettings):
     # (read path stays F3-safe — no live LLM/Exa ever). Local dev sets =1.
     portfolio_enabled: bool = False
 
+    # ── MCP trace-capture (Phase 1 substrate) ───────────────────────────
+    # When off (default), the migration still creates ``tool_traces`` /
+    # ``trace_sessions`` but ``_trace_call`` in server.py returns immediately —
+    # zero overhead on the hot call path. Set STRATA_TRACE_CAPTURE=1 to enable.
+    # trace_max_sessions: FIFO cap per org (STRATA_TRACE_MAX_SESSIONS, D3).
+    # trace_max_field_bytes: args/result fields truncated at write time to this
+    #   byte limit before storage (STRATA_TRACE_MAX_FIELD_BYTES, D4 privacy cap).
+    # trace_full_results: store the full result blob in addition to the summary
+    #   (STRATA_TRACE_FULL_RESULTS=1; opt-in, heavy — for diff analysis only).
+    trace_capture_enabled: bool = False
+    trace_max_sessions: int = Field(default=200, ge=1)
+    trace_max_field_bytes: int = Field(default=65536, ge=1024)
+    trace_full_results: bool = False
+
     # ── SQLAlchemy async engine pool (prod-tuned defaults) ──────────────
     # Wired into create_async_engine via ``engine_pool_kwargs()``. Defaults
     # are sized for a single Railway service container fronting a managed
