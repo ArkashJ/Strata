@@ -377,6 +377,80 @@ class SourcingGapRow(Base):
     )
 
 
+class ToolTraceRow(Base):
+    """One captured MCP tool-call row (migration 018, trace-capture substrate).
+
+    Org-scoped with the same strict closed RLS as ``sourcing_gaps`` — a session
+    sees only its ``app.org_id`` rows (admin sees all via the additive policy).
+    ``session_id`` is nullable: a call with no grouping header still lands here
+    rather than being dropped (AC-1.5 — capture never blocks a call).
+    ``result_sha256`` is the replay regression signal; ``result_summary`` is the
+    structural digest so ``traces show`` is diagnosable without full result blobs.
+    """
+
+    __tablename__ = "tool_traces"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    org_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    session_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    seq: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    tool: Mapped[str] = mapped_column(String(128), nullable=False)
+    args: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    args_truncated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    result_summary: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    result_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    result_truncated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error_code: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+    __table_args__ = (
+        # Primary read pattern: a session's calls in sequence order for replay.
+        Index("ix_tool_traces_org_session_seq", "org_id", "session_id", "seq"),
+        # Retention pruning: newest-first per org, no session filter needed.
+        Index("ix_tool_traces_org_created_at", "org_id", "created_at"),
+        # Error triage: surface all error calls for an org quickly.
+        Index("ix_tool_traces_org_status", "org_id", "status"),
+    )
+
+
+class TraceSessionRow(Base):
+    """One session grouping sequential tool calls (migration 018).
+
+    ``call_count`` is bumped atomically in ``record_trace_safe`` so replay has
+    an accurate count without a full scan.  ``reasoning`` / ``outcome`` are
+    agent-submitted via ``record_session_reasoning`` — the structural context
+    the server can't infer on its own (why the agent made those calls, whether
+    the session succeeded).  Unique on ``(org_id, session_id)`` — the recorder
+    upserts on conflict, bumping ``call_count`` + ``last_seen_at``.
+    """
+
+    __tablename__ = "trace_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    org_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    call_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    reasoning: Mapped[str | None] = mapped_column(Text, nullable=True)
+    outcome: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    __table_args__ = (
+        # The upsert target: one row per (org, session) pair.
+        UniqueConstraint("org_id", "session_id", name="uq_trace_sessions_org_session"),
+        # List sessions by org, newest-last-seen first.
+        Index("ix_trace_sessions_org_last_seen", "org_id", "last_seen_at"),
+    )
+
+
 class OAuthClientRow(Base):
     """A dynamically-registered OAuth client (RFC 7591 DCR), migration 013.
 

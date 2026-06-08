@@ -6,6 +6,7 @@ import asyncio
 import base64
 import re
 from dataclasses import dataclass
+from datetime import UTC
 from pathlib import Path
 from typing import Any
 
@@ -1616,6 +1617,370 @@ def admin_promote(
     origin = f" (from {org})" if org else ""
     typer.echo(f"✓ Promoted flag {feedback_id}{origin} → {dest}")
     typer.echo("  Validate + seed: `strata validate` then `strata db seed`.")
+
+
+traces_app = typer.Typer(
+    name="traces",
+    help="MCP session traces: list captured sessions, inspect ordered calls, export "
+    "golden fixtures, replay against current code to surface regressions, or purge "
+    "old captures. Gated on STRATA_TRACE_CAPTURE=1 at capture time (safe to read "
+    "when the gate was ever on).",
+    no_args_is_help=True,
+)
+app.add_typer(traces_app)
+
+# Module-level Option singletons (B008 — never put typer.Option(...) in a function
+# default; Typer reads them at definition time; these mirror the gaps_app pattern).
+_TRACES_ORG_OPT = typer.Option(None, "--org", help="Workspace (org_id) to scope reads to.")
+_TRACES_ALL_OPT = typer.Option(
+    False, "--all", help="Read across every workspace (admin scope — local-trust only)."
+)
+_TRACES_OUTCOME_OPT = typer.Option(
+    None,
+    "--outcome",
+    help="Filter by agent-submitted outcome (ok/unsourced/unverifiable/error/flagged).",
+)
+_TRACES_TOP_OPT = typer.Option(50, "--top", help="Max sessions to return (most-recent first).")
+_TRACES_OUT_OPT = typer.Option(
+    None, "--out", help="Destination path for the exported fixture JSON."
+)
+_TRACES_FIXTURE_OPT = typer.Option(
+    None, "--fixture", help="Path to a JSON fixture written by 'traces export'."
+)
+_TRACES_INCLUDE_WRITES_OPT = typer.Option(
+    False,
+    "--include-writes",
+    help="Replay [WRITE] tools too (DANGEROUS: mutates real org data; use a sandboxed DB).",
+)
+_TRACES_BEFORE_OPT = typer.Option(
+    None,
+    "--before",
+    help="ISO-8601 datetime; purge sessions whose last_seen_at is older than this.",
+)
+_TRACES_SESSION_OPT = typer.Option(
+    None, "--session", help="Purge exactly this one session_id (overrides --before)."
+)
+
+
+@traces_app.command("list")
+def traces_list(
+    org: str | None = _TRACES_ORG_OPT,
+    all_orgs: bool = _TRACES_ALL_OPT,
+    outcome: str | None = _TRACES_OUTCOME_OPT,
+    limit: int = _TRACES_TOP_OPT,
+) -> None:
+    """List captured MCP sessions, most-recently-active first.
+
+    Use ``--all`` for the platform-wide admin view; ``--org`` for a single workspace."""
+    import asyncio
+
+    from strata.db.engine import admin_session_scope, org_session_scope
+    from strata.db.traces import admin_list_sessions, list_sessions
+    from strata.models.trace import TraceSession
+
+    async def _run() -> list[TraceSession]:
+        if all_orgs:
+            async with admin_session_scope(_ADMIN_ORG) as session:
+                return await admin_list_sessions(session, org_id=org, outcome=outcome, limit=limit)
+        if org is None:
+            raise ValueError("pass --org <workspace> or --all for the platform view")
+        async with org_session_scope(org) as session:
+            return await list_sessions(session, outcome=outcome, limit=limit, offset=0)
+
+    try:
+        rows = asyncio.run(_run())
+    except ValueError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        typer.echo(f"ERROR listing sessions: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if not rows:
+        typer.echo("No trace sessions found.")
+        return
+    for r in rows:
+        outcome_tag = r.outcome or "-"
+        last = r.last_seen_at.strftime("%Y-%m-%dT%H:%M")
+        typer.echo(
+            f"  {r.session_id[:16]}…  calls={r.call_count:<4}  outcome={outcome_tag:<14}  {last}"
+        )
+
+
+@traces_app.command("show")
+def traces_show(
+    session_id: str = typer.Argument(..., help="The session_id to inspect."),
+    org: str | None = _TRACES_ORG_OPT,
+    all_orgs: bool = _TRACES_ALL_OPT,
+) -> None:
+    """Print the ordered tool calls for a session and its agent-submitted reasoning."""
+    import asyncio
+
+    from strata.db.engine import admin_session_scope, org_session_scope
+    from strata.db.traces import (
+        admin_get_session_calls,
+        admin_list_sessions,
+        get_session_calls,
+        list_sessions,
+    )
+    from strata.models.trace import ToolCall, TraceSession
+
+    async def _run() -> tuple[TraceSession | None, list[ToolCall]]:
+        if all_orgs:
+            async with admin_session_scope(_ADMIN_ORG) as session:
+                sessions = await admin_list_sessions(session, org_id=org, limit=1000)
+                sess = next((s for s in sessions if s.session_id == session_id), None)
+                calls = await admin_get_session_calls(session, session_id=session_id, org_id=org)
+            return sess, calls
+        if org is None:
+            raise ValueError("pass --org <workspace> or --all")
+        async with org_session_scope(org) as session:
+            sessions = await list_sessions(session, limit=1000)
+            sess = next((s for s in sessions if s.session_id == session_id), None)
+            calls = await get_session_calls(session, session_id=session_id)
+        return sess, calls
+
+    try:
+        sess, calls = asyncio.run(_run())
+    except ValueError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        typer.echo(f"ERROR fetching session: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if not calls:
+        typer.echo(f"No calls found for session {session_id!r}.", err=True)
+        raise typer.Exit(code=1)
+
+    typer.echo(f"Session {session_id}")
+    if sess:
+        typer.echo(
+            f"  calls={sess.call_count}  outcome={sess.outcome or '-'}  "
+            f"last={sess.last_seen_at.strftime('%Y-%m-%dT%H:%M')}"
+        )
+    typer.echo("")
+    typer.echo(f"  {'seq':<5} {'tool':<34} {'status':<7} {'ms':>6}")
+    typer.echo(f"  {'-' * 5} {'-' * 34} {'-' * 7} {'-' * 6}")
+    for c in calls:
+        typer.echo(f"  {c.seq:<5} {c.tool:<34} {c.status.value:<7} {c.duration_ms:>6}")
+
+    if sess and sess.reasoning:
+        typer.echo("\n--- reasoning ---")
+        typer.echo(sess.reasoning)
+
+
+@traces_app.command("export")
+def traces_export(
+    session_id: str = typer.Argument(..., help="Session to export."),
+    org: str | None = _TRACES_ORG_OPT,
+    all_orgs: bool = _TRACES_ALL_OPT,
+    out: Path | None = _TRACES_OUT_OPT,
+) -> None:
+    """Export a captured session to a versioned JSON fixture for replay in CI.
+
+    Writes to ``--out`` or ``tests/fixtures/traces/<session_id>.json`` by default."""
+    import asyncio
+    import json as _json
+    from datetime import datetime
+
+    from strata.db.engine import admin_session_scope, org_session_scope
+    from strata.db.traces import (
+        admin_get_session_calls,
+        admin_list_sessions,
+        get_session_calls,
+        list_sessions,
+    )
+    from strata.models.trace import ToolCall, TraceSession
+
+    async def _run() -> tuple[TraceSession | None, list[ToolCall]]:
+        if all_orgs:
+            async with admin_session_scope(_ADMIN_ORG) as session:
+                sessions = await admin_list_sessions(session, org_id=org, limit=1000)
+                sess = next((s for s in sessions if s.session_id == session_id), None)
+                calls = await admin_get_session_calls(session, session_id=session_id, org_id=org)
+            return sess, calls
+        if org is None:
+            raise ValueError("pass --org <workspace> or --all")
+        async with org_session_scope(org) as session:
+            sessions = await list_sessions(session, limit=1000)
+            sess = next((s for s in sessions if s.session_id == session_id), None)
+            calls = await get_session_calls(session, session_id=session_id)
+        return sess, calls
+
+    try:
+        sess, calls = asyncio.run(_run())
+    except ValueError as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        typer.echo(f"ERROR fetching session: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if not calls:
+        typer.echo(f"No calls found for session {session_id!r}.", err=True)
+        raise typer.Exit(code=1)
+
+    # Resolve output path — default to tests/fixtures/traces/ next to the
+    # backend package root so the fixture is version-controllable alongside tests.
+    if out is None:
+        here = Path(__file__).resolve().parent
+        # cli.py lives at backend/src/strata/cli.py → parents[2] == backend/
+        fixtures_dir = here.parents[2] / "tests" / "fixtures" / "traces"
+        fixtures_dir.mkdir(parents=True, exist_ok=True)
+        out = fixtures_dir / f"{session_id}.json"
+
+    # Fixture JSON shape (documented in traces/replay.py module docstring).
+    fixture: dict[str, object] = {
+        "schema_version": 1,
+        "session_id": session_id,
+        "org_id": sess.org_id if sess else (org or "unknown"),
+        "reasoning": sess.reasoning if sess else None,
+        "exported_at": datetime.now(UTC).isoformat(),
+        "calls": [
+            _json.loads(c.model_dump_json())
+            for c in sorted(calls, key=lambda c: (c.seq, c.created_at))
+        ],
+    }
+
+    out = Path(out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(_json.dumps(fixture, indent=2, default=str), encoding="utf-8")
+    typer.echo(f"✓ Exported {len(calls)} call(s) → {out}")
+
+
+@traces_app.command("replay")
+def traces_replay(
+    session_id: str | None = typer.Argument(
+        None,
+        help="Session to replay from the DB (requires --org or --all).",
+    ),
+    org: str | None = _TRACES_ORG_OPT,
+    all_orgs: bool = _TRACES_ALL_OPT,
+    fixture: Path | None = _TRACES_FIXTURE_OPT,
+    include_writes: bool = _TRACES_INCLUDE_WRITES_OPT,
+) -> None:
+    """Replay a captured session against current code and report hash divergences.
+
+    Exits non-zero when any call produces a 'diff' or 'error' — usable as a CI
+    regression gate.  Write tools are skipped by default (pass --include-writes
+    only against a sandboxed DB)."""
+    # ── load calls ──────────────────────────────────────────────────────────────
+    from strata.models.trace import ToolCall
+    from strata.traces.replay import load_session_from_fixture, replay_session
+
+    if fixture is not None:
+        try:
+            calls = load_session_from_fixture(fixture)
+        except Exception as exc:
+            typer.echo(f"ERROR loading fixture {fixture}: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+    elif session_id is not None:
+        import asyncio as _asyncio
+
+        from strata.db.engine import admin_session_scope, org_session_scope
+        from strata.db.traces import admin_get_session_calls, get_session_calls
+
+        async def _load() -> list[ToolCall]:
+            if all_orgs:
+                async with admin_session_scope(_ADMIN_ORG) as session:
+                    return await admin_get_session_calls(session, session_id=session_id, org_id=org)
+            if org is None:
+                raise ValueError("pass --org <workspace> or --all (or use --fixture)")
+            async with org_session_scope(org) as session:
+                return await get_session_calls(session, session_id=session_id)
+
+        try:
+            calls = _asyncio.run(_load())
+        except ValueError as exc:
+            typer.echo(f"ERROR: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+        except Exception as exc:
+            typer.echo(f"ERROR loading session: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+    else:
+        typer.echo("ERROR: provide a session_id argument or --fixture path.", err=True)
+        raise typer.Exit(code=1)
+
+    if not calls:
+        typer.echo("No calls to replay.", err=True)
+        raise typer.Exit(code=1)
+
+    # ── build offline registry ───────────────────────────────────────────────────
+    # Replay is registry-first + YAML-only so no live DB connector path runs.
+    # server.load_registry() uses a short TTL cache and reads from the configured
+    # data_dir — the same source of truth as the capture path.
+    try:
+        from strata.mcp.server import load_registry
+
+        reg = load_registry()
+    except Exception as exc:
+        typer.echo(f"ERROR building registry: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    # ── run replay ──────────────────────────────────────────────────────────────
+    report = replay_session(reg, calls, include_writes=include_writes)
+
+    # ── print report ────────────────────────────────────────────────────────────
+    status_symbols = {"match": "✓", "diff": "✗", "skipped": "~", "error": "!"}
+    typer.echo(f"Replay — session {report.session_id or 'fixture'} — {len(report.calls)} call(s)")
+    typer.echo("")
+    for cr in report.calls:
+        sym = status_symbols.get(cr.status, "?")
+        line = f"  {sym} seq={cr.seq:<4} {cr.tool:<34} {cr.status}"
+        if cr.status == "diff":
+            line += f"\n      captured={cr.captured_hash[:16]}…  fresh={cr.fresh_hash[:16] if cr.fresh_hash else 'N/A'}…"
+        elif cr.status == "error":
+            line += f"\n      {cr.error}"
+        typer.echo(line)
+
+    typer.echo("")
+    if report.passed:
+        typer.echo("PASS — no regressions detected.")
+    else:
+        typer.echo("FAIL — regression(s) detected (see diff/error rows above).", err=True)
+        raise typer.Exit(code=1)
+
+
+@traces_app.command("purge")
+def traces_purge(
+    org: str = typer.Option(..., "--org", help="Workspace to purge traces for."),
+    before: str | None = _TRACES_BEFORE_OPT,
+    session: str | None = _TRACES_SESSION_OPT,
+) -> None:
+    """Delete captured sessions for a workspace.  Use ``--before`` for date-based
+    cleanup or ``--session`` to delete exactly one session."""
+    import asyncio
+    from datetime import datetime
+
+    from strata.db.engine import org_session_scope
+    from strata.db.traces import purge_sessions
+
+    before_dt: datetime | None = None
+    if before is not None:
+        try:
+            before_dt = datetime.fromisoformat(before)
+            if before_dt.tzinfo is None:
+                # Treat a naive ISO string as UTC so --before=2026-01-01 is unambiguous.
+                before_dt = before_dt.replace(tzinfo=UTC)
+        except ValueError as exc:
+            typer.echo(f"ERROR: --before must be an ISO-8601 datetime: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+
+    async def _run() -> int:
+        async with org_session_scope(org) as db_session:
+            return await purge_sessions(db_session, before=before_dt, session_id=session)
+
+    try:
+        deleted = asyncio.run(_run())
+    except Exception as exc:
+        typer.echo(f"ERROR purging traces: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if deleted == 0:
+        typer.echo("No sessions matched the filter.")
+    else:
+        typer.echo(f"✓ Purged {deleted} session(s) from {org}.")
 
 
 if __name__ == "__main__":

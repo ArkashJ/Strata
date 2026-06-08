@@ -24,6 +24,7 @@ import hashlib
 import inspect
 import sys
 import time
+import uuid
 from collections.abc import AsyncGenerator, Callable
 from pathlib import Path
 from typing import Any
@@ -109,6 +110,11 @@ def build_server(get_registry: Callable[[], Registry] = load_registry) -> Server
     ) -> types.CallToolResult:
         reg = get_registry()
         status = "ok"
+        # result_view is the JSON-serializable dict the tracer hashes/summarizes:
+        # the plain dict a handler returned when available, else a minimal stable
+        # view derived from the CallToolResult (so replay has a comparable signal).
+        result_view: dict[str, Any]
+        t0 = time.monotonic()
         try:
             result = call_tool(reg, name, arguments)
             # Write/read DB tools return a coroutine — await it on this loop (the
@@ -116,9 +122,13 @@ def build_server(get_registry: Callable[[], Registry] = load_registry) -> Server
             if inspect.isawaitable(result):
                 result = await result
         except ToolError as exc:
+            duration_ms = int((time.monotonic() - t0) * 1000)
             status = "error"
-            out = tool_result(exc.to_payload(), is_error=True)
+            payload = exc.to_payload()
+            out = tool_result(payload, is_error=True)
+            result_view = payload
         else:
+            duration_ms = int((time.monotonic() - t0) * 1000)
             # A handler may return a fully-built CallToolResult (the result-aware
             # tools) or a plain dict (wrap it). A dict carrying a top-level
             # "error" is an in-band failure → mark the result isError.
@@ -126,12 +136,18 @@ def build_server(get_registry: Callable[[], Registry] = load_registry) -> Server
                 out = result
                 if out.isError:
                     status = "error"
+                # No plain dict to hash; prefer the structured content the SDK
+                # carries, else a minimal stable view of the error flag.
+                sc = out.structuredContent
+                result_view = sc if isinstance(sc, dict) else {"isError": out.isError}
             else:
                 dict_result: dict[str, Any] = result
                 is_err = "error" in dict_result
                 status = "error" if is_err else "ok"
                 out = tool_result(dict_result, is_error=is_err)
+                result_view = dict_result
         await _audit_call(name, arguments, status)
+        await _trace_call(name, arguments, status, result_view, duration_ms)
         return out
 
     register_resources(server, get_registry)
@@ -160,10 +176,49 @@ async def _audit_call(name: str, arguments: dict[str, Any], status: str) -> None
         pass
 
 
+async def _trace_call(
+    name: str,
+    arguments: dict[str, Any],
+    status: str,
+    result: dict[str, Any],
+    duration_ms: int,
+) -> None:
+    """Best-effort trace capture of a tool call (Phase 2, plan #6). Gated off by
+    default — when ``trace_capture_enabled`` is False this returns before any
+    import or DB work, so behaviour is byte-identical to before (AC-1.5).
+
+    Unlike ``_audit_call`` (which hashes args), trace-capture keeps real args +
+    a result summary because replay needs the inputs (privacy trade D4). The
+    whole body is guarded — capture must never break or slow a real tool call."""
+    if not settings.trace_capture_enabled:
+        return
+    try:
+        from ..db.traces import record_trace_safe
+        from ..models.trace import TraceStatus
+        from .context import current_org_id, current_trace_session_id
+
+        await record_trace_safe(
+            org_id=current_org_id(),
+            session_id=current_trace_session_id(),
+            tool=name,
+            args=arguments,
+            result=result,
+            status=TraceStatus(status),
+            duration_ms=duration_ms,
+        )
+    except Exception:  # capture is fire-and-forget; never break the tool call
+        pass
+
+
 async def run_stdio() -> None:
     from mcp.server.stdio import stdio_server
 
+    from .context import current_trace_session
+
     server = build_server()
+    # One stdio process is one trace session (plan D1): set a process-stable id
+    # once so a local run's calls group together. Sequence numbers order them.
+    current_trace_session.set(uuid.uuid4().hex)
     async with stdio_server() as (read, write):
         await server.run(read, write, server.create_initialization_options())
 
