@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from strata.db.models import FeedbackEventRow
 from strata.db.user_primitives import UserPrimitive, create_user_primitive
+from strata.guards.fence import validate_and_fence_shared_primitive
 from strata.models.feedback import (
     FeedbackEvent,
     FeedbackKind,
@@ -171,6 +172,102 @@ async def update_feedback(
     return FeedbackEvent.model_validate(row)
 
 
+async def admin_list_feedback(
+    session: AsyncSession,
+    *,
+    status: FeedbackStatus | None = None,
+    kind: FeedbackKind | None = None,
+    org_id: str | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[FeedbackEvent]:
+    """Cross-org feedback list for an admin session (``admin_session_scope`` set
+    the ``app.is_admin`` GUC, so the additive admin SELECT policy returns every
+    org's rows). Optional ``org_id`` filter narrows to one tenant. Newest-first.
+
+    This is the only reader that crosses the tenant boundary — every other reader
+    is RLS-isolated to ``app.org_id``."""
+    stmt = select(FeedbackEventRow)
+    if status is not None:
+        stmt = stmt.where(FeedbackEventRow.status == status.value)
+    if kind is not None:
+        stmt = stmt.where(FeedbackEventRow.kind == kind.value)
+    if org_id is not None:
+        stmt = stmt.where(FeedbackEventRow.org_id == org_id)
+    stmt = (
+        stmt.order_by(FeedbackEventRow.created_at.desc(), FeedbackEventRow.id.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    rows = (await session.execute(stmt)).scalars().all()
+    return [FeedbackEvent.model_validate(r) for r in rows]
+
+
+async def admin_get_feedback_row(
+    session: AsyncSession, feedback_id: int
+) -> FeedbackEventRow | None:
+    """Read one feedback row cross-org (admin session). Returns the ORM row (not
+    the read model) so the promote path can mark it resolved in the same txn."""
+    return (
+        await session.execute(select(FeedbackEventRow).where(FeedbackEventRow.id == feedback_id))
+    ).scalar_one_or_none()
+
+
+async def admin_correction_payload(
+    session: AsyncSession, row: FeedbackEventRow
+) -> dict[str, Any] | None:
+    """The primitive payload a correction would promote: the org-private primitive
+    it already created (``resolved_primitive_id``, read cross-org via the admin
+    SELECT policy on ``user_primitives``) or, failing that, the flag's own
+    ``suggested_value``. ``None`` when neither is present."""
+    if row.resolved_primitive_id is not None:
+        from strata.db.models import UserPrimitiveRow
+
+        prim = (
+            await session.execute(
+                select(UserPrimitiveRow).where(UserPrimitiveRow.id == row.resolved_primitive_id)
+            )
+        ).scalar_one_or_none()
+        if prim is not None:
+            return dict(prim.payload)
+    if row.suggested_value is not None:
+        return dict(row.suggested_value)
+    return None
+
+
+async def admin_promote_payload(
+    session: AsyncSession, feedback_id: int, *, resolve: bool = True
+) -> tuple[dict[str, Any], str]:
+    """Read a correction cross-org, fence it for the shared bank, and (when
+    ``resolve``) mark the flag resolved with the promotion note. Returns the
+    normalized PUBLIC payload + the originating ``org_id``.
+
+    The single owner of the promote sequence (read → fence → resolve → note) so
+    the MCP tool and the CLI can never drift on the Q20 fence or the resolution
+    string — each caller keeps only its own transport concern (envelope vs
+    typer.Exit; the CLI's ``validate_only`` maps to ``resolve=False``). Raises
+    :class:`FeedbackNotApplicableError` (unknown row / no correction payload) and
+    the fence's :class:`ModeledFenceError` / ``ValidationError`` (the callers map
+    those to their surface). Runs inside the caller's ``admin_session_scope``."""
+    row = await admin_get_feedback_row(session, feedback_id)
+    if row is None:
+        raise FeedbackNotApplicableError(f"no feedback {feedback_id}")
+    payload = await admin_correction_payload(session, row)
+    if payload is None:
+        raise FeedbackNotApplicableError(
+            f"feedback {feedback_id} has no correction to promote "
+            "(no applied primitive and no suggested_value)"
+        )
+    shared = validate_and_fence_shared_primitive(payload)
+    from_org = row.org_id
+    if resolve:
+        note = f"promoted to shared bank → data/primitives/{shared['slug']}.yaml"
+        row.resolution = f"{row.resolution} · {note}" if row.resolution else note
+        row.status = FeedbackStatus.RESOLVED.value
+        await session.flush()
+    return shared, from_org
+
+
 async def apply_feedback_correction(
     session: AsyncSession,
     feedback_id: int,
@@ -223,7 +320,9 @@ async def apply_feedback_correction(
     # the whole apply rolls back (no primitive, flag stays open). A correction whose
     # slug already exists in the org bank trips the (org_id, slug) unique constraint
     # at flush; translate that to an applicable-error (422) instead of a raw 500.
-    slug = str(payload.get("slug", "")) if isinstance(payload, dict) else ""
+    # ``payload`` is a non-empty dict here (the ``if not payload`` guard above
+    # rejected None / empty), so the slug lookup is safe without an isinstance.
+    slug = str(payload.get("slug", ""))
     try:
         prim = await create_user_primitive(
             session, org_id=org_id, created_by=created_by, payload=payload

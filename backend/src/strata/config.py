@@ -53,6 +53,14 @@ class Settings(BaseSettings):
     # Token-bucket rate limit per key on LLM/compute routes.
     rate_limit_rpm: int = Field(default=60, ge=1)
 
+    # ── Admin (cross-org governance) ────────────────────────────────────
+    # Comma-separated org ids granted cross-tenant admin: read every org's
+    # feedback queue and promote an org-private correction into the shared bank.
+    # The bypass is an explicit, AUDITED Postgres GUC (``app.is_admin``), never a
+    # relaxation of the closed tenant RLS — empty (default) means no admin exists,
+    # so the cross-org tools are inert until an operator opts an org in.
+    admin_orgs: str = ""
+
     # ── Clerk session-JWT bridge (PR 1 / KTD-3) ────────────────────────
     # When ``clerk_jwks_url`` is None (default), the Clerk verifier is INERT —
     # it returns None with no network call, so anonymous permalinks resolve with

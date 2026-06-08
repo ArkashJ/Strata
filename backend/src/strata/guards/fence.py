@@ -55,4 +55,35 @@ def validate_and_fence_primitive(payload: dict[str, Any], *, org_id: str) -> dic
     return prim.model_dump(mode="json")
 
 
-__all__ = ["ModeledFenceError", "validate_and_fence_primitive"]
+def validate_and_fence_shared_primitive(payload: dict[str, Any]) -> dict[str, Any]:
+    """Validate + fence a primitive being PROMOTED into the shared bank.
+
+    The shared-bank twin of :func:`validate_and_fence_primitive`: instead of
+    forcing private+org, it forces ``visibility=public`` and strips ``org_id``
+    (a shared number belongs to no tenant), then runs the SAME schema validation
+    and MODELED fence. So an admin promoting an org-private correction can never
+    push a soft-data estimate into the bank everyone reads (Q20 holds at the
+    shared door exactly as it does at the private one). Returns the normalized
+    public payload ready to serialize to ``data/primitives/<slug>.yaml`` or seed
+    into the shared registry."""
+    normalized = dict(payload)
+    normalized["visibility"] = "public"
+    normalized.pop("org_id", None)
+    normalized.setdefault("kind", "atomic_primitive")
+
+    prim = TypeAdapter(AtomicPrimitive).validate_python(normalized)
+
+    if prim.provenance_class is ProvenanceClass.MODELED:
+        raise ModeledFenceError(
+            f"primitive {prim.slug!r} (tier={prim.source.tier.value}) is modeled, not "
+            f"sourced; the shared bank promotes sourced output only (Q20)"
+        )
+
+    return prim.model_dump(mode="json")
+
+
+__all__ = [
+    "ModeledFenceError",
+    "validate_and_fence_primitive",
+    "validate_and_fence_shared_primitive",
+]

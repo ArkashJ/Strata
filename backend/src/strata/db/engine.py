@@ -67,3 +67,22 @@ async def org_session_scope(org_id: str) -> AsyncGenerator[AsyncSession]:
     async with SessionLocal() as session, session.begin():
         await set_org_scope(session, org_id)
         yield session
+
+
+@asynccontextmanager
+async def admin_session_scope(org_id: str) -> AsyncGenerator[AsyncSession]:
+    """A transactional session that ALSO sets the transaction-local
+    ``app.is_admin = 'on'`` GUC, activating the *additive* admin RLS policies
+    (migration 016) so a cross-tenant operator can read every org's feedback and
+    read any org-private primitive it is promoting.
+
+    The bypass is explicit and transaction-scoped (``is_local=true``) so it can't
+    leak to the next pooled request, and it never relaxes the closed tenant policy
+    — it is a second permissive policy OR'd in only when this GUC is set. Callers
+    MUST gate on ``auth.is_admin`` before entering this scope. ``app.org_id`` is
+    still set (to the admin's own org) so any tenant-scoped WRITE the admin makes
+    on its own behalf still lands in its bucket."""
+    async with SessionLocal() as session, session.begin():
+        await set_org_scope(session, org_id)
+        await session.execute(text("SELECT set_config('app.is_admin', 'on', true)"))
+        yield session

@@ -41,6 +41,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
                                                                 (REST · apply_feedback MCP · CLI --apply)
   ```
 
+### Added — admin: see every workspace's feedback and promote a fix to the shared bank
+
+- **The owner can now see what users are flagging across every workspace, not just
+  their own.** A workspace listed in `STRATA_ADMIN_ORGS` gets a cross-tenant view
+  of the whole feedback queue, with each flag tagged by the workspace it came
+  from. New MCP tool `admin_list_feedback` and CLI `strata admin feedback`
+  (filter by status / kind / workspace). A normal workspace is refused — and an
+  unauthenticated or public caller can never be admin.
+- **An accepted correction can be promoted from one workspace into the shared bank
+  everyone reads.** `admin_promote_correction` (MCP) re-checks the corrected
+  number through the shared-bank fence (a modeled / analyst-tier estimate is
+  refused, Q20) and hands back the ready-to-commit `data/primitives/<slug>.yaml`;
+  `strata admin promote <id> --org <workspace>` writes that file in a checkout.
+  The originating flag is marked resolved with a promotion note.
+- **The cross-workspace view never weakens isolation.** Admin access is an
+  explicit, audited database flag added *alongside* the existing closed
+  per-workspace rules — when the flag is off, every read behaves exactly as
+  before, and a normal workspace still sees only its own rows.
+
+  ```
+  user flags a wrong number ─▶ admin_list_feedback (every workspace, attributed)
+                                       │ owner picks a high-value fix
+                                       ▼
+                          admin_promote_correction ─▶ shared data/primitives/<slug>.yaml
+                          (re-validated · modeled refused)   └─▶ seed ─▶ every workspace sees it
+  ```
+
 ### Added — professional HTML/PDF report engine + a CLI an analyst drives (backend)
 
 - **The harness now builds the entire professional report and exports it as a

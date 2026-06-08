@@ -41,6 +41,8 @@ _EXPECTED_TOOLS = {
     "get_report_for_tam",
     "export_report",
     "verify_market_claim",
+    "admin_list_feedback",
+    "admin_promote_correction",
 }
 
 
