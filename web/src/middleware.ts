@@ -20,17 +20,15 @@ type MiddlewareFn = (
 ) => Response | Promise<Response | undefined> | undefined;
 
 // Protected-by-default: every route requires sign-in EXCEPT this small public
-// allowlist. We gate the whole product (landing included) — the only surfaces
-// left open are ones where a gate has no security value and would break a real
-// feature: the auth pages themselves, Clerk's own callback paths, the public
-// embeddable TAM iframe, SEO crawl files, and OpenGraph images (fetched by
-// unauthenticated unfurl bots). `auth.protect()` redirects signed-out visitors
-// to NEXT_PUBLIC_CLERK_SIGN_IN_URL (/sign-in).
+// allowlist: the landing, the auth pages themselves, the MCP OAuth consent
+// surface, SEO crawl files, and OpenGraph images (fetched by unauthenticated
+// unfurl bots). Retired app routes 404 via Next's not-found — no redirects.
+// `auth.protect()` redirects signed-out visitors to /sign-in.
 const isPublicRoute = createRouteMatcher([
   "/", // public marketing landing (signed-out); the app home is gated behind it
   "/sign-in(.*)",
   "/sign-up(.*)",
-  "/embed(.*)",
+  "/oauth(.*)", // MCP OAuth consent — ConsentView handles signed-out itself via SignInButton
   "/robots.txt",
   "/sitemap.xml",
   /opengraph-image/,

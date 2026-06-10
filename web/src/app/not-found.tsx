@@ -1,7 +1,6 @@
-// App-level 404. Renders inside the persistent shell, so it keeps the sidebar
-// + top bar — a missing page is a dead end with a way back, not a blank slate.
-// Editorial and restrained, in the house style: serif headline, mono code motif,
-// real navigational paths (never a link to "#").
+// App-level 404. The web app is retired (CLI + MCP are the product), so any
+// old app route lands here — editorial and restrained, with a way back to the
+// one surviving surface.
 import Link from "next/link";
 
 import { Button } from "@/components/ui/Button";
@@ -21,21 +20,14 @@ export default function NotFound() {
           This page isn&rsquo;t in the ledger.
         </h1>
         <p className="max-w-[52ch] text-[14px] leading-relaxed text-[var(--fg-2)]">
-          The link may be stale, or the TAM was never minted. Every sized market lives at a
-          permanent <code className="font-mono text-[13px]">/tam/&lt;hash&gt;</code> — head back to
-          a surface that exists.
+          The web app has been retired — Strata now ships through the CLI and the MCP server. The
+          link may point to a page that no longer exists here.
         </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Link href="/">
           <Button>Back to home</Button>
-        </Link>
-        <Link href="/browse">
-          <Button variant="ghost">Browse TAMs</Button>
-        </Link>
-        <Link href="/connectors">
-          <Button variant="ghost">Connectors</Button>
         </Link>
       </div>
     </main>

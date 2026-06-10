@@ -1,6 +1,4 @@
-import { AppShell } from "@/components/shell/AppShell";
 import { clerkEnabled } from "@/lib/clerk";
-import { Providers } from "@/lib/providers";
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
@@ -57,9 +55,7 @@ export default function RootLayout({
               "(function(){try{var d=localStorage.getItem('strata-theme')==='dark';var e=document.documentElement;e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';}catch(e){}})();",
           }}
         />
-        <Providers>
-          <AppShell>{children}</AppShell>
-        </Providers>
+        {children}
       </body>
     </html>
   );

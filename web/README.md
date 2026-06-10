@@ -1,36 +1,25 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Strata web — landing + auth + OAuth consent only
 
-## Getting Started
+The full web app has been **retired**: Strata ships through the **CLI and the
+MCP server** (the direction lock in the root `CLAUDE.md`). This Next.js app now
+serves only three surfaces:
 
-First, run the development server:
+- `/` — the public marketing landing
+- `/sign-in`, `/sign-up` — Clerk auth pages
+- `/oauth/authorize` — the hosted-MCP OAuth consent page (pointed at by
+  `backend/src/strata/config.py`; do not break it)
+
+Everything else (build studio, TAM pages, browse, connectors, dashboards, …)
+was removed. The complete app is preserved on the **`frontend-archive`** branch
+and the **`frontend-archive-2026-06-10`** tag.
+
+## Develop
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install
+bun run dev        # http://localhost:3000
+bun run build      # production build (must stay green for Vercel)
+bun run check      # tsc + biome + eslint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployed at [stratabank.vercel.app](https://stratabank.vercel.app).
