@@ -22,10 +22,11 @@ from ..config import settings
 from ..models import CompanyRecord
 from ..registry import Registry
 from ..sizing.demo import load_demo_portfolio
-from ..sizing.service import SizeOptions
+from ..sizing.service import SizeOptions, validate_explicit_market
 from ..sizing.service import size_company as _size_company
 from ..sizing.store import CompanyStore
 from .context import current_org_id
+from .errors import CODE_CONCEPT_NOT_FOUND, ToolError
 
 
 def _disabled() -> dict[str, Any]:
@@ -59,6 +60,66 @@ def import_portfolio(reg: Registry, *, rows: list[dict[str, Any]]) -> dict[str, 
     ]
     added, skipped = _store().upsert_many(records)
     return {"imported": added, "existing": skipped, "parsed": len(records), "org_id": org}
+
+
+def add_portfolio_company(
+    reg: Registry,
+    *,
+    name: str,
+    domain: str = "",
+    vertical: str | None = None,
+    market_concept_slug: str | None = None,
+    size: bool = False,
+) -> dict[str, Any]:
+    """[WRITE] Add ONE company to your org — the single-row twin of
+    ``import_portfolio`` (agent parity with ``strata portfolio add``).
+
+    An explicit ``market_concept_slug`` that isn't in the registry is an honest
+    error with near-miss suggestions, never a fuzzy reroute (ADV-1 / Q20: a
+    confidently wrong market is worse than a refusal)."""
+    if not settings.portfolio_enabled:
+        return _disabled()
+    name = name.strip()
+    if not name:
+        return {"error": "name must be non-empty"}
+    if market_concept_slug is not None:
+        near = validate_explicit_market(reg, market_concept_slug)
+        if near is not None:
+            remediation = "search_concepts to find the curated slug"
+            if near:
+                remediation = f"did you mean: {', '.join(near)} — or {remediation}"
+            raise ToolError(
+                f"market_concept_slug {market_concept_slug!r} is not in the registry; "
+                "explicit slugs are never fuzzy-rerouted",
+                code=CODE_CONCEPT_NOT_FOUND,
+                remediation=remediation,
+            )
+    org = current_org_id()
+    store = _store()
+    rec = CompanyRecord(
+        org_id=org,
+        name=name,
+        domain=domain.strip(),
+        vertical=vertical,
+        market_concept_slug=market_concept_slug,
+    )
+    action, target = store.add_company(rec, market=market_concept_slug, vertical=vertical)
+    out: dict[str, Any] = {"action": action, "key": rec.key, "org_id": org, "name": name}
+    if not size:
+        return out
+    res = _size_company(reg, target, opts=SizeOptions())
+    store.save(res.company)
+    out.update(
+        {
+            "status": res.company.status,
+            "market_concept_slug": res.company.market_concept_slug,
+            "tam_value": res.company.tam_value,
+            "reason": res.company.reason,
+        }
+    )
+    if res.tam is not None:
+        out["state_hash"] = res.tam.state_hash
+    return out
 
 
 def size_company(

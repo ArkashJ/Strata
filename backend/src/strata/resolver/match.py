@@ -128,6 +128,13 @@ def _similarity(query: str, candidate: str) -> float:
     return score
 
 
+# Public names for sibling modules (suggest.py): near-miss suggestions must use
+# the SAME token-coverage notion as matching so the two can never disagree on
+# what "close" means.
+FUZZY_THRESHOLD = _FUZZY_THRESHOLD
+token_similarity = _similarity
+
+
 def match_concept(reg: Registry, query: str) -> str | None:
     """Return the slug of the curated concept the query names, or ``None``.
 
