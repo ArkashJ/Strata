@@ -76,7 +76,7 @@ def tool_result(
     ]
     # ResourceLink.uri must be an absolute URL (the SDK rejects a relative path).
     # Emit only scheme-qualified URIs (strata://…, https://…) as content blocks;
-    # relative web deep links (/tam/<hash>) still ride structuredContent.resource_links.
+    # any relative path a handler passes still rides structuredContent.resource_links.
     for link in links or []:
         if "://" in str(link.get("uri", "")):
             content.append(_resource_link(link))

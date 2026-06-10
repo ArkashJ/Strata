@@ -212,7 +212,12 @@ def _serialize_tam_output(reg: Registry, tam: TAMOutput) -> dict[str, Any]:
         "convergence": (tam.convergence.model_dump(mode="json") if tam.convergence else None),
         "scenarios": scenarios,
         "charts": build_all_charts(tam),
-        "permalink": f"/tam/{tam.state_hash}",
+        # The web /tam/<hash> page was retired (MCP + CLI direction lock); the
+        # full data already rides this payload, so point at the report tools.
+        "report_hint": (
+            f"call get_report_for_tam or export_report with state_hash "
+            f"{tam.state_hash!r} for the full branded report"
+        ),
     }
 
 
@@ -228,15 +233,15 @@ def _serialize_tam(
 
 
 def _tam_resource_links(reg: Registry, tam_dict: dict[str, Any]) -> list[dict[str, Any]]:
-    """Drill-down links for a TAM result: the TAM + report resources, the web
-    permalink + forwardable report, and each unique sourced input primitive."""
+    """Drill-down links for a TAM result: the TAM + report resources and each
+    unique sourced input primitive. Web deep links (/tam, /p) were retired with
+    the web app trim (MCP + CLI direction lock) — strata:// resources are the
+    durable references."""
     state_hash = str(tam_dict.get("state_hash", ""))
     concept = str(tam_dict.get("concept", ""))
     links: list[dict[str, Any]] = [
         {"uri": f"strata://tam/{state_hash}", "name": "tam", "description": "the frozen TAM"},
         {"uri": f"strata://report/{concept}", "name": "report", "description": "market report"},
-        {"uri": f"/tam/{state_hash}", "name": "permalink", "mimeType": "text/html"},
-        {"uri": f"/tam/{state_hash}/report", "name": "report_pdf", "mimeType": "text/html"},
     ]
     seen: set[str] = set()
     for sc in tam_dict.get("scenarios", []):
@@ -245,9 +250,6 @@ def _tam_resource_links(reg: Registry, tam_dict: dict[str, Any]) -> list[dict[st
             if slug and slug not in seen and slug in reg.atomic:
                 seen.add(slug)
                 links.append({"uri": f"strata://primitive/{slug}", "name": slug})
-                links.append(
-                    {"uri": f"/p/{slug}", "name": f"{slug} (web)", "mimeType": "text/html"}
-                )
     return links
 
 
@@ -432,7 +434,8 @@ async def export_report(
         "premium": premium.model_dump(mode="json"),
         "charts": build_all_charts(tam),
         "citations": citations,
-        "permalink": f"/tam/{tam.state_hash}/report",
+        # No web permalink: the /tam/<hash>/report page was retired (MCP + CLI
+        # direction lock) and this payload already IS the full branded report.
         # Chainable affordances embedded in the payload (the dict path does not
         # take a separate next_actions kwarg, so carry them inline — result.py
         # surfaces structuredContent.next_actions identically).
@@ -747,10 +750,9 @@ def _h_get_primitive(reg: Registry, args: dict[str, Any]) -> CallToolResult:
     slug = str(args["slug"])
     return tool_result(
         out,
-        links=[
-            {"uri": f"strata://primitive/{slug}", "name": slug},
-            {"uri": f"/p/{slug}", "name": f"{slug} (web)", "mimeType": "text/html"},
-        ],
+        # The web /p/<slug> page was retired (MCP + CLI direction lock); the
+        # strata:// resource is the durable reference.
+        links=[{"uri": f"strata://primitive/{slug}", "name": slug}],
     )
 
 
@@ -1094,8 +1096,8 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": (
             "[WRITE] Save a sourced primitive to your org's PRIVATE bank — durable in "
             "Postgres, org-scoped. visibility/org_id are forced server-side and a "
-            "modeled / analyst-tier number is rejected (Q20). Readable back at /bank, "
-            "GET /me/primitives, and via list_my_primitives."
+            "modeled / analyst-tier number is rejected (Q20). Readable back via "
+            "GET /me/primitives and list_my_primitives."
         ),
         "inputSchema": schemas.SAVE_PRIMITIVE,
         "handler": _h_save_primitive,
@@ -1114,7 +1116,8 @@ TOOLS: dict[str, dict[str, Any]] = {
         "description": (
             "[READ] Assemble the full sourced market report for a concept — the "
             "analysis-question answers, per-method equations, and provenance. "
-            "Registry-only, no LLM. The forwardable PDF lives at /tam/<hash>/report."
+            "Registry-only, no LLM. For the forwardable branded HTML/PDF, call "
+            "export_report with a state_hash from size_tam/build_tam."
         ),
         "inputSchema": schemas.GET_REPORT,
         "handler": _h_get_report,
@@ -1125,8 +1128,8 @@ TOOLS: dict[str, dict[str, Any]] = {
             "[WRITE] Flag a bad assumption, a failed query, a wrong primitive, or "
             "missing data on a tam/primitive/concept/framework/query/report. Stored "
             "org-scoped so the team can triage and improve the tool. Commentary "
-            "only — never changes a sourced number (E1). Readable at /feedback, "
-            "GET /feedback, and via list_feedback."
+            "only — never changes a sourced number (E1). Readable back via "
+            "GET /feedback and list_feedback."
         ),
         "inputSchema": schemas.SUBMIT_FEEDBACK,
         "handler": _h_submit_feedback,
