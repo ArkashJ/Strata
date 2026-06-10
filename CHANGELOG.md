@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — sense-check revenue auto-pull from SEC EDGAR
+
+- **`--player "Name|edgar:TICKER|share"`** resolves a US-listed company's latest
+  annual revenue live from SEC EDGAR XBRL (regulator-tier) instead of typing an
+  estimate — so for public players the revenue is **sourced**, not the analyst's
+  guess (closing the "private revenue is itself a guess" critique). It picks the
+  most recent annual fact across revenue concepts (`Revenues` and the ASC 606
+  `RevenueFromContractWithCustomerExcludingAssessedTax`), prints the figure +
+  fiscal year + filer, and counts it as sourced. EDGAR-only (US public cos);
+  private players stay estimates. Gated by `STRATA_OFFLINE` (refuses live lookups
+  offline). yfinance is not used — it exposes quotes, not revenue.
+
+### Fixed — EDGAR fact parsing crashed on present-but-null `fy`/`fp`
+
+- SEC XBRL `companyconcept` facts frequently carry `"fy": null` / `"fp": null`
+  (key present, value null). `_parse_fact` guarded on key presence, so
+  `int(None)` raised `TypeError` on live company-concept data. Now guards on the
+  value. (Surfaced by the revenue auto-pull exercising the company-concept path.)
+
 ### Added — `strata sense-check`: market-share-implied TAM cross-check
 
 - **A reusable sense check for any market sizing.** Given the top players in a

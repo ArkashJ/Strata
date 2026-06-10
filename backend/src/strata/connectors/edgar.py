@@ -249,8 +249,10 @@ def _parse_fact(raw: dict[str, Any]) -> Fact:
         form=str(raw.get("form", "")),
         filed=str(raw.get("filed", "")),
         frame=str(raw.get("frame", "")),
-        fiscal_year=int(raw["fy"]) if "fy" in raw else None,
-        fiscal_period=str(raw["fp"]) if "fp" in raw else None,
+        # SEC XBRL facts often carry "fy"/"fp" present-but-null; guard on the
+        # value, not just key presence, or int(None)/str(None) corrupts the Fact.
+        fiscal_year=int(raw["fy"]) if raw.get("fy") is not None else None,
+        fiscal_period=str(raw["fp"]) if raw.get("fp") is not None else None,
     )
 
 

@@ -149,6 +149,41 @@ def test_cli_sense_check_standalone() -> None:
     assert "2,000,000,000" in r.stdout
 
 
+def test_cli_edgar_token_resolves_sourced_revenue(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Monkeypatch the EDGAR lookup so the CLI path stays offline + deterministic.
+    import strata.cli as cli
+    from strata.sizing.revenue_lookup import ResolvedRevenue
+
+    def _fake_resolve(ticker: str, **_kw: object) -> ResolvedRevenue:
+        return ResolvedRevenue(
+            ticker=ticker.upper(),
+            cik="0000320193",
+            entity_name="Salesforce, Inc.",
+            revenue=34_900_000_000,
+            fiscal_year=2023,
+            concept="Revenues",
+            source_url="https://www.sec.gov/cgi-bin/browse-edgar?CIK=0000320193",
+        )
+
+    monkeypatch.setattr(cli, "resolve_revenue", _fake_resolve)
+    r = runner.invoke(app, ["sense-check", "--player", "Salesforce|edgar:CRM|0.30"])
+    assert r.exit_code == 0, r.stdout
+    assert "resolved Salesforce revenue" in r.stdout
+    assert "1/1 revenues sourced" in r.stdout  # EDGAR figure counts as sourced
+
+
+def test_cli_edgar_token_blocked_offline(monkeypatch: pytest.MonkeyPatch) -> None:
+    import strata.cli as cli
+
+    def _boom(*_a: object, **_k: object) -> object:
+        raise AssertionError("resolve_revenue must not be called when STRATA_OFFLINE=1")
+
+    monkeypatch.setattr(cli, "resolve_revenue", _boom)
+    monkeypatch.setenv("STRATA_OFFLINE", "1")
+    r = runner.invoke(app, ["sense-check", "--player", "Salesforce|edgar:CRM|0.30"])
+    assert r.exit_code == 2  # offline guard fired before any live lookup
+
+
 def test_cli_sense_check_against_curated_concept() -> None:
     # demo-ai-sales-ops-us has a sourced scenario range; the check should compare.
     r = runner.invoke(

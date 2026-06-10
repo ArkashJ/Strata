@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import csv
+import os
 import re
 from dataclasses import dataclass
 from datetime import UTC
@@ -29,10 +30,12 @@ from strata.report import (
     render_premium_pdf,
 )
 from strata.sizing.cli import portfolio_app
+from strata.sizing.revenue_lookup import RevenueLookupError, resolve_revenue
 from strata.sizing.sense_check import (
     Player,
     SenseCheckError,
     SenseCheckResult,
+    normalize_share,
     parse_player,
     sense_check,
 )
@@ -95,8 +98,8 @@ _SC_PLAYER_OPT = typer.Option(
     [],
     "--player",
     "-p",
-    help="A top player as 'Name|revenue|share' (repeatable). revenue: 31e9 / 3.1b / $300m; "
-    "share: 0.15 or 15.",
+    help="A top player as 'Name|revenue|share' (repeatable). revenue: 31e9 / 3.1b / $300m, "
+    "or 'edgar:TICKER' to pull a SOURCED revenue from SEC EDGAR; share: 0.15 or 15.",
 )
 _SC_FILE_OPT = typer.Option(
     None, "--players-file", help="CSV with columns: name,revenue,market_share."
@@ -424,8 +427,35 @@ def verify_cmd(
 # ── Database sub-commands ────────────────────────────────────────────
 
 
+def _player_from_spec(spec: str) -> Player:
+    """Parse a --player spec, resolving an ``edgar:TICKER`` revenue token to a
+    SOURCED revenue via SEC EDGAR (live HTTP). Any other revenue token is an
+    analyst estimate parsed offline."""
+    parts = [p.strip() for p in spec.split("|")]
+    if len(parts) >= 3 and parts[1].lower().startswith("edgar:"):
+        ticker = parts[1].split(":", 1)[1].strip()
+        if not ticker:
+            raise SenseCheckError(f"empty EDGAR ticker in {spec!r}")
+        if os.environ.get("STRATA_OFFLINE") == "1":
+            raise SenseCheckError(f"{spec!r} needs a live EDGAR lookup but STRATA_OFFLINE=1")
+        try:
+            share = normalize_share(float(parts[2]))
+        except ValueError as exc:
+            raise SenseCheckError(f"could not parse share {parts[2]!r} in {spec!r}") from exc
+        try:
+            rr = resolve_revenue(ticker)
+        except RevenueLookupError as exc:
+            raise SenseCheckError(str(exc)) from exc
+        typer.echo(
+            f"  resolved {parts[0]} revenue ${rr.revenue:,.0f} "
+            f"(EDGAR {rr.concept} FY{rr.fiscal_year}, {rr.entity_name})"
+        )
+        return Player(name=parts[0], revenue=rr.revenue, market_share=share, revenue_sourced=True)
+    return parse_player(spec)
+
+
 def _collect_players(specs: list[str], players_file: Path | None) -> list[Player]:
-    players = [parse_player(s) for s in specs]
+    players = [_player_from_spec(s) for s in specs]
     if players_file is not None:
         with players_file.open(newline="", encoding="utf-8") as fh:
             for row in csv.DictReader(fh):
@@ -434,7 +464,7 @@ def _collect_players(specs: list[str], players_file: Path | None) -> list[Player
                     continue
                 rev = (row.get("revenue") or "").strip()
                 share = (row.get("market_share") or "").strip()
-                players.append(parse_player(f"{name}|{rev}|{share}"))
+                players.append(_player_from_spec(f"{name}|{rev}|{share}"))
     return players
 
 
