@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from strata.connectors.edgar import CompanyConcept, Fact
+from strata.connectors.edgar import CompanyConcept, EDGARClientError, Fact
 from strata.sizing.revenue_lookup import RevenueLookupError, resolve_revenue
 
 
@@ -23,22 +23,25 @@ def _concept(facts: tuple[Fact, ...]) -> CompanyConcept:
 
 
 class _FakeClient:
-    """Stands in for EDGARClient — no HTTP. ``concept_by_tag`` maps tag -> response."""
+    """Stands in for EDGARClient — no HTTP. ``concept_by_tag`` maps tag -> concept
+    (the per-tag view one companyfacts request now carries)."""
 
     def __init__(self, cik: str | None, concept_by_tag: dict[str, CompanyConcept | None]) -> None:
         self._cik = cik
         self._by_tag = concept_by_tag
         self.closed = False
+        self.facts_calls = 0
 
     def resolve_ticker(self, ticker: str) -> str | None:
         _ = ticker
         return self._cik
 
-    def get_company_concept(
-        self, cik: str, taxonomy: str = "us-gaap", concept: str = "Revenues"
-    ) -> SimpleNamespace:
-        _ = (cik, taxonomy)
-        return SimpleNamespace(concept=self._by_tag.get(concept))
+    def get_company_facts(self, cik: str) -> SimpleNamespace:
+        _ = cik
+        self.facts_calls += 1
+        return SimpleNamespace(
+            concepts={tag: c for tag, c in self._by_tag.items() if c is not None}
+        )
 
     def close(self) -> None:
         self.closed = True
@@ -252,11 +255,22 @@ def test_picks_latest_year_across_concepts() -> None:
     assert rr.revenue == 34_900_000_000
     assert rr.fiscal_year == 2023
     assert rr.concept == "RevenueFromContractWithCustomerExcludingAssessedTax"
+    assert client.facts_calls == 1  # ONE companyfacts request covers every tag
 
 
 def test_unknown_ticker_raises() -> None:
     with pytest.raises(RevenueLookupError):
         resolve_revenue("NOPE", client=_FakeClient(None, {}))
+
+
+def test_companyfacts_error_is_honest_lookup_error() -> None:
+    class _ErrClient(_FakeClient):
+        def get_company_facts(self, cik: str) -> SimpleNamespace:
+            raise EDGARClientError("EDGAR 404: resource not found")
+
+    with pytest.raises(RevenueLookupError) as exc_info:
+        resolve_revenue("ABC", client=_ErrClient("0000320193", {}))
+    assert "no usable annual revenue concept" in str(exc_info.value)
 
 
 def test_no_revenue_concept_raises_and_names_tried_tags() -> None:

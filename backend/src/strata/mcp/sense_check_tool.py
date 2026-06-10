@@ -17,11 +17,12 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from ..evaluator import size_concept
+from ..connectors.edgar import EDGARClient
 from ..evaluator.engine import EvaluatorError
-from ..registry import Registry
-from ..sizing.revenue_lookup import RevenueLookupError, resolve_revenue
+from ..registry import Registry, RegistryError
+from ..sizing.revenue_lookup import RevenueLookupError, resolve_revenue, to_player
 from ..sizing.sense_check import (
+    MODELED_LABEL,
     Player,
     SenseCheckError,
     normalize_share,
@@ -29,6 +30,7 @@ from ..sizing.sense_check import (
 from ..sizing.sense_check import (
     sense_check as run_sense_check,
 )
+from ..sizing.service import sourced_scenarios
 from .errors import (
     CODE_CONCEPT_NOT_FOUND,
     CODE_EVALUATOR_ERROR,
@@ -37,14 +39,8 @@ from .errors import (
     ToolError,
 )
 
-# The unconditional Q20 label every payload carries, machine-readably.
-MODELED_LABEL = (
-    "MODELED (Q20): market shares are analyst estimates, so the implied TAM is a "
-    "modeled cross-check — never a sourced number, never persisted"
-)
 
-
-def _player_from_row(row: dict[str, Any], live_enabled: bool) -> Player:
+def _player_from_row(row: dict[str, Any], live_enabled: bool, client: EDGARClient) -> Player:
     name = str(row.get("name") or "").strip()
     if not name:
         raise ToolError("each player needs a non-empty 'name'", code=CODE_INVALID_INPUT)
@@ -73,17 +69,10 @@ def _player_from_row(row: dict[str, Any], live_enabled: bool) -> Player:
                 remediation="set STRATA_MCP_LIVE_CONNECTORS=1 or supply revenue directly",
             )
         try:
-            rr = resolve_revenue(ticker)
+            rr = resolve_revenue(ticker, client=client)
         except RevenueLookupError as exc:
             raise ToolError(str(exc), code=CODE_INVALID_INPUT, retriable=True) from exc
-        return Player(
-            name=name,
-            revenue=rr.revenue,
-            market_share=share,
-            revenue_sourced=True,
-            # EDGAR revenue is whole-company, never silently an in-market figure.
-            revenue_note="filing, total-co",
-        )
+        return to_player(name, share, rr)
     if not isinstance(revenue, (int, float)) or isinstance(revenue, bool):
         raise ToolError(
             f"player {name!r}: provide a numeric 'revenue' or an 'edgar_ticker'",
@@ -96,33 +85,28 @@ def sense_check_tool(
     reg: Registry, *, players: list[dict[str, Any]], concept_slug: str | None = None
 ) -> dict[str, Any]:
     live_enabled = os.getenv("STRATA_MCP_LIVE_CONNECTORS") == "1"
-    parsed = [_player_from_row(dict(row), live_enabled) for row in players]
+    # Construction is cheap and no-network; one client serves every edgar: row.
+    with EDGARClient() as client:
+        parsed = [_player_from_row(row, live_enabled, client) for row in players]
 
-    sourced_scenarios: tuple[float, ...] | None = None
+    scenarios: tuple[float, ...] | None = None
     if concept_slug:
-        if concept_slug not in reg.concepts:
+        try:
+            scenarios = sourced_scenarios(reg, concept_slug)
+        except RegistryError as exc:
             raise ToolError(
                 f"concept {concept_slug!r} not found",
                 code=CODE_CONCEPT_NOT_FOUND,
                 remediation="search_concepts to find a matching slug",
-            )
-        try:
-            tam = size_concept(reg, concept_slug)
+            ) from exc
         except EvaluatorError as exc:
             raise ToolError(str(exc), code=CODE_EVALUATOR_ERROR) from exc
-        sourced_scenarios = tuple(s.value for s in tam.scenarios)
 
     try:
-        r = run_sense_check(parsed, sourced_scenarios=sourced_scenarios)
+        r = run_sense_check(parsed, sourced_scenarios=scenarios)
     except SenseCheckError as exc:
         raise ToolError(str(exc), code=CODE_INVALID_INPUT) from exc
 
-    caveats = [
-        f"{p.name}: EDGAR figure is TOTAL company revenue — confirm it equals "
-        f"in-market revenue or use a segment figure"
-        for p in parsed
-        if p.revenue_note == "filing, total-co"
-    ]
     sourced_range = None
     if r.sourced_low is not None and r.sourced_high is not None:
         sourced_range = {"low": r.sourced_low, "mid": r.sourced_mid, "high": r.sourced_high}
@@ -155,7 +139,9 @@ def sense_check_tool(
             }
             for p in r.per_player
         ],
-        "warnings": list(r.warnings) + caveats,
+        # The total-company caveat now arrives as an engine warning (set by the
+        # typed marker), so no surface re-derives it from prose.
+        "warnings": list(r.warnings),
         "assumptions": list(r.assumptions),
         "concept": concept_slug,
         "sourced_range": sourced_range,

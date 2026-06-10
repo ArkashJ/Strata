@@ -53,6 +53,15 @@ def _offline() -> bool:
     return os.environ.get("STRATA_OFFLINE") == "1"
 
 
+def sourced_scenarios(reg: Registry, slug: str) -> tuple[float, ...]:
+    """A curated concept's sourced scenario values — the comparison side of the
+    sense-check cross-check, shared by the CLI and the MCP tool. Validates the
+    slug via ``get_concept`` (RegistryError) before sizing (EvaluatorError) so
+    each surface can map "unknown slug" and "unsizable" to its own error."""
+    reg.get_concept(slug)
+    return tuple(s.value for s in size_concept(reg, slug).scenarios)
+
+
 def _tam_midpoint(tam: TAMOutput) -> float:
     """Representative TAM value = median of the satisfiable scenario values
     (no new number invented — pure synthesis of sourced scenarios)."""

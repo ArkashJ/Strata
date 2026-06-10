@@ -30,18 +30,22 @@ from strata.report import (
     render_premium_html,
     render_premium_pdf,
 )
+from strata.report.narrative import usd
 from strata.sizing.cli import portfolio_app
-from strata.sizing.revenue_lookup import RevenueLookupError, resolve_revenue
+from strata.sizing.revenue_lookup import RevenueLookupError, resolve_revenue, to_player
 from strata.sizing.sense_check import (
+    MODELED_LABEL,
+    SOURCED_TOKENS,
     Player,
     SenseCheckError,
     SenseCheckResult,
     normalize_share,
     parse_money,
-    parse_player,
     sense_check,
     share_token_warning,
+    split_player_spec,
 )
+from strata.sizing.service import sourced_scenarios
 from strata.validator import Severity, ValidationFinding
 from strata.validator import validate as run_validate
 
@@ -430,32 +434,6 @@ def verify_cmd(
 # ── Database sub-commands ────────────────────────────────────────────
 
 
-# An EDGAR companyconcept revenue is the WHOLE company's, not one market's —
-# said inline at resolution time so a total never silently passes as a segment.
-_EDGAR_TOTAL_CO_NOTE = (
-    "EDGAR figure is TOTAL company revenue — confirm it equals in-market revenue "
-    "or use a segment figure"
-)
-_SOURCED_TOKENS = ("sourced", "filing", "true", "1", "yes")
-
-
-class _SharedEDGARClient:
-    """One lazily-created EDGARClient shared across every ``edgar:`` row in a
-    run, so N public players reuse one HTTP pool + disk cache."""
-
-    def __init__(self) -> None:
-        self._client: EDGARClient | None = None
-
-    def get(self) -> EDGARClient:
-        if self._client is None:
-            self._client = EDGARClient()
-        return self._client
-
-    def close(self) -> None:
-        if self._client is not None:
-            self._client.close()
-
-
 def _share_from_token(token: str, ctx: str) -> float:
     try:
         share = normalize_share(float(token))
@@ -467,56 +445,43 @@ def _share_from_token(token: str, ctx: str) -> float:
     return share
 
 
-def _edgar_player(name: str, ticker: str, share: float, edgar: _SharedEDGARClient) -> Player:
+def _edgar_player(name: str, ticker: str, share: float, client: EDGARClient) -> Player:
     """Resolve an ``edgar:TICKER`` revenue token to a SOURCED (but total-company)
     revenue via SEC EDGAR (live HTTP)."""
-    if not name:
-        raise SenseCheckError("player name is empty for an edgar: revenue token")
     if not ticker:
         raise SenseCheckError(f"empty EDGAR ticker for player {name!r}")
     if os.environ.get("STRATA_OFFLINE") == "1":
         raise SenseCheckError(f"{name!r} needs a live EDGAR lookup but STRATA_OFFLINE=1")
     try:
-        rr = resolve_revenue(ticker, client=edgar.get())
+        rr = resolve_revenue(ticker, client=client)
     except RevenueLookupError as exc:
         raise SenseCheckError(str(exc)) from exc
     typer.echo(
-        f"  resolved {name} revenue ${rr.revenue:,.0f} "
+        f"  resolved {name} revenue {usd(rr.revenue)} "
         f"(EDGAR {rr.concept} FY{rr.fiscal_year}, {rr.entity_name})"
     )
-    typer.echo(f"  note: {_EDGAR_TOTAL_CO_NOTE}")
-    return Player(
-        name=name,
-        revenue=rr.revenue,
-        market_share=share,
-        revenue_sourced=True,
-        revenue_note="filing, total-co",
-    )
+    return to_player(name, share, rr)
 
 
-def _player_from_spec(spec: str, edgar: _SharedEDGARClient) -> Player:
+def _player_from_spec(spec: str, client: EDGARClient) -> Player:
     """Parse a --player spec. An ``edgar:TICKER`` revenue token resolves to a
     sourced total-company revenue; any other token is an analyst estimate
     parsed offline."""
-    parts = [p.strip() for p in spec.split("|")]
-    # Enforce the same field-count contract on both branches so a malformed
-    # edgar spec fails as loudly as a malformed plain spec.
-    if len(parts) not in (3, 4):
-        raise SenseCheckError(f"--player must be 'Name|revenue|share[|sourced]', got {spec!r}")
+    parts = split_player_spec(spec)
+    share = _share_from_token(parts[2], spec)
     if parts[1].lower().startswith("edgar:"):
-        share = _share_from_token(parts[2], spec)
-        return _edgar_player(parts[0], parts[1].split(":", 1)[1].strip(), share, edgar)
-    player = parse_player(spec)
-    share_warning = share_token_warning(parts[2], player.market_share)
-    if share_warning:
-        typer.echo(f"  WARN {share_warning}")
-    return player
+        return _edgar_player(parts[0], parts[1].split(":", 1)[1].strip(), share, client)
+    sourced = len(parts) == 4 and parts[3].lower() in SOURCED_TOKENS
+    return Player(
+        name=parts[0], revenue=parse_money(parts[1]), market_share=share, revenue_sourced=sourced
+    )
 
 
 def _collect_players(specs: list[str], players_file: Path | None) -> list[Player]:
-    edgar = _SharedEDGARClient()
-    try:
-        players = [_player_from_spec(s, edgar) for s in specs]
+    # EDGARClient construction is cheap and no-network — one client shared by
+    # every edgar: row so N public players reuse one HTTP pool + disk cache.
+    with EDGARClient() as client:
+        players = [_player_from_spec(s, client) for s in specs]
         if players_file is not None:
             with players_file.open(newline="", encoding="utf-8") as fh:
                 # CSV fields go straight into Player — never round-tripped
@@ -532,10 +497,10 @@ def _collect_players(specs: list[str], players_file: Path | None) -> list[Player
                     )
                     if rev.lower().startswith("edgar:"):
                         players.append(
-                            _edgar_player(name, rev.split(":", 1)[1].strip(), share, edgar)
+                            _edgar_player(name, rev.split(":", 1)[1].strip(), share, client)
                         )
                         continue
-                    sourced = (row.get("sourced") or "").strip().lower() in _SOURCED_TOKENS
+                    sourced = (row.get("sourced") or "").strip().lower() in SOURCED_TOKENS
                     players.append(
                         Player(
                             name=name,
@@ -545,8 +510,6 @@ def _collect_players(specs: list[str], players_file: Path | None) -> list[Player
                         )
                     )
         return players
-    finally:
-        edgar.close()
 
 
 @app.command("sense-check")
@@ -569,18 +532,17 @@ def sense_check_cmd(
         typer.echo(f"ERROR {exc}", err=True)
         raise typer.Exit(code=2) from exc
 
-    sourced_scenarios: tuple[float, ...] | None = None
+    scenarios: tuple[float, ...] | None = None
     if concept:
         try:
             reg = Registry.from_loaded(load_data_dir(data_dir))
-            tam = size_concept(reg, concept)
+            scenarios = sourced_scenarios(reg, concept)
         except (LoaderError, EvaluatorError, RegistryError) as exc:
             typer.echo(f"ERROR could not size concept {concept!r}: {exc}", err=True)
             raise typer.Exit(code=1) from exc
-        sourced_scenarios = tuple(s.value for s in tam.scenarios)
 
     try:
-        result = sense_check(players, sourced_scenarios=sourced_scenarios)
+        result = sense_check(players, sourced_scenarios=scenarios)
     except SenseCheckError as exc:
         typer.echo(f"ERROR {exc}", err=True)
         raise typer.Exit(code=2) from exc
@@ -589,26 +551,36 @@ def sense_check_cmd(
 
 def _render_sense_check(r: SenseCheckResult, concept: str | None) -> None:
     typer.echo("Market-share-implied TAM (comparable-revenue sense-check)")
-    # All four band fields are None together (Σshare ≥ 100% suppresses them).
-    band_ok = r.implied_low is not None
-    if r.implied_low is not None and r.implied_high is not None:
+    typer.echo(f"  {MODELED_LABEL}")
+    # All four band fields are None together (Σshare ≥ 100% suppresses them) —
+    # collapsed into ONE optional tuple so every suppression gate is the same check.
+    band = (
+        (r.implied_low, r.implied_high, r.leverage, r.residual)
+        if r.implied_low is not None
+        and r.implied_high is not None
+        and r.leverage is not None
+        and r.residual is not None
+        else None
+    )
+    if band is not None:
+        implied_low, implied_high = band[0], band[1]
         typer.echo(
-            f"  implied TAM     ${r.implied_tam:,.0f}   "
-            f"(= revenue ${r.revenue_floor:,.0f} / share {r.combined_share:.0%})"
+            f"  implied TAM     {usd(r.implied_tam)}   "
+            f"(= revenue {usd(r.revenue_floor)} / share {r.combined_share:.0%})"
         )
         typer.echo(
-            f"  sensitivity     ${r.implied_low:,.0f} - ${r.implied_high:,.0f}   "
+            f"  sensitivity     {usd(implied_low)} - {usd(implied_high)}   "
             f"(shares +/-{r.share_tolerance:.0%})"
         )
-    typer.echo(f"  revenue floor   ${r.revenue_floor:,.0f}   (a TAM cannot be below this)")
-    if r.leverage is not None and r.residual is not None:
+    typer.echo(f"  revenue floor   {usd(r.revenue_floor)}   (a TAM cannot be below this)")
+    if band is not None:
+        leverage, residual = band[2], band[3]
         typer.echo(
-            f"  leverage        {r.leverage:.1f}x   "
-            f"(implied TAM is {r.leverage:.1f}x captured revenue; 1 / {r.combined_share:.0%} share)"
+            f"  leverage        {leverage:.1f}x   "
+            f"(implied TAM is {leverage:.1f}x captured revenue; 1 / {r.combined_share:.0%} share)"
         )
         typer.echo(
-            f"  residual        ${r.residual:,.0f}   "
-            f"(revenue attributed to players outside the set)"
+            f"  residual        {usd(residual)}   (revenue attributed to players outside the set)"
         )
     typer.echo(
         f"  per-player spread {r.spread_ratio:.1f}x   ({r.n_sourced}/{r.n_players} revenues sourced)"
@@ -621,15 +593,23 @@ def _render_sense_check(r: SenseCheckResult, concept: str | None) -> None:
         else:
             tag = "  (est.)"
         typer.echo(
-            f"    {pi.name:24} ${pi.revenue:,.0f} @ {pi.market_share:.0%}"
-            f"  -> implied ${pi.implied_tam:,.0f}{tag}"
+            f"    {pi.name:24} {usd(pi.revenue)} @ {pi.market_share:.0%}"
+            f"  -> implied {usd(pi.implied_tam)}{tag}"
         )
     # With Σshare ≥ 100% the implied TAM is not defensible, so a verdict on it
-    # would mislead — only the floor + the overlap warning are rendered.
-    if band_ok and concept and r.verdict is not None:
+    # would mislead — only the floor + the overlap warning are rendered. The
+    # sourced trio is always set when verdict is; the None checks just narrow.
+    if (
+        band is not None
+        and concept
+        and r.verdict is not None
+        and r.sourced_low is not None
+        and r.sourced_high is not None
+        and r.sourced_mid is not None
+    ):
         typer.echo(
             f"\n  cross-check vs {concept}: sourced range "
-            f"${r.sourced_low:,.0f} - ${r.sourced_high:,.0f} (mid ${r.sourced_mid:,.0f})"
+            f"{usd(r.sourced_low)} - {usd(r.sourced_high)} (mid {usd(r.sourced_mid)})"
         )
         verdict_label = {
             "within": "AGREES - implied TAM lands inside the sourced range",

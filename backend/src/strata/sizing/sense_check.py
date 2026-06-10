@@ -44,6 +44,29 @@ DEFAULT_SHARE_TOLERANCE = 0.25
 # (the threshold docs/methods/sense-check-defensibility.md states; keep in sync).
 LEVERAGE_WARN_SHARE = 0.25
 
+# Tokens an optional 4th --player field / CSV `sourced` column may use to flag
+# a filing-backed revenue — one list shared by every parsing surface.
+SOURCED_TOKENS = ("sourced", "filing", "true", "1", "yes")
+
+# The unconditional Q20 label every surface renders/ships, machine-readably:
+# shares are ALWAYS analyst estimates, so the implied TAM stays modeled even
+# when every revenue is a sourced filing.
+MODELED_LABEL = (
+    "MODELED (Q20): market shares are analyst estimates, so the implied TAM is a "
+    "modeled cross-check — never a sourced number, never persisted"
+)
+
+# Typed marker for an EDGAR-resolved revenue: a whole-company filing figure,
+# not an in-market one. Lives here (not revenue_lookup) so the engine can emit
+# the caveat without importing the lookup module (which imports Player from us).
+REVENUE_NOTE_FILING_TOTAL_CO = "filing, total-co"
+# The caveat sentence, stated ONCE — sense_check() emits it as a per-player
+# warning whenever the marker is set, so every surface renders it uniformly.
+EDGAR_TOTAL_CO_CAVEAT = (
+    "EDGAR figure is TOTAL company revenue — confirm it equals in-market revenue "
+    "or use a segment figure"
+)
+
 # The load-bearing assumptions the implied TAM rests on. Rendered with every
 # result so a reviewer sees exactly what must hold — these are the conditions a
 # TAM expert checks first, made explicit rather than buried.
@@ -98,9 +121,7 @@ class SenseCheckResult:
     residual: float | None  # implied_tam - revenue_floor (revenue attributed outside the set)
     per_player: tuple[PlayerImplied, ...]
     spread_ratio: float  # max per-player implied / min (1.0 == perfect agreement)
-    n_players: int
     n_sourced: int  # how many revenues are sourced filings
-    all_revenue_sourced: bool
     warnings: tuple[str, ...] = ()
     # Cross-check against a curated concept's sourced scenario range (when given).
     sourced_low: float | None = None
@@ -109,6 +130,15 @@ class SenseCheckResult:
     vs_mid_ratio: float | None = None  # implied_tam / sourced_mid
     verdict: str | None = None  # within | above | below | None (no sourced market)
     assumptions: tuple[str, ...] = field(default=ASSUMPTIONS)
+
+    # Derivable state stays derived — per_player is the single source of truth.
+    @property
+    def n_players(self) -> int:
+        return len(self.per_player)
+
+    @property
+    def all_revenue_sourced(self) -> bool:
+        return self.n_sourced == self.n_players
 
 
 def normalize_share(raw: float) -> float:
@@ -148,23 +178,30 @@ def parse_money(raw: str) -> float:
         raise SenseCheckError(f"could not parse money value {raw!r}") from exc
 
 
+def split_player_spec(spec: str) -> list[str]:
+    """Split a ``--player`` spec into its fields. The field-count and empty-name
+    guards live HERE only, so every spec branch (plain / edgar) fails the same way."""
+    parts = [p.strip() for p in spec.split("|")]
+    if len(parts) not in (3, 4):
+        raise SenseCheckError(f"--player must be 'Name|revenue|share[|sourced]', got {spec!r}")
+    if not parts[0]:
+        raise SenseCheckError(f"player name is empty in {spec!r}")
+    return parts
+
+
 def parse_player(spec: str) -> Player:
     """Parse a CLI ``--player`` spec ``'Name|revenue|share'`` (optional 4th field
     ``sourced`` flags a revenue that comes from a filing). Revenue uses
     :func:`parse_money`; share uses :func:`normalize_share`."""
-    parts = [p.strip() for p in spec.split("|")]
-    if len(parts) not in (3, 4):
-        raise SenseCheckError(f"--player must be 'Name|revenue|share[|sourced]', got {spec!r}")
-    name, rev_s, share_s = parts[0], parts[1], parts[2]
-    if not name:
-        raise SenseCheckError(f"player name is empty in {spec!r}")
+    parts = split_player_spec(spec)
+    share_s = parts[2]
     try:
         share = normalize_share(float(share_s))
     except ValueError as exc:
         raise SenseCheckError(f"could not parse share {share_s!r} in {spec!r}") from exc
-    sourced = len(parts) == 4 and parts[3].lower() in ("sourced", "filing", "true", "1", "yes")
+    sourced = len(parts) == 4 and parts[3].lower() in SOURCED_TOKENS
     return Player(
-        name=name, revenue=parse_money(rev_s), market_share=share, revenue_sourced=sourced
+        name=parts[0], revenue=parse_money(parts[1]), market_share=share, revenue_sourced=sourced
     )
 
 
@@ -261,6 +298,13 @@ def sense_check(
             f"{len(players) - n_sourced}/{len(players)} revenues are estimates, not sourced "
             f"filings — the implied TAM is MODELED, a cross-check only, never a sourced number (Q20)"
         )
+    # The engine owns the total-company caveat so every surface (CLI, MCP)
+    # renders it the same way instead of re-deriving it from the note string.
+    warnings.extend(
+        f"{p.name}: {EDGAR_TOTAL_CO_CAVEAT}"
+        for p in players
+        if p.revenue_note == REVENUE_NOTE_FILING_TOTAL_CO
+    )
 
     sourced_low = sourced_high = sourced_mid = vs_mid = None
     verdict: str | None = None
@@ -288,9 +332,7 @@ def sense_check(
         residual=residual,
         per_player=per,
         spread_ratio=spread,
-        n_players=len(players),
         n_sourced=n_sourced,
-        all_revenue_sourced=all_sourced,
         warnings=tuple(warnings),
         sourced_low=sourced_low,
         sourced_high=sourced_high,

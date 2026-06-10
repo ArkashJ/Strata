@@ -176,7 +176,7 @@ def test_cli_sense_check_standalone() -> None:
     )
     assert r.exit_code == 0, r.stdout
     assert "implied TAM" in r.stdout
-    assert "2,000,000,000" in r.stdout
+    assert "$2.0B" in r.stdout  # money renders via the repo-wide usd() formatter
 
 
 def test_cli_edgar_token_resolves_sourced_revenue(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -257,7 +257,7 @@ def test_cli_csv_players_parse_directly(tmp_path: Path) -> None:
     assert r.exit_code == 0, r.stdout
     assert "Acme|Pipes Inc" in r.stdout
     assert "1/2 revenues sourced" in r.stdout
-    assert "2,000,000,000" in r.stdout  # 500m / 25%
+    assert "$2.0B" in r.stdout  # 500m / 25%, via the repo-wide usd() formatter
 
 
 def test_cli_csv_edgar_rows_share_one_client(
