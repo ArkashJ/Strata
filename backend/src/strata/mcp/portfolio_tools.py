@@ -22,11 +22,11 @@ from ..config import settings
 from ..models import CompanyRecord
 from ..registry import Registry
 from ..sizing.demo import load_demo_portfolio
-from ..sizing.service import SizeOptions
+from ..sizing.service import SizeOptions, validate_explicit_market
 from ..sizing.service import size_company as _size_company
 from ..sizing.store import CompanyStore
-from ..sizing.suggest import near_miss_slugs
 from .context import current_org_id
+from .errors import CODE_CONCEPT_NOT_FOUND, ToolError
 
 
 def _disabled() -> dict[str, Any]:
@@ -82,15 +82,18 @@ def add_portfolio_company(
     name = name.strip()
     if not name:
         return {"error": "name must be non-empty"}
-    if market_concept_slug is not None and market_concept_slug not in reg.concepts:
-        return {
-            "error": "unknown_market_concept_slug",
-            "detail": (
+    if market_concept_slug is not None:
+        near = validate_explicit_market(reg, market_concept_slug)
+        if near is not None:
+            remediation = "search_concepts to find the curated slug"
+            if near:
+                remediation = f"did you mean: {', '.join(near)} — or {remediation}"
+            raise ToolError(
                 f"market_concept_slug {market_concept_slug!r} is not in the registry; "
-                "explicit slugs are never fuzzy-rerouted."
-            ),
-            "suggestions": near_miss_slugs(reg, market_concept_slug),
-        }
+                "explicit slugs are never fuzzy-rerouted",
+                code=CODE_CONCEPT_NOT_FOUND,
+                remediation=remediation,
+            )
     org = current_org_id()
     store = _store()
     rec = CompanyRecord(
@@ -100,29 +103,10 @@ def add_portfolio_company(
         vertical=vertical,
         market_concept_slug=market_concept_slug,
     )
-    added, _skipped = store.upsert_many([rec])
-    if added:
-        action = "added"
-    else:
-        # Re-add carrying NEW info updates the row (CLI ADV-3 parity); a
-        # re-add with no new info stays idempotent.
-        stored = store.get(rec.key) or rec
-        changed = (
-            market_concept_slug is not None and stored.market_concept_slug != market_concept_slug
-        ) or (vertical is not None and stored.vertical != vertical)
-        if changed:
-            if market_concept_slug is not None:
-                stored.market_concept_slug = market_concept_slug
-            if vertical is not None:
-                stored.vertical = vertical
-            store.save(stored)
-            action = "updated"
-        else:
-            action = "existing"
+    action, target = store.add_company(rec, market=market_concept_slug, vertical=vertical)
     out: dict[str, Any] = {"action": action, "key": rec.key, "org_id": org, "name": name}
     if not size:
         return out
-    target = store.get(rec.key) or rec
     res = _size_company(reg, target, opts=SizeOptions())
     store.save(res.company)
     out.update(

@@ -19,6 +19,7 @@ import json
 import os
 import tempfile
 from pathlib import Path
+from typing import Literal
 
 from strata.models import CompanyRecord, CompanyStatus
 
@@ -76,8 +77,43 @@ class CompanyStore:
                 continue
             self._rows[rec.key] = rec
             added += 1
-        self._flush()
+        # The idempotent no-op path must not rewrite the file.
+        if added:
+            self._flush()
         return added, skipped
+
+    def add_company(
+        self,
+        rec: CompanyRecord,
+        *,
+        market: str | None,
+        vertical: str | None,
+    ) -> tuple[Literal["added", "updated", "existing"], CompanyRecord]:
+        """Add-or-update one record, flushing at most once.
+
+        Shared by the CLI and the MCP tool so add/update/existing semantics can't
+        drift between surfaces (ADV-3): a re-add carrying NEW info (an explicit
+        market or vertical) updates the stored row; a re-add with no new info is
+        a no-op that never touches disk. Returns the resolved stored record so
+        callers size/render the same object the store holds.
+        """
+        rec.org_id = self.org_id
+        stored = self._rows.get(rec.key)
+        if stored is None:
+            self._rows[rec.key] = rec
+            self._flush()
+            return "added", rec
+        changed = (market is not None and stored.market_concept_slug != market) or (
+            vertical is not None and stored.vertical != vertical
+        )
+        if not changed:
+            return "existing", stored
+        if market is not None:
+            stored.market_concept_slug = market
+        if vertical is not None:
+            stored.vertical = vertical
+        self._flush()
+        return "updated", stored
 
     def save(self, rec: CompanyRecord) -> None:
         """Upsert one record (used after sizing updates status/tam_value)."""

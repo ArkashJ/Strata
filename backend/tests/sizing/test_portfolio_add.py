@@ -2,30 +2,17 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterator
 from pathlib import Path
 
-import pytest
 from typer.testing import CliRunner
 
 from strata.cli import app
-from strata.config import settings
 from strata.sizing.store import CompanyStore
 
 runner = CliRunner()
 
 # Repo-root data dir (tests run from backend/): backend/tests/sizing -> repo root.
 _DATA_DIR = Path(__file__).resolve().parents[3] / "data"
-
-
-@pytest.fixture
-def portfolio_enabled() -> Iterator[None]:
-    prev = settings.portfolio_enabled
-    settings.portfolio_enabled = True
-    try:
-        yield
-    finally:
-        settings.portfolio_enabled = prev
 
 
 def test_add_disabled_by_default(tmp_path: Path) -> None:

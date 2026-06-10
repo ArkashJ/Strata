@@ -7,14 +7,13 @@ reroute.
 
 from __future__ import annotations
 
-from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 
-from strata.config import settings
+from strata.mcp.errors import CODE_CONCEPT_NOT_FOUND, ToolError
 from strata.mcp.server import load_registry
 from strata.mcp.tools import call_tool
 from strata.registry import Registry
@@ -26,16 +25,6 @@ def _call(reg: Registry, name: str, args: dict[str, Any]) -> dict[str, Any]:
     out = call_tool(reg, name, args)
     assert isinstance(out, dict)
     return out
-
-
-@pytest.fixture
-def portfolio_enabled() -> Iterator[None]:
-    prev = settings.portfolio_enabled
-    settings.portfolio_enabled = True
-    try:
-        yield
-    finally:
-        settings.portfolio_enabled = prev
 
 
 @pytest.fixture
@@ -58,13 +47,15 @@ def test_add_unknown_explicit_market_is_honest_error(
     portfolio_enabled: None, tmp_store: Path
 ) -> None:
     reg = load_registry()
-    out = _call(
-        reg,
-        "add_portfolio_company",
-        {"name": "Acme", "domain": "acme.example", "market_concept_slug": "doc-gen-pc"},
-    )
-    assert out["error"] == "unknown_market_concept_slug"
-    assert "doc-gen-pc-insurance" in out["suggestions"]
+    with pytest.raises(ToolError) as excinfo:
+        _call(
+            reg,
+            "add_portfolio_company",
+            {"name": "Acme", "domain": "acme.example", "market_concept_slug": "doc-gen-pc"},
+        )
+    assert excinfo.value.code == CODE_CONCEPT_NOT_FOUND
+    assert "doc-gen-pc" in str(excinfo.value)
+    assert "doc-gen-pc-insurance" in (excinfo.value.remediation or "")  # near-miss suggestion
     assert not tmp_store.exists()  # honest refusal writes nothing
 
 

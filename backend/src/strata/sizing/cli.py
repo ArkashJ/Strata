@@ -17,9 +17,8 @@ from strata.loader import LoaderError, load_data_dir
 from strata.models import CompanyRecord
 from strata.registry import Registry
 from strata.sizing.importer import parse_portfolio_csv
-from strata.sizing.service import SizeOptions, size_company
+from strata.sizing.service import SizeOptions, size_company, validate_explicit_market
 from strata.sizing.store import DEFAULT_STORE_PATH, CompanyStore
-from strata.sizing.suggest import near_miss_slugs
 
 portfolio_app = typer.Typer(
     name="portfolio",
@@ -110,13 +109,14 @@ def portfolio_add(
             raise typer.Exit(code=1) from None
         # An explicit slug the user typed must never fuzzy-reroute to a
         # different market — a miss is an honest error (ADV-1).
-        if market is not None and market not in reg.concepts:
-            msg = f"unknown market concept slug {market!r}"
-            near = near_miss_slugs(reg, market)
-            if near:
-                msg += " — did you mean: " + ", ".join(near)
-            typer.echo(msg)
-            raise typer.Exit(code=1)
+        if market is not None:
+            near = validate_explicit_market(reg, market)
+            if near is not None:
+                msg = f"unknown market concept slug {market!r}"
+                if near:
+                    msg += " — did you mean: " + ", ".join(near)
+                typer.echo(msg)
+                raise typer.Exit(code=1)
     elif market is not None:
         typer.echo(
             f"note: --market {market!r} stored unvalidated (no registry without --size; "
@@ -131,33 +131,17 @@ def portfolio_add(
         vertical=vertical,
         market_concept_slug=market,
     )
-    added, _skipped = store.upsert_many([rec])
-    if added:
+    action, target = store.add_company(rec, market=market, vertical=vertical)
+    if action == "added":
         typer.echo(f"added {rec.name!r} ({rec.key}) → org {org!r}")
+    elif action == "updated":
+        typer.echo(f"updated {target.name!r} ({target.key}) → org {org!r}")
     else:
-        # Re-add carrying NEW info updates the stored row instead of silently
-        # dropping it (ADV-3); a re-add with no new info stays idempotent.
-        stored = store.get(rec.key) or rec
-        changed = (market is not None and stored.market_concept_slug != market) or (
-            vertical is not None and stored.vertical != vertical
-        )
-        if changed:
-            if market is not None:
-                stored.market_concept_slug = market
-            if vertical is not None:
-                stored.vertical = vertical
-            store.save(stored)
-            typer.echo(f"updated {stored.name!r} ({stored.key}) → org {org!r}")
-        else:
-            typer.echo(f"{rec.name!r} already in portfolio (idempotent on {rec.key!r})")
+        typer.echo(f"{rec.name!r} already in portfolio (idempotent on {rec.key!r})")
 
-    if not size or reg is None:
+    # reg is loaded iff --size was passed — sizing rides on that.
+    if reg is None:
         return
-    # Size the stored record (the existing one on a re-add); honor a freshly
-    # passed --market even when the row was already present.
-    target = store.get(rec.key) or rec
-    if market:
-        target.market_concept_slug = market
     res = size_company(reg, target, opts=SizeOptions())
     store.save(res.company)
     if res.verdict == "sized":
