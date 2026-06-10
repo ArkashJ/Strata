@@ -13,12 +13,13 @@ from pathlib import Path
 import typer
 
 from strata.config import settings
-from strata.loader import load_data_dir
+from strata.loader import LoaderError, load_data_dir
 from strata.models import CompanyRecord
 from strata.registry import Registry
 from strata.sizing.importer import parse_portfolio_csv
 from strata.sizing.service import SizeOptions, size_company
 from strata.sizing.store import DEFAULT_STORE_PATH, CompanyStore
+from strata.sizing.suggest import near_miss_slugs
 
 portfolio_app = typer.Typer(
     name="portfolio",
@@ -92,10 +93,40 @@ def portfolio_add(
     ``unsizable``, never an invented number (Q20).
     """
     _require_enabled()
+    name = name.strip()
+    if not name:
+        raise typer.BadParameter("--name must be non-empty")
+
+    # Load the registry BEFORE any write so a bad data dir or a bad explicit
+    # --market fails fast with no partial state (ADV-4 / ADV-1).
+    reg: Registry | None = None
+    if size:
+        try:
+            reg = Registry.from_loaded(load_data_dir(data_dir))
+        except LoaderError as exc:
+            typer.echo(
+                f"could not load data dir: {exc} — pass `-d ../data` when running from backend/"
+            )
+            raise typer.Exit(code=1) from None
+        # An explicit slug the user typed must never fuzzy-reroute to a
+        # different market — a miss is an honest error (ADV-1).
+        if market is not None and market not in reg.concepts:
+            msg = f"unknown market concept slug {market!r}"
+            near = near_miss_slugs(reg, market)
+            if near:
+                msg += " — did you mean: " + ", ".join(near)
+            typer.echo(msg)
+            raise typer.Exit(code=1)
+    elif market is not None:
+        typer.echo(
+            f"note: --market {market!r} stored unvalidated (no registry without --size; "
+            "a typo here will surface as an honest sizing error later)"
+        )
+
     store = _store(store_path, org)
     rec = CompanyRecord(
         org_id=org,
-        name=name.strip(),
+        name=name,
         domain=domain.strip(),
         vertical=vertical,
         market_concept_slug=market,
@@ -104,11 +135,24 @@ def portfolio_add(
     if added:
         typer.echo(f"added {rec.name!r} ({rec.key}) → org {org!r}")
     else:
-        typer.echo(f"{rec.name!r} already in portfolio (idempotent on {rec.key!r})")
+        # Re-add carrying NEW info updates the stored row instead of silently
+        # dropping it (ADV-3); a re-add with no new info stays idempotent.
+        stored = store.get(rec.key) or rec
+        changed = (market is not None and stored.market_concept_slug != market) or (
+            vertical is not None and stored.vertical != vertical
+        )
+        if changed:
+            if market is not None:
+                stored.market_concept_slug = market
+            if vertical is not None:
+                stored.vertical = vertical
+            store.save(stored)
+            typer.echo(f"updated {stored.name!r} ({stored.key}) → org {org!r}")
+        else:
+            typer.echo(f"{rec.name!r} already in portfolio (idempotent on {rec.key!r})")
 
-    if not size:
+    if not size or reg is None:
         return
-    reg = Registry.from_loaded(load_data_dir(data_dir))
     # Size the stored record (the existing one on a re-add); honor a freshly
     # passed --market even when the row was already present.
     target = store.get(rec.key) or rec

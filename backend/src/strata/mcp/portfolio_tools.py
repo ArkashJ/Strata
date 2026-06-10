@@ -25,6 +25,7 @@ from ..sizing.demo import load_demo_portfolio
 from ..sizing.service import SizeOptions
 from ..sizing.service import size_company as _size_company
 from ..sizing.store import CompanyStore
+from ..sizing.suggest import near_miss_slugs
 from .context import current_org_id
 
 
@@ -59,6 +60,82 @@ def import_portfolio(reg: Registry, *, rows: list[dict[str, Any]]) -> dict[str, 
     ]
     added, skipped = _store().upsert_many(records)
     return {"imported": added, "existing": skipped, "parsed": len(records), "org_id": org}
+
+
+def add_portfolio_company(
+    reg: Registry,
+    *,
+    name: str,
+    domain: str = "",
+    vertical: str | None = None,
+    market_concept_slug: str | None = None,
+    size: bool = False,
+) -> dict[str, Any]:
+    """[WRITE] Add ONE company to your org — the single-row twin of
+    ``import_portfolio`` (agent parity with ``strata portfolio add``).
+
+    An explicit ``market_concept_slug`` that isn't in the registry is an honest
+    error with near-miss suggestions, never a fuzzy reroute (ADV-1 / Q20: a
+    confidently wrong market is worse than a refusal)."""
+    if not settings.portfolio_enabled:
+        return _disabled()
+    name = name.strip()
+    if not name:
+        return {"error": "name must be non-empty"}
+    if market_concept_slug is not None and market_concept_slug not in reg.concepts:
+        return {
+            "error": "unknown_market_concept_slug",
+            "detail": (
+                f"market_concept_slug {market_concept_slug!r} is not in the registry; "
+                "explicit slugs are never fuzzy-rerouted."
+            ),
+            "suggestions": near_miss_slugs(reg, market_concept_slug),
+        }
+    org = current_org_id()
+    store = _store()
+    rec = CompanyRecord(
+        org_id=org,
+        name=name,
+        domain=domain.strip(),
+        vertical=vertical,
+        market_concept_slug=market_concept_slug,
+    )
+    added, _skipped = store.upsert_many([rec])
+    if added:
+        action = "added"
+    else:
+        # Re-add carrying NEW info updates the row (CLI ADV-3 parity); a
+        # re-add with no new info stays idempotent.
+        stored = store.get(rec.key) or rec
+        changed = (
+            market_concept_slug is not None and stored.market_concept_slug != market_concept_slug
+        ) or (vertical is not None and stored.vertical != vertical)
+        if changed:
+            if market_concept_slug is not None:
+                stored.market_concept_slug = market_concept_slug
+            if vertical is not None:
+                stored.vertical = vertical
+            store.save(stored)
+            action = "updated"
+        else:
+            action = "existing"
+    out: dict[str, Any] = {"action": action, "key": rec.key, "org_id": org, "name": name}
+    if not size:
+        return out
+    target = store.get(rec.key) or rec
+    res = _size_company(reg, target, opts=SizeOptions())
+    store.save(res.company)
+    out.update(
+        {
+            "status": res.company.status,
+            "market_concept_slug": res.company.market_concept_slug,
+            "tam_value": res.company.tam_value,
+            "reason": res.company.reason,
+        }
+    )
+    if res.tam is not None:
+        out["state_hash"] = res.tam.state_hash
+    return out
 
 
 def size_company(

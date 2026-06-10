@@ -159,6 +159,28 @@ IMPORT_PORTFOLIO: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+ADD_PORTFOLIO_COMPANY: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string", "description": "Company name (required)."},
+        "domain": {"type": "string", "description": "Website / domain (the idempotency key)."},
+        "vertical": {"type": "string", "description": "Industry vertical."},
+        "market_concept_slug": {
+            "type": "string",
+            "description": (
+                "Explicit market concept slug. Validated against the registry — an "
+                "unknown slug is an honest error with suggestions, never fuzzy-rerouted."
+            ),
+        },
+        "size": {
+            "type": "boolean",
+            "description": "Size the company immediately (registry-first, offline-safe).",
+        },
+    },
+    "required": ["name"],
+    "additionalProperties": False,
+}
+
 SIZE_COMPANY: dict[str, Any] = {
     "type": "object",
     "properties": {
