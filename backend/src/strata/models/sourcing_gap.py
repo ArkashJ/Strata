@@ -47,7 +47,12 @@ class SourcingGap(BaseModel):
     recorder collapses repeats onto, bumping ``hit_count`` instead of inserting a
     duplicate — so the queue counts demand. ``resource_target`` (e.g.
     ``bls:displacement-by-occupation``) names the connector/method that would fill
-    the gap, when known."""
+    the gap, when known.
+
+    A resolve-side and a verify-side phrasing of the same market can land two
+    rows (the key is the normalized query text and the two surfaces see
+    different strings) — acceptable: both still rank as demand for the same
+    missing number."""
 
     model_config = ConfigDict(from_attributes=True)
 

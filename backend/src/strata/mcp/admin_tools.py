@@ -51,6 +51,60 @@ def _require_admin() -> dict[str, Any] | None:
     return None
 
 
+def _correction_path(row: dict[str, Any]) -> list[dict[str, Any]]:
+    """Next-actions to close a ``primitive_correction``. Honest: the steps differ
+    on whether the flag actually carries a promotable payload — without one, the
+    only real next action is a better submission, not a promote that will fail."""
+    fid = row.get("id")
+    if row.get("suggested_value"):
+        return [
+            {
+                "tool": "apply_feedback",
+                "arguments": {"feedback_id": fid},
+                "description": "create the org-private corrected primitive (fenced, Q20)",
+            },
+            {
+                "tool": "admin_promote_correction",
+                "arguments": {"feedback_id": fid},
+                "description": "re-fence for the SHARED bank and return the committable YAML",
+            },
+            {
+                "cli": f"strata admin promote {fid}",
+                "description": "write data/primitives/<slug>.yaml in a repo checkout",
+            },
+        ]
+    return [
+        {
+            "tool": "submit_feedback",
+            "description": (
+                "this flag has no promotable correction; a promotable one needs a FULL "
+                "primitive payload in suggested_value (value + unit + as_of + geo + a "
+                "sourced, hash-pinned source — modeled/analyst tier cannot cross the "
+                "shared fence)"
+            ),
+            "arguments": {
+                "payload": {
+                    "kind": "primitive_correction",
+                    "target_type": "primitive",
+                    "target_id": row.get("target_id") or "<primitive-slug>",
+                    "body": "<why the current number is wrong>",
+                    "suggested_value": {
+                        "kind": "atomic_primitive",
+                        "slug": "<new-slug>",
+                        "value": "<corrected number>",
+                        "unit": {"kind": "<stock|flow|price>", "dimension": "<people|money|…>"},
+                        "source": {
+                            "tier": "<regulator|first_party|aggregator>",
+                            "url": "<citation url>",
+                            "snapshot_sha256": "<64-hex content pin>",
+                        },
+                    },
+                }
+            },
+        }
+    ]
+
+
 async def admin_list_feedback(
     reg: Registry,
     *,
@@ -87,10 +141,18 @@ async def admin_list_feedback(
             org_id=org_id,
             limit=max(1, min(limit, 500)),
         )
+    feedback: list[dict[str, Any]] = []
+    for r in rows:
+        d = r.model_dump(mode="json")
+        # Corrections carry their closing path so the operator (or the agent
+        # driving the queue) never has to guess the apply → promote sequence.
+        if r.kind is FeedbackKind.PRIMITIVE_CORRECTION:
+            d["correction_path"] = _correction_path(d)
+        feedback.append(d)
     return {
         "admin": True,
-        "count": len(rows),
-        "feedback": [r.model_dump(mode="json") for r in rows],
+        "count": len(feedback),
+        "feedback": feedback,
     }
 
 

@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — the miss→gap flywheel now runs itself (feedback loop fixes)
+
+- **A failed market query now automatically becomes ranked demand.** When the
+  resolver (HTTP `/resolve`), the MCP `resolve_market`, or `verify_market_claim`
+  comes up empty for a signed-in workspace, the miss is recorded in the
+  sourcing-gap queue on its own — repeats of the same question bump the gap's
+  hit count instead of piling up. Previously a miss either filed a bug-style
+  feedback row or relied on the agent volunteering a follow-up call. An actual
+  internal error still files feedback: an exception is a bug report, a miss is
+  a demand signal — and a gap is only ever a demand signal, never a number.
+- **Feedback noise is quarantined, never deleted.** Throwaway probes ("test",
+  "asdf", two-character queries) and flags that merely echo the canned no-data
+  message are stored as `wontfix` with severity `noise`, so the open triage
+  queue stays clean while every submission remains auditable.
+- **`strata admin correct <feedback_id>` closes the correction loop honestly.**
+  It shows the flagged primitive's current sourced value side-by-side with the
+  complaint, applies the corrected number org-private by default (via the
+  existing apply path), and `--shared` promotes through the existing
+  shared-bank fence — which still refuses modeled/analyst-tier numbers (Q20),
+  pointing the operator at the honest fallback (correct org-private + file a
+  sourcing gap for a real source).
+- **The backlog is visible.** Admin `whoami` reports the count of open
+  primitive corrections, and `admin_list_feedback` correction rows carry a
+  `correction_path` — the exact apply → promote → commit chain (or, when the
+  flag has no usable payload, a template showing what a promotable correction
+  needs).
+
 ### Changed — web app trimmed to landing + auth + OAuth consent (CLI/MCP direction lock)
 
 The web frontend now serves only the public landing page, the Clerk sign-in /

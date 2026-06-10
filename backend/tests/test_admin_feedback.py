@@ -237,6 +237,245 @@ async def test_admin_list_feedback_sees_every_org(_clean: None) -> None:
         assert {r.org_id for r in a_rows} == {_TENANT_A}
 
 
+@pytest.fixture(scope="module")
+def reg() -> Any:
+    from pathlib import Path
+
+    from strata.loader import load_data_dir
+    from strata.registry import Registry
+
+    return Registry.from_loaded(load_data_dir(Path(__file__).resolve().parents[2] / "data"))
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_whoami_admin_sees_open_corrections(
+    reg: Any, _clean: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An admin caller's whoami carries the open primitive_correction backlog
+    count; a noise-quarantined or resolved flag does not inflate it."""
+    import inspect
+
+    from strata.db.engine import org_session_scope
+    from strata.mcp import context
+    from strata.mcp.tools import _h_whoami
+
+    monkeypatch.setattr(settings, "admin_orgs", _ADMIN_ORG)
+    async with org_session_scope(_TENANT_A) as s:
+        await record_feedback(
+            s,
+            org_id=_TENANT_A,
+            user_id=None,
+            kind=FeedbackKind.PRIMITIVE_CORRECTION,
+            target_type=TargetType.PRIMITIVE,
+            body="headcount looks stale",
+        )
+
+    token = context.current_principal.set(Principal(org_id=_ADMIN_ORG, key_id="k", scopes=("*",)))
+    try:
+        res = _h_whoami(reg, {})
+        assert inspect.isawaitable(res)
+        out = await res
+    finally:
+        context.current_principal.reset(token)
+    assert out["ok"] is True
+    assert out["open_corrections"] >= 1
+
+
+def test_whoami_non_admin_has_no_backlog(reg: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A non-admin (or stdio) caller keeps the synchronous, DB-free whoami —
+    the backlog count is an admin-only field."""
+    from strata.mcp import context
+    from strata.mcp.tools import _h_whoami
+
+    monkeypatch.setattr(settings, "admin_orgs", _ADMIN_ORG)
+    token = context.current_principal.set(Principal(org_id=_TENANT_A, key_id="k", scopes=("*",)))
+    try:
+        out = _h_whoami(reg, {})
+        assert isinstance(out, dict)
+        assert "open_corrections" not in out
+    finally:
+        context.current_principal.reset(token)
+    # stdio: no principal at all → same sync path.
+    out = _h_whoami(reg, {})
+    assert isinstance(out, dict)
+    assert "open_corrections" not in out
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_admin_list_feedback_correction_path(
+    _clean: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """primitive_correction rows carry a correction_path: the apply→promote→CLI
+    chain when a promotable payload exists, a submit_feedback template when not.
+    Other kinds carry none."""
+    from strata.db.engine import org_session_scope
+    from strata.mcp import context
+    from strata.mcp.admin_tools import admin_list_feedback as mcp_admin_list
+
+    monkeypatch.setattr(settings, "admin_orgs", _ADMIN_ORG)
+    async with org_session_scope(_TENANT_A) as s:
+        with_payload = await record_feedback(
+            s,
+            org_id=_TENANT_A,
+            user_id=None,
+            kind=FeedbackKind.PRIMITIVE_CORRECTION,
+            target_type=TargetType.PRIMITIVE,
+            body="corrected headcount attached",
+            suggested_value=_sourced_primitive("adm-path-with-payload"),
+        )
+        without_payload = await record_feedback(
+            s,
+            org_id=_TENANT_A,
+            user_id=None,
+            kind=FeedbackKind.PRIMITIVE_CORRECTION,
+            target_type=TargetType.PRIMITIVE,
+            target_id="some-flagged-slug",
+            body="this number looks wrong",
+        )
+        commentary = await record_feedback(
+            s,
+            org_id=_TENANT_A,
+            user_id=None,
+            kind=FeedbackKind.BAD_ASSUMPTION,
+            target_type=TargetType.TAM,
+            body="adoption looks aggressive",
+        )
+
+    token = context.current_principal.set(Principal(org_id=_ADMIN_ORG, key_id="k", scopes=("*",)))
+    try:
+        out = await mcp_admin_list(None, org_id=_TENANT_A)  # type: ignore[arg-type]
+    finally:
+        context.current_principal.reset(token)
+    by_id = {r["id"]: r for r in out["feedback"]}
+
+    path = by_id[with_payload.id]["correction_path"]
+    assert [step.get("tool", step.get("cli")) for step in path] == [
+        "apply_feedback",
+        "admin_promote_correction",
+        f"strata admin promote {with_payload.id}",
+    ]
+    assert path[0]["arguments"] == {"feedback_id": with_payload.id}
+
+    template = by_id[without_payload.id]["correction_path"]
+    assert len(template) == 1
+    assert template[0]["tool"] == "submit_feedback"
+    payload = template[0]["arguments"]["payload"]
+    assert payload["target_id"] == "some-flagged-slug"
+    assert "suggested_value" in payload  # shows exactly what a promotable correction needs
+
+    assert "correction_path" not in by_id[commentary.id]
+
+
+# --------------------------------------------------------------------------- #
+# `strata admin correct` — the operator's correction loop.                     #
+# --------------------------------------------------------------------------- #
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_admin_correct_org_private_happy_path(_clean: None, tmp_path: Any) -> None:
+    """Default mode applies the correction ORG-PRIVATE via the existing apply
+    path: primitive created under the flag's own org, flag resolved + linked."""
+    from strata.cli import _admin_correct_run
+    from strata.db.engine import org_session_scope
+    from strata.db.feedback import list_feedback
+    from strata.db.user_primitives import list_user_primitives
+
+    async with org_session_scope(_TENANT_A) as s:
+        ev = await record_feedback(
+            s,
+            org_id=_TENANT_A,
+            user_id=None,
+            kind=FeedbackKind.PRIMITIVE_CORRECTION,
+            target_type=TargetType.PRIMITIVE,
+            body="corrected headcount attached",
+            suggested_value=_sourced_primitive("adm-correct-private"),
+        )
+        fid = ev.id
+
+    outcome = await _admin_correct_run(
+        fid, payload=None, shared=False, data_dir=tmp_path, assume_yes=True
+    )
+    assert outcome["mode"] == "org-private"
+    assert outcome["org_id"] == _TENANT_A
+    assert outcome["slug"] == "adm-correct-private"
+    assert outcome["status"] == "resolved"
+
+    async with org_session_scope(_TENANT_A) as s:
+        prims = await list_user_primitives(s, org_id=_TENANT_A)
+        assert any(p.slug == "adm-correct-private" and p.visibility == "private" for p in prims)
+        rows = await list_feedback(s, org_id=_TENANT_A)
+        assert rows[0].status is FeedbackStatus.RESOLVED
+        assert rows[0].resolved_primitive_id is not None
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_admin_correct_shared_happy_path(_clean: None, tmp_path: Any) -> None:
+    """--shared promotes through the existing fence and writes the committable
+    data/primitives/<slug>.yaml into the given data dir."""
+    import yaml
+
+    from strata.cli import _admin_correct_run
+    from strata.db.engine import org_session_scope
+
+    async with org_session_scope(_TENANT_A) as s:
+        ev = await record_feedback(
+            s,
+            org_id=_TENANT_A,
+            user_id=None,
+            kind=FeedbackKind.PRIMITIVE_CORRECTION,
+            target_type=TargetType.PRIMITIVE,
+            body="corrected headcount attached",
+            suggested_value=_sourced_primitive("adm-correct-shared"),
+        )
+        fid = ev.id
+
+    outcome = await _admin_correct_run(
+        fid, payload=None, shared=True, data_dir=tmp_path, assume_yes=True
+    )
+    assert outcome["mode"] == "shared"
+    written = tmp_path / "primitives" / "adm-correct-shared.yaml"
+    assert written.exists()
+    shared = yaml.safe_load(written.read_text(encoding="utf-8"))
+    assert shared["visibility"] == "public"
+    assert shared.get("org_id") is None
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_admin_correct_shared_refuses_modeled(_clean: None, tmp_path: Any) -> None:
+    """--shared on a modeled-tier correction is refused by the EXISTING shared
+    fence (Q20) — the flag stays open, the payload stays intact (never deleted),
+    and nothing lands in the shared data dir."""
+    from strata.cli import _admin_correct_run
+    from strata.db.engine import org_session_scope
+    from strata.db.feedback import list_feedback
+
+    async with org_session_scope(_TENANT_A) as s:
+        ev = await record_feedback(
+            s,
+            org_id=_TENANT_A,
+            user_id=None,
+            kind=FeedbackKind.PRIMITIVE_CORRECTION,
+            target_type=TargetType.PRIMITIVE,
+            body="proposed (modeled) correction",
+            suggested_value=_modeled_primitive("adm-correct-modeled"),
+        )
+        fid = ev.id
+
+    with pytest.raises(ModeledFenceError):
+        await _admin_correct_run(fid, payload=None, shared=True, data_dir=tmp_path, assume_yes=True)
+
+    assert not (tmp_path / "primitives" / "adm-correct-modeled.yaml").exists()
+    async with org_session_scope(_TENANT_A) as s:
+        rows = await list_feedback(s, org_id=_TENANT_A)
+        assert rows[0].status is FeedbackStatus.OPEN
+        assert rows[0].suggested_value is not None  # feedback is never deleted
+
+
 @_PG
 @pytest.mark.asyncio
 async def test_admin_promote_correction_returns_shared_yaml(_clean: None) -> None:

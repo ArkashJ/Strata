@@ -20,6 +20,7 @@ from strata.connectors.edgar import EDGARClient
 from strata.evaluator import EvaluatorError, size_concept
 from strata.loader import LoaderError, load_data_dir
 from strata.models import QuestionCategory, ResolvedAnswer, TAMOutput, Unit
+from strata.models.feedback import FeedbackEvent
 from strata.registry import Registry, RegistryError
 from strata.report import (
     Branding,
@@ -1532,7 +1533,7 @@ def feedback_list(org: str = _FB_ORG_OPT, status: str | None = _FB_STATUS_OPT) -
 
     from strata.db.engine import org_session_scope
     from strata.db.feedback import list_feedback
-    from strata.models.feedback import FeedbackEvent, FeedbackStatus
+    from strata.models.feedback import FeedbackStatus
 
     status_filter = FeedbackStatus(status) if status else None
 
@@ -1759,6 +1760,22 @@ _ADMIN_VALIDATE_ONLY_OPT = typer.Option(
     False, "--validate-only", help="Validate + print the shared YAML but don't write/resolve."
 )
 _ADMIN_ID_ARG = typer.Argument(..., help="Feedback row id to promote.")
+_ADMIN_CORRECT_ID_ARG = typer.Argument(..., help="Feedback row id to correct.")
+_ADMIN_CORRECT_PAYLOAD_OPT = typer.Option(
+    None,
+    "--payload",
+    help="YAML file with the corrected primitive (value + unit + source + tier). "
+    "Falls back to the flag's own suggested_value.",
+)
+_ADMIN_CORRECT_SHARED_OPT = typer.Option(
+    False,
+    "--shared",
+    help="Promote into the SHARED bank (runs the shared-bank fence; a modeled / "
+    "analyst-tier number is refused — Q20). Default is org-private.",
+)
+_ADMIN_CORRECT_YES_OPT = typer.Option(
+    False, "--yes", "-y", help="Apply without the interactive confirmation."
+)
 
 
 @admin_app.command("feedback")
@@ -1772,7 +1789,7 @@ def admin_feedback(
 
     from strata.db.engine import admin_session_scope
     from strata.db.feedback import admin_list_feedback
-    from strata.models.feedback import FeedbackEvent, FeedbackKind, FeedbackStatus
+    from strata.models.feedback import FeedbackKind, FeedbackStatus
 
     status_filter = FeedbackStatus(status) if status else None
     kind_filter = FeedbackKind(kind) if kind else None
@@ -1847,6 +1864,177 @@ def admin_promote(
     origin = f" (from {org})" if org else ""
     typer.echo(f"✓ Promoted flag {feedback_id}{origin} → {dest}")
     typer.echo("  Validate + seed: `strata validate` then `strata db seed`.")
+
+
+def _echo_correction_context(flag: FeedbackEvent, data_dir: Path) -> None:
+    """Show the flagged primitive's CURRENT sourced value next to the complaint
+    so the operator decides with both numbers in view — never blind-applies."""
+    from strata.models.feedback import TargetType
+
+    tgt = f"{flag.target_type.value}:{flag.target_id}" if flag.target_id else flag.target_type.value
+    typer.echo(f"Flag #{flag.id} [{flag.status.value}] org={flag.org_id} kind={flag.kind.value}")
+    typer.echo(f"  Target:    {tgt}")
+    typer.echo(f"  Complaint: {flag.body}")
+    if flag.target_type is TargetType.PRIMITIVE and flag.target_id:
+        current = None
+        try:
+            reg = Registry.from_loaded(load_data_dir(data_dir))
+            current = reg.atomic.get(flag.target_id)
+        except Exception:
+            # No readable data dir here — say so rather than pretend.
+            typer.echo(f"  Current:   (could not load the registry from {data_dir})")
+        else:
+            if current is not None:
+                typer.echo(
+                    f"  Current:   {current.value} [{current.source.tier.value}] "
+                    f"{current.source.url}"
+                )
+            else:
+                typer.echo(f"  Current:   {flag.target_id!r} not in the shared registry")
+    if flag.suggested_value:
+        src_raw = flag.suggested_value.get("source")
+        src: dict[str, Any] = src_raw if isinstance(src_raw, dict) else {}
+        typer.echo(
+            f"  Proposed:  {flag.suggested_value.get('value')} [{src.get('tier')}] {src.get('url')}"
+        )
+    else:
+        typer.echo("  Proposed:  (none on the flag — pass --payload <yaml>)")
+
+
+async def _admin_correct_run(
+    feedback_id: int,
+    *,
+    payload: dict[str, Any] | None,
+    shared: bool,
+    data_dir: Path,
+    assume_yes: bool,
+) -> dict[str, Any]:
+    """The whole correct flow on ONE event loop (the async engine binds its pool
+    to the loop, so a second ``asyncio.run`` in the same process would break).
+    Reuses the existing apply / promote paths — no new fence is built here."""
+    import sys
+
+    import yaml
+
+    from strata.db.engine import admin_session_scope, org_session_scope
+    from strata.db.feedback import (
+        FeedbackNotApplicableError,
+        admin_get_feedback_row,
+        admin_promote_payload,
+        apply_feedback_correction,
+    )
+    from strata.models.feedback import FeedbackStatus
+
+    async with admin_session_scope(_ADMIN_ORG) as session:
+        row = await admin_get_feedback_row(session, feedback_id)
+        if row is None:
+            raise FeedbackNotApplicableError(f"no feedback {feedback_id}")
+        flag = FeedbackEvent.model_validate(row)
+
+    _echo_correction_context(flag, data_dir)
+
+    if not assume_yes and sys.stdin.isatty():
+        target = "the SHARED bank" if shared else f"org-private ({flag.org_id})"
+        typer.confirm(f"Apply this correction to {target}?", abort=True)
+
+    if not shared:
+        # Default: org-private via the existing apply path — the workspace gets
+        # the fix; any banner/fence the apply path enforces stays intact.
+        async with org_session_scope(flag.org_id) as session:
+            event, prim = await apply_feedback_correction(
+                session,
+                feedback_id,
+                org_id=flag.org_id,
+                created_by="cli-admin",
+                primitive_payload=payload,
+            )
+        return {
+            "mode": "org-private",
+            "org_id": flag.org_id,
+            "slug": prim.slug,
+            "primitive_id": prim.id,
+            "status": event.status.value,
+        }
+
+    # --shared: an explicit payload is applied org-private FIRST so the promote
+    # reads the fenced primitive the admin actually reviewed, not a stale one.
+    if payload is not None and flag.status is not FeedbackStatus.RESOLVED:
+        async with org_session_scope(flag.org_id) as session:
+            await apply_feedback_correction(
+                session,
+                feedback_id,
+                org_id=flag.org_id,
+                created_by="cli-admin",
+                primitive_payload=payload,
+            )
+    async with admin_session_scope(_ADMIN_ORG) as session:
+        shared_payload, from_org = await admin_promote_payload(session, feedback_id, resolve=True)
+    slug = str(shared_payload["slug"])
+    dest = data_dir / "primitives" / f"{slug}.yaml"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(yaml.safe_dump(shared_payload, sort_keys=False), encoding="utf-8")
+    return {"mode": "shared", "org_id": from_org, "slug": slug, "path": str(dest)}
+
+
+@admin_app.command("correct")
+def admin_correct(
+    feedback_id: int = _ADMIN_CORRECT_ID_ARG,
+    payload_file: Path | None = _ADMIN_CORRECT_PAYLOAD_OPT,
+    shared: bool = _ADMIN_CORRECT_SHARED_OPT,
+    data_dir: Path = _DATA_DIR_OPT,
+    yes: bool = _ADMIN_CORRECT_YES_OPT,
+) -> None:
+    """Close one correction flag honestly: show the flagged primitive's CURRENT
+    sourced value side-by-side with the complaint, then apply the corrected
+    number ORG-PRIVATE (default, via the existing apply path) or promote it
+    through the existing shared-bank fence (--shared). A modeled / analyst-tier
+    number is refused at the shared door (Q20) — the honest fallback is an
+    org-private correction plus a sourcing gap for a real source."""
+    import yaml
+
+    from strata.db.feedback import FeedbackNotApplicableError
+    from strata.guards.fence import ModeledFenceError
+
+    payload: dict[str, Any] | None = None
+    if payload_file is not None:
+        loaded: Any = yaml.safe_load(payload_file.read_text(encoding="utf-8"))
+        if not isinstance(loaded, dict):
+            typer.echo("ERROR: --payload must be a YAML mapping (one primitive).", err=True)
+            raise typer.Exit(code=1)
+        payload = {str(k): v for k, v in loaded.items()}  # pyright: ignore[reportUnknownVariableType]
+
+    try:
+        outcome = asyncio.run(
+            _admin_correct_run(
+                feedback_id, payload=payload, shared=shared, data_dir=data_dir, assume_yes=yes
+            )
+        )
+    except typer.Abort:
+        raise
+    except ModeledFenceError as exc:
+        typer.echo(f"REFUSED by the shared-bank fence (Q20): {exc}", err=True)
+        typer.echo(
+            "  Honest path: apply it org-private (drop --shared) so the workspace gets "
+            "the fix with the modeled banner intact, and file a sourcing gap "
+            "(`strata gaps record`) so a real source gets prioritized.",
+            err=True,
+        )
+        raise typer.Exit(code=1) from exc
+    except (FeedbackNotApplicableError, ValueError) as exc:
+        typer.echo(f"ERROR: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except Exception as exc:
+        typer.echo(f"ERROR correcting feedback: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if outcome["mode"] == "shared":
+        typer.echo(f"✓ Promoted flag {feedback_id} (from {outcome['org_id']}) → {outcome['path']}")
+        typer.echo("  Validate + seed: `strata validate` then `strata db seed`.")
+    else:
+        typer.echo(
+            f"✓ Corrected org-private for {outcome['org_id']}: primitive "
+            f"{outcome['slug']!r} (id={outcome['primitive_id']}); flag {outcome['status']}."
+        )
 
 
 traces_app = typer.Typer(

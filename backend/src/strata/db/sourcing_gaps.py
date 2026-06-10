@@ -12,6 +12,7 @@ inserting a duplicate, so the queue ranks by real demand.
 
 from __future__ import annotations
 
+import logging
 import re
 
 from sqlalchemy import func, select
@@ -23,6 +24,13 @@ from strata.db.models import SourcingGapRow
 from strata.models.sourcing_gap import GapSource, GapStatus, SourcingGap
 
 _WS = re.compile(r"\s+")
+
+_log = logging.getLogger(__name__)
+
+# The anonymous tenant sentinel (mirrors ``db/feedback.py`` / the audit writer).
+# The closed RLS policy rejects an anon-org row by design, so an anonymous miss
+# is dropped silently — never a 500 on the request that observed it.
+_ANONYMOUS_ORG = "public"
 
 
 def make_dedup_key(*, query_text: str | None, resource_target: str | None) -> str:
@@ -85,6 +93,53 @@ async def record_gap(
     ).returning(SourcingGapRow)
     row = (await session.execute(stmt)).scalar_one()
     return SourcingGap.model_validate(row)
+
+
+async def record_gap_safe(
+    *,
+    org_id: str | None,
+    source: GapSource,
+    query_text: str | None = None,
+    concept_slug: str | None = None,
+    role: str | None = None,
+    lens: str | None = None,
+    unit_hint: str | None = None,
+    resource_target: str | None = None,
+    note: str | None = None,
+) -> int | None:
+    """Fire-and-forget gap write on its own org-scoped session (mirrors
+    ``record_feedback_safe``). Swallows (but logs) any failure so recording a
+    miss can never break the request that observed it. Returns the row id, or
+    ``None`` when the write was dropped (anonymous org has no tenant bucket
+    under the closed RLS policy).
+
+    Resolve-vs-verify phrasings of the same market can land two rows — the
+    dedup key is the normalized query text and the two surfaces see different
+    strings. Acceptable: both still rank as demand for the same missing number.
+    """
+    if not org_id or org_id == _ANONYMOUS_ORG:
+        return None
+    try:
+        from strata.db.engine import org_session_scope
+
+        async with org_session_scope(org_id) as session:
+            gap = await record_gap(
+                session,
+                org_id=org_id,
+                source=source,
+                query_text=query_text,
+                concept_slug=concept_slug,
+                role=role,
+                lens=lens,
+                unit_hint=unit_hint,
+                resource_target=resource_target,
+                note=note,
+            )
+            # org_session_scope commits on exit (session.begin()).
+            return gap.id
+    except Exception:
+        _log.warning("sourcing_gap.write_failed source=%s", source.value)
+        return None
 
 
 async def list_gaps(
