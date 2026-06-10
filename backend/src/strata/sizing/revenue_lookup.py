@@ -55,18 +55,33 @@ class ResolvedRevenue:
     fiscal_year: int | None
     concept: str
     source_url: str
+    # The fact's own fiscal-period end (ISO date) — the filing already knows
+    # WHEN its revenue is measured, so the time-match guardrail gets it for free.
+    period_end: str = ""
 
 
-def to_player(name: str, share: float, resolved: ResolvedRevenue) -> Player:
+def to_player(
+    name: str,
+    share: float,
+    resolved: ResolvedRevenue,
+    *,
+    share_as_of: str = "",
+    share_basis: str = "",
+) -> Player:
     """The ONE way an EDGAR figure becomes a sense-check player: always sourced,
     always carrying the total-company marker so the engine emits the caveat —
-    a sourced-but-total figure is never an unmarked sourced line."""
+    a sourced-but-total figure is never an unmarked sourced line. The filing's
+    fiscal-period end auto-threads into ``revenue_as_of`` (time-match guardrail);
+    the share's date/basis stay caller-owned (the share is an analyst estimate)."""
     return Player(
         name=name,
         revenue=resolved.revenue,
         market_share=share,
         revenue_sourced=True,
         revenue_note=REVENUE_NOTE_FILING_TOTAL_CO,
+        revenue_as_of=resolved.period_end,
+        share_as_of=share_as_of,
+        share_basis=share_basis,
     )
 
 
@@ -122,6 +137,7 @@ def resolve_revenue(ticker: str, *, client: EDGARClient | None = None) -> Resolv
             fiscal_year=fiscal_year_from_end(fact),
             concept=concept_tag,
             source_url=f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}",
+            period_end=fact.end,
         )
     finally:
         if own:

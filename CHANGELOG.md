@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — sense-check time-match + share-basis guardrails (cofounder feedback)
+
+- **Time-match guardrail.** Players now carry optional `revenue_as_of` /
+  `share_as_of` dates (`YYYY[-MM[-DD]]`) — set via the `--player` DSL's new
+  backward-compatible `key=value` suffixes (`rev_date=` / `share_date=`), the
+  CSV columns, or the MCP `sense_check` row schema. Dates more than ~6 months
+  apart fire a per-player warning (pairing a current revenue with a stale share
+  inflates/deflates the implied TAM — the real Cursor Feb-2026-ARR ÷ mid-2025
+  share case, ~2x); absent dates add the softer assumptions line "revenue and
+  share assumed time-matched — un-dated inputs". An `edgar:` revenue threads its
+  filing's own fiscal-period end into `revenue_as_of` automatically and rejects
+  a conflicting caller-supplied date.
+- **Share-basis guardrail.** Optional `share_basis` per player (`revenue` |
+  `usage` | unspecified; DSL `share_basis=`, CSV column, MCP enum). `usage`
+  fires a strong warning — the denominator must be a REVENUE share; a usage/seat
+  share understates the implied market (the Copilot 42%-seat-share case).
+  Unspecified adds "shares assumed to be revenue shares" to the assumptions.
+  Both guardrails are warnings through the existing engine channel — never
+  silent corrections — so CLI and MCP render them identically; the MODELED (Q20)
+  label is untouched. Failure modes #11–#12 documented in
+  `docs/methods/sense-check-defensibility.md`.
+
 ### Changed — the miss→gap flywheel now runs itself (feedback loop fixes)
 
 - **A failed market query now automatically becomes ranked demand.** When the

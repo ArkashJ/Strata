@@ -33,6 +33,21 @@ The method:
 | 9 | **"Private-company revenue is itself a guess — this is circular."** | Each revenue carries a `revenue_sourced` flag; the output shows `n/N revenues sourced` and tags estimates `(est.)`. The **MODELED label is unconditional**: market shares are always analyst estimates, so the implied TAM is labelled **MODELED (Q20)** even when every revenue is a sourced filing, and is **never persisted as a sourced primitive** — it can only agree or disagree with the sourced number, never become one. |
 | 10 | **"This market isn't revenue-defined yet"** — pre-revenue / latent demand. | Assumption #4 ("the market is revenue-defined today, not pre-revenue / latent"). For a `latent_demand` market the method is the wrong tool, and the assumption says so — the reviewer uses the adoption-curve lens instead. |
 
+## Two more failure modes — validated in practice (AI coding tools)
+
+Both surfaced when the method was applied for real to the AI-coding-tools market
+(prod MCP feedback, feedback event #6). Both are **warnings, never silent
+corrections** — the tool stays honest, not clever.
+
+| # | Failure mode | How the check answers it |
+|---|---|---|
+| 11 | **"Your revenue and your share aren't from the same moment."** Dividing Cursor's Feb-2026 $2B ARR by its mid-2025 ~18% share inflates the implied market roughly 2× — the share was measured before the revenue grew into it. | Optional `revenue_as_of` / `share_as_of` dates (`YYYY[-MM[-DD]]`) on every player, via the `--player` DSL (`rev_date=2026-02\|share_date=2025-06`), the CSV columns, and the MCP row schema. When both dates are present and more than ~6 months apart (`TIME_MATCH_WARN_MONTHS`), a per-player warning fires ("pairing a current revenue with a stale share inflates/deflates the implied TAM; time-match the inputs"). When dates are absent, the assumptions block adds the softer line "revenue and share assumed time-matched — un-dated inputs". An `edgar:` revenue threads its filing's own fiscal-period end into `revenue_as_of` automatically — and rejects a conflicting caller-supplied date rather than silently overriding either. A bare year anchors to mid-year (June), staying honest about its own imprecision. |
+| 12 | **"That's a seat share, not a revenue share."** GitHub Copilot's ~42% share of AI-coding *seats* is far above its revenue share; dividing market revenue by a usage/seat share understates the implied market. | Optional `share_basis` per player: `revenue` \| `usage` \| unspecified (DSL `share_basis=usage`, CSV column, MCP enum). `usage` fires a strong per-player warning ("denominator must be a REVENUE share — usage/seat share understates the implied market"); unspecified adds the assumptions line "shares assumed to be revenue shares". Any other token is rejected, never coerced. |
+
+These sharpen arguments #2 and #7 above from stated assumptions into checkable,
+per-player guardrails — when the analyst supplies the metadata, the tool checks
+it; when they don't, the output says exactly what was assumed.
+
 ### Bonus: "comparing to one number hides the real spread"
 When `--concept` is given, the implied TAM is compared to the curated market's
 **full sourced scenario range** (`within / above / below`), not a single point —

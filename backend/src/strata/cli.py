@@ -41,7 +41,9 @@ from strata.sizing.sense_check import (
     SenseCheckError,
     SenseCheckResult,
     normalize_share,
+    parse_as_of,
     parse_money,
+    parse_share_basis,
     sense_check,
     share_token_warning,
     split_player_spec,
@@ -106,11 +108,19 @@ _SC_PLAYER_OPT = typer.Option(
     [],
     "--player",
     "-p",
-    help="A top player as 'Name|revenue|share' (repeatable). revenue: 31e9 / 3.1b / $300m, "
-    "or 'edgar:TICKER' to pull a SOURCED revenue from SEC EDGAR; share: 0.15 or 15.",
+    help="A top player as 'Name|revenue|share[|sourced][|key=value ...]' (repeatable). "
+    "revenue: 31e9 / 3.1b / $300m, or 'edgar:TICKER' to pull a SOURCED revenue from "
+    "SEC EDGAR (its fiscal-period end auto-fills rev_date); share: 0.15 or 15. "
+    "Optional keys: rev_date=YYYY[-MM[-DD]] / share_date=YYYY[-MM[-DD]] (when the "
+    "revenue / share were measured; >6 months apart warns) and "
+    "share_basis=revenue|usage (usage/seat shares warn — the method needs a "
+    "revenue share). Example: 'Cursor|2b|0.18|rev_date=2026-02|share_date=2025-06'.",
 )
 _SC_FILE_OPT = typer.Option(
-    None, "--players-file", help="CSV with columns: name,revenue,market_share."
+    None,
+    "--players-file",
+    help="CSV with columns: name,revenue,market_share and optional "
+    "sourced,revenue_as_of,share_as_of,share_basis.",
 )
 _SC_CONCEPT_OPT = typer.Option(
     None, "--concept", help="Curated concept slug to cross-check the implied TAM against."
@@ -446,11 +456,27 @@ def _share_from_token(token: str, ctx: str) -> float:
     return share
 
 
-def _edgar_player(name: str, ticker: str, share: float, client: EDGARClient) -> Player:
+def _edgar_player(
+    name: str,
+    ticker: str,
+    share: float,
+    client: EDGARClient,
+    *,
+    revenue_as_of: str = "",
+    share_as_of: str = "",
+    share_basis: str = "",
+) -> Player:
     """Resolve an ``edgar:TICKER`` revenue token to a SOURCED (but total-company)
-    revenue via SEC EDGAR (live HTTP)."""
+    revenue via SEC EDGAR (live HTTP). The filing's own fiscal-period end becomes
+    ``revenue_as_of`` — a caller-supplied rev_date is rejected, not silently
+    overridden, so the dates the guardrail compares are never ambiguous."""
     if not ticker:
         raise SenseCheckError(f"empty EDGAR ticker for player {name!r}")
+    if revenue_as_of:
+        raise SenseCheckError(
+            f"{name!r}: rev_date conflicts with an edgar: revenue — the filing's "
+            f"fiscal-period end fills revenue_as_of automatically"
+        )
     if os.environ.get("STRATA_OFFLINE") == "1":
         raise SenseCheckError(f"{name!r} needs a live EDGAR lookup but STRATA_OFFLINE=1")
     try:
@@ -461,20 +487,33 @@ def _edgar_player(name: str, ticker: str, share: float, client: EDGARClient) -> 
         f"  resolved {name} revenue {usd(rr.revenue)} "
         f"(EDGAR {rr.concept} FY{rr.fiscal_year}, {rr.entity_name})"
     )
-    return to_player(name, share, rr)
+    return to_player(name, share, rr, share_as_of=share_as_of, share_basis=share_basis)
 
 
 def _player_from_spec(spec: str, client: EDGARClient) -> Player:
     """Parse a --player spec. An ``edgar:TICKER`` revenue token resolves to a
     sourced total-company revenue; any other token is an analyst estimate
     parsed offline."""
-    parts = split_player_spec(spec)
-    share = _share_from_token(parts[2], spec)
-    if parts[1].lower().startswith("edgar:"):
-        return _edgar_player(parts[0], parts[1].split(":", 1)[1].strip(), share, client)
-    sourced = len(parts) == 4 and parts[3].lower() in SOURCED_TOKENS
+    ps = split_player_spec(spec)
+    share = _share_from_token(ps.share_token, spec)
+    if ps.revenue_token.lower().startswith("edgar:"):
+        return _edgar_player(
+            ps.name,
+            ps.revenue_token.split(":", 1)[1].strip(),
+            share,
+            client,
+            revenue_as_of=ps.revenue_as_of,
+            share_as_of=ps.share_as_of,
+            share_basis=ps.share_basis,
+        )
     return Player(
-        name=parts[0], revenue=parse_money(parts[1]), market_share=share, revenue_sourced=sourced
+        name=ps.name,
+        revenue=parse_money(ps.revenue_token),
+        market_share=share,
+        revenue_sourced=ps.sourced,
+        revenue_as_of=ps.revenue_as_of,
+        share_as_of=ps.share_as_of,
+        share_basis=ps.share_basis,
     )
 
 
@@ -496,9 +535,22 @@ def _collect_players(specs: list[str], players_file: Path | None) -> list[Player
                     share = _share_from_token(
                         (row.get("market_share") or "").strip(), f"CSV row {name!r}"
                     )
+                    raw_rev_as_of = (row.get("revenue_as_of") or "").strip()
+                    revenue_as_of = parse_as_of(raw_rev_as_of) if raw_rev_as_of else ""
+                    raw_share_as_of = (row.get("share_as_of") or "").strip()
+                    share_as_of = parse_as_of(raw_share_as_of) if raw_share_as_of else ""
+                    share_basis = parse_share_basis((row.get("share_basis") or "").strip())
                     if rev.lower().startswith("edgar:"):
                         players.append(
-                            _edgar_player(name, rev.split(":", 1)[1].strip(), share, client)
+                            _edgar_player(
+                                name,
+                                rev.split(":", 1)[1].strip(),
+                                share,
+                                client,
+                                revenue_as_of=revenue_as_of,
+                                share_as_of=share_as_of,
+                                share_basis=share_basis,
+                            )
                         )
                         continue
                     sourced = (row.get("sourced") or "").strip().lower() in SOURCED_TOKENS
@@ -508,6 +560,9 @@ def _collect_players(specs: list[str], players_file: Path | None) -> list[Player
                             revenue=parse_money(rev),
                             market_share=share,
                             revenue_sourced=sourced,
+                            revenue_as_of=revenue_as_of,
+                            share_as_of=share_as_of,
+                            share_basis=share_basis,
                         )
                     )
         return players

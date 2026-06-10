@@ -149,6 +149,116 @@ def test_bad_player_rows_raise_invalid_input(reg) -> None:
     assert e2.value.code == CODE_INVALID_INPUT
 
 
+def test_guardrail_fields_round_trip_and_warn(reg) -> None:
+    out = sense_check_tool(
+        reg,
+        players=[
+            {
+                "name": "Cursor",
+                "revenue": 2e9,
+                "market_share": 0.18,
+                "revenue_as_of": "2026-02",
+                "share_as_of": "2025-06",
+                "share_basis": "revenue",
+            },
+            {"name": "Copilot", "revenue": 1e9, "market_share": 0.42, "share_basis": "usage"},
+        ],
+    )
+    rows = {p["name"]: p for p in out["per_player"]}
+    assert rows["Cursor"]["revenue_as_of"] == "2026-02"
+    assert rows["Cursor"]["share_as_of"] == "2025-06"
+    assert rows["Cursor"]["share_basis"] == "revenue"
+    assert rows["Copilot"]["share_basis"] == "usage"
+    assert any("time-match" in w for w in out["warnings"])  # Cursor's 8-month gap
+    assert any("understates" in w for w in out["warnings"])  # Copilot's usage share
+    # Copilot is un-dated; Cursor's basis IS specified but Copilot's dates absent.
+    assert any("un-dated" in a for a in out["assumptions"])
+
+
+def test_schema_advertises_guardrail_fields() -> None:
+    props = TOOLS["sense_check"]["inputSchema"]["properties"]["players"]["items"]["properties"]
+    assert "revenue_as_of" in props
+    assert "share_as_of" in props
+    assert props["share_basis"]["enum"] == ["revenue", "usage"]
+
+
+def test_bad_guardrail_tokens_are_invalid_input(reg) -> None:
+    with pytest.raises(ToolError) as e1:
+        sense_check_tool(
+            reg,
+            players=[{"name": "A", "revenue": 1e9, "market_share": 0.2, "share_basis": "seats"}],
+        )
+    assert e1.value.code == CODE_INVALID_INPUT
+    with pytest.raises(ToolError) as e2:
+        sense_check_tool(
+            reg,
+            players=[
+                {"name": "A", "revenue": 1e9, "market_share": 0.2, "revenue_as_of": "Feb 2026"}
+            ],
+        )
+    assert e2.value.code == CODE_INVALID_INPUT
+
+
+def test_edgar_threads_period_end_into_revenue_as_of(reg, monkeypatch: pytest.MonkeyPatch) -> None:
+    import strata.mcp.sense_check_tool as mod
+    from strata.sizing.revenue_lookup import ResolvedRevenue
+
+    monkeypatch.setenv("STRATA_MCP_LIVE_CONNECTORS", "1")
+
+    def _fake_resolve(ticker: str, **_kw: object) -> ResolvedRevenue:
+        return ResolvedRevenue(
+            ticker=ticker.upper(),
+            cik="0000000001",
+            entity_name=f"{ticker} Corp",
+            revenue=1_000_000_000,
+            fiscal_year=2026,
+            concept="Revenues",
+            source_url="https://www.sec.gov/cgi-bin/browse-edgar?CIK=0000000001",
+            period_end="2026-01-31",
+        )
+
+    monkeypatch.setattr(mod, "resolve_revenue", _fake_resolve)
+    out = sense_check_tool(
+        reg,
+        players=[
+            {
+                "name": "Alpha",
+                "edgar_ticker": "AAA",
+                "market_share": 0.10,
+                "share_as_of": "2025-06",
+            }
+        ],
+    )
+    # The filing's own period end arrives with no caller-supplied date, and the
+    # stale share against it fires the time-match warning.
+    assert out["per_player"][0]["revenue_as_of"] == "2026-01-31"
+    assert any("time-match" in w for w in out["warnings"])
+
+
+def test_edgar_rejects_explicit_revenue_as_of(reg, monkeypatch: pytest.MonkeyPatch) -> None:
+    import strata.mcp.sense_check_tool as mod
+
+    monkeypatch.setenv("STRATA_MCP_LIVE_CONNECTORS", "1")
+
+    def _boom(*_a: object, **_k: object) -> object:
+        raise AssertionError("conflict must be rejected before any live lookup")
+
+    monkeypatch.setattr(mod, "resolve_revenue", _boom)
+    with pytest.raises(ToolError) as exc_info:
+        sense_check_tool(
+            reg,
+            players=[
+                {
+                    "name": "Alpha",
+                    "edgar_ticker": "AAA",
+                    "market_share": 0.10,
+                    "revenue_as_of": "2026-02",
+                }
+            ],
+        )
+    assert exc_info.value.code == CODE_INVALID_INPUT
+
+
 def test_call_tool_dispatch(reg) -> None:
     out = call_tool(
         reg,
