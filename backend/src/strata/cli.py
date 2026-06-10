@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import csv
 import re
 from dataclasses import dataclass
 from datetime import UTC
@@ -15,7 +16,7 @@ from dotenv import load_dotenv
 
 from strata import __version__
 from strata.evaluator import EvaluatorError, size_concept
-from strata.loader import LoaderError
+from strata.loader import LoaderError, load_data_dir
 from strata.models import QuestionCategory, ResolvedAnswer, TAMOutput, Unit
 from strata.registry import Registry, RegistryError
 from strata.report import (
@@ -28,6 +29,13 @@ from strata.report import (
     render_premium_pdf,
 )
 from strata.sizing.cli import portfolio_app
+from strata.sizing.sense_check import (
+    Player,
+    SenseCheckError,
+    SenseCheckResult,
+    parse_player,
+    sense_check,
+)
 from strata.validator import Severity, ValidationFinding
 from strata.validator import validate as run_validate
 
@@ -81,6 +89,20 @@ _REPORT_PREPARED_BY_OPT = typer.Option(
 _VERIFY_CLAIM_ARG = typer.Argument(..., help="A market claim to verify against the sourced bank.")
 _VERIFY_VALUE_OPT = typer.Option(
     None, "--value", help="The numeric figure the claim asserts (same unit as the market)."
+)
+# `sense-check` — market-share-implied (comparable-revenue) cross-check.
+_SC_PLAYER_OPT = typer.Option(
+    [],
+    "--player",
+    "-p",
+    help="A top player as 'Name|revenue|share' (repeatable). revenue: 31e9 / 3.1b / $300m; "
+    "share: 0.15 or 15.",
+)
+_SC_FILE_OPT = typer.Option(
+    None, "--players-file", help="CSV with columns: name,revenue,market_share."
+)
+_SC_CONCEPT_OPT = typer.Option(
+    None, "--concept", help="Curated concept slug to cross-check the implied TAM against."
 )
 
 # A 64-char hex string is a TAM state hash; anything else is a concept slug.
@@ -152,6 +174,10 @@ def size(
         typer.echo(f"ERROR registry: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     _render(tam)
+    typer.echo(
+        f"\nSense-check (comparable-revenue): strata sense-check --concept {concept_slug} "
+        f'--player "Name|revenue|share" ...'
+    )
 
 
 def _render(tam: TAMOutput) -> None:
@@ -396,6 +422,88 @@ def verify_cmd(
 
 
 # ── Database sub-commands ────────────────────────────────────────────
+
+
+def _collect_players(specs: list[str], players_file: Path | None) -> list[Player]:
+    players = [parse_player(s) for s in specs]
+    if players_file is not None:
+        with players_file.open(newline="", encoding="utf-8") as fh:
+            for row in csv.DictReader(fh):
+                name = (row.get("name") or "").strip()
+                if not name:
+                    continue
+                rev = (row.get("revenue") or "").strip()
+                share = (row.get("market_share") or "").strip()
+                players.append(parse_player(f"{name}|{rev}|{share}"))
+    return players
+
+
+@app.command("sense-check")
+def sense_check_cmd(
+    player: list[str] = _SC_PLAYER_OPT,
+    players_file: Path | None = _SC_FILE_OPT,
+    concept: str | None = _SC_CONCEPT_OPT,
+    data_dir: Path = _DATA_DIR_OPT,
+) -> None:
+    """Market-share-implied TAM cross-check: sum(top-player revenue) / sum(market share).
+
+    A sense check, not a sourced number — market shares are analyst estimates, so
+    the implied TAM is MODELED and never persisted (Q20). With --concept, the
+    implied TAM is compared head-to-head with the curated market's sourced
+    scenario range (within / above / below).
+    """
+    try:
+        players = _collect_players(player, players_file)
+    except SenseCheckError as exc:
+        typer.echo(f"ERROR {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    sourced_scenarios: tuple[float, ...] | None = None
+    if concept:
+        try:
+            reg = Registry.from_loaded(load_data_dir(data_dir))
+            tam = size_concept(reg, concept)
+        except (LoaderError, EvaluatorError, RegistryError) as exc:
+            typer.echo(f"ERROR could not size concept {concept!r}: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+        sourced_scenarios = tuple(s.value for s in tam.scenarios)
+
+    try:
+        result = sense_check(players, sourced_scenarios=sourced_scenarios)
+    except SenseCheckError as exc:
+        typer.echo(f"ERROR {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    _render_sense_check(result, concept)
+
+
+def _render_sense_check(r: SenseCheckResult, concept: str | None) -> None:
+    typer.echo("Market-share-implied TAM (comparable-revenue sense-check)")
+    typer.echo(
+        f"  implied TAM     ${r.implied_tam:,.0f}   "
+        f"(= revenue ${r.revenue_floor:,.0f} / share {r.combined_share:.0%})"
+    )
+    typer.echo(f"  revenue floor   ${r.revenue_floor:,.0f}   (a TAM cannot be below this)")
+    typer.echo(f"  players         {r.n_players}   per-player spread {r.spread_ratio:.1f}x")
+    for pi in r.per_player:
+        typer.echo(
+            f"    {pi.name:24} ${pi.revenue:,.0f} @ {pi.market_share:.0%}"
+            f"  -> implied ${pi.implied_tam:,.0f}"
+        )
+    if concept and r.verdict is not None:
+        typer.echo(
+            f"\n  cross-check vs {concept}: sourced range "
+            f"${r.sourced_low:,.0f} - ${r.sourced_high:,.0f} (mid ${r.sourced_mid:,.0f})"
+        )
+        verdict_label = {
+            "within": "AGREES - implied TAM lands inside the sourced range",
+            "above": "implied TAM is ABOVE the sourced range",
+            "below": "implied TAM is BELOW the sourced range",
+        }[r.verdict]
+        ratio = f" ({r.vs_mid_ratio:.1f}x the sourced midpoint)" if r.vs_mid_ratio else ""
+        typer.echo(f"  verdict: {verdict_label}{ratio}")
+    for w in r.warnings:
+        typer.echo(f"  WARN {w}")
+
 
 db_app = typer.Typer(name="db", help="Database management commands.", no_args_is_help=True)
 app.add_typer(db_app)

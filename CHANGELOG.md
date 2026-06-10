@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — `strata sense-check`: market-share-implied TAM cross-check
+
+- **A reusable sense check for any market sizing.** Given the top players in a
+  market (each with a revenue and an estimated market share), it derives an
+  implied TAM and cross-checks it against the sourced number:
+  `implied TAM = sum(player revenue) / sum(market share)`, plus a **revenue
+  floor** (a TAM can't be below the revenue already inside it) and a
+  **per-player spread** (each `revenue/share` should imply the same TAM; a wide
+  spread flags inconsistent share estimates). This is the `COMPARABLE_REVENUE`
+  method run as an analyst cross-check.
+- **Honest by construction (Q20):** market shares are analyst *estimates*, so the
+  implied TAM is **MODELED** — a cross-check only, never written back as a sourced
+  primitive. With `--concept <slug>` it compares the implied TAM head-to-head with
+  the curated market's sourced scenario range and returns `within | above | below`
+  — the same spirit as the evaluator's `convergence` banner.
+- Surfaces: CLI `strata sense-check --player "Name|revenue|share" ... [--concept
+  <slug>] [--players-file players.csv]` (revenue accepts `31e9`/`3.1b`/`$300m`,
+  share `0.15` or `15`). `strata size` now prints a one-line pointer so the
+  cross-check is offered on every sizing.
+
 ### Added — MCP trace-capture: every tool call captured for replay and regression testing (Direction 1)
 
 Every MCP call is automatically recorded — tool name, arguments, structural result summary
