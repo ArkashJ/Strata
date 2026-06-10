@@ -99,6 +99,43 @@ def test_bad_inputs_raise() -> None:
         sense_check([Player("A", -1, 0.1)])
     with pytest.raises(SenseCheckError):
         sense_check([Player("A", 1e9, 1.2)])  # share > 1
+    with pytest.raises(SenseCheckError):
+        sense_check([Player("A", 1e9, 0.2)], share_tolerance=1.5)  # bad tolerance
+
+
+# ── defensibility hardening ───────────────────────────────────────────────────
+def test_sensitivity_band_brackets_the_point_estimate() -> None:
+    r = sense_check([Player("A", 4e8, 0.2)], share_tolerance=0.25)  # 0.4/0.2 = 2.0B
+    assert r.implied_low < r.implied_tam < r.implied_high
+    assert r.implied_low == pytest.approx(4e8 / 0.25)  # share +25% -> 1.6B
+    assert r.implied_high == pytest.approx(4e8 / 0.15)  # share -25% -> ~2.67B
+
+
+def test_low_combined_share_flags_leverage() -> None:
+    # 5% combined share → implied TAM is 20x the captured revenue → fragile.
+    r = sense_check([Player("A", 1e8, 0.05)])
+    assert r.leverage == pytest.approx(20.0)
+    assert any("leveraged" in w for w in r.warnings)
+
+
+def test_residual_is_implied_minus_floor() -> None:
+    r = sense_check([Player("A", 3e8, 0.15), Player("B", 2e8, 0.10)])  # implied 2.0B, floor 0.5B
+    assert r.residual == pytest.approx(r.implied_tam - r.revenue_floor)
+    assert r.residual == pytest.approx(1.5e9)
+
+
+def test_sourced_flag_parsed_and_counted() -> None:
+    p = parse_player("Salesforce|10b|0.3|sourced")
+    assert p.revenue_sourced is True
+    r = sense_check([p, Player("Est", 1e9, 0.1)])
+    assert r.n_sourced == 1
+    assert not r.all_revenue_sourced
+
+
+def test_result_carries_assumptions() -> None:
+    r = sense_check([Player("A", 3e8, 0.15)])
+    assert len(r.assumptions) >= 4
+    assert any("revenue IN THIS MARKET" in a for a in r.assumptions)
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────

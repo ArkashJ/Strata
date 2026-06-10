@@ -482,12 +482,26 @@ def _render_sense_check(r: SenseCheckResult, concept: str | None) -> None:
         f"  implied TAM     ${r.implied_tam:,.0f}   "
         f"(= revenue ${r.revenue_floor:,.0f} / share {r.combined_share:.0%})"
     )
+    typer.echo(
+        f"  sensitivity     ${r.implied_low:,.0f} - ${r.implied_high:,.0f}   "
+        f"(shares +/-{r.share_tolerance:.0%})"
+    )
     typer.echo(f"  revenue floor   ${r.revenue_floor:,.0f}   (a TAM cannot be below this)")
-    typer.echo(f"  players         {r.n_players}   per-player spread {r.spread_ratio:.1f}x")
+    typer.echo(
+        f"  leverage        {r.leverage:.1f}x   "
+        f"(implied TAM is {r.leverage:.1f}x captured revenue; 1 / {r.combined_share:.0%} share)"
+    )
+    typer.echo(
+        f"  residual        ${r.residual:,.0f}   (revenue attributed to players outside the set)"
+    )
+    typer.echo(
+        f"  per-player spread {r.spread_ratio:.1f}x   ({r.n_sourced}/{r.n_players} revenues sourced)"
+    )
     for pi in r.per_player:
+        tag = "" if pi.revenue_sourced else "  (est.)"
         typer.echo(
             f"    {pi.name:24} ${pi.revenue:,.0f} @ {pi.market_share:.0%}"
-            f"  -> implied ${pi.implied_tam:,.0f}"
+            f"  -> implied ${pi.implied_tam:,.0f}{tag}"
         )
     if concept and r.verdict is not None:
         typer.echo(
@@ -501,6 +515,11 @@ def _render_sense_check(r: SenseCheckResult, concept: str | None) -> None:
         }[r.verdict]
         ratio = f" ({r.vs_mid_ratio:.1f}x the sourced midpoint)" if r.vs_mid_ratio else ""
         typer.echo(f"  verdict: {verdict_label}{ratio}")
+    typer.echo("\n  Assumptions (the implied TAM holds only if):")
+    for a in r.assumptions:
+        typer.echo(f"   - {a}")
+    if r.warnings:
+        typer.echo("")
     for w in r.warnings:
         typer.echo(f"  WARN {w}")
 
