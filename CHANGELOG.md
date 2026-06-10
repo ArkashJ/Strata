@@ -16,6 +16,16 @@ were removed, along with their components, libraries, tests, Storybook, and
 Playwright tooling. The CLI and the MCP server are the product surfaces going
 forward. The full web app is preserved on the `frontend-archive` branch and the
 `frontend-archive-2026-06-10` tag.
+
+- **MCP tools/prompts no longer emit dead `/tam/<hash>` web permalinks.** With
+  the web TAM pages gone, `size_tam`/`build_tam`/`resolve_market` payloads
+  replace the `permalink` field with a `report_hint` (call `get_report_for_tam`
+  / `export_report`), `export_report` drops its `/tam/<hash>/report` permalink
+  (the payload already is the full branded report), TAM/primitive
+  `resource_links` keep only the durable `strata://` URIs, tool descriptions and
+  the `strata.report` prompt point at `export_report` instead of the retired
+  page, and the report assembler's synthesis line cites the still-live API
+  artifact (`GET /tam/<hash>`) rather than the deleted web route.
 ### Fixed — sense-check adversarial-review findings (PR #143)
 
 - **EDGAR picked the wrong year.** A company's annual filing repeats the prior

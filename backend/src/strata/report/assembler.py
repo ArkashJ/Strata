@@ -376,7 +376,8 @@ def _resolve_tam_field(
     synthesis = (
         f"triangulated from {n} sourced scenario(s) across "
         f"{n_families} method famil{'y' if n_families == 1 else 'ies'}, "
-        f"reproducible at /tam/{tam.state_hash}"
+        # The web /tam page is retired — the API artifact is the durable ref.
+        f"reproducible via GET /tam/{tam.state_hash}"
     )
     ctx = {
         "value": display,

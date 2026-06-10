@@ -41,7 +41,7 @@ _REPORT = (
     "market definition + scope, TAM/SAM/SOM, triangulation, segmentation, competitive "
     "landscape, growth drivers, sensitivity, sources appendix, limitations).\n"
     "3. Surface every figure with its source + tier + snapshot; mark gaps as 'no data', "
-    "never fabricate. The forwardable PDF lives at /tam/<hash>/report."
+    "never fabricate. 4. export_report(<state_hash>) for the forwardable branded HTML/PDF."
 )
 
 _PORTFOLIO = (

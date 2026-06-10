@@ -271,7 +271,7 @@ SUBMIT_FEEDBACK: dict[str, Any] = {
                 "body": {"type": "string", "description": "What's wrong / what you observed."},
                 "target_id": {
                     "type": "string",
-                    "description": "The flagged target (e.g. a /tam/<hash> hash or primitive slug).",
+                    "description": "The flagged target (e.g. a TAM state_hash or primitive slug).",
                 },
                 "query_text": {"type": "string", "description": "The query that failed, if any."},
                 "severity": {"type": "string", "description": "info | warning | error."},
