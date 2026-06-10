@@ -42,6 +42,7 @@ _EXPECTED_TOOLS = {
     "get_report_for_tam",
     "export_report",
     "verify_market_claim",
+    "sense_check",
     "admin_list_feedback",
     "admin_promote_correction",
     "report_sourcing_gap",
