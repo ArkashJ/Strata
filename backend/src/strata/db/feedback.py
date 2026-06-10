@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -51,6 +51,27 @@ class FeedbackNotApplicableError(ValueError):
 # an anonymous flag is attempted best-effort and silently dropped — never a 500.
 _ANONYMOUS_ORG = "public"
 
+# The canned message the resolve surfaces emit on a market-data miss. The miss
+# itself now lands in the sourcing-gap queue, so a flag whose body merely echoes
+# this message carries no triage signal beyond the gap row that already exists.
+CANNED_MISS_BODY = "Could not find enough market data for this query."
+
+# Throwaway probe strings people type to poke the form/tool — zero triage signal.
+_NOISE_TOKENS = frozenset({"test", "testing", "asdf", "foo"})
+
+
+def _is_noise(query_text: str | None, body: str, kind: FeedbackKind) -> bool:
+    """Quarantine predicate. A noise flag is still INSERTED — just born
+    ``wontfix`` with severity ``noise`` so the open queue stays clean while the
+    row remains auditable (never dropped, never deleted)."""
+    if body.strip() == CANNED_MISS_BODY:
+        return True
+    # A failed-query flag is judged by what was asked; everything else by what
+    # was said about it.
+    probe = query_text if (kind is FeedbackKind.FAILED_QUERY and query_text) else body
+    s = probe.strip().lower()
+    return s in _NOISE_TOKENS or len(s) <= 2
+
 
 async def record_feedback(
     session: AsyncSession,
@@ -71,6 +92,11 @@ async def record_feedback(
     The session-match guard refuses a spoofed/misrouted ``org_id`` even under a
     BYPASSRLS (superuser) role, where the RLS ``WITH CHECK`` would not catch it."""
     await assert_org_matches_session(session, org_id)
+    # Only a default-status flag is quarantined — an explicit triage decision
+    # (e.g. a re-filed row already marked triaged) is never second-guessed.
+    if status is FeedbackStatus.OPEN and _is_noise(query_text, body, kind):
+        status = FeedbackStatus.WONTFIX
+        severity = "noise"
     row = FeedbackEventRow(
         org_id=org_id,
         user_id=user_id,
@@ -216,6 +242,21 @@ async def admin_list_feedback(
     )
     rows = (await session.execute(stmt)).scalars().all()
     return [FeedbackEvent.model_validate(r) for r in rows]
+
+
+async def admin_count_open_corrections(session: AsyncSession) -> int:
+    """Cross-org count of OPEN ``primitive_correction`` flags (admin session) —
+    the number ``whoami`` surfaces so the correction backlog is visible from the
+    very first call an admin makes."""
+    stmt = (
+        select(func.count())
+        .select_from(FeedbackEventRow)
+        .where(
+            FeedbackEventRow.kind == FeedbackKind.PRIMITIVE_CORRECTION.value,
+            FeedbackEventRow.status == FeedbackStatus.OPEN.value,
+        )
+    )
+    return int((await session.execute(stmt)).scalar_one())
 
 
 async def admin_get_feedback_row(

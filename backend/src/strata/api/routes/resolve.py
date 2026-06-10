@@ -30,8 +30,10 @@ from strata.api.deps import get_registry
 from strata.api.ratelimit import enforce_rate_limit
 from strata.api.responses import RATE_LIMITED, UNAUTHORIZED, merge
 from strata.db.audit import record_audit_safe
-from strata.db.feedback import record_feedback_safe
+from strata.db.feedback import CANNED_MISS_BODY, record_feedback_safe
+from strata.db.sourcing_gaps import record_gap_safe
 from strata.models.feedback import FeedbackKind, TargetType
+from strata.models.sourcing_gap import GapSource
 from strata.registry import Registry
 from strata.resolver import RunOptions, parse_query, run, search_primitive
 from strata.resolver.events import PipelineStatus, ResolverResult
@@ -198,24 +200,20 @@ async def resolve_query(
                 "Pick the nearest curated concept below, or retry once a backend "
                 "is configured."
                 if llm_unavailable
-                else "Could not find enough market data for this query."
+                else CANNED_MISS_BODY
             )
-            # Capture the dead-end ONLY when it's a real market-data gap — a query
-            # the bank couldn't answer (Phase F backlog). An LLM-backend-unavailable
-            # / fallback-parse failure is an infra/config problem, not a missing
-            # number; flooding triage with it would bury the actual data gaps, so
-            # skip the auto-flag for that branch (the user still gets the honest
-            # message + curated-concept fallback above).
+            # A real market-data miss is DEMAND for a missing number, not a bug
+            # report — it lands in the de-duplicated sourcing-gap queue (a repeat
+            # of the same query bumps hit_count via make_dedup_key normalization)
+            # instead of the feedback triage queue. The internal-error branch
+            # above stays feedback: an exception is a bug report. An LLM-backend-
+            # unavailable / fallback-parse failure is an infra/config problem,
+            # not a missing number, so it records neither.
             if not llm_unavailable:
-                await record_feedback_safe(
+                await record_gap_safe(
                     org_id=principal.org_id,
-                    user_id=principal.user_id,
-                    kind=FeedbackKind.FAILED_QUERY,
-                    target_type=TargetType.QUERY,
-                    body=message,
+                    source=GapSource.RESOLVE_MISS,
                     query_text=body.query[:2048],
-                    severity="warning",
-                    suggested_value={"reason": result.error} if result.error else None,
                 )
             yield _sse("error", {"message": message, "step": "search"})
             yield _sse("done", {})

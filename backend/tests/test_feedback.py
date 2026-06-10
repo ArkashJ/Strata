@@ -107,6 +107,9 @@ async def _cleanup() -> None:
         has_prims = await conn.fetchval(
             "SELECT 1 FROM information_schema.tables WHERE table_name = 'user_primitives'"
         )
+        has_gaps = await conn.fetchval(
+            "SELECT 1 FROM information_schema.tables WHERE table_name = 'sourcing_gaps'"
+        )
         for org in (_ORG_A, _ORG_B):
             async with conn.transaction():
                 await conn.execute("SELECT set_config('app.org_id', $1, true)", org)
@@ -114,6 +117,9 @@ async def _cleanup() -> None:
                 if has_prims:
                     # The apply tests create org-private primitives; clean them too.
                     await conn.execute("DELETE FROM user_primitives WHERE org_id = $1", org)
+                if has_gaps:
+                    # The resolve-miss tests now record sourcing gaps.
+                    await conn.execute("DELETE FROM sourcing_gaps WHERE org_id = $1", org)
     finally:
         await conn.close()
 
@@ -311,16 +317,19 @@ async def test_rest_bad_enum_is_422(client: AsyncClient, stub_clerk: None, _clea
 
 
 # --------------------------------------------------------------------------- #
-# Failed-query auto-capture on /resolve.                                      #
+# Miss → sourcing gap (demand), exception → feedback (bug) on /resolve.        #
 # --------------------------------------------------------------------------- #
 
 
 @_PG
 @pytest.mark.asyncio
-async def test_failed_query_autocaptures_feedback(
+async def test_resolve_miss_records_gap_not_feedback(
     client: AsyncClient, stub_clerk: None, _clean: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A resolve dead-end records a failed_query flag under the caller's org."""
+    """A market-data miss is DEMAND for a missing number — it lands in the
+    de-duplicated sourcing-gap queue, never in the feedback triage queue."""
+    from strata.models.sourcing_gap import GapSource
+
     monkeypatch.setenv("STRATA_OFFLINE", "1")
     # A novel, unmatched query with no live/fallback path → terminal "no data".
     r = await client.post(
@@ -333,12 +342,61 @@ async def test_failed_query_autocaptures_feedback(
     _ = r.text
 
     from strata.db.engine import org_session_scope
+    from strata.db.sourcing_gaps import list_gaps
+
+    async with org_session_scope(_ORG_A) as session:
+        feedback_rows = await list_feedback(session, org_id=_ORG_A)
+        gap_rows = await list_gaps(session, org_id=_ORG_A)
+    assert feedback_rows == [], "a market-data miss must not create a feedback row"
+    assert len(gap_rows) == 1, "a market-data miss must record exactly one sourcing gap"
+    assert gap_rows[0].source is GapSource.RESOLVE_MISS
+    assert gap_rows[0].query_text == "wholly unrelated zylophone market 2099"
+
+    # A repeat of the same miss bumps hit_count via the dedup key — no new row.
+    r2 = await client.post(
+        "/resolve",
+        headers=_BEARER_A,
+        json={"query": "Wholly  Unrelated zylophone market 2099"},
+    )
+    assert r2.status_code == 200, r2.text
+    _ = r2.text
+    async with org_session_scope(_ORG_A) as session:
+        gap_rows = await list_gaps(session, org_id=_ORG_A)
+    assert len(gap_rows) == 1
+    assert gap_rows[0].hit_count == 2
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_internal_error_still_records_feedback(
+    client: AsyncClient, stub_clerk: None, _clean: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An exception in the pipeline is a BUG REPORT, not a demand signal — it
+    stays a failed_query feedback row (the gap queue is for missing numbers)."""
+    import strata.api.routes.resolve as resolve_mod
+
+    def _boom(*_a: Any, **_k: Any) -> Any:
+        raise RuntimeError("kaboom")
+
+    monkeypatch.setattr(resolve_mod, "run", _boom)
+    r = await client.post(
+        "/resolve",
+        headers=_BEARER_A,
+        json={"query": "wholly unrelated zylophone market 2099"},
+    )
+    assert r.status_code == 200, r.text
+    _ = r.text
+
+    from strata.db.engine import org_session_scope
+    from strata.db.sourcing_gaps import list_gaps
 
     async with org_session_scope(_ORG_A) as session:
         rows = await list_feedback(session, org_id=_ORG_A)
+        gap_rows = await list_gaps(session, org_id=_ORG_A)
     assert any(
         r.kind is FeedbackKind.FAILED_QUERY and r.target_type is TargetType.QUERY for r in rows
-    ), "a failed resolve must auto-create a failed_query feedback row"
+    ), "an internal error must auto-create a failed_query feedback row"
+    assert gap_rows == [], "an internal error is not demand — no sourcing gap"
 
 
 # --------------------------------------------------------------------------- #
@@ -624,3 +682,87 @@ def _novel_resolved_query() -> Any:
     from strata.resolver.slug import ResolvedQuery, ResolverIntent
 
     return ResolvedQuery(intent=ResolverIntent.NOVEL, confidence=0.0)
+
+
+# --------------------------------------------------------------------------- #
+# Noise quarantine at the feedback seam — wontfix + severity=noise, never drop. #
+# --------------------------------------------------------------------------- #
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_noise_feedback_is_quarantined_not_deleted(_clean: None) -> None:
+    """Throwaway probes and the canned auto-miss body are INSERTED as
+    wontfix/severity=noise (auditable quarantine) — never dropped — while a real
+    flag stays open. The default open-queue view stays clean."""
+    from strata.db.engine import org_session_scope
+    from strata.db.feedback import CANNED_MISS_BODY
+
+    async with org_session_scope(_ORG_A) as session:
+        probe = await record_feedback(
+            session,
+            org_id=_ORG_A,
+            user_id=_USER_A,
+            kind=FeedbackKind.GENERAL,
+            target_type=TargetType.QUERY,
+            body="test",
+        )
+        canned = await record_feedback(
+            session,
+            org_id=_ORG_A,
+            user_id=_USER_A,
+            kind=FeedbackKind.FAILED_QUERY,
+            target_type=TargetType.QUERY,
+            body=CANNED_MISS_BODY,
+            query_text="some genuinely missing market",
+        )
+        short = await record_feedback(
+            session,
+            org_id=_ORG_A,
+            user_id=_USER_A,
+            kind=FeedbackKind.FAILED_QUERY,
+            target_type=TargetType.QUERY,
+            body="resolve came up empty",
+            query_text="ai",
+        )
+        real = await record_feedback(
+            session,
+            org_id=_ORG_A,
+            user_id=_USER_A,
+            kind=FeedbackKind.BAD_ASSUMPTION,
+            target_type=TargetType.TAM,
+            body="adoption rate looks aggressive",
+        )
+
+    for noisy in (probe, canned, short):
+        assert noisy.status is FeedbackStatus.WONTFIX
+        assert noisy.severity == "noise"
+    assert real.status is FeedbackStatus.OPEN
+    assert real.severity != "noise"
+
+    async with org_session_scope(_ORG_A) as session:
+        all_rows = await list_feedback(session, org_id=_ORG_A)
+        open_rows = await list_feedback(session, org_id=_ORG_A, status=FeedbackStatus.OPEN)
+    assert len(all_rows) == 4, "quarantined rows must persist — never auto-deleted"
+    assert {r.id for r in open_rows} == {real.id}
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_real_failed_query_is_not_noise(_clean: None) -> None:
+    """A failed_query flag carrying a real query stays open — only the probe
+    strings and the canned echo are quarantined."""
+    from strata.db.engine import org_session_scope
+
+    async with org_session_scope(_ORG_A) as session:
+        ev = await record_feedback(
+            session,
+            org_id=_ORG_A,
+            user_id=_USER_A,
+            kind=FeedbackKind.FAILED_QUERY,
+            target_type=TargetType.QUERY,
+            body="resolver gave a wrong framework for this",
+            query_text="US dental practice management software market",
+        )
+    assert ev.status is FeedbackStatus.OPEN
+    assert ev.severity is None

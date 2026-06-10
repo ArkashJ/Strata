@@ -45,14 +45,19 @@ def test_dedup_key_prefers_resource_target() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def test_resolve_market_miss_is_flagged_unsourced() -> None:
+@pytest.fixture(scope="module")
+def reg() -> Any:
     from pathlib import Path
 
     from strata.loader import load_data_dir
-    from strata.mcp.tools import resolve_market
     from strata.registry import Registry
 
-    reg = Registry.from_loaded(load_data_dir(Path(__file__).resolve().parents[2] / "data"))
+    return Registry.from_loaded(load_data_dir(Path(__file__).resolve().parents[2] / "data"))
+
+
+def test_resolve_market_miss_is_flagged_unsourced(reg: Any) -> None:
+    from strata.mcp.tools import resolve_market
+
     out = resolve_market(reg, query="zzqx nonexistent market xyzzy qwerty")
     assert out["matched"] is False
     assert out["unsourced"] is True
@@ -100,6 +105,36 @@ async def test_list_gaps_scope_all_is_admin_only(monkeypatch: pytest.MonkeyPatch
         assert out["error"] == "forbidden"
     finally:
         context.current_principal.reset(token)
+
+
+# --------------------------------------------------------------------------- #
+# record_gap_safe — fire-and-forget gate (no DB needed for the drop paths).    #
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.asyncio
+async def test_record_gap_safe_drops_anonymous_and_missing_org() -> None:
+    from strata.db.sourcing_gaps import record_gap_safe
+
+    assert await record_gap_safe(org_id=None, source=GapSource.RESOLVE_MISS, query_text="x") is None
+    assert (
+        await record_gap_safe(org_id="public", source=GapSource.RESOLVE_MISS, query_text="x")
+        is None
+    )
+
+
+def test_mcp_resolve_miss_without_tenant_is_writeless(reg: Any) -> None:
+    """Over stdio (no principal) the miss path stays synchronous — no gap write
+    is even attempted, mirroring the no-tenant honesty of the write tools."""
+    from mcp.types import CallToolResult
+
+    from strata.mcp.tools import _h_resolve_market
+
+    res = _h_resolve_market(reg, {"query": "zzqx nonexistent market xyzzy qwerty"})
+    assert isinstance(res, CallToolResult)
+    assert res.structuredContent is not None
+    assert res.structuredContent["matched"] is False
+    assert "gap_recorded" not in res.structuredContent
 
 
 # --------------------------------------------------------------------------- #
@@ -190,7 +225,7 @@ async def test_gaps_rank_by_demand_and_isolate(_clean: None) -> None:
 
     async with org_session_scope(_TENANT_A) as s:
         rows = await list_gaps(s, org_id=_TENANT_A)
-        assert [r.query_text for r in rows][0] == "hot market"  # most-demanded first
+        assert next(r.query_text for r in rows) == "hot market"  # most-demanded first
         assert all(r.org_id == _TENANT_A for r in rows)
         assert "B only" not in {r.query_text for r in rows}
 
@@ -254,3 +289,68 @@ async def test_admin_sees_every_org_gap_and_can_mark_sourced(_clean: None) -> No
     async with org_session_scope(_TENANT_A) as s:
         open_rows = await list_gaps(s, org_id=_TENANT_A, status=GapStatus.OPEN)
         assert gid not in {r.id for r in open_rows}
+
+
+# --------------------------------------------------------------------------- #
+# MCP auto-record: a tenanted miss / unverifiable claim becomes ranked demand. #
+# --------------------------------------------------------------------------- #
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_mcp_resolve_miss_autorecords_gap(reg: Any, _clean: None) -> None:
+    """A tenanted resolve_market miss records the gap automatically — and keeps
+    the report_sourcing_gap hint so the agent's follow-up enriches the SAME row."""
+    import inspect
+
+    from strata.db.engine import org_session_scope
+    from strata.db.sourcing_gaps import list_gaps
+    from strata.mcp import context
+    from strata.mcp.tools import _h_resolve_market
+
+    token = context.current_principal.set(Principal(org_id=_TENANT_A, key_id="k", scopes=("*",)))
+    try:
+        res = _h_resolve_market(reg, {"query": "zzqx nonexistent market xyzzy qwerty"})
+        assert inspect.isawaitable(res)
+        out = await res
+    finally:
+        context.current_principal.reset(token)
+
+    assert out["matched"] is False and out["unsourced"] is True
+    assert out["next_action"]["tool"] == "report_sourcing_gap"
+    assert out["gap_recorded"] is True
+
+    async with org_session_scope(_TENANT_A) as s:
+        rows = await list_gaps(s, org_id=_TENANT_A)
+        assert len(rows) == 1
+        assert rows[0].source is GapSource.RESOLVE_MISS
+        assert rows[0].id == out["gap_id"]
+
+
+@_PG
+@pytest.mark.asyncio
+async def test_mcp_unverifiable_claim_autorecords_gap(reg: Any, _clean: None) -> None:
+    """An unverifiable verify_market_claim is the same demand signal as a resolve
+    miss — recorded under its own source so the queue knows which surface saw it."""
+    import inspect
+
+    from strata.db.engine import org_session_scope
+    from strata.db.sourcing_gaps import list_gaps
+    from strata.mcp import context
+    from strata.mcp.tools import _h_verify_market_claim
+
+    token = context.current_principal.set(Principal(org_id=_TENANT_A, key_id="k", scopes=("*",)))
+    try:
+        res = _h_verify_market_claim(reg, {"claim": "zzqx nonexistent market xyzzy qwerty"})
+        assert inspect.isawaitable(res)
+        out = await res
+    finally:
+        context.current_principal.reset(token)
+
+    assert out["verdict"] == "unverifiable"
+    assert out["gap_recorded"] is True
+
+    async with org_session_scope(_TENANT_A) as s:
+        rows = await list_gaps(s, org_id=_TENANT_A)
+        assert len(rows) == 1
+        assert rows[0].source is GapSource.UNVERIFIABLE_CLAIM

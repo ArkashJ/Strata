@@ -732,8 +732,54 @@ def _tam_result(reg: Registry, tam_dict: dict[str, Any]) -> CallToolResult:
     )
 
 
-def _h_whoami(reg: Registry, _args: dict[str, Any]) -> dict[str, Any]:
+def _h_whoami(reg: Registry, _args: dict[str, Any]) -> dict[str, Any] | Awaitable[dict[str, Any]]:
+    from ..api.auth import is_admin
+    from .context import current_principal
+
+    p = current_principal.get()
+    # Async only for an admin caller — the backlog count needs a DB round-trip;
+    # everyone else keeps the synchronous, DB-free diagnostic.
+    if p is not None and is_admin(p):
+        return _whoami_with_backlog(reg)
     return whoami(reg)
+
+
+async def _whoami_with_backlog(reg: Registry) -> dict[str, Any]:
+    """Admin callers also see the open primitive-correction backlog, so the
+    correction loop is visible from the first call of a session."""
+    from ..db.engine import admin_session_scope
+    from ..db.feedback import admin_count_open_corrections
+    from .context import current_org_id
+
+    out = whoami(reg)
+    try:
+        async with admin_session_scope(current_org_id()) as session:
+            out["open_corrections"] = await admin_count_open_corrections(session)
+    except Exception:
+        # A DB outage must not break the connection diagnostic; unknown is honest.
+        out["open_corrections"] = None
+    return out
+
+
+async def _record_miss_gap(out: dict[str, Any], *, source: str, query_text: str) -> dict[str, Any]:
+    """Auto-record a miss as ranked demand under the caller's org (best-effort:
+    the payload is returned unchanged when the write is dropped). The agent's
+    follow-up report_sourcing_gap call enriches the SAME row — the upsert
+    coalesces on the dedup key, so auto + manual never duplicate."""
+    from ..db.sourcing_gaps import record_gap_safe
+    from ..models.sourcing_gap import GapSource
+    from .context import current_principal
+
+    p = current_principal.get()
+    if p is None:
+        return out
+    gap_id = await record_gap_safe(
+        org_id=p.org_id, source=GapSource(source), query_text=query_text[:2048]
+    )
+    if gap_id is not None:
+        out["gap_recorded"] = True
+        out["gap_id"] = gap_id
+    return out
 
 
 def _h_search(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
@@ -766,14 +812,27 @@ def _h_size_tam(reg: Registry, args: dict[str, Any]) -> CallToolResult:
     )
 
 
-def _h_resolve_market(reg: Registry, args: dict[str, Any]) -> CallToolResult:
+def _h_resolve_market(
+    reg: Registry, args: dict[str, Any]
+) -> CallToolResult | Awaitable[dict[str, Any]]:
+    from .context import current_principal
+
     out = resolve_market(reg, query=args["query"])
     if out.get("matched"):
         return _tam_result(reg, out)
-    return tool_result(out)
+    # A miss with a tenant auto-records the gap (async); the next_action hint
+    # stays in the payload — the agent's explicit report enriches the same row.
+    # Over stdio (no principal) the path stays synchronous and write-free.
+    if current_principal.get() is None:
+        return tool_result(out)
+    return _record_miss_gap(out, source="resolve_miss", query_text=str(args["query"]))
 
 
-def _h_verify_market_claim(reg: Registry, args: dict[str, Any]) -> CallToolResult:
+def _h_verify_market_claim(
+    reg: Registry, args: dict[str, Any]
+) -> CallToolResult | Awaitable[dict[str, Any]]:
+    from .context import current_principal
+
     out = verify_market_claim(
         reg,
         claim=args["claim"],
@@ -781,6 +840,11 @@ def _h_verify_market_claim(reg: Registry, args: dict[str, Any]) -> CallToolResul
         asserted_unit=args.get("asserted_unit"),
         as_of=args.get("as_of"),
     )
+    # An unverifiable claim is the same demand signal as a resolve miss — record
+    # it when there is a tenant to attribute it to (a verify-side phrasing may
+    # land a second row next to a resolve-side one; see record_gap_safe).
+    if out.get("verdict") == "unverifiable" and current_principal.get() is not None:
+        return _record_miss_gap(out, source="unverifiable_claim", query_text=str(args["claim"]))
     links: list[dict[str, Any]] = []
     next_actions: list[dict[str, Any]] = []
     if out.get("strata_range") is not None and out.get("state_hash"):
