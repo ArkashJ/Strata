@@ -159,6 +159,11 @@ class Fact:
     frame: str
     fiscal_year: int | None = None
     fiscal_period: str | None = None
+    # The fact's own reporting period. fy/fp describe the FILING, so a FY2025
+    # 10-K stamps fy=2025 on its FY2023/24/25 revenue comparatives — only
+    # start/end identify which year a comparative actually covers.
+    start: str = ""
+    end: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -253,6 +258,8 @@ def _parse_fact(raw: dict[str, Any]) -> Fact:
         # value, not just key presence, or int(None)/str(None) corrupts the Fact.
         fiscal_year=int(raw["fy"]) if raw.get("fy") is not None else None,
         fiscal_period=str(raw["fp"]) if raw.get("fp") is not None else None,
+        start=str(raw.get("start", "") or ""),
+        end=str(raw.get("end", "") or ""),
     )
 
 

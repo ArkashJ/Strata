@@ -520,6 +520,58 @@ VERIFY_MARKET_CLAIM: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+SENSE_CHECK: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "players": {
+            "type": "array",
+            "minItems": 1,
+            "description": (
+                "The top players in the market. Each needs a name, a market_share "
+                "(fraction 0.15 or percent 15), and EITHER a numeric revenue (analyst "
+                "estimate, offline) OR an edgar_ticker (sourced TOTAL-company revenue "
+                "from SEC EDGAR — live, gated by STRATA_MCP_LIVE_CONNECTORS=1)."
+            ),
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "Player / company name."},
+                    "revenue": {
+                        "type": "number",
+                        "description": (
+                            "The player's annual revenue IN THIS MARKET (analyst "
+                            "estimate). Mutually exclusive with edgar_ticker."
+                        ),
+                    },
+                    "edgar_ticker": {
+                        "type": "string",
+                        "description": (
+                            "US-listed ticker to pull a SOURCED (total-company) revenue "
+                            "from SEC EDGAR. Live call — requires "
+                            "STRATA_MCP_LIVE_CONNECTORS=1. Mutually exclusive with revenue."
+                        ),
+                    },
+                    "market_share": {
+                        "type": "number",
+                        "description": "Estimated revenue share: fraction (0.15) or percent (15).",
+                    },
+                },
+                "required": ["name", "market_share"],
+                "additionalProperties": False,
+            },
+        },
+        "concept_slug": {
+            "type": "string",
+            "description": (
+                "Optional curated concept slug to cross-check the implied TAM against "
+                "its sourced scenario range (verdict: within / above / below)."
+            ),
+        },
+    },
+    "required": ["players"],
+    "additionalProperties": False,
+}
+
 # ── Output schemas (Phase 0) ────────────────────────────────────────────────
 # Advertised in tools/list so a host gets typed structuredContent. Permissive by
 # design (the payloads are rich + evolving): object with additionalProperties so
@@ -598,6 +650,28 @@ OUTPUT_SCHEMAS: dict[str, dict[str, Any]] = {
             "session_id": {"type": "string"},
             "outcome": {"type": ["string", "null"]},
             "readable_at": {"type": "string"},
+        },
+    },
+    "sense_check": {
+        "type": "object",
+        "additionalProperties": True,
+        "properties": {
+            # modeled is ALWAYS true (Q20): shares are analyst estimates.
+            "modeled": {"type": "boolean", "const": True},
+            "modeled_label": {"type": "string"},
+            "implied_tam": {"type": "number"},
+            "implied_low": {"type": ["number", "null"]},
+            "implied_high": {"type": ["number", "null"]},
+            "revenue_floor": {"type": "number"},
+            "combined_share": {"type": "number"},
+            "leverage": {"type": ["number", "null"]},
+            "residual": {"type": ["number", "null"]},
+            "spread_ratio": {"type": "number"},
+            "per_player": {"type": "array", "items": {"type": "object"}},
+            "warnings": {"type": "array", "items": {"type": "string"}},
+            "assumptions": {"type": "array", "items": {"type": "string"}},
+            "sourced_range": {"type": ["object", "null"]},
+            "verdict": {"type": ["string", "null"]},
         },
     },
 }

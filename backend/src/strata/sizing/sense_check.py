@@ -40,7 +40,8 @@ from dataclasses import dataclass, field
 DEFAULT_AGREE_BAND = 2.0
 # Default relative tolerance applied to shares for the sensitivity band.
 DEFAULT_SHARE_TOLERANCE = 0.25
-# Combined share below this makes the 1/Σshare multiplier large → fragile estimate.
+# Combined share ≤ 25% makes the 1/Σshare multiplier large → fragile estimate
+# (the threshold docs/methods/sense-check-defensibility.md states; keep in sync).
 LEVERAGE_WARN_SHARE = 0.25
 
 # The load-bearing assumptions the implied TAM rests on. Rendered with every
@@ -66,6 +67,10 @@ class Player:
     revenue: float  # currency/year, in the market's unit
     market_share: float  # fraction in (0, 1]
     revenue_sourced: bool = False  # True only if revenue is a sourced filing (EDGAR/regulator)
+    # Display tag for the revenue's basis, e.g. "filing, total-co" for an EDGAR
+    # figure (whole-company revenue, not in-market) — rendered next to the line
+    # so a sourced-but-total figure is never an unmarked sourced line.
+    revenue_note: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,18 +80,22 @@ class PlayerImplied:
     market_share: float
     implied_tam: float  # revenue / market_share
     revenue_sourced: bool = False
+    revenue_note: str = ""
 
 
 @dataclass(frozen=True, slots=True)
 class SenseCheckResult:
     implied_tam: float  # combined Σrevenue / Σshare
-    implied_low: float  # at shares scaled up by share_tolerance (more share → less TAM)
-    implied_high: float  # at shares scaled down by share_tolerance (less share → more TAM)
+    # Band/leverage/residual are None when Σshare ≥ 100%: a band derived from
+    # overlapping shares would exclude its own point estimate, leverage < 1 is
+    # meaningless, and the residual goes negative — suppressed, never emitted.
+    implied_low: float | None  # at shares scaled up by share_tolerance (more share → less TAM)
+    implied_high: float | None  # at shares scaled down by share_tolerance (less share → more TAM)
     share_tolerance: float
     revenue_floor: float  # Σrevenue
     combined_share: float  # Σshare
-    leverage: float  # 1 / Σshare — how much the estimate multiplies the captured revenue
-    residual: float  # implied_tam - revenue_floor (revenue attributed outside the named set)
+    leverage: float | None  # 1 / Σshare — how much the estimate multiplies the captured revenue
+    residual: float | None  # implied_tam - revenue_floor (revenue attributed outside the set)
     per_player: tuple[PlayerImplied, ...]
     spread_ratio: float  # max per-player implied / min (1.0 == perfect agreement)
     n_players: int
@@ -107,6 +116,19 @@ def normalize_share(raw: float) -> float:
     is read as a percent, so ``15`` → ``0.15``. (A genuine share never exceeds 1,
     so this is unambiguous in practice.)"""
     return raw / 100.0 if raw > 1.0 else raw
+
+
+def share_token_warning(token: str, share: float) -> str | None:
+    """The ``1`` trap: a bare integer token parses to a 100% share (fractions ≤ 1
+    pass through :func:`normalize_share`), but a user may have meant 1%. Warn when
+    a token without a decimal point or percent sign lands on exactly 100%."""
+    t = token.strip()
+    if share == 1.0 and "." not in t and "%" not in t:
+        return (
+            f"share token {token!r} parsed as 100% — if you meant 1%, "
+            f"write '0.01' or '1.0' for an unambiguous fraction"
+        )
+    return None
 
 
 def parse_money(raw: str) -> float:
@@ -172,23 +194,34 @@ def sense_check(
     warnings: list[str] = []
     total_rev = sum(p.revenue for p in players)
     total_share = sum(p.market_share for p in players)
-    if total_share > 1.0:
-        warnings.append(
-            f"combined market share is {total_share:.0%} (> 100%) — the shares overlap "
-            f"or are overstated; treat the implied TAM as a floor"
-        )
 
     implied = total_rev / total_share
-    leverage = 1.0 / total_share
-    # Sensitivity band: a share that is x% too low/high moves the TAM the other way.
-    # Cap the upper share at 1.0 (a combined share can't exceed 100%).
-    share_hi = min(total_share * (1.0 + share_tolerance), 1.0)
-    share_lo = total_share * (1.0 - share_tolerance)
-    implied_low = total_rev / share_hi
-    implied_high = total_rev / share_lo if share_lo > 0 else float("inf")
-    residual = implied - total_rev
+    leverage: float | None
+    implied_low: float | None
+    implied_high: float | None
+    residual: float | None
+    if total_share >= 1.0:
+        # Σshare ≥ 100%: capping the upper share at 1.0 would put the band's low
+        # end ABOVE the point estimate (which itself falls below the revenue
+        # floor). A band that excludes its own point estimate is never emitted —
+        # only the floor and the overlap warning survive.
+        leverage = implied_low = implied_high = residual = None
+        if total_share > 1.0:
+            warnings.append(
+                f"combined market share is {total_share:.0%} (> 100%) — the shares overlap "
+                f"or are overstated; only the revenue floor ${total_rev:,.0f} is defensible"
+            )
+    else:
+        leverage = 1.0 / total_share
+        # Sensitivity band: a share that is x% too low/high moves the TAM the
+        # other way. Cap the upper share at 1.0 (a combined share can't exceed 100%).
+        share_hi = min(total_share * (1.0 + share_tolerance), 1.0)
+        share_lo = total_share * (1.0 - share_tolerance)
+        implied_low = total_rev / share_hi
+        implied_high = total_rev / share_lo if share_lo > 0 else float("inf")
+        residual = implied - total_rev
 
-    if total_share < LEVERAGE_WARN_SHARE:
+    if total_share <= LEVERAGE_WARN_SHARE and leverage is not None:
         warnings.append(
             f"combined share is only {total_share:.0%}, so the implied TAM is {leverage:.0f}x the "
             f"captured revenue — it is highly leveraged on the share estimate; widen the player set"
@@ -196,7 +229,12 @@ def sense_check(
 
     per = tuple(
         PlayerImplied(
-            p.name, p.revenue, p.market_share, p.revenue / p.market_share, p.revenue_sourced
+            p.name,
+            p.revenue,
+            p.market_share,
+            p.revenue / p.market_share,
+            p.revenue_sourced,
+            p.revenue_note,
         )
         for p in players
     )
@@ -210,7 +248,15 @@ def sense_check(
 
     n_sourced = sum(1 for p in players if p.revenue_sourced)
     all_sourced = n_sourced == len(players)
-    if not all_sourced:
+    # The MODELED label is UNCONDITIONAL: market shares are always analyst
+    # estimates, so the implied TAM stays a modeled cross-check even when every
+    # revenue is a sourced filing (Q20).
+    if all_sourced:
+        warnings.append(
+            "revenues sourced; shares are analyst estimates — the implied TAM remains "
+            "MODELED (Q20), a cross-check only, never a sourced number"
+        )
+    else:
         warnings.append(
             f"{len(players) - n_sourced}/{len(players)} revenues are estimates, not sourced "
             f"filings — the implied TAM is MODELED, a cross-check only, never a sourced number (Q20)"

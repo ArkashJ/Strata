@@ -933,6 +933,16 @@ def _h_record_session_reasoning(reg: Registry, args: dict[str, Any]) -> Awaitabl
     return record_session_reasoning(reg, payload=dict(args.get("payload") or {}))
 
 
+def _h_sense_check(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    from .sense_check_tool import sense_check_tool
+
+    return sense_check_tool(
+        reg,
+        players=list(args.get("players", [])),
+        concept_slug=args.get("concept_slug"),
+    )
+
+
 def _h_list_sourcing_gaps(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
     from .sourcing_gap_tools import list_sourcing_gaps
 
@@ -1194,6 +1204,21 @@ TOOLS: dict[str, dict[str, Any]] = {
         "inputSchema": schemas.LIST_SOURCING_GAPS,
         "handler": _h_list_sourcing_gaps,
         "annotations": _READ,
+    },
+    "sense_check": {
+        "description": (
+            "[READ] Market-share-implied TAM cross-check: Σ(top-player revenue) / "
+            "Σ(market share), with sensitivity band, revenue floor, leverage, residual, "
+            "per-player consistency, and explicit assumptions. ALWAYS MODELED (Q20) — "
+            "shares are analyst estimates, so the payload carries modeled=true and is "
+            "never a sourced number. revenue is a number, or edgar_ticker pulls a "
+            "sourced TOTAL-company revenue from SEC EDGAR (live, gated by "
+            "STRATA_MCP_LIVE_CONNECTORS=1). Optional concept_slug cross-checks the "
+            "implied TAM against the curated market's sourced scenario range."
+        ),
+        "inputSchema": schemas.SENSE_CHECK,
+        "handler": _h_sense_check,
+        "annotations": _READ_NET,
     },
     "record_session_reasoning": {
         "description": (

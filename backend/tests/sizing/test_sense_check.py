@@ -14,6 +14,7 @@ from strata.sizing.sense_check import (
     parse_money,
     parse_player,
     sense_check,
+    share_token_warning,
 )
 
 runner = CliRunner()
@@ -67,16 +68,45 @@ def test_inconsistent_shares_flag_spread() -> None:
     assert any("disagree" in w for w in r.warnings)
 
 
-def test_combined_share_over_100pct_warns() -> None:
+def test_combined_share_over_100pct_warns_and_suppresses_band() -> None:
+    # Σshare > 100%: a band would exclude its own point estimate, leverage < 1
+    # is meaningless, residual negative — all suppressed; floor + warning remain.
     r = sense_check([Player("A", 300e6, 0.6), Player("B", 200e6, 0.6)])
     assert r.combined_share == pytest.approx(1.2)
     assert any("100%" in w for w in r.warnings)
+    assert r.implied_low is None
+    assert r.implied_high is None
+    assert r.leverage is None
+    assert r.residual is None
+    assert r.revenue_floor == pytest.approx(500e6)
 
 
 def test_modeled_revenue_warns_q20() -> None:
     r = sense_check([Player("A", 300e6, 0.15)])
     assert not r.all_revenue_sourced
     assert any("MODELED" in w for w in r.warnings)
+
+
+def test_all_sourced_run_is_still_modeled_q20() -> None:
+    # Shares are ALWAYS analyst estimates, so even an all-sourced-revenue run
+    # carries the MODELED marker — the label is unconditional (Q20).
+    r = sense_check(
+        [
+            Player("A", 300e6, 0.15, revenue_sourced=True),
+            Player("B", 200e6, 0.10, revenue_sourced=True),
+        ]
+    )
+    assert r.all_revenue_sourced
+    assert any("MODELED" in w for w in r.warnings)
+    assert any("analyst estimates" in w for w in r.warnings)
+
+
+def test_share_token_warning_flags_the_1_trap() -> None:
+    assert share_token_warning("1", 1.0) is not None  # bare '1' → 100%: warn
+    assert share_token_warning("100", 1.0) is not None  # bare '100' → 100%: warn
+    assert share_token_warning("1.0", 1.0) is None  # explicit decimal: intended
+    assert share_token_warning("0.15", 0.15) is None
+    assert share_token_warning("15", 0.15) is None
 
 
 def test_cross_check_verdict_within_above_below() -> None:
@@ -170,6 +200,9 @@ def test_cli_edgar_token_resolves_sourced_revenue(monkeypatch: pytest.MonkeyPatc
     assert r.exit_code == 0, r.stdout
     assert "resolved Salesforce revenue" in r.stdout
     assert "1/1 revenues sourced" in r.stdout  # EDGAR figure counts as sourced
+    # The figure is whole-company revenue: caveat inline + a marked player line.
+    assert "TOTAL company revenue" in r.stdout
+    assert "(filing, total-co)" in r.stdout
 
 
 def test_cli_edgar_token_blocked_offline(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -182,6 +215,82 @@ def test_cli_edgar_token_blocked_offline(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setenv("STRATA_OFFLINE", "1")
     r = runner.invoke(app, ["sense-check", "--player", "Salesforce|edgar:CRM|0.30"])
     assert r.exit_code == 2  # offline guard fired before any live lookup
+
+
+def test_cli_overflow_share_prints_floor_only() -> None:
+    # Σshare = 120%: no implied-TAM headline, band, leverage, or residual lines —
+    # only the revenue floor and the overlap warning are defensible.
+    r = runner.invoke(app, ["sense-check", "--player", "A|300m|60", "--player", "B|200m|60"])
+    assert r.exit_code == 0, r.stdout
+    assert "revenue floor" in r.stdout
+    assert "only the revenue floor" in r.stdout  # the >100% warning
+    assert "implied TAM     $" not in r.stdout
+    assert "sensitivity" not in r.stdout
+    assert "leverage" not in r.stdout
+    assert "residual" not in r.stdout
+
+
+def test_cli_share_token_one_warns() -> None:
+    # The '1' trap: a bare integer share token landing on exactly 100% warns.
+    r = runner.invoke(app, ["sense-check", "--player", "Solo|300m|1"])
+    assert r.exit_code == 0, r.stdout
+    assert "parsed as 100%" in r.stdout
+
+
+def test_cli_edgar_spec_enforces_field_count() -> None:
+    # The edgar branch must reject malformed specs as loudly as the plain branch.
+    r = runner.invoke(app, ["sense-check", "--player", "Salesforce|edgar:CRM"])
+    assert r.exit_code == 2
+    r = runner.invoke(app, ["sense-check", "--player", "A|edgar:CRM|0.3|x|y"])
+    assert r.exit_code == 2
+
+
+def test_cli_csv_players_parse_directly(tmp_path: Path) -> None:
+    # CSV fields go straight into Player — a '|' in a company name must not
+    # inject extra pipe-DSL fields, and the optional sourced column is honored.
+    csv_path = tmp_path / "players.csv"
+    csv_path.write_text(
+        "name,revenue,market_share,sourced\nAcme|Pipes Inc,300m,15,\nFiler Co,200m,10,sourced\n",
+        encoding="utf-8",
+    )
+    r = runner.invoke(app, ["sense-check", "--players-file", str(csv_path)])
+    assert r.exit_code == 0, r.stdout
+    assert "Acme|Pipes Inc" in r.stdout
+    assert "1/2 revenues sourced" in r.stdout
+    assert "2,000,000,000" in r.stdout  # 500m / 25%
+
+
+def test_cli_csv_edgar_rows_share_one_client(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import strata.cli as cli
+    from strata.sizing.revenue_lookup import ResolvedRevenue
+
+    seen_clients: list[object] = []
+
+    def _fake_resolve(ticker: str, **kw: object) -> ResolvedRevenue:
+        seen_clients.append(kw.get("client"))
+        return ResolvedRevenue(
+            ticker=ticker.upper(),
+            cik="0000000001",
+            entity_name=f"{ticker} Corp",
+            revenue=1_000_000_000,
+            fiscal_year=2024,
+            concept="Revenues",
+            source_url="https://www.sec.gov/cgi-bin/browse-edgar?CIK=0000000001",
+        )
+
+    monkeypatch.setattr(cli, "resolve_revenue", _fake_resolve)
+    csv_path = tmp_path / "players.csv"
+    csv_path.write_text(
+        "name,revenue,market_share\nAlpha,edgar:AAA,10\nBeta,edgar:BBB,20\n",
+        encoding="utf-8",
+    )
+    r = runner.invoke(app, ["sense-check", "--players-file", str(csv_path)])
+    assert r.exit_code == 0, r.stdout
+    assert len(seen_clients) == 2
+    assert seen_clients[0] is not None
+    assert seen_clients[0] is seen_clients[1]  # ONE EDGARClient across rows
 
 
 def test_cli_sense_check_against_curated_concept() -> None:

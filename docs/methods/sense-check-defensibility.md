@@ -22,15 +22,15 @@ The method:
 
 | # | Expert argument | How the check answers it |
 |---|---|---|
-| 1 | **"Reported revenue isn't in-market revenue"** — a vendor's total revenue spans adjacent products. | Assumption #1 is stated on every run ("each revenue is the player's revenue IN THIS MARKET"). The tool can't detect this, so it makes the requirement explicit and tags every non-filing revenue `(est.)`. The reviewer scopes the inputs; the tool never pretends a total is a segment. |
+| 1 | **"Reported revenue isn't in-market revenue"** — a vendor's total revenue spans adjacent products. | Assumption #1 is stated on every run ("each revenue is the player's revenue IN THIS MARKET"). The tool can't detect this, so it makes the requirement explicit and tags every non-filing revenue `(est.)`. An `edgar:` revenue is tagged `(filing, total-co)` and resolution prints an inline caveat ("EDGAR figure is TOTAL company revenue — confirm it equals in-market revenue or use a segment figure") — a sourced total never passes as an unmarked in-market figure. |
 | 2 | **"Share of *what*?"** — revenue share ≠ unit/seat/logo/mindshare. | Assumption #2 ("market shares are revenue shares OF THIS SAME MARKET"). The math is only coherent for revenue shares; the assumption names it so a seats-share input is caught by the reviewer, not silently divided. |
-| 3 | **"A small combined share explodes the error."** | The `leverage = 1/Σshare` factor is printed, and a **warning fires when combined share < 25%** ("the implied TAM is Nx the captured revenue … widen the player set"). The **sensitivity band** (shares ±25%) shows how far the answer moves. |
-| 4 | **"Your shares overlap / sum past 100%."** | Detected and warned ("combined market share is N% (> 100%) … treat the implied TAM as a floor"). The number is never emitted as if clean. |
+| 3 | **"A small combined share explodes the error."** | The `leverage = 1/Σshare` factor is printed, and a **warning fires when combined share ≤ 25%** (matching `LEVERAGE_WARN_SHARE` with `<=` in code: "the implied TAM is Nx the captured revenue … widen the player set"). The **sensitivity band** (shares ±25%) shows how far the answer moves. |
+| 4 | **"Your shares overlap / sum past 100%."** | Detected and warned ("combined market share is N% (> 100%) … only the revenue floor is defensible"). When Σshare ≥ 100% the band, leverage, and residual are **suppressed entirely** — a band derived from overlapping shares would exclude its own point estimate, so only the revenue floor and the warning are emitted. Never rendered as if clean. |
 | 5 | **"Your share estimates are internally inconsistent."** | The **per-player spread** (`max(revᵢ/shareᵢ) / min(...)`) is computed; a spread beyond 2× warns. If every player implies a different TAM, the reviewer sees it immediately. |
 | 6 | **"Currencies don't match."** | Assumption #3 ("one currency"). The tool is unit-agnostic by design; the assumption is load-bearing and shown. |
 | 7 | **"Periods don't match"** — TTM vs FY, mixed years. | Assumption #3 ("one period, e.g. TTM"). Same treatment: explicit, not silent. |
 | 8 | **"Geography mismatch"** — global revenue against a US market. | Assumption #3 ("same geography as the market"). This ties to Strata's first-class `MarketScope` (geo_supply/geo_demand); a future increment can bind the players' geo to the concept's declared scope and auto-flag a mismatch. |
-| 9 | **"Private-company revenue is itself a guess — this is circular."** | Each revenue carries a `revenue_sourced` flag; the output shows `n/N revenues sourced` and tags estimates `(est.)`. When any revenue is an estimate, the whole implied TAM is labelled **MODELED** and is **never persisted as a sourced primitive (Q20)** — it can only agree or disagree with the sourced number, never become one. |
+| 9 | **"Private-company revenue is itself a guess — this is circular."** | Each revenue carries a `revenue_sourced` flag; the output shows `n/N revenues sourced` and tags estimates `(est.)`. The **MODELED label is unconditional**: market shares are always analyst estimates, so the implied TAM is labelled **MODELED (Q20)** even when every revenue is a sourced filing, and is **never persisted as a sourced primitive** — it can only agree or disagree with the sourced number, never become one. |
 | 10 | **"This market isn't revenue-defined yet"** — pre-revenue / latent demand. | Assumption #4 ("the market is revenue-defined today, not pre-revenue / latent"). For a `latent_demand` market the method is the wrong tool, and the assumption says so — the reviewer uses the adoption-curve lens instead. |
 
 ### Bonus: "comparing to one number hides the real spread"
@@ -57,5 +57,6 @@ also reports the ratio to the sourced midpoint.
   same-geography — it asserts the assumption and tags estimates; the analyst owns
   the inputs.
 - `MarketScope`-aware geo/period binding (argument 8) is a future increment.
-- Auto-pulling player revenues from EDGAR/yfinance (so only shares are manual) is
-  a planned follow-up; today revenues default to `(est.)` unless flagged sourced.
+- `edgar:TICKER` pulls a sourced annual revenue from SEC EDGAR (US-listed filers
+  only), selected by the fact's own period end — but it is TOTAL company revenue,
+  tagged `(filing, total-co)` with an inline caveat; segment figures stay manual.

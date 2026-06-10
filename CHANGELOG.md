@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — sense-check adversarial-review findings (PR #143)
+
+- **EDGAR picked the wrong year.** A company's annual filing repeats the prior
+  years' revenue for comparison, and the SEC stamps them all with the filing's
+  year — so the lookup could return a 2-year-old figure labelled as the latest.
+  Revenue is now selected by the fact's own reporting period end, and the
+  displayed fiscal year comes from that period, never the filing stamp.
+- **The MODELED label is now always shown.** Market shares are always analyst
+  estimates, so the implied TAM is a modeled cross-check even when every revenue
+  comes from a filing (Q20) — the label no longer disappears on all-sourced runs.
+- **Overlapping shares no longer produce a contradictory range.** When the
+  players' shares sum past 100%, the sensitivity band, leverage, and residual
+  are suppressed — only the revenue floor and the overlap warning are shown.
+- **EDGAR revenue is flagged as total-company.** An `edgar:` figure is the whole
+  company's revenue, not one market's — resolution prints a caveat and the
+  player line is tagged `(filing, total-co)`.
+- More revenue tags tried (`…IncludingAssessedTax`, `SalesRevenueNet`,
+  `SalesRevenueServicesNet`); the no-revenue error names every tag tried;
+  a bare share token that parses to exactly 100% gets a warning (the `1` →
+  100% trap); CSV player files parse directly (a `|` in a company name can no
+  longer break parsing) with an optional `sourced` column and one shared EDGAR
+  client across rows.
+
+### Added — `sense_check` MCP tool
+
+- The same market-share-implied TAM cross-check, callable by agents: players in,
+  implied TAM + band + floor + leverage + residual + warnings + assumptions out,
+  with the MODELED (Q20) marker carried machine-readably (`"modeled": true`) on
+  every payload. `edgar_ticker` resolution is gated behind
+  `STRATA_MCP_LIVE_CONNECTORS=1`, like every live connector call.
+
 ### Added — sense-check revenue auto-pull from SEC EDGAR
 
 - **`--player "Name|edgar:TICKER|share"`** resolves a US-listed company's latest
