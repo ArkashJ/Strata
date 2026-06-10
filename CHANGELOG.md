@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — web app trimmed to landing + auth + OAuth consent (CLI/MCP direction lock)
+
+The web frontend now serves only the public landing page, the Clerk sign-in /
+sign-up pages, and the hosted-MCP OAuth consent page (`/oauth/authorize`). All
+other app routes (build studio, TAM pages, browse, connectors, dashboard, …)
+were removed, along with their components, libraries, tests, Storybook, and
+Playwright tooling. The CLI and the MCP server are the product surfaces going
+forward. The full web app is preserved on the `frontend-archive` branch and the
+`frontend-archive-2026-06-10` tag.
 ### Fixed — sense-check adversarial-review findings (PR #143)
 
 - **EDGAR picked the wrong year.** A company's annual filing repeats the prior

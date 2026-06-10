@@ -63,9 +63,13 @@ fi
 
 echo "== frontend $WEB =="
 
-# 4. Frontend canonical responds (200). A gated app shell still returns 200 at /.
+# 4. Frontend: the web surface is landing + auth + OAuth consent only — probe
+# the landing and the sign-in page.
 w=$(code "$WEB/")
 [ "$w" = "200" ] && ok "/ -> 200" || bad "/ -> $w (frontend down?)"
+
+s=$(code "$WEB/sign-in")
+[ "$s" = "200" ] && ok "/sign-in -> 200" || bad "/sign-in -> $s (auth page broken?)"
 
 echo
 if [ "$fail" -eq 0 ]; then
