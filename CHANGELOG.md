@@ -16,6 +16,105 @@ were removed, along with their components, libraries, tests, Storybook, and
 Playwright tooling. The CLI and the MCP server are the product surfaces going
 forward. The full web app is preserved on the `frontend-archive` branch and the
 `frontend-archive-2026-06-10` tag.
+### Fixed — sense-check adversarial-review findings (PR #143)
+
+- **EDGAR picked the wrong year.** A company's annual filing repeats the prior
+  years' revenue for comparison, and the SEC stamps them all with the filing's
+  year — so the lookup could return a 2-year-old figure labelled as the latest.
+  Revenue is now selected by the fact's own reporting period end, and the
+  displayed fiscal year comes from that period, never the filing stamp.
+- **The MODELED label is now always shown.** Market shares are always analyst
+  estimates, so the implied TAM is a modeled cross-check even when every revenue
+  comes from a filing (Q20) — the label no longer disappears on all-sourced runs.
+- **Overlapping shares no longer produce a contradictory range.** When the
+  players' shares sum past 100%, the sensitivity band, leverage, and residual
+  are suppressed — only the revenue floor and the overlap warning are shown.
+- **EDGAR revenue is flagged as total-company.** An `edgar:` figure is the whole
+  company's revenue, not one market's — resolution prints a caveat and the
+  player line is tagged `(filing, total-co)`.
+- More revenue tags tried (`…IncludingAssessedTax`, `SalesRevenueNet`,
+  `SalesRevenueServicesNet`); the no-revenue error names every tag tried;
+  a bare share token that parses to exactly 100% gets a warning (the `1` →
+  100% trap); CSV player files parse directly (a `|` in a company name can no
+  longer break parsing) with an optional `sourced` column and one shared EDGAR
+  client across rows.
+
+### Added — `sense_check` MCP tool
+
+- The same market-share-implied TAM cross-check, callable by agents: players in,
+  implied TAM + band + floor + leverage + residual + warnings + assumptions out,
+  with the MODELED (Q20) marker carried machine-readably (`"modeled": true`) on
+  every payload. `edgar_ticker` resolution is gated behind
+  `STRATA_MCP_LIVE_CONNECTORS=1`, like every live connector call.
+
+### Added — sense-check revenue auto-pull from SEC EDGAR
+
+- **`--player "Name|edgar:TICKER|share"`** resolves a US-listed company's latest
+  annual revenue live from SEC EDGAR XBRL (regulator-tier) instead of typing an
+  estimate — so for public players the revenue is **sourced**, not the analyst's
+  guess (closing the "private revenue is itself a guess" critique). It picks the
+  most recent annual fact across revenue concepts (`Revenues` and the ASC 606
+  `RevenueFromContractWithCustomerExcludingAssessedTax`), prints the figure +
+  fiscal year + filer, and counts it as sourced. EDGAR-only (US public cos);
+  private players stay estimates. Gated by `STRATA_OFFLINE` (refuses live lookups
+  offline). yfinance is not used — it exposes quotes, not revenue.
+
+### Fixed — EDGAR fact parsing crashed on present-but-null `fy`/`fp`
+
+- SEC XBRL `companyconcept` facts frequently carry `"fy": null` / `"fp": null`
+  (key present, value null). `_parse_fact` guarded on key presence, so
+  `int(None)` raised `TypeError` on live company-concept data. Now guards on the
+  value. (Surfaced by the revenue auto-pull exercising the company-concept path.)
+
+### Added — `strata sense-check`: market-share-implied TAM cross-check
+
+- **A reusable sense check for any market sizing.** Given the top players in a
+  market (each with a revenue and an estimated market share), it derives an
+  implied TAM and cross-checks it against the sourced number:
+  `implied TAM = sum(player revenue) / sum(market share)`, plus a **revenue
+  floor** (a TAM can't be below the revenue already inside it) and a
+  **per-player spread** (each `revenue/share` should imply the same TAM; a wide
+  spread flags inconsistent share estimates). This is the `COMPARABLE_REVENUE`
+  method run as an analyst cross-check.
+- **Honest by construction (Q20):** market shares are analyst *estimates*, so the
+  implied TAM is **MODELED** — a cross-check only, never written back as a sourced
+  primitive. With `--concept <slug>` it compares the implied TAM head-to-head with
+  the curated market's sourced scenario range and returns `within | above | below`
+  — the same spirit as the evaluator's `convergence` banner.
+- Surfaces: CLI `strata sense-check --player "Name|revenue|share" ... [--concept
+  <slug>] [--players-file players.csv]` (revenue accepts `31e9`/`3.1b`/`$300m`,
+  share `0.15` or `15`). `strata size` now prints a one-line pointer so the
+  cross-check is offered on every sizing.
+### Added — `strata portfolio add`: add one company without a CSV
+
+- **You can now add a single portfolio company from the CLI** instead of writing
+  a CSV and running `import`. `strata portfolio add --name "Synthio Labs"
+  --domain synthiolabs.com --vertical "Pharma" [--market <slug>] [--size]`
+  upserts one company pointer (idempotent on the normalized domain, else name),
+  optionally maps it to an explicit market concept, and can size it in the same
+  command. Sizing stays registry-first and offline-safe — an uncurated market is
+  an honest `unsizable` with a lens-gap, never an invented number (Q20). Gated by
+  `STRATA_PORTFOLIO_ENABLED` like the rest of the portfolio write surface (F6).
+
+  ```
+  strata portfolio add --name X --domain x.com --vertical V --size
+        └─ upsert one CompanyRecord (JSON store) ─▶ size_company (registry-first)
+           ─▶ sized $TAM  |  honest unsizable + lens-gap
+  ```
+
+- **An explicit `--market` slug is now validated, never fuzzy-rerouted.** On the
+  `--size` path an unknown slug is a clean error with up to 3 near-miss
+  suggestions; without `--size` the command says plainly that the slug is stored
+  unvalidated. Re-adding an existing company with a new `--market`/`--vertical`
+  updates the stored row (and says "updated"); a plain re-add stays idempotent.
+  A blank `--name` is rejected, and a bad data dir on `--size` is a one-line
+  error suggesting `-d ../data` instead of a traceback.
+- **The shared portfolio store no longer loses other orgs' rows.** Saving one
+  org's portfolio now re-serializes every org sharing the file, and writes are
+  atomic (temp file + rename), so a crash mid-write can't truncate the store.
+- **Agents get the same capability:** new `add_portfolio_company` MCP tool —
+  add one company (idempotent, update-on-new-info) with the same honest
+  unknown-market error, optional immediate registry-first sizing.
 
 ### Added — MCP trace-capture: every tool call captured for replay and regression testing (Direction 1)
 

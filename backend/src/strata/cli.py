@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import csv
+import os
 import re
 from dataclasses import dataclass
 from datetime import UTC
@@ -14,8 +16,9 @@ import typer
 from dotenv import load_dotenv
 
 from strata import __version__
+from strata.connectors.edgar import EDGARClient
 from strata.evaluator import EvaluatorError, size_concept
-from strata.loader import LoaderError
+from strata.loader import LoaderError, load_data_dir
 from strata.models import QuestionCategory, ResolvedAnswer, TAMOutput, Unit
 from strata.registry import Registry, RegistryError
 from strata.report import (
@@ -27,7 +30,22 @@ from strata.report import (
     render_premium_html,
     render_premium_pdf,
 )
+from strata.report.narrative import usd
 from strata.sizing.cli import portfolio_app
+from strata.sizing.revenue_lookup import RevenueLookupError, resolve_revenue, to_player
+from strata.sizing.sense_check import (
+    MODELED_LABEL,
+    SOURCED_TOKENS,
+    Player,
+    SenseCheckError,
+    SenseCheckResult,
+    normalize_share,
+    parse_money,
+    sense_check,
+    share_token_warning,
+    split_player_spec,
+)
+from strata.sizing.service import sourced_scenarios
 from strata.validator import Severity, ValidationFinding
 from strata.validator import validate as run_validate
 
@@ -81,6 +99,20 @@ _REPORT_PREPARED_BY_OPT = typer.Option(
 _VERIFY_CLAIM_ARG = typer.Argument(..., help="A market claim to verify against the sourced bank.")
 _VERIFY_VALUE_OPT = typer.Option(
     None, "--value", help="The numeric figure the claim asserts (same unit as the market)."
+)
+# `sense-check` — market-share-implied (comparable-revenue) cross-check.
+_SC_PLAYER_OPT = typer.Option(
+    [],
+    "--player",
+    "-p",
+    help="A top player as 'Name|revenue|share' (repeatable). revenue: 31e9 / 3.1b / $300m, "
+    "or 'edgar:TICKER' to pull a SOURCED revenue from SEC EDGAR; share: 0.15 or 15.",
+)
+_SC_FILE_OPT = typer.Option(
+    None, "--players-file", help="CSV with columns: name,revenue,market_share."
+)
+_SC_CONCEPT_OPT = typer.Option(
+    None, "--concept", help="Curated concept slug to cross-check the implied TAM against."
 )
 
 # A 64-char hex string is a TAM state hash; anything else is a concept slug.
@@ -152,6 +184,10 @@ def size(
         typer.echo(f"ERROR registry: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     _render(tam)
+    typer.echo(
+        f"\nSense-check (comparable-revenue): strata sense-check --concept {concept_slug} "
+        f'--player "Name|revenue|share" ...'
+    )
 
 
 def _render(tam: TAMOutput) -> None:
@@ -396,6 +432,200 @@ def verify_cmd(
 
 
 # ── Database sub-commands ────────────────────────────────────────────
+
+
+def _share_from_token(token: str, ctx: str) -> float:
+    try:
+        share = normalize_share(float(token))
+    except ValueError as exc:
+        raise SenseCheckError(f"could not parse share {token!r} in {ctx}") from exc
+    share_warning = share_token_warning(token, share)
+    if share_warning:
+        typer.echo(f"  WARN {share_warning}")
+    return share
+
+
+def _edgar_player(name: str, ticker: str, share: float, client: EDGARClient) -> Player:
+    """Resolve an ``edgar:TICKER`` revenue token to a SOURCED (but total-company)
+    revenue via SEC EDGAR (live HTTP)."""
+    if not ticker:
+        raise SenseCheckError(f"empty EDGAR ticker for player {name!r}")
+    if os.environ.get("STRATA_OFFLINE") == "1":
+        raise SenseCheckError(f"{name!r} needs a live EDGAR lookup but STRATA_OFFLINE=1")
+    try:
+        rr = resolve_revenue(ticker, client=client)
+    except RevenueLookupError as exc:
+        raise SenseCheckError(str(exc)) from exc
+    typer.echo(
+        f"  resolved {name} revenue {usd(rr.revenue)} "
+        f"(EDGAR {rr.concept} FY{rr.fiscal_year}, {rr.entity_name})"
+    )
+    return to_player(name, share, rr)
+
+
+def _player_from_spec(spec: str, client: EDGARClient) -> Player:
+    """Parse a --player spec. An ``edgar:TICKER`` revenue token resolves to a
+    sourced total-company revenue; any other token is an analyst estimate
+    parsed offline."""
+    parts = split_player_spec(spec)
+    share = _share_from_token(parts[2], spec)
+    if parts[1].lower().startswith("edgar:"):
+        return _edgar_player(parts[0], parts[1].split(":", 1)[1].strip(), share, client)
+    sourced = len(parts) == 4 and parts[3].lower() in SOURCED_TOKENS
+    return Player(
+        name=parts[0], revenue=parse_money(parts[1]), market_share=share, revenue_sourced=sourced
+    )
+
+
+def _collect_players(specs: list[str], players_file: Path | None) -> list[Player]:
+    # EDGARClient construction is cheap and no-network — one client shared by
+    # every edgar: row so N public players reuse one HTTP pool + disk cache.
+    with EDGARClient() as client:
+        players = [_player_from_spec(s, client) for s in specs]
+        if players_file is not None:
+            with players_file.open(newline="", encoding="utf-8") as fh:
+                # CSV fields go straight into Player — never round-tripped
+                # through the pipe DSL, so a '|' in a company name can't inject
+                # extra fields.
+                for row in csv.DictReader(fh):
+                    name = (row.get("name") or "").strip()
+                    if not name:
+                        continue
+                    rev = (row.get("revenue") or "").strip()
+                    share = _share_from_token(
+                        (row.get("market_share") or "").strip(), f"CSV row {name!r}"
+                    )
+                    if rev.lower().startswith("edgar:"):
+                        players.append(
+                            _edgar_player(name, rev.split(":", 1)[1].strip(), share, client)
+                        )
+                        continue
+                    sourced = (row.get("sourced") or "").strip().lower() in SOURCED_TOKENS
+                    players.append(
+                        Player(
+                            name=name,
+                            revenue=parse_money(rev),
+                            market_share=share,
+                            revenue_sourced=sourced,
+                        )
+                    )
+        return players
+
+
+@app.command("sense-check")
+def sense_check_cmd(
+    player: list[str] = _SC_PLAYER_OPT,
+    players_file: Path | None = _SC_FILE_OPT,
+    concept: str | None = _SC_CONCEPT_OPT,
+    data_dir: Path = _DATA_DIR_OPT,
+) -> None:
+    """Market-share-implied TAM cross-check: sum(top-player revenue) / sum(market share).
+
+    A sense check, not a sourced number — market shares are analyst estimates, so
+    the implied TAM is MODELED and never persisted (Q20). With --concept, the
+    implied TAM is compared head-to-head with the curated market's sourced
+    scenario range (within / above / below).
+    """
+    try:
+        players = _collect_players(player, players_file)
+    except SenseCheckError as exc:
+        typer.echo(f"ERROR {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+
+    scenarios: tuple[float, ...] | None = None
+    if concept:
+        try:
+            reg = Registry.from_loaded(load_data_dir(data_dir))
+            scenarios = sourced_scenarios(reg, concept)
+        except (LoaderError, EvaluatorError, RegistryError) as exc:
+            typer.echo(f"ERROR could not size concept {concept!r}: {exc}", err=True)
+            raise typer.Exit(code=1) from exc
+
+    try:
+        result = sense_check(players, sourced_scenarios=scenarios)
+    except SenseCheckError as exc:
+        typer.echo(f"ERROR {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    _render_sense_check(result, concept)
+
+
+def _render_sense_check(r: SenseCheckResult, concept: str | None) -> None:
+    typer.echo("Market-share-implied TAM (comparable-revenue sense-check)")
+    typer.echo(f"  {MODELED_LABEL}")
+    # All four band fields are None together (Σshare ≥ 100% suppresses them) —
+    # collapsed into ONE optional tuple so every suppression gate is the same check.
+    band = (
+        (r.implied_low, r.implied_high, r.leverage, r.residual)
+        if r.implied_low is not None
+        and r.implied_high is not None
+        and r.leverage is not None
+        and r.residual is not None
+        else None
+    )
+    if band is not None:
+        implied_low, implied_high = band[0], band[1]
+        typer.echo(
+            f"  implied TAM     {usd(r.implied_tam)}   "
+            f"(= revenue {usd(r.revenue_floor)} / share {r.combined_share:.0%})"
+        )
+        typer.echo(
+            f"  sensitivity     {usd(implied_low)} - {usd(implied_high)}   "
+            f"(shares +/-{r.share_tolerance:.0%})"
+        )
+    typer.echo(f"  revenue floor   {usd(r.revenue_floor)}   (a TAM cannot be below this)")
+    if band is not None:
+        leverage, residual = band[2], band[3]
+        typer.echo(
+            f"  leverage        {leverage:.1f}x   "
+            f"(implied TAM is {leverage:.1f}x captured revenue; 1 / {r.combined_share:.0%} share)"
+        )
+        typer.echo(
+            f"  residual        {usd(residual)}   (revenue attributed to players outside the set)"
+        )
+    typer.echo(
+        f"  per-player spread {r.spread_ratio:.1f}x   ({r.n_sourced}/{r.n_players} revenues sourced)"
+    )
+    for pi in r.per_player:
+        if pi.revenue_note:
+            tag = f"  ({pi.revenue_note})"
+        elif pi.revenue_sourced:
+            tag = ""
+        else:
+            tag = "  (est.)"
+        typer.echo(
+            f"    {pi.name:24} {usd(pi.revenue)} @ {pi.market_share:.0%}"
+            f"  -> implied {usd(pi.implied_tam)}{tag}"
+        )
+    # With Σshare ≥ 100% the implied TAM is not defensible, so a verdict on it
+    # would mislead — only the floor + the overlap warning are rendered. The
+    # sourced trio is always set when verdict is; the None checks just narrow.
+    if (
+        band is not None
+        and concept
+        and r.verdict is not None
+        and r.sourced_low is not None
+        and r.sourced_high is not None
+        and r.sourced_mid is not None
+    ):
+        typer.echo(
+            f"\n  cross-check vs {concept}: sourced range "
+            f"{usd(r.sourced_low)} - {usd(r.sourced_high)} (mid {usd(r.sourced_mid)})"
+        )
+        verdict_label = {
+            "within": "AGREES - implied TAM lands inside the sourced range",
+            "above": "implied TAM is ABOVE the sourced range",
+            "below": "implied TAM is BELOW the sourced range",
+        }[r.verdict]
+        ratio = f" ({r.vs_mid_ratio:.1f}x the sourced midpoint)" if r.vs_mid_ratio else ""
+        typer.echo(f"  verdict: {verdict_label}{ratio}")
+    typer.echo("\n  Assumptions (the implied TAM holds only if):")
+    for a in r.assumptions:
+        typer.echo(f"   - {a}")
+    if r.warnings:
+        typer.echo("")
+    for w in r.warnings:
+        typer.echo(f"  WARN {w}")
+
 
 db_app = typer.Typer(name="db", help="Database management commands.", no_args_is_help=True)
 app.add_typer(db_app)

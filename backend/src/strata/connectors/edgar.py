@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
@@ -159,6 +161,11 @@ class Fact:
     frame: str
     fiscal_year: int | None = None
     fiscal_period: str | None = None
+    # The fact's own reporting period. fy/fp describe the FILING, so a FY2025
+    # 10-K stamps fy=2025 on its FY2023/24/25 revenue comparatives — only
+    # start/end identify which year a comparative actually covers.
+    start: str = ""
+    end: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,6 +177,62 @@ class CompanyConcept:
     label: str
     description: str
     units: dict[str, tuple[Fact, ...]]
+
+
+# ── Period-aware annual fact selection ──────────────────────────────
+# Shared with strata.sizing.revenue_lookup. `_pick_fact` (below, used by the
+# YAML converters) still uses the older fy/frame heuristic — kept unchanged in
+# this pass; only callers that opt into these helpers get period-aware selection.
+
+# An annual XBRL frame is "CYnnnn" with no quarter suffix (e.g. CY2024); a
+# quarterly frame carries a Q (CY2024Q1I). Annual is what a TAM cares about.
+_ANNUAL_FRAME = re.compile(r"^CY\d{4}$")
+# A fiscal year is ~365 days; this window admits 52/53-week fiscal calendars
+# while excluding quarterly and multi-year durations.
+_ANNUAL_DAYS = (330, 400)
+
+
+def _is_annual(fact: Fact) -> bool:
+    """Annual-duration test. When the fact carries its own period (start/end),
+    trust THAT — fy/fp/form describe the filing, and a 10-K holds quarterly
+    comparatives too. Frame/form is only a fallback for period-less facts."""
+    if fact.start and fact.end:
+        try:
+            days = (date.fromisoformat(fact.end) - date.fromisoformat(fact.start)).days
+        except ValueError:
+            return bool(fact.frame and _ANNUAL_FRAME.match(fact.frame))
+        return _ANNUAL_DAYS[0] <= days <= _ANNUAL_DAYS[1]
+    return bool((fact.frame and _ANNUAL_FRAME.match(fact.frame)) or fact.form == "10-K")
+
+
+def fiscal_year_from_end(fact: Fact) -> int | None:
+    """Displayed fiscal year comes from the fact's own period end — never from
+    ``fy``, which is the filing's year and mislabels comparatives."""
+    if fact.end:
+        try:
+            return date.fromisoformat(fact.end).year
+        except ValueError:
+            return None
+    return None
+
+
+def fact_recency(fact: Fact) -> tuple[str, str]:
+    """Sort key: latest period end wins; filed date breaks ties (an amended
+    re-filing of the same period supersedes the original). ISO date strings
+    compare correctly as text; a missing end sorts before any real date."""
+    return (fact.end, fact.filed)
+
+
+def latest_annual_fact(facts: Iterable[Fact]) -> Fact | None:
+    """The most recent annual fact, selected by the fact's own period end. A
+    FY2025 10-K carries FY2023/24/25 comparatives all stamped fy=2025 with one
+    filed date, so fy/filed cannot distinguish them — only ``end`` can."""
+    usable = [f for f in facts if f.value]
+    if not usable:
+        return None
+    annual = [f for f in usable if _is_annual(f)]
+    pool = annual or usable
+    return max(pool, key=fact_recency)
 
 
 @dataclass(frozen=True, slots=True)
@@ -249,8 +312,12 @@ def _parse_fact(raw: dict[str, Any]) -> Fact:
         form=str(raw.get("form", "")),
         filed=str(raw.get("filed", "")),
         frame=str(raw.get("frame", "")),
-        fiscal_year=int(raw["fy"]) if "fy" in raw else None,
-        fiscal_period=str(raw["fp"]) if "fp" in raw else None,
+        # SEC XBRL facts often carry "fy"/"fp" present-but-null; guard on the
+        # value, not just key presence, or int(None)/str(None) corrupts the Fact.
+        fiscal_year=int(raw["fy"]) if raw.get("fy") is not None else None,
+        fiscal_period=str(raw["fp"]) if raw.get("fp") is not None else None,
+        start=str(raw.get("start", "") or ""),
+        end=str(raw.get("end", "") or ""),
     )
 
 
@@ -429,6 +496,9 @@ class EDGARClient:
         )
         default_cache = Path.home() / ".strata" / "cache" / "edgar"
         self._cache = _DiskCache(cache_dir or default_cache, cache_ttl)
+        # ticker → CIK map, parsed once per client so resolve_ticker is a dict
+        # hit after the first call (the SEC list is ~12k rows re-scanned otherwise).
+        self._cik_by_ticker: dict[str, str] | None = None
 
     def close(self) -> None:
         self._http.close()
@@ -523,41 +593,71 @@ class EDGARClient:
 
         facts_raw: dict[str, Any] = raw.get("facts", {})
 
+        cik_str = str(raw.get("cik", ""))
+        entity_name = str(raw.get("entityName", ""))
         all_units: dict[str, list[Fact]] = {}
-        for taxonomy_data in facts_raw.values():
+        # Per-tag accumulation alongside the merged view, so one companyfacts
+        # request can answer per-concept questions (e.g. the revenue lookup)
+        # without N companyconcept round-trips.
+        per_tag_units: dict[str, dict[str, list[Fact]]] = {}
+        per_tag_meta: dict[str, tuple[str, str, str]] = {}  # tag → (taxonomy, label, description)
+        for taxonomy_name in facts_raw:
+            taxonomy_data: object = facts_raw[taxonomy_name]
             if not isinstance(taxonomy_data, dict):
                 continue
             taxonomy_dict: dict[str, Any] = cast(dict[str, Any], taxonomy_data)
-            for _concept_tag in taxonomy_dict:
-                concept_data: object = taxonomy_dict[_concept_tag]
+            for concept_tag in taxonomy_dict:
+                concept_data: object = taxonomy_dict[concept_tag]
                 if not isinstance(concept_data, dict):
                     continue
                 concept_dict: dict[str, Any] = cast(dict[str, Any], concept_data)
                 units_block: dict[str, Any] = concept_dict.get("units", {})
+                per_tag_meta.setdefault(
+                    concept_tag,
+                    (
+                        str(taxonomy_name),
+                        str(concept_dict.get("label") or ""),
+                        str(concept_dict.get("description") or ""),
+                    ),
+                )
+                tag_units = per_tag_units.setdefault(concept_tag, {})
                 for unit_label in units_block:
                     fact_list: object = units_block[unit_label]
                     if not isinstance(fact_list, list):
                         continue
                     typed_list: list[dict[str, Any]] = cast(list[dict[str, Any]], fact_list)
                     parsed = [_parse_fact(f) for f in typed_list]
-                    if unit_label in all_units:
-                        all_units[unit_label].extend(parsed)
-                    else:
-                        all_units[unit_label] = parsed
+                    all_units.setdefault(unit_label, []).extend(parsed)
+                    # A tag colliding across taxonomies merges its facts under
+                    # one key (none collide in practice; us-gaap vs dei disjoint).
+                    tag_units.setdefault(unit_label, []).extend(parsed)
 
         concept = CompanyConcept(
-            cik=str(raw.get("cik", "")),
-            entity_name=str(raw.get("entityName", "")),
+            cik=cik_str,
+            entity_name=entity_name,
             taxonomy="all",
             tag="ALL",
             label="All XBRL facts",
             description="Aggregated company facts across all taxonomies",
             units={k: tuple(v) for k, v in all_units.items()},
         )
+        concepts = {
+            tag: CompanyConcept(
+                cik=cik_str,
+                entity_name=entity_name,
+                taxonomy=per_tag_meta[tag][0],
+                tag=tag,
+                label=per_tag_meta[tag][1],
+                description=per_tag_meta[tag][2],
+                units={k: tuple(v) for k, v in units.items()},
+            )
+            for tag, units in per_tag_units.items()
+        }
 
         return EDGARResponse(
             kind="companyfacts",
             concept=concept,
+            concepts=concepts,
             cached=was_cached,
             cache_age_seconds=age,
         )
@@ -800,12 +900,15 @@ class EDGARClient:
 
     def resolve_ticker(self, ticker: str) -> str | None:
         """Map a ticker symbol to its zero-padded CIK. Returns None if not found."""
-        resp = self.get_company_tickers()
-        target = ticker.upper()
-        for cik_int, tick, _name in resp.tickers:
-            if tick.upper() == target:
-                return str(cik_int).zfill(10)
-        return None
+        if self._cik_by_ticker is None:
+            resp = self.get_company_tickers()
+            mapping: dict[str, str] = {}
+            for cik_int, tick, _name in resp.tickers:
+                # setdefault keeps the FIRST entry per symbol — same winner as
+                # the previous linear scan when the SEC list carries duplicates.
+                mapping.setdefault(tick.upper(), str(cik_int).zfill(10))
+            self._cik_by_ticker = mapping
+        return self._cik_by_ticker.get(ticker.upper())
 
     # ── Cache management ─────────────────────────────────────────
 

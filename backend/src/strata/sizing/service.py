@@ -27,6 +27,7 @@ from strata.evaluator.engine import EvaluatorError, size_concept
 from strata.models import CompanyRecord, LensGap, TAMOutput
 from strata.registry import Registry
 from strata.resolver.match import match_concept
+from strata.resolver.suggest import near_miss_slugs
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,8 +50,29 @@ class SizeResult:
     notes: list[str] = field(default_factory=lambda: list[str]())
 
 
+def validate_explicit_market(reg: Registry, slug: str) -> list[str] | None:
+    """``None`` when ``slug`` is a curated concept; near-miss suggestions on a miss.
+
+    Shared by the CLI door and the MCP tool so both refuse an unknown explicit
+    slug the same way (ADV-1: never fuzzy-reroute what the user typed). Surfaces
+    decide when to call and how to render the refusal.
+    """
+    if slug in reg.concepts:
+        return None
+    return near_miss_slugs(reg, slug)
+
+
 def _offline() -> bool:
     return os.environ.get("STRATA_OFFLINE") == "1"
+
+
+def sourced_scenarios(reg: Registry, slug: str) -> tuple[float, ...]:
+    """A curated concept's sourced scenario values — the comparison side of the
+    sense-check cross-check, shared by the CLI and the MCP tool. Validates the
+    slug via ``get_concept`` (RegistryError) before sizing (EvaluatorError) so
+    each surface can map "unknown slug" and "unsizable" to its own error."""
+    reg.get_concept(slug)
+    return tuple(s.value for s in size_concept(reg, slug).scenarios)
 
 
 def _tam_midpoint(tam: TAMOutput) -> float:

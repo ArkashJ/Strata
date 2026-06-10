@@ -15,9 +15,23 @@ loop. This is test-infrastructure only — it does not change production pooling
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 
+import pytest
 import pytest_asyncio
+
+from strata.config import settings
+
+
+@pytest.fixture
+def portfolio_enabled() -> Iterator[None]:
+    """Flip the F6 portfolio write gate on for one test, restoring it after."""
+    prev = settings.portfolio_enabled
+    settings.portfolio_enabled = True
+    try:
+        yield
+    finally:
+        settings.portfolio_enabled = prev
 
 
 @pytest_asyncio.fixture(autouse=True)

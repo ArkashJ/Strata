@@ -841,6 +841,21 @@ def _h_import_portfolio(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
     return import_portfolio(reg, rows=list(args.get("rows", [])))
 
 
+def _h_add_portfolio_company(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    from .portfolio_tools import add_portfolio_company
+
+    return add_portfolio_company(
+        reg,
+        name=str(args.get("name", "")),
+        domain=str(args.get("domain", "")),
+        vertical=(str(args["vertical"]) if args.get("vertical") else None),
+        market_concept_slug=(
+            str(args["market_concept_slug"]) if args.get("market_concept_slug") else None
+        ),
+        size=bool(args.get("size", False)),
+    )
+
+
 def _h_size_company(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
     from .portfolio_tools import size_company as _size_company_tool
 
@@ -931,6 +946,16 @@ def _h_record_session_reasoning(reg: Registry, args: dict[str, Any]) -> Awaitabl
     from .trace_tools import record_session_reasoning
 
     return record_session_reasoning(reg, payload=dict(args.get("payload") or {}))
+
+
+def _h_sense_check(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    from .sense_check_tool import sense_check_tool
+
+    return sense_check_tool(
+        reg,
+        players=list(args.get("players", [])),
+        concept_slug=args.get("concept_slug"),
+    )
 
 
 def _h_list_sourcing_gaps(reg: Registry, args: dict[str, Any]) -> Awaitable[dict[str, Any]]:
@@ -1034,6 +1059,19 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "inputSchema": schemas.IMPORT_PORTFOLIO,
         "handler": _h_import_portfolio,
+        "annotations": _WRITE,
+    },
+    "add_portfolio_company": {
+        "description": (
+            "[WRITE] Add ONE company to your org's portfolio (idempotent on domain; "
+            "a re-add with new vertical/market info updates the row). An explicit "
+            "market_concept_slug must exist in the registry — an unknown slug is an "
+            "honest error with suggestions, never a fuzzy reroute. Optional "
+            "size=true sizes it immediately (registry-first, offline-safe). "
+            "Gated by STRATA_PORTFOLIO_ENABLED."
+        ),
+        "inputSchema": schemas.ADD_PORTFOLIO_COMPANY,
+        "handler": _h_add_portfolio_company,
         "annotations": _WRITE,
     },
     "size_company": {
@@ -1194,6 +1232,21 @@ TOOLS: dict[str, dict[str, Any]] = {
         "inputSchema": schemas.LIST_SOURCING_GAPS,
         "handler": _h_list_sourcing_gaps,
         "annotations": _READ,
+    },
+    "sense_check": {
+        "description": (
+            "[READ] Market-share-implied TAM cross-check: Σ(top-player revenue) / "
+            "Σ(market share), with sensitivity band, revenue floor, leverage, residual, "
+            "per-player consistency, and explicit assumptions. ALWAYS MODELED (Q20) — "
+            "shares are analyst estimates, so the payload carries modeled=true and is "
+            "never a sourced number. revenue is a number, or edgar_ticker pulls a "
+            "sourced TOTAL-company revenue from SEC EDGAR (live, gated by "
+            "STRATA_MCP_LIVE_CONNECTORS=1). Optional concept_slug cross-checks the "
+            "implied TAM against the curated market's sourced scenario range."
+        ),
+        "inputSchema": schemas.SENSE_CHECK,
+        "handler": _h_sense_check,
+        "annotations": _READ_NET,
     },
     "record_session_reasoning": {
         "description": (
