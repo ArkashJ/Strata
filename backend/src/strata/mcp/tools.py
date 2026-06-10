@@ -841,6 +841,21 @@ def _h_import_portfolio(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
     return import_portfolio(reg, rows=list(args.get("rows", [])))
 
 
+def _h_add_portfolio_company(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
+    from .portfolio_tools import add_portfolio_company
+
+    return add_portfolio_company(
+        reg,
+        name=str(args.get("name", "")),
+        domain=str(args.get("domain", "")),
+        vertical=(str(args["vertical"]) if args.get("vertical") else None),
+        market_concept_slug=(
+            str(args["market_concept_slug"]) if args.get("market_concept_slug") else None
+        ),
+        size=bool(args.get("size", False)),
+    )
+
+
 def _h_size_company(reg: Registry, args: dict[str, Any]) -> dict[str, Any]:
     from .portfolio_tools import size_company as _size_company_tool
 
@@ -1044,6 +1059,19 @@ TOOLS: dict[str, dict[str, Any]] = {
         ),
         "inputSchema": schemas.IMPORT_PORTFOLIO,
         "handler": _h_import_portfolio,
+        "annotations": _WRITE,
+    },
+    "add_portfolio_company": {
+        "description": (
+            "[WRITE] Add ONE company to your org's portfolio (idempotent on domain; "
+            "a re-add with new vertical/market info updates the row). An explicit "
+            "market_concept_slug must exist in the registry — an unknown slug is an "
+            "honest error with suggestions, never a fuzzy reroute. Optional "
+            "size=true sizes it immediately (registry-first, offline-safe). "
+            "Gated by STRATA_PORTFOLIO_ENABLED."
+        ),
+        "inputSchema": schemas.ADD_PORTFOLIO_COMPANY,
+        "handler": _h_add_portfolio_company,
         "annotations": _WRITE,
     },
     "size_company": {

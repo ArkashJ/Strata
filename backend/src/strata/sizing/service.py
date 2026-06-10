@@ -27,6 +27,7 @@ from strata.evaluator.engine import EvaluatorError, size_concept
 from strata.models import CompanyRecord, LensGap, TAMOutput
 from strata.registry import Registry
 from strata.resolver.match import match_concept
+from strata.resolver.suggest import near_miss_slugs
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,6 +48,18 @@ class SizeResult:
     verdict: str = "unsized"  # sized | unsizable | registry_hit
     lens_gap: LensGap | None = None
     notes: list[str] = field(default_factory=lambda: list[str]())
+
+
+def validate_explicit_market(reg: Registry, slug: str) -> list[str] | None:
+    """``None`` when ``slug`` is a curated concept; near-miss suggestions on a miss.
+
+    Shared by the CLI door and the MCP tool so both refuse an unknown explicit
+    slug the same way (ADV-1: never fuzzy-reroute what the user typed). Surfaces
+    decide when to call and how to render the refusal.
+    """
+    if slug in reg.concepts:
+        return None
+    return near_miss_slugs(reg, slug)
 
 
 def _offline() -> bool:

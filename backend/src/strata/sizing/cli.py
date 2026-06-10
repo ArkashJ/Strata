@@ -13,10 +13,11 @@ from pathlib import Path
 import typer
 
 from strata.config import settings
-from strata.loader import load_data_dir
+from strata.loader import LoaderError, load_data_dir
+from strata.models import CompanyRecord
 from strata.registry import Registry
 from strata.sizing.importer import parse_portfolio_csv
-from strata.sizing.service import SizeOptions, size_company
+from strata.sizing.service import SizeOptions, size_company, validate_explicit_market
 from strata.sizing.store import DEFAULT_STORE_PATH, CompanyStore
 
 portfolio_app = typer.Typer(
@@ -36,6 +37,14 @@ _VERTICAL_OPT = typer.Option(None, "--vertical", help="Filter by industry vertic
 _DOMAIN_OPT = typer.Option(None, "--domain", help="Size a single company by domain.")
 _LIMIT_OPT = typer.Option(None, "--limit", help="Max rows to size/list.")
 _GAPS_OUT_OPT = typer.Option(None, "--out", help="Write lens-gap rows to this JSONL path.")
+# `portfolio add` — single-company convenience twin of `import`.
+_ADD_NAME_OPT = typer.Option(..., "--name", "-n", help="Company name (required).")
+_ADD_DOMAIN_OPT = typer.Option(
+    "", "--domain", help="Company website / domain (the idempotency key)."
+)
+_ADD_VERTICAL_OPT = typer.Option(None, "--vertical", help="Industry vertical.")
+_ADD_MARKET_OPT = typer.Option(None, "--market", help="Map to an explicit market concept slug.")
+_ADD_SIZE_OPT = typer.Option(False, "--size", help="Size the company immediately after adding.")
 
 
 def _require_enabled() -> None:
@@ -62,6 +71,85 @@ def portfolio_import(
     rows = parse_portfolio_csv(csv_path, org_id=org)
     added, skipped = _store(store_path, org).upsert_many(rows)
     typer.echo(f"imported {added} new, {skipped} existing ({len(rows)} parsed) → org {org!r}")
+
+
+@portfolio_app.command("add")
+def portfolio_add(
+    name: str = _ADD_NAME_OPT,
+    domain: str = _ADD_DOMAIN_OPT,
+    vertical: str | None = _ADD_VERTICAL_OPT,
+    market: str | None = _ADD_MARKET_OPT,
+    size: bool = _ADD_SIZE_OPT,
+    data_dir: Path = _DATA_DIR_OPT,
+    store_path: Path = _STORE_OPT,
+    org: str = _ORG_OPT,
+) -> None:
+    """Add a single company pointer to your org (idempotent on domain, else name).
+
+    The convenience twin of ``import`` for one company. Optionally map it to an
+    explicit market concept (``--market``) and size it right away (``--size``);
+    sizing is registry-first and offline-safe, so a miss is an honest
+    ``unsizable``, never an invented number (Q20).
+    """
+    _require_enabled()
+    name = name.strip()
+    if not name:
+        raise typer.BadParameter("--name must be non-empty")
+
+    # Load the registry BEFORE any write so a bad data dir or a bad explicit
+    # --market fails fast with no partial state (ADV-4 / ADV-1).
+    reg: Registry | None = None
+    if size:
+        try:
+            reg = Registry.from_loaded(load_data_dir(data_dir))
+        except LoaderError as exc:
+            typer.echo(
+                f"could not load data dir: {exc} — pass `-d ../data` when running from backend/"
+            )
+            raise typer.Exit(code=1) from None
+        # An explicit slug the user typed must never fuzzy-reroute to a
+        # different market — a miss is an honest error (ADV-1).
+        if market is not None:
+            near = validate_explicit_market(reg, market)
+            if near is not None:
+                msg = f"unknown market concept slug {market!r}"
+                if near:
+                    msg += " — did you mean: " + ", ".join(near)
+                typer.echo(msg)
+                raise typer.Exit(code=1)
+    elif market is not None:
+        typer.echo(
+            f"note: --market {market!r} stored unvalidated (no registry without --size; "
+            "a typo here will surface as an honest sizing error later)"
+        )
+
+    store = _store(store_path, org)
+    rec = CompanyRecord(
+        org_id=org,
+        name=name,
+        domain=domain.strip(),
+        vertical=vertical,
+        market_concept_slug=market,
+    )
+    action, target = store.add_company(rec, market=market, vertical=vertical)
+    if action == "added":
+        typer.echo(f"added {rec.name!r} ({rec.key}) → org {org!r}")
+    elif action == "updated":
+        typer.echo(f"updated {target.name!r} ({target.key}) → org {org!r}")
+    else:
+        typer.echo(f"{rec.name!r} already in portfolio (idempotent on {rec.key!r})")
+
+    # reg is loaded iff --size was passed — sizing rides on that.
+    if reg is None:
+        return
+    res = size_company(reg, target, opts=SizeOptions())
+    store.save(res.company)
+    if res.verdict == "sized":
+        typer.echo(
+            f"  sized     {target.name:30} → {target.market_concept_slug}  ${target.tam_value:,.0f}"
+        )
+    else:
+        typer.echo(f"  unsizable {target.name:30} → {target.reason}")
 
 
 @portfolio_app.command("size")

@@ -26,6 +26,7 @@ _EXPECTED_TOOLS = {
     "size_tam",
     "resolve_market",
     "import_portfolio",
+    "add_portfolio_company",
     "size_company",
     "list_portfolio",
     "list_primitives",
