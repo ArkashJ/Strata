@@ -577,6 +577,37 @@ SENSE_CHECK: dict[str, Any] = {
                         "type": "number",
                         "description": "Estimated revenue share: fraction (0.15) or percent (15).",
                     },
+                    "revenue_as_of": {
+                        "type": "string",
+                        "description": (
+                            "When the revenue was measured: 'YYYY', 'YYYY-MM', or "
+                            "'YYYY-MM-DD'. With edgar_ticker it is filled automatically "
+                            "from the filing's fiscal-period end (do not pass both). A "
+                            ">~6-month gap vs share_as_of fires a time-match warning — "
+                            "pairing a current revenue with a stale share inflates/"
+                            "deflates the implied TAM."
+                        ),
+                    },
+                    "share_as_of": {
+                        "type": "string",
+                        "description": (
+                            "When the market-share estimate was measured: 'YYYY', "
+                            "'YYYY-MM', or 'YYYY-MM-DD'. See revenue_as_of for the "
+                            "time-match guardrail; un-dated inputs get an assumptions "
+                            "note instead."
+                        ),
+                    },
+                    "share_basis": {
+                        "type": "string",
+                        "enum": ["revenue", "usage"],
+                        "description": (
+                            "What the share measures. The method's denominator must be a "
+                            "REVENUE share; 'usage' (seats/usage) triggers a strong "
+                            "warning because a usage share understates the implied "
+                            "market. Unspecified is noted as 'shares assumed to be "
+                            "revenue shares'."
+                        ),
+                    },
                 },
                 "required": ["name", "market_share"],
                 "additionalProperties": False,

@@ -32,6 +32,7 @@ evaluator's ``convergence`` does for two genuinely sourced method families.
 
 from __future__ import annotations
 
+import re
 import statistics
 from dataclasses import dataclass, field
 
@@ -47,6 +48,22 @@ LEVERAGE_WARN_SHARE = 0.25
 # Tokens an optional 4th --player field / CSV `sourced` column may use to flag
 # a filing-backed revenue — one list shared by every parsing surface.
 SOURCED_TOKENS = ("sourced", "filing", "true", "1", "yes")
+
+# Time-match guardrail: a revenue and a share dated more than this many months
+# apart get a per-player warning — pairing a current revenue with a stale share
+# inflates/deflates the implied TAM (validated in practice: Cursor's Feb-2026
+# ARR over its mid-2025 share inflated the implied market ~2x).
+TIME_MATCH_WARN_MONTHS = 6
+# The only declarable share bases. 'usage' triggers a strong warning: dividing
+# revenue by a seat/usage share understates the implied market (a high-priced
+# player's revenue share exceeds its seat share, and vice versa).
+SHARE_BASIS_VALUES = ("revenue", "usage")
+# Conditional assumptions-block lines — softer than warnings, still explicit.
+NOTE_UNDATED = "revenue and share assumed time-matched — un-dated inputs"
+NOTE_BASIS_UNSPECIFIED = "shares assumed to be revenue shares"
+
+# An as-of token: 'YYYY', 'YYYY-MM', or 'YYYY-MM-DD' (ISO order so strings sort).
+_AS_OF_RE = re.compile(r"^(\d{4})(?:-(\d{2}))?(?:-(\d{2}))?$")
 
 # The unconditional Q20 label every surface renders/ships, machine-readably:
 # shares are ALWAYS analyst estimates, so the implied TAM stays modeled even
@@ -94,6 +111,14 @@ class Player:
     # figure (whole-company revenue, not in-market) — rendered next to the line
     # so a sourced-but-total figure is never an unmarked sourced line.
     revenue_note: str = ""
+    # When the revenue / the share estimate were measured ('YYYY[-MM[-DD]]').
+    # Optional: absent dates only soften the output (assumptions note), present
+    # dates that disagree past TIME_MATCH_WARN_MONTHS warn — never auto-corrected.
+    revenue_as_of: str = ""
+    share_as_of: str = ""
+    # 'revenue' | 'usage' | '' (unspecified). 'usage' warns: the method's
+    # denominator must be a revenue share, never seats/usage.
+    share_basis: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +129,9 @@ class PlayerImplied:
     implied_tam: float  # revenue / market_share
     revenue_sourced: bool = False
     revenue_note: str = ""
+    revenue_as_of: str = ""
+    share_as_of: str = ""
+    share_basis: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -178,30 +206,113 @@ def parse_money(raw: str) -> float:
         raise SenseCheckError(f"could not parse money value {raw!r}") from exc
 
 
-def split_player_spec(spec: str) -> list[str]:
+def parse_as_of(raw: str) -> str:
+    """Validate an as-of token: ``'2026'``, ``'2026-02'``, or ``'2026-02-15'``.
+    Returns the token unchanged (ISO order already sorts/compares correctly)."""
+    s = raw.strip()
+    m = _AS_OF_RE.match(s)
+    if not m or (m.group(2) and not 1 <= int(m.group(2)) <= 12):
+        raise SenseCheckError(
+            f"could not parse as-of date {raw!r} (use YYYY, YYYY-MM, or YYYY-MM-DD)"
+        )
+    return s
+
+
+def _as_of_month_index(value: str) -> int:
+    """A validated as-of token as a month count. A bare year is honest about its
+    imprecision — anchor it mid-year (June) so the comparison stays unbiased."""
+    m = _AS_OF_RE.match(value)
+    assert m is not None  # callers validate via parse_as_of / sense_check
+    return int(m.group(1)) * 12 + (int(m.group(2)) if m.group(2) else 6)
+
+
+def parse_share_basis(raw: str) -> str:
+    """Validate a share-basis token: ``'revenue'``, ``'usage'``, or empty
+    (unspecified). Anything else is rejected — never silently coerced."""
+    s = raw.strip().lower()
+    if s and s not in SHARE_BASIS_VALUES:
+        raise SenseCheckError(f"share_basis must be one of {SHARE_BASIS_VALUES} (got {raw!r})")
+    return s
+
+
+@dataclass(frozen=True, slots=True)
+class PlayerSpec:
+    """A parsed ``--player`` mini-DSL spec, before money/share token parsing
+    (the edgar: branch needs the raw revenue token)."""
+
+    name: str
+    revenue_token: str
+    share_token: str
+    sourced: bool = False
+    revenue_as_of: str = ""
+    share_as_of: str = ""
+    share_basis: str = ""
+
+
+# The optional key=value suffix keys the --player DSL accepts (after the three
+# positional fields and the optional 'sourced' flag).
+_SPEC_KEYS = ("rev_date", "share_date", "share_basis")
+_SPEC_SHAPE = "'Name|revenue|share[|sourced][|key=value ...]'"
+
+
+def split_player_spec(spec: str) -> PlayerSpec:
     """Split a ``--player`` spec into its fields. The field-count and empty-name
-    guards live HERE only, so every spec branch (plain / edgar) fails the same way."""
+    guards live HERE only, so every spec branch (plain / edgar) fails the same way.
+
+    Backward-compatible shape: three positional fields, an optional ``sourced``
+    flag, then optional ``key=value`` suffix tokens (``rev_date`` / ``share_date``
+    / ``share_basis``) — a token with no ``=`` is only ever the sourced flag."""
     parts = [p.strip() for p in spec.split("|")]
-    if len(parts) not in (3, 4):
-        raise SenseCheckError(f"--player must be 'Name|revenue|share[|sourced]', got {spec!r}")
+    if len(parts) < 3:
+        raise SenseCheckError(f"--player must be {_SPEC_SHAPE}, got {spec!r}")
     if not parts[0]:
         raise SenseCheckError(f"player name is empty in {spec!r}")
-    return parts
+    sourced = False
+    kv: dict[str, str] = {}
+    for i, token in enumerate(parts[3:]):
+        key, eq, value = token.partition("=")
+        if eq:
+            key = key.strip().lower()
+            if key not in _SPEC_KEYS:
+                raise SenseCheckError(
+                    f"unknown key {key!r} in {spec!r} (expected one of {_SPEC_KEYS})"
+                )
+            if key in kv:
+                raise SenseCheckError(f"duplicate key {key!r} in {spec!r}")
+            kv[key] = value.strip()
+        elif i == 0 and token.lower() in SOURCED_TOKENS:
+            sourced = True
+        else:
+            raise SenseCheckError(f"--player must be {_SPEC_SHAPE}, got {spec!r}")
+    return PlayerSpec(
+        name=parts[0],
+        revenue_token=parts[1],
+        share_token=parts[2],
+        sourced=sourced,
+        revenue_as_of=parse_as_of(kv["rev_date"]) if kv.get("rev_date") else "",
+        share_as_of=parse_as_of(kv["share_date"]) if kv.get("share_date") else "",
+        share_basis=parse_share_basis(kv.get("share_basis", "")),
+    )
 
 
 def parse_player(spec: str) -> Player:
     """Parse a CLI ``--player`` spec ``'Name|revenue|share'`` (optional 4th field
-    ``sourced`` flags a revenue that comes from a filing). Revenue uses
+    ``sourced`` flags a revenue that comes from a filing; optional ``key=value``
+    suffixes set ``rev_date`` / ``share_date`` / ``share_basis``). Revenue uses
     :func:`parse_money`; share uses :func:`normalize_share`."""
-    parts = split_player_spec(spec)
-    share_s = parts[2]
+    ps = split_player_spec(spec)
     try:
-        share = normalize_share(float(share_s))
+        share = normalize_share(float(ps.share_token))
     except ValueError as exc:
-        raise SenseCheckError(f"could not parse share {share_s!r} in {spec!r}") from exc
-    sourced = len(parts) == 4 and parts[3].lower() in SOURCED_TOKENS
+        raise SenseCheckError(f"could not parse share {ps.share_token!r} in {spec!r}") from exc
     return Player(
-        name=parts[0], revenue=parse_money(parts[1]), market_share=share, revenue_sourced=sourced
+        name=ps.name,
+        revenue=parse_money(ps.revenue_token),
+        market_share=share,
+        revenue_sourced=ps.sourced,
+        revenue_as_of=ps.revenue_as_of,
+        share_as_of=ps.share_as_of,
+        share_basis=ps.share_basis,
     )
 
 
@@ -227,8 +338,31 @@ def sense_check(
             raise SenseCheckError(
                 f"{p.name}: market_share must be in (0, 1] (got {p.market_share})"
             )
+        # Players can be constructed directly (MCP rows, library callers), so
+        # the as-of / basis tokens are re-validated here, not just at the DSL.
+        if p.revenue_as_of:
+            parse_as_of(p.revenue_as_of)
+        if p.share_as_of:
+            parse_as_of(p.share_as_of)
+        parse_share_basis(p.share_basis)
 
     warnings: list[str] = []
+    for p in players:
+        # Time-match guardrail: warn, never auto-correct — the analyst owns the
+        # inputs; the tool's job is to make the mismatch impossible to miss.
+        if p.revenue_as_of and p.share_as_of:
+            delta = abs(_as_of_month_index(p.revenue_as_of) - _as_of_month_index(p.share_as_of))
+            if delta > TIME_MATCH_WARN_MONTHS:
+                warnings.append(
+                    f"{p.name}: revenue is as of {p.revenue_as_of} but the share is as of "
+                    f"{p.share_as_of} (~{delta} months apart) — pairing a current revenue "
+                    f"with a stale share inflates/deflates the implied TAM; time-match the inputs"
+                )
+        if p.share_basis == "usage":
+            warnings.append(
+                f"{p.name}: share_basis is 'usage' — the denominator must be a REVENUE "
+                f"share; usage/seat share understates the implied market"
+            )
     total_rev = sum(p.revenue for p in players)
     total_share = sum(p.market_share for p in players)
 
@@ -272,6 +406,9 @@ def sense_check(
             p.revenue / p.market_share,
             p.revenue_sourced,
             p.revenue_note,
+            p.revenue_as_of,
+            p.share_as_of,
+            p.share_basis,
         )
         for p in players
     )
@@ -306,6 +443,15 @@ def sense_check(
         if p.revenue_note == REVENUE_NOTE_FILING_TOTAL_CO
     )
 
+    # Conditional assumptions: softer than warnings — un-dated or basis-less
+    # inputs are not errors, but what the implied TAM silently assumes about
+    # them must be on the record.
+    assumptions = list(ASSUMPTIONS)
+    if any(not (p.revenue_as_of and p.share_as_of) for p in players):
+        assumptions.append(NOTE_UNDATED)
+    if any(not p.share_basis for p in players):
+        assumptions.append(NOTE_BASIS_UNSPECIFIED)
+
     sourced_low = sourced_high = sourced_mid = vs_mid = None
     verdict: str | None = None
     if sourced_scenarios:
@@ -339,4 +485,5 @@ def sense_check(
         sourced_mid=sourced_mid,
         vs_mid_ratio=vs_mid,
         verdict=verdict,
+        assumptions=tuple(assumptions),
     )
