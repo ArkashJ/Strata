@@ -14,6 +14,7 @@ import typer
 
 from strata.config import settings
 from strata.loader import load_data_dir
+from strata.models import CompanyRecord
 from strata.registry import Registry
 from strata.sizing.importer import parse_portfolio_csv
 from strata.sizing.service import SizeOptions, size_company
@@ -36,6 +37,14 @@ _VERTICAL_OPT = typer.Option(None, "--vertical", help="Filter by industry vertic
 _DOMAIN_OPT = typer.Option(None, "--domain", help="Size a single company by domain.")
 _LIMIT_OPT = typer.Option(None, "--limit", help="Max rows to size/list.")
 _GAPS_OUT_OPT = typer.Option(None, "--out", help="Write lens-gap rows to this JSONL path.")
+# `portfolio add` — single-company convenience twin of `import`.
+_ADD_NAME_OPT = typer.Option(..., "--name", "-n", help="Company name (required).")
+_ADD_DOMAIN_OPT = typer.Option(
+    "", "--domain", help="Company website / domain (the idempotency key)."
+)
+_ADD_VERTICAL_OPT = typer.Option(None, "--vertical", help="Industry vertical.")
+_ADD_MARKET_OPT = typer.Option(None, "--market", help="Map to an explicit market concept slug.")
+_ADD_SIZE_OPT = typer.Option(False, "--size", help="Size the company immediately after adding.")
 
 
 def _require_enabled() -> None:
@@ -62,6 +71,57 @@ def portfolio_import(
     rows = parse_portfolio_csv(csv_path, org_id=org)
     added, skipped = _store(store_path, org).upsert_many(rows)
     typer.echo(f"imported {added} new, {skipped} existing ({len(rows)} parsed) → org {org!r}")
+
+
+@portfolio_app.command("add")
+def portfolio_add(
+    name: str = _ADD_NAME_OPT,
+    domain: str = _ADD_DOMAIN_OPT,
+    vertical: str | None = _ADD_VERTICAL_OPT,
+    market: str | None = _ADD_MARKET_OPT,
+    size: bool = _ADD_SIZE_OPT,
+    data_dir: Path = _DATA_DIR_OPT,
+    store_path: Path = _STORE_OPT,
+    org: str = _ORG_OPT,
+) -> None:
+    """Add a single company pointer to your org (idempotent on domain, else name).
+
+    The convenience twin of ``import`` for one company. Optionally map it to an
+    explicit market concept (``--market``) and size it right away (``--size``);
+    sizing is registry-first and offline-safe, so a miss is an honest
+    ``unsizable``, never an invented number (Q20).
+    """
+    _require_enabled()
+    store = _store(store_path, org)
+    rec = CompanyRecord(
+        org_id=org,
+        name=name.strip(),
+        domain=domain.strip(),
+        vertical=vertical,
+        market_concept_slug=market,
+    )
+    added, _skipped = store.upsert_many([rec])
+    if added:
+        typer.echo(f"added {rec.name!r} ({rec.key}) → org {org!r}")
+    else:
+        typer.echo(f"{rec.name!r} already in portfolio (idempotent on {rec.key!r})")
+
+    if not size:
+        return
+    reg = Registry.from_loaded(load_data_dir(data_dir))
+    # Size the stored record (the existing one on a re-add); honor a freshly
+    # passed --market even when the row was already present.
+    target = store.get(rec.key) or rec
+    if market:
+        target.market_concept_slug = market
+    res = size_company(reg, target, opts=SizeOptions())
+    store.save(res.company)
+    if res.verdict == "sized":
+        typer.echo(
+            f"  sized     {target.name:30} → {target.market_concept_slug}  ${target.tam_value:,.0f}"
+        )
+    else:
+        typer.echo(f"  unsizable {target.name:30} → {target.reason}")
 
 
 @portfolio_app.command("size")

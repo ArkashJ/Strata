@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — `strata portfolio add`: add one company without a CSV
+
+- **You can now add a single portfolio company from the CLI** instead of writing
+  a CSV and running `import`. `strata portfolio add --name "Synthio Labs"
+  --domain synthiolabs.com --vertical "Pharma" [--market <slug>] [--size]`
+  upserts one company pointer (idempotent on the normalized domain, else name),
+  optionally maps it to an explicit market concept, and can size it in the same
+  command. Sizing stays registry-first and offline-safe — an uncurated market is
+  an honest `unsizable` with a lens-gap, never an invented number (Q20). Gated by
+  `STRATA_PORTFOLIO_ENABLED` like the rest of the portfolio write surface (F6).
+
+  ```
+  strata portfolio add --name X --domain x.com --vertical V --size
+        └─ upsert one CompanyRecord (JSON store) ─▶ size_company (registry-first)
+           ─▶ sized $TAM  |  honest unsizable + lens-gap
+  ```
+
 ### Added — MCP trace-capture: every tool call captured for replay and regression testing (Direction 1)
 
 Every MCP call is automatically recorded — tool name, arguments, structural result summary
