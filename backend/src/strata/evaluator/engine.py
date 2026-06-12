@@ -706,35 +706,38 @@ def _latest_as_of_year(registry: Registry, tam: TAMOutput) -> int | None:
     return max(years) if years else None
 
 
-def project_tam(
+_DEFENSE = (
+    "Returns ``None`` — the honest gap — when the concept declares no "
+    "``growth_index``, the referenced primitive is missing / not atomic, or its "
+    "unit is not a per-year rate. A future market is NEVER fabricated (Q20); "
+    "mirrors :func:`_convergence` refusing to manufacture a second method family. "
+    "The growth primitive's provenance (tier + snapshot) and any ``MODELED`` banner "
+    "ride the result so a projected-from-modeled number is never presented as a "
+    "sourced measurement."
+)
+
+
+def project_from_output(
     registry: Registry,
-    concept_slug: str,
+    tam: TAMOutput,
     *,
     horizon_years: int = 5,
-    overrides: EvalOverrides | None = None,
 ) -> TAMProjection | None:
-    """Project a concept's *today* market to a *future* horizon.
+    """Project an *already-built* TAM to a future horizon.
 
-    Returns the today (``realized``) and horizon (``projected``) market: the
-    today TAM midpoint compounded by the concept's sourced growth primitive
-    (``base * (1 + cagr) ** horizon_years``). This is pure arithmetic over an
-    already-sourced, hash-pinned CAGR — the same unit-crossing math frameworks
-    own (Q3), never an engine-invented rate.
+    Compounds the TAM's scenario midpoint by the concept's sourced growth
+    primitive (``midpoint * (1 + cagr) ** horizon_years``). Because it projects
+    the TAM passed in, the today anchor reflects any what-if overrides already
+    folded into that TAM (the ``build_tam`` path), not a fresh re-size.
 
-    Returns ``None`` — the honest gap — when the concept declares no
-    ``growth_index``, the referenced primitive is missing / not atomic, or its
-    unit is not a per-year rate. A future market is NEVER fabricated (Q20);
-    mirrors :func:`_convergence` refusing to manufacture a second method family.
-    The growth primitive's provenance (tier + snapshot) and any ``MODELED``
-    banner ride the result so a projected-from-modeled number is never presented
-    as a sourced measurement.
+    {defense}
     """
     if horizon_years <= 0:
         raise EvaluatorError(f"horizon_years must be a positive integer, got {horizon_years!r}")
     try:
-        concept = registry.get_concept(concept_slug)
+        concept = registry.get_concept(tam.target.concept)
     except RegistryError as exc:
-        raise EvaluatorError(f"concept {concept_slug!r} not found") from exc
+        raise EvaluatorError(f"concept {tam.target.concept!r} not found") from exc
 
     growth_slug = concept.growth_index
     if growth_slug is None or growth_slug not in registry.atomic:
@@ -743,7 +746,6 @@ def project_tam(
     if not _is_growth_rate_unit(growth.unit):
         return None
 
-    tam = size_concept(registry, concept_slug, overrides=overrides)
     values = [s.value for s in tam.scenarios]
     if not values:
         return None
@@ -772,6 +774,38 @@ def project_tam(
         horizon=ProjectionPoint(year=horizon_year, value=horizon_value, kind="projected"),
         banners=tuple(_dedupe_banners(_banners_for(growth))),
     )
+
+
+project_from_output.__doc__ = (project_from_output.__doc__ or "").format(defense=_DEFENSE)
+
+
+def project_tam(
+    registry: Registry,
+    concept_slug: str,
+    *,
+    horizon_years: int = 5,
+    overrides: EvalOverrides | None = None,
+) -> TAMProjection | None:
+    """Size ``concept_slug`` and project it to a future horizon.
+
+    The convenience entry point used by the CLI and tests: sizes the concept
+    (today market), then delegates to :func:`project_from_output` for the
+    forward projection (future market). {defense}
+    """
+    if horizon_years <= 0:
+        raise EvaluatorError(f"horizon_years must be a positive integer, got {horizon_years!r}")
+    try:
+        concept = registry.get_concept(concept_slug)
+    except RegistryError as exc:
+        raise EvaluatorError(f"concept {concept_slug!r} not found") from exc
+    # Cheap pre-check: skip the (re-)size entirely when there's no growth series.
+    if concept.growth_index is None or concept.growth_index not in registry.atomic:
+        return None
+    tam = size_concept(registry, concept_slug, overrides=overrides)
+    return project_from_output(registry, tam, horizon_years=horizon_years)
+
+
+project_tam.__doc__ = (project_tam.__doc__ or "").format(defense=_DEFENSE)
 
 
 def _pick_output_unit(fw_pairs: list[tuple[Framework, FrameworkVariant]]) -> Unit:

@@ -15,14 +15,14 @@ from typing import Any
 
 from mcp.types import CallToolResult
 
-from ..evaluator import size_concept
+from ..evaluator import project_from_output, size_concept, trajectory
 from ..evaluator.engine import EvalOverrides, EvaluatorError, OverrideValue
 from ..models import AtomicPrimitive
 from ..models.tam_output import TAMOutput
 from ..registry import Registry, RegistryError
 from ..resolver.match import match_concept
 from . import schemas
-from .charts import build_all_charts
+from .charts import build_all_charts, penetration_spec
 
 # ToolError now lives in errors.py with a code taxonomy; imported here so the many
 # ``from .tools import ToolError`` / ``raise ToolError(...)`` sites are unchanged
@@ -202,6 +202,22 @@ def _serialize_tam_output(reg: Registry, tam: TAMOutput) -> dict[str, Any]:
         }
         for s in tam.scenarios
     ]
+    # Temporal sizing (today + future market). The projection is override-aware
+    # (it projects THIS tam, so a what-if build_tam reflects in the today anchor).
+    # None when the concept has no sourced growth primitive — an honest gap the
+    # agent can close with report_sourcing_gap, never a fabricated future (Q20).
+    projection = project_from_output(reg, tam)
+    charts = build_all_charts(tam)
+    traj = trajectory(reg, tam.target.concept)
+    if projection is not None:
+        # The penetration chart was a dead honest-empty placeholder; feed it the
+        # realized history + today + projected horizon now that a series exists.
+        charts["penetration"] = {
+            "spec": penetration_spec(traj, projection),
+            "format": "vega-lite",
+            "resource_uri": f"strata://chart/{tam.state_hash}/penetration",
+        }
+
     return {
         "concept": tam.target.concept,
         "concept_name": tam.target.concept_name,
@@ -211,7 +227,23 @@ def _serialize_tam_output(reg: Registry, tam: TAMOutput) -> dict[str, Any]:
         "independence_score": tam.independence_score,
         "convergence": (tam.convergence.model_dump(mode="json") if tam.convergence else None),
         "scenarios": scenarios,
-        "charts": build_all_charts(tam),
+        # Today + future market. ``projection`` is null (with a reason) when no
+        # sourced growth primitive backs this concept; ``trajectory`` is the
+        # backward, sourced-only history (may be a single point).
+        "projection": (
+            projection.model_dump(mode="json")
+            if projection is not None
+            else {
+                "available": False,
+                "reason": (
+                    "No sourced growth primitive (growth_index) for this concept, so no "
+                    "future market is projected. Report it with report_sourcing_gap to "
+                    "rank the missing CAGR for sourcing."
+                ),
+            }
+        ),
+        "trajectory": traj.model_dump(mode="json"),
+        "charts": charts,
         # The web /tam/<hash> page was retired (MCP + CLI direction lock); the
         # full data already rides this payload, so point at the report tools.
         "report_hint": (

@@ -252,3 +252,54 @@ def test_real_ai_coding_concept_projects_with_modeled_banner() -> None:
 def test_real_concept_without_growth_index_returns_none() -> None:
     # doc-gen-pc-insurance has no growth_index → honest gap, no fabricated future.
     assert project_tam(_real_registry(), "doc-gen-pc-insurance") is None
+
+
+# --- chart builder ------------------------------------------------------------
+
+
+def test_penetration_spec_has_realized_and_projected_series() -> None:
+    from strata.evaluator import trajectory
+    from strata.mcp.charts import penetration_spec
+
+    reg = _real_registry()
+    proj = project_tam(reg, "ai-coding-assistants-us")
+    assert proj is not None
+    spec = penetration_spec(trajectory(reg, "ai-coding-assistants-us"), proj)
+    rows = spec["data"]["values"]
+    series = {r["series"] for r in rows}
+    assert series == {"realized", "projected"}
+    # The projected leg connects the base year to the horizon year.
+    projected_years = sorted(r["year"] for r in rows if r["series"] == "projected")
+    assert projected_years == [proj.base_year, proj.horizon_year]
+
+
+# --- MCP surface (size_tam carries today + future) ----------------------------
+
+
+def test_mcp_size_tam_carries_projection_and_populated_chart() -> None:
+    from mcp.types import CallToolResult
+
+    from strata.mcp.tools import call_tool
+
+    out = call_tool(_real_registry(), "size_tam", {"concept_slug": "ai-coding-assistants-us"})
+    assert isinstance(out, CallToolResult) and out.structuredContent is not None
+    payload = out.structuredContent
+    proj = payload["projection"]
+    assert proj["base_year"] == 2024 and proj["horizon_year"] == 2029
+    assert proj["today"]["kind"] == "realized" and proj["horizon"]["kind"] == "projected"
+    assert proj["horizon"]["value"] > proj["today"]["value"]
+    # The once-dead penetration chart is now populated from real data.
+    assert payload["charts"]["penetration"]["spec"]["data"]["values"]
+
+
+def test_mcp_size_tam_projection_unavailable_without_growth_index() -> None:
+    from mcp.types import CallToolResult
+
+    from strata.mcp.tools import call_tool
+
+    out = call_tool(_real_registry(), "size_tam", {"concept_slug": "doc-gen-pc-insurance"})
+    assert isinstance(out, CallToolResult) and out.structuredContent is not None
+    payload = out.structuredContent
+    assert payload["projection"]["available"] is False
+    # Honest gap → the penetration chart stays the empty placeholder.
+    assert payload["charts"]["penetration"]["spec"]["data"]["values"] == []

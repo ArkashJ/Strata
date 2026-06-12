@@ -121,8 +121,10 @@ def test_committed_bank_split() -> None:
         assert p.source.tier in _MODELED_TIERS
         assert p.needs_resourcing is True
     # PR5 added 12 community-modeled structural-default / latent-demand inputs
-    # (each MODELED-bannered, ranged, with a resolvable anchor URL).
-    assert len(modeled) == 76  # 35 community-modeled + 35 analyst-paraphrase + 6 analyst
+    # (each MODELED-bannered, ranged, with a resolvable anchor URL). Temporal-TAM
+    # added 1 more community-modeled input: the ai-coding seat-spend CAGR that
+    # drives the today→future projection (correctly fenced, banner-flagged).
+    assert len(modeled) == 77  # 36 community-modeled + 35 analyst-paraphrase + 6 analyst
 
 
 # --------------------------------------------------------------------------- #

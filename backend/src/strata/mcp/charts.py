@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..models.tam_output import TAMOutput
+from ..models.tam_output import TAMOutput, TAMProjection, TAMTrajectory
 
 _VL_SCHEMA = "https://vega.github.io/schema/vega-lite/v5.json"
 
@@ -122,6 +122,53 @@ def _penetration(tam: TAMOutput) -> dict[str, Any]:
     }
 
 
+def penetration_spec(traj: TAMTrajectory, projection: TAMProjection) -> dict[str, Any]:
+    """Populated market-over-time spec: realized history + today + projected horizon.
+
+    Pure — fed by an already-computed :class:`TAMTrajectory` (backward, sourced)
+    and :class:`TAMProjection` (forward, sourced-growth-driven), so this stays
+    registry-free. The realized series is sized from sourced primitives; the
+    projected leg (today → horizon) is dashed and the title names the growth
+    rate's tier so a modeled CAGR reads as modeled. The caller uses this ONLY
+    when a projection exists — otherwise the honest-empty :func:`_penetration`
+    placeholder stands (never a fabricated S-curve, Q20)."""
+    rows: list[dict[str, Any]] = [
+        {"year": pt.as_of.year, "value": pt.value, "series": "realized"} for pt in traj.points
+    ]
+    # The today anchor (realized) and the projected leg that springs from it.
+    rows.append(
+        {"year": projection.today.year, "value": projection.today.value, "series": "realized"}
+    )
+    rows.append(
+        {"year": projection.today.year, "value": projection.today.value, "series": "projected"}
+    )
+    rows.append(
+        {"year": projection.horizon.year, "value": projection.horizon.value, "series": "projected"}
+    )
+    cur = projection.unit.currency or ""
+    return {
+        "$schema": _VL_SCHEMA,
+        "title": "Market size over time — today vs projected horizon",
+        "description": (
+            f"Realized points are sized from sourced primitives; the projected leg "
+            f"compounds the {projection.base_year} market to {projection.horizon_year} at the "
+            f"{projection.cagr_source_tier} growth rate ({projection.cagr * 100:.1f}%/yr)."
+        ),
+        "data": {"values": rows},
+        "mark": {"type": "line", "point": True},
+        "encoding": {
+            "x": {
+                "field": "year",
+                "type": "quantitative",
+                "axis": {"format": "d", "title": "Year"},
+            },
+            "y": {"field": "value", "type": "quantitative", "title": f"TAM ({cur}/yr)".strip()},
+            "color": {"field": "series", "type": "nominal", "title": "Basis"},
+            "strokeDash": {"field": "series", "type": "nominal", "title": "Basis"},
+        },
+    }
+
+
 def _scenario_tree(tam: TAMOutput) -> dict[str, Any]:
     lines = ["graph TD", f'  C["{tam.target.concept_name or tam.target.concept}"]']
     for i, s in enumerate(tam.scenarios):
@@ -177,4 +224,4 @@ def build_all_charts(tam: TAMOutput) -> dict[str, Any]:
     return out
 
 
-__all__ = ["ALL_KINDS", "build_all_charts", "build_chart"]
+__all__ = ["ALL_KINDS", "build_all_charts", "build_chart", "penetration_spec"]

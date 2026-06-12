@@ -641,6 +641,12 @@ _TAM_OUTPUT_SCHEMA: dict[str, Any] = {
         "method_families": {"type": "array", "items": {"type": "string"}},
         "independence_score": {"type": "number"},
         "scenarios": {"type": "array", "items": {"type": "object"}},
+        # Today + future market (temporal sizing). ``projection`` carries the
+        # realized (today) and projected (horizon) points + the sourced growth
+        # rate's provenance, or {available:false, reason} when no growth primitive
+        # backs the concept. ``trajectory`` is the backward, sourced-only history.
+        "projection": {"type": "object"},
+        "trajectory": {"type": "object"},
         "charts": {"type": "object"},
         "next_actions": {"type": "array", "items": {"type": "object"}},
         "resource_links": {"type": "array", "items": {"type": "object"}},
