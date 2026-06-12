@@ -6,6 +6,7 @@ from .engine import (
     EvalOverrides,
     EvaluatorError,
     OverrideValue,
+    project_tam,
     size_concept,
     trajectory,
 )
@@ -14,6 +15,7 @@ __all__ = [
     "EvalOverrides",
     "EvaluatorError",
     "OverrideValue",
+    "project_tam",
     "size_concept",
     "trajectory",
 ]

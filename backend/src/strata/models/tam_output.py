@@ -195,3 +195,57 @@ class TAMTrajectory(BaseModel):
     concept_name: str
     unit: Unit
     points: list[TrajectoryPoint]
+
+
+class ProjectionPoint(BaseModel):
+    """One anchored point on a today→future projection.
+
+    ``kind`` distinguishes the *realized* base-year market (a sized,
+    sourced figure) from the *projected* horizon-year market (the base
+    compounded by a sourced growth rate). The UI/exports MUST label them
+    differently — a projected number is not a measurement.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    year: int
+    value: float
+    kind: Literal["realized", "projected"]
+
+
+class TAMProjection(BaseModel):
+    """Today market + future market for a concept (temporal sizing).
+
+    A projection is pure arithmetic over already-sourced inputs: the today
+    TAM midpoint compounded by a **sourced** growth primitive (a CAGR), exactly
+    the unit-crossing math frameworks already own (Q3). It is NEVER synthesized
+    — when a concept has no sourced growth primitive the evaluator returns
+    ``None`` and no projection is shown (the honest gap, mirroring
+    :class:`Convergence` returning ``None`` for single-method concepts, Q20).
+
+    The growth primitive's provenance rides the projection: ``cagr_source_tier``
+    + ``cagr_snapshot_sha256`` pin it (Q5), and a modeled-tier rate carries a
+    ``MODELED`` banner in ``banners`` so a projected-from-modeled future number is
+    never silently presented as sourced (Q37). Derived, not part of the TAM state
+    hash.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    concept_slug: Slug
+    concept_name: str | None = None
+    unit: Unit
+
+    base_year: int
+    horizon_year: int
+    # Compound annual growth rate as a fraction (0.18 == 18%/yr), straight off
+    # the sourced growth primitive — never inferred by the engine.
+    cagr: float
+    cagr_primitive: Slug
+    cagr_source_tier: str | None = None
+    cagr_snapshot_sha256: Sha256Hex
+
+    today: ProjectionPoint
+    horizon: ProjectionPoint
+
+    banners: tuple[ScenarioBanner, ...] = ()

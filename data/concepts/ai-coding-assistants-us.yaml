@@ -14,5 +14,10 @@ modifiers: {}
 measurements:
   - us-software-engineering-workforce
   - ai-coding-assistant-acv-per-engineer-2024
+  - ai-coding-assistant-spend-cagr-2024
+# Temporal sizing: the sourced (here community-modeled) per-year CAGR that
+# projects the today market to a future horizon. See docs/plans/
+# 2026-06-11-temporal-tam-today-future-sizing.md.
+growth_index: ai-coding-assistant-spend-cagr-2024
 competing_concepts: []
 requires_clearance: []

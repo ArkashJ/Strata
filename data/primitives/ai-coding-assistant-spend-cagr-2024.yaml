@@ -1,0 +1,41 @@
+kind: atomic_primitive
+slug: ai-coding-assistant-spend-cagr-2024
+schema_version: 1
+concept_slug: ai-coding-assistants-us
+name: AI coding-assistant US seat-spend CAGR (blended 5yr, modeled)
+description: >-
+  Blended near-term (5-year) compound annual growth rate of US AI
+  coding-assistant seat spend, used to project the today market to a future
+  horizon. Community-modeled, NOT a sourced regulator/analyst series: anchored
+  to public AI-software and developer-tooling growth signals and a decelerating
+  adoption S-curve. Stored as a fraction (0.22 = 22%/yr). Ranged; treat as a
+  defensible modeled assumption, never as a measurement.
+value: 0.22
+unit:
+  kind: intensive
+  dimension: percent
+  denominator: per-year
+as_of: '2024-12-31'
+expiry: '2027-05-28'
+geo:
+  level: country
+  codes:
+    - US
+geo_perspective: demand
+distribution_shape: normal
+delivery_mode: n/a
+uncertainty:
+  range:
+    - 0.12
+    - 0.35
+  basis: >-
+    Low end reflects a mature-tooling deceleration as seat penetration
+    saturates; high end reflects continued enterprise expansion and platform
+    add-ons. Blended across the US engineering pool where adoption and
+    willingness-to-pay vary widely. Modeled, not sourced.
+source:
+  slug: strata-modeled-ai-coding-cagr-2024
+  tier: community-modeled
+  url: https://github.com/ArkashJ/Strata/blob/main/data/primitives/ai-coding-assistant-spend-cagr-2024.yaml
+  accessed: '2026-06-11'
+  snapshot_sha256: 88a519f88e3724109c3babaa98793986dee2b88f38978a16a49ce04d3239dd01

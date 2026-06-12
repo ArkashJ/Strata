@@ -33,12 +33,14 @@ from ..models import (
     FrameworkVariant,
     InputUsed,
     MethodFamily,
+    ProjectionPoint,
     ProvenanceClass,
     Scenario,
     ScenarioBanner,
     SetOperation,
     SourceTier,
     TAMOutput,
+    TAMProjection,
     TAMTarget,
     TAMTrajectory,
     TrajectoryPoint,
@@ -672,6 +674,103 @@ def trajectory(registry: Registry, concept_slug: str) -> TAMTrajectory:
         concept_name=concept.name,
         unit=output_unit,
         points=points,
+    )
+
+
+def _is_growth_rate_unit(unit: Unit) -> bool:
+    """A growth primitive is a *per-year rate*: a percent dimension carrying a
+    per-year denominator. The denominator is what distinguishes a CAGR from the
+    static percent shares (``addressable_share``, ``replacement_rate``) — those
+    are dimensionless fractions with no denominator and must NOT be mistaken for
+    a growth series."""
+    return unit.dimension is UnitDimension.PERCENT and unit.denominator in {"per-year", "year"}
+
+
+def _latest_as_of_year(registry: Registry, tam: TAMOutput) -> int | None:
+    """The base year of a TAM — the latest ``as_of`` among the atomic primitives
+    it actually consumed (a composite contributes its members' dates). ``None``
+    when no consumed input resolves to a dated atomic, so the caller can fall
+    back to the growth primitive's own ``as_of`` rather than the wall clock."""
+    years: list[int] = []
+    for sc in tam.scenarios:
+        for iu in sc.inputs_used:
+            slug = iu.primitive_slug
+            if slug in registry.atomic:
+                years.append(registry.atomic[slug].as_of.year)
+            elif slug in registry.composite:
+                years.extend(
+                    registry.atomic[m].as_of.year
+                    for m in registry.composite[slug].inputs
+                    if m in registry.atomic
+                )
+    return max(years) if years else None
+
+
+def project_tam(
+    registry: Registry,
+    concept_slug: str,
+    *,
+    horizon_years: int = 5,
+    overrides: EvalOverrides | None = None,
+) -> TAMProjection | None:
+    """Project a concept's *today* market to a *future* horizon.
+
+    Returns the today (``realized``) and horizon (``projected``) market: the
+    today TAM midpoint compounded by the concept's sourced growth primitive
+    (``base * (1 + cagr) ** horizon_years``). This is pure arithmetic over an
+    already-sourced, hash-pinned CAGR — the same unit-crossing math frameworks
+    own (Q3), never an engine-invented rate.
+
+    Returns ``None`` — the honest gap — when the concept declares no
+    ``growth_index``, the referenced primitive is missing / not atomic, or its
+    unit is not a per-year rate. A future market is NEVER fabricated (Q20);
+    mirrors :func:`_convergence` refusing to manufacture a second method family.
+    The growth primitive's provenance (tier + snapshot) and any ``MODELED``
+    banner ride the result so a projected-from-modeled number is never presented
+    as a sourced measurement.
+    """
+    if horizon_years <= 0:
+        raise EvaluatorError(f"horizon_years must be a positive integer, got {horizon_years!r}")
+    try:
+        concept = registry.get_concept(concept_slug)
+    except RegistryError as exc:
+        raise EvaluatorError(f"concept {concept_slug!r} not found") from exc
+
+    growth_slug = concept.growth_index
+    if growth_slug is None or growth_slug not in registry.atomic:
+        return None
+    growth = registry.atomic[growth_slug]
+    if not _is_growth_rate_unit(growth.unit):
+        return None
+
+    tam = size_concept(registry, concept_slug, overrides=overrides)
+    values = [s.value for s in tam.scenarios]
+    if not values:
+        return None
+    today_value = math.fsum(values) / len(values)
+
+    base_year = _latest_as_of_year(registry, tam) or growth.as_of.year
+    horizon_year = base_year + horizon_years
+    # Growth rate is stored as a fraction (0.18 == 18%/yr), matching the percent
+    # convention of every other percent-dimension primitive (e.g. addressable_share=0.6).
+    cagr = growth.value
+    horizon_value = today_value * (1.0 + cagr) ** horizon_years
+    if not (math.isfinite(today_value) and math.isfinite(horizon_value)):
+        return None
+
+    return TAMProjection(
+        concept_slug=concept.slug,
+        concept_name=concept.name,
+        unit=tam.scenarios[0].unit,
+        base_year=base_year,
+        horizon_year=horizon_year,
+        cagr=cagr,
+        cagr_primitive=growth.slug,
+        cagr_source_tier=str(growth.source.tier),
+        cagr_snapshot_sha256=growth.source.snapshot_sha256,
+        today=ProjectionPoint(year=base_year, value=today_value, kind="realized"),
+        horizon=ProjectionPoint(year=horizon_year, value=horizon_value, kind="projected"),
+        banners=tuple(_dedupe_banners(_banners_for(growth))),
     )
 
 

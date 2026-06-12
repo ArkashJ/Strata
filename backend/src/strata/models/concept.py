@@ -107,4 +107,11 @@ class Concept(BaseModel):
     measurements: tuple[Slug, ...] = ()
     competing_concepts: tuple[Slug, ...] = ()
 
+    # Temporal sizing (today + future market). Optional; existing records load
+    # unchanged. Points at the atomic growth primitive (a sourced per-year CAGR)
+    # that drives this market's forward projection. ``None`` = no sourced growth
+    # series → no future market is projected (the honest gap, Q20). Explicit by
+    # design: a reader can see exactly which sourced rate compounds the TAM.
+    growth_index: Slug | None = None
+
     requires_clearance: tuple[str, ...] = ()
